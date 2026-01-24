@@ -2,24 +2,46 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
 import { Transaction, TransactionType } from './types';
-import { INITIAL_TRANSACTIONS, MONTHLY_CHART_DATA } from './constants';
+import { MONTHLY_CHART_DATA } from './constants';
 import { StatCard } from './components/StatCard';
 import { TransactionForm } from './components/TransactionForm';
 import { Sidebar } from './components/Sidebar';
+import api from './services/api';
+import { useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
 const App: React.FC = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [userName, setUserName] = useState('Usuário Finanza');
-  
+  const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Usuário');
+  const navigate = useNavigate();
+
   // States for History Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'ALL' | TransactionType>('ALL');
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await api.get('/transactions');
+      // Ensure date strings are handled correctly if needed, though API returns ISO strings which work with new Date()
+      setTransactions(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar transações:', error);
+      if ((error as any).response?.status === 401) {
+        navigate('/login');
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     // @ts-ignore
@@ -31,8 +53,10 @@ const App: React.FC = () => {
 
   const totals = useMemo(() => {
     return transactions.reduce((acc, t) => {
-      if (t.type === 'INCOME') acc.income += t.amount;
-      else acc.expense += t.amount;
+      // Backend returns number, but just to be safe with JSON
+      const amount = Number(t.amount);
+      if (t.type === 'INCOME') acc.income += amount;
+      else acc.expense += amount;
       return acc;
     }, { income: 0, expense: 0 });
   }, [transactions]);
@@ -42,7 +66,7 @@ const App: React.FC = () => {
   const categorySummary = useMemo(() => {
     const categories: Record<string, number> = {};
     transactions.filter(t => t.type === 'EXPENSE').forEach(t => {
-      categories[t.category] = (categories[t.category] || 0) + t.amount;
+      categories[t.category] = (categories[t.category] || 0) + Number(t.amount);
     });
     return Object.entries(categories)
       .map(([name, value]) => ({ name, value }))
@@ -55,8 +79,8 @@ const App: React.FC = () => {
 
   const filteredHistory = useMemo(() => {
     return transactions.filter(tx => {
-      const matchesSearch = tx.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            tx.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.category.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = filterType === 'ALL' || tx.type === filterType;
       return matchesSearch && matchesType;
     });
@@ -65,40 +89,65 @@ const App: React.FC = () => {
   const transactionsGroupedByDate = useMemo(() => {
     const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const groups: Record<string, Transaction[]> = {};
-    
+
     sorted.forEach(t => {
-      if (!groups[t.date]) groups[t.date] = [];
-      groups[t.date].push(t);
+      const dateKey = t.date.toString().split('T')[0]; // Extract YYYY-MM-DD
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(t);
     });
-    
+
     return Object.entries(groups).map(([date, txs]) => ({
       date,
       transactions: txs
     }));
   }, [transactions]);
 
-  const handleAddTransaction = (newTx: Omit<Transaction, 'id'>) => {
-    const txWithId = { ...newTx, id: Math.random().toString(36).substr(2, 9) };
-    setTransactions(prev => [txWithId, ...prev]);
+  const handleAddTransaction = async (newTx: Omit<Transaction, 'id'>) => {
+    try {
+      const response = await api.post('/transactions', newTx);
+      setTransactions(prev => [response.data, ...prev]);
+      setIsFormOpen(false);
+    } catch (error) {
+      console.error('Erro ao adicionar:', error);
+      alert('Erro ao salvar transação');
+    }
   };
 
-  const handleUpdateTransaction = (updatedTx: Transaction) => {
-    setTransactions(prev => prev.map(t => t.id === updatedTx.id ? updatedTx : t));
-    setEditingTransaction(null);
+  const handleUpdateTransaction = async (updatedTx: Transaction) => {
+    try {
+      const { id, ...data } = updatedTx;
+      const response = await api.patch(`/transactions/${id}`, data);
+      // The backend might return count, so we update local state optimally or refetch
+      // Usually simpler to just update local state if we trust the input
+      setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...data } : t));
+      setEditingTransaction(null);
+      setIsFormOpen(false);
+    } catch (error) {
+      console.error('Erro ao atualizar:', error);
+      alert('Erro ao atualizar transação');
+    }
   };
 
-  const handleDeleteTransaction = (id: string) => {
+  const handleDeleteTransaction = async (id: string) => {
     if (confirm('Deseja realmente excluir este lançamento?')) {
-      setTransactions(prev => prev.filter(t => t.id !== id));
+      try {
+        await api.delete(`/transactions/${id}`);
+        setTransactions(prev => prev.filter(t => t.id !== id));
+      } catch (error) {
+        console.error('Erro ao deletar:', error);
+        alert('Erro ao deletar transação');
+      }
     }
   };
 
-  const handleResetApp = () => {
-    if (confirm('ATENÇÃO: Isso apagará todos os seus dados permanentemente. Continuar?')) {
-      setTransactions([]);
-      localStorage.clear();
-      alert('Dados resetados com sucesso.');
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userName');
+    navigate('/login');
+  };
+
+  const handleResetApp = async () => {
+    alert('Esta funcionalidade não está disponível na versão com Banco de Dados para sua segurança.');
   };
 
   const handleExportData = () => {
@@ -144,14 +193,14 @@ const App: React.FC = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={MONTHLY_CHART_DATA}>
                         <defs>
-                          <linearGradient id="gradInc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
-                          <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1}/><stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/></linearGradient>
+                          <linearGradient id="gradInc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.1} /><stop offset="95%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
+                          <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1} /><stop offset="95%" stopColor="#f43f5e" stopOpacity={0} /></linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} dx={-5} />
+                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dx={-5} />
                         <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} />
-                        <Legend verticalAlign="top" height={36} iconType="circle"/>
+                        <Legend verticalAlign="top" height={36} iconType="circle" />
                         <Area name="Receitas" type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fill="url(#gradInc)" />
                         <Area name="Despesas" type="monotone" dataKey="expenses" stroke="#f43f5e" strokeWidth={3} fill="url(#gradExp)" />
                       </AreaChart>
@@ -166,7 +215,7 @@ const App: React.FC = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={categorySummary.slice(0, 5)} layout="vertical">
                           <XAxis type="number" hide />
-                          <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} width={70} />
+                          <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} width={70} />
                           <Bar dataKey="value" radius={[0, 10, 10, 0]} fill="#6366f1" barSize={16} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -179,7 +228,7 @@ const App: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-6">
                       <div className="text-center"><p className="text-[10px] font-bold text-slate-400 uppercase">Total Transações</p><p className="text-lg font-black text-slate-700">{transactions.length}</p></div>
-                      <div className="text-center border-l border-slate-100"><p className="text-[10px] font-bold text-slate-400 uppercase">Maior Gasto</p><p className="text-lg font-black text-rose-500">R$ {Math.max(...transactions.filter(t => t.type === 'EXPENSE').map(t => t.amount), 0).toLocaleString('pt-BR')}</p></div>
+                      <div className="text-center border-l border-slate-100"><p className="text-[10px] font-bold text-slate-400 uppercase">Maior Gasto</p><p className="text-lg font-black text-rose-500">R$ {Math.max(...transactions.filter(t => t.type === 'EXPENSE').map(t => Number(t.amount)), 0).toLocaleString('pt-BR')}</p></div>
                     </div>
                   </div>
                 </div>
@@ -198,8 +247,8 @@ const App: React.FC = () => {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                       <span className="text-[10px] font-bold text-slate-400 uppercase">Despesas</span>
-                       <span className="text-lg font-black text-slate-800">100%</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Despesas</span>
+                      <span className="text-lg font-black text-slate-800">100%</span>
                     </div>
                   </div>
                   <div className="mt-8 space-y-4">
@@ -223,14 +272,15 @@ const App: React.FC = () => {
         return (
           <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in zoom-in-95 duration-700">
             <div className="text-center space-y-2">
-               <h3 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Caminho Financeiro</h3>
-               <p className="text-sm md:text-base text-slate-500 font-medium px-4">Sua jornada detalhada dia após dia</p>
+              <h3 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Caminho Financeiro</h3>
+              <p className="text-sm md:text-base text-slate-500 font-medium px-4">Sua jornada detalhada dia após dia</p>
             </div>
             <div className="relative px-2">
               <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-emerald-500 to-slate-200 -translate-x-1/2 rounded-full hidden md:block"></div>
               <div className="space-y-12 md:space-y-16">
                 {transactionsGroupedByDate.map((group, groupIdx) => {
-                  const dateObj = new Date(group.date);
+                  // Fix date parsing for timeline display
+                  const dateObj = new Date(group.date + 'T12:00:00'); // Adding time to avoid timezone shifts on date-only strings
                   const isEven = groupIdx % 2 === 0;
                   return (
                     <div key={group.date} className="relative">
@@ -254,7 +304,7 @@ const App: React.FC = () => {
                                     <h4 className="font-bold text-slate-800 text-base md:text-lg group-hover:text-indigo-600 transition-colors truncate">{tx.description}</h4>
                                   </div>
                                   <p className={`font-black text-base md:text-lg whitespace-nowrap ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'}`}>
-                                    {tx.type === 'INCOME' ? '+' : '-'} R$ {tx.amount.toLocaleString('pt-BR')}
+                                    {tx.type === 'INCOME' ? '+' : '-'} R$ {Number(tx.amount).toLocaleString('pt-BR')}
                                   </p>
                                 </div>
                               </div>
@@ -276,8 +326,8 @@ const App: React.FC = () => {
         return (
           <div className="space-y-6 animate-in slide-in-from-bottom-6 duration-500">
             <div className="flex justify-between items-center px-4">
-               <h3 className="text-xl font-black text-slate-800">Gerenciar Lançamentos</h3>
-               <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">{transactions.length} registros</p>
+              <h3 className="text-xl font-black text-slate-800">Gerenciar Lançamentos</h3>
+              <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">{transactions.length} registros</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               {transactions.map((tx) => (
@@ -286,7 +336,7 @@ const App: React.FC = () => {
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 md:gap-5 min-w-0">
                       <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex-shrink-0 flex items-center justify-center text-lg md:text-xl ${tx.type === 'INCOME' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                         <i data-lucide={tx.type === 'INCOME' ? 'arrow-up-right' : 'arrow-down-left'} className="w-5 h-5 md:w-6 md:h-6"></i>
+                        <i data-lucide={tx.type === 'INCOME' ? 'arrow-up-right' : 'arrow-down-left'} className="w-5 h-5 md:w-6 md:h-6"></i>
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -295,18 +345,18 @@ const App: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[8px] md:text-[10px] uppercase font-black tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg truncate">{tx.category}</span>
-                          <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{new Date(tx.date).toLocaleDateString('pt-BR')}</span>
+                          <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{new Date(tx.date + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
                         </div>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                       <p className={`font-black text-base md:text-xl ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'}`}>
-                        {tx.type === 'INCOME' ? '+' : '-'} R$ {tx.amount.toLocaleString('pt-BR')}
-                       </p>
-                       <div className="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
+                      <p className={`font-black text-base md:text-xl ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'}`}>
+                        {tx.type === 'INCOME' ? '+' : '-'} R$ {Number(tx.amount).toLocaleString('pt-BR')}
+                      </p>
+                      <div className="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
                         <button onClick={() => openEditForm(tx)} className="p-2 text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"><i data-lucide="edit-3" className="w-4 h-4"></i></button>
                         <button onClick={() => handleDeleteTransaction(tx.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
-                       </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -319,65 +369,75 @@ const App: React.FC = () => {
         return (
           <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-right duration-500">
             <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-               <div className="p-8 border-b border-slate-100 bg-slate-50/50">
-                  <h3 className="text-xl font-black text-slate-800">Configurações do Perfil</h3>
-                  <p className="text-sm text-slate-500 font-medium">Gerencie seus dados e preferências do sistema</p>
-               </div>
-               <div className="p-8 space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nome de Exibição</label>
-                        <div className="relative">
-                           <i data-lucide="user" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                           <input 
-                              type="text" 
-                              value={userName} 
-                              onChange={(e) => setUserName(e.target.value)} 
-                              className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-bold text-slate-700"
-                           />
-                        </div>
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Moeda Padrão</label>
-                        <div className="relative">
-                           <i data-lucide="banknote" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                           <select className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none appearance-none font-bold text-slate-700">
-                              <option>Real Brasileiro (BRL)</option>
-                           </select>
-                        </div>
-                     </div>
+              <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="text-xl font-black text-slate-800">Configurações do Perfil</h3>
+                <p className="text-sm text-slate-500 font-medium">Gerencie seus dados e preferências do sistema</p>
+              </div>
+              <div className="p-8 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nome de Exibição</label>
+                    <div className="relative">
+                      <i data-lucide="user" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                      <input
+                        type="text"
+                        value={userName}
+                        readOnly
+                        className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-bold text-slate-700 cursor-not-allowed opacity-70"
+                      />
+                    </div>
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Moeda Padrão</label>
+                    <div className="relative">
+                      <i data-lucide="banknote" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                      <select className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none appearance-none font-bold text-slate-700">
+                        <option>Real Brasileiro (BRL)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
 
-                  <div className="pt-8 border-t border-slate-100">
-                     <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6">Gestão de Dados</h4>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <button 
-                          onClick={handleExportData}
-                          className="flex items-center gap-4 p-5 bg-white border border-slate-200 rounded-[1.5rem] hover:bg-slate-50 transition-all group"
-                        >
-                           <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                              <i data-lucide="download"></i>
-                           </div>
-                           <div className="text-left">
-                              <p className="font-bold text-slate-800 text-sm">Exportar Dados</p>
-                              <p className="text-[10px] text-slate-500 font-medium">Baixar backup em JSON</p>
-                           </div>
-                        </button>
-                        <button 
-                          onClick={handleResetApp}
-                          className="flex items-center gap-4 p-5 bg-rose-50/30 border border-rose-100 rounded-[1.5rem] hover:bg-rose-50 transition-all group"
-                        >
-                           <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                              <i data-lucide="refresh-cw"></i>
-                           </div>
-                           <div className="text-left">
-                              <p className="font-bold text-rose-700 text-sm">Resetar Sistema</p>
-                              <p className="text-[10px] text-rose-500 font-medium">Limpar todo histórico</p>
-                           </div>
-                        </button>
-                     </div>
+                <div className="pt-8 border-t border-slate-100">
+                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6">Gestão de Dados</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button
+                      onClick={handleExportData}
+                      className="flex items-center gap-4 p-5 bg-white border border-slate-200 rounded-[1.5rem] hover:bg-slate-50 transition-all group"
+                    >
+                      <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i data-lucide="download"></i>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-slate-800 text-sm">Exportar Dados</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Baixar backup em JSON</p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={handleResetApp}
+                      className="flex items-center gap-4 p-5 bg-rose-50/30 border border-rose-100 rounded-[1.5rem] hover:bg-rose-50 transition-all group opacity-50 cursor-not-allowed"
+                    >
+                      <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i data-lucide="refresh-cw"></i>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-rose-700 text-sm">Resetar Sistema</p>
+                        <p className="text-[10px] text-rose-500 font-medium">Desativado (Web)</p>
+                      </div>
+                    </button>
                   </div>
-               </div>
+                </div>
+
+                <div className="pt-8 border-t border-slate-100">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center gap-2 p-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-all"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sair da Conta
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="bg-indigo-900 p-8 rounded-[2.5rem] text-white shadow-xl overflow-hidden relative group">
@@ -398,7 +458,7 @@ const App: React.FC = () => {
         return (
           <div className="space-y-6 animate-in slide-in-from-right duration-500">
             <div className="bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-               <div className="p-5 md:p-8 border-b border-slate-100 space-y-6">
+              <div className="p-5 md:p-8 border-b border-slate-100 space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                   <div className="text-center sm:text-left w-full sm:w-auto">
                     <h3 className="text-lg md:text-xl font-bold text-slate-800">Extrato Consolidado</h3>
@@ -435,8 +495,8 @@ const App: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 md:px-8 py-5 md:py-6 hidden sm:table-cell"><span className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-tighter">{tx.category}</span></td>
-                        <td className="px-6 md:px-8 py-5 md:py-6 text-sm font-bold text-slate-400 hidden md:table-cell">{new Date(tx.date).toLocaleDateString('pt-BR')}</td>
-                        <td className={`px-6 md:px-8 py-5 md:py-6 text-right font-black ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'}`}>{tx.type === 'INCOME' ? '+' : '-'} R$ {tx.amount.toLocaleString('pt-BR')}</td>
+                        <td className="px-6 md:px-8 py-5 md:py-6 text-sm font-bold text-slate-400 hidden md:table-cell">{new Date(tx.date + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
+                        <td className={`px-6 md:px-8 py-5 md:py-6 text-right font-black ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'}`}>{tx.type === 'INCOME' ? '+' : '-'} R$ {Number(tx.amount).toLocaleString('pt-BR')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -460,6 +520,9 @@ const App: React.FC = () => {
             <p className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-0.5 truncate">Gestão Financeira</p>
             <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight capitalize truncate">
               {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'timeline' ? 'Linha do Tempo' : activeTab === 'recent' ? 'Lançamentos' : activeTab === 'settings' ? 'Configurações' : 'Extrato'}
+              {userName && (
+                <span className="block text-xs text-indigo-600 font-bold mt-1">Olá, {userName}</span>
+              )}
             </h2>
           </div>
           <button onClick={() => setIsFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center gap-2 md:gap-3 flex-shrink-0">
@@ -472,10 +535,10 @@ const App: React.FC = () => {
         </main>
       </div>
       {isFormOpen && (
-        <TransactionForm 
-          onAdd={handleAddTransaction} 
+        <TransactionForm
+          onAdd={handleAddTransaction}
           onUpdate={handleUpdateTransaction}
-          onClose={closeForm} 
+          onClose={closeForm}
           existingCategories={uniqueCategories}
           editingTransaction={editingTransaction}
         />
