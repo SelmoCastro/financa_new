@@ -423,19 +423,18 @@ const App: React.FC = () => {
                   </div>
                   <div className="h-[250px] md:h-[320px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={monthlyChartData}>
-                        <defs>
-                          <linearGradient id="gradInc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.1} /><stop offset="95%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
-                          <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1} /><stop offset="95%" stopColor="#f43f5e" stopOpacity={0} /></linearGradient>
-                        </defs>
+                      <BarChart data={monthlyChartData} barSize={20}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dy={10} />
                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dx={-5} />
-                        <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} />
+                        <Tooltip
+                          cursor={{ fill: '#f8fafc' }}
+                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
+                        />
                         <Legend verticalAlign="top" height={36} iconType="circle" />
-                        <Area name="Receitas" type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fill="url(#gradInc)" />
-                        <Area name="Despesas" type="monotone" dataKey="expenses" stroke="#f43f5e" strokeWidth={3} fill="url(#gradExp)" />
-                      </AreaChart>
+                        <Bar name="Receitas" dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} />
+                        <Bar name="Despesas" dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                      </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
