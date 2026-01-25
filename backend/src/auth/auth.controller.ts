@@ -1,5 +1,5 @@
 
-import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -21,8 +21,8 @@ export class AuthController {
     // But better to use the service validation:
     const user = await this.authService.validateUser(req.email, req.password);
     if (!user) {
-      return { message: 'Credenciais inválidas' }; // na aplicação real lançar UnauthorizedException
+      throw new UnauthorizedException('Credenciais inválidas');
     }
-    return this.authService.login(user);
+    return this.authService.login(user); // Returns { access_token: ... }
   }
 }
