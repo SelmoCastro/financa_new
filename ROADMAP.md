@@ -4,25 +4,13 @@ Este documento rastreia ideias e funcionalidades planejadas para as próximas ve
 
 ## 🚀 Próximas Implementações
 
-### 1. Metas de Orçamento (Budgets) 🎯
-**Objetivo:** Permitir que o usuário defina tetos de gastos por categoria.
+### 1. 🎙️ Lançamento por Voz (Comando de Voz) 🚀
+**Objetivo:** Adicionar transações falando, sem precisar digitar campos.
 **Funcionalidades:**
-- [ ] Interface para definir limite (ex: "Mercado = R$ 600,00").
-- [ ] Barras de progresso visuais no Dashboard.
-- [ ] Alertas visuais (Amarelo > 80%, Vermelho > 100%).
-- [ ] Notificações de "Meta Estourada".
-
-### 2. Gestão de Assinaturas (Subscription Manager) 🔄
-**Objetivo:** Automatizar e visualizar melhor os gastos fixos e recorrentes.
-**Funcionalidades:**
-- [ ] Tela dedicada para listar apenas despesas fixas (Netflix, Aluguel, Academia).
-- [ ] Botão "Renovar Mês": Duplica automaticamente os lançamentos fixos para o próximo mês.
-- [ ] Calendário de vencimentos visual.
-
-## 📦 Backlog (Ideias Futuras)
-- [ ] **Modo Multi-moeda:** Suporte para Dólar/Euro (viagens).
-- [ ] **Integração Open Finance:** Importação automática de extratos bancários (OFX/API).
-- [ ] **Metas de Poupança:** "Cofrinhos" virtuais para objetivos (Carro, Casa, Viagem).
+- [ ] Botão de microfone flutuante ou no formulário.
+- [ ] Transcrição de voz para texto (Web Speech API).
+- [ ] Inteligência para identificar Valor, Categoria e Descrição automaticamente.
+  - *Exemplo: "Gastei 50 reais na padaria" -> R$ 50,00 | Alimentação | Padaria*
 
 ---
 *Última atualização: Janeiro 2026*
