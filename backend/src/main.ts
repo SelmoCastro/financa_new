@@ -3,9 +3,22 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
+
+  // Swagger Config
+  const config = new DocumentBuilder()
+    .setTitle('Finanza API')
+    .setDescription('API do Dashboard Financeiro Simplificado. Use esta documentação para testar os endpoints.')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
