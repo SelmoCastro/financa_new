@@ -18,6 +18,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Usuário');
+  const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false);
   const navigate = useNavigate();
 
   // States for History Filters
@@ -357,7 +358,8 @@ const App: React.FC = () => {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              <StatCard title="Saldo Total" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<i data-lucide="banknote"></i>} />
+              <StatCard title="Saldo Projetado" value={`R$ ${forecast.projectedBalance.toLocaleString('pt-BR')}`} color="bg-indigo-600 text-indigo-50" icon={<i data-lucide="crosshair" className="text-white"></i>} isVisible={!isPrivacyEnabled} />
+              <StatCard title="Saldo Atual" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<i data-lucide="banknote"></i>} isVisible={!isPrivacyEnabled} />
               <StatCard
                 title="Entradas (Mês)"
                 value={`R$ ${totals.currentIncome.toLocaleString('pt-BR')}`}
@@ -365,6 +367,7 @@ const App: React.FC = () => {
                 icon={<i data-lucide="trending-up"></i>}
                 trend={`${Math.abs(totals.incomeTrend).toFixed(1)}%`}
                 trendUp={totals.incomeTrend >= 0}
+                isVisible={!isPrivacyEnabled}
               />
               <StatCard
                 title="Saídas (Mês)"
@@ -373,8 +376,8 @@ const App: React.FC = () => {
                 icon={<i data-lucide="trending-down"></i>}
                 trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`}
                 trendUp={totals.expenseTrend <= 0}
+                isVisible={!isPrivacyEnabled}
               />
-              <StatCard title="Saving Rate" value={`${totals.income > 0 ? ((totals.balance / totals.income) * 100).toFixed(1) : 0}%`} color="bg-amber-50 text-amber-600" icon={<i data-lucide="activity"></i>} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
@@ -623,8 +626,8 @@ const App: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <p className={`font-black text-base md:text-xl ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'}`}>
-                        {tx.type === 'INCOME' ? '+' : '-'} R$ {Number(tx.amount).toLocaleString('pt-BR')}
+                      <p className={`font-black text-base md:text-xl ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'} ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
+                        {isPrivacyEnabled ? 'R$ •••••••' : `${tx.type === 'INCOME' ? '+' : '-'} R$ ${Number(tx.amount).toLocaleString('pt-BR')}`}
                       </p>
                       <div className="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
                         <button onClick={() => openEditForm(tx)} className="p-2 text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"><i data-lucide="edit-3" className="w-4 h-4"></i></button>
@@ -798,10 +801,19 @@ const App: React.FC = () => {
               )}
             </h2>
           </div>
-          <button onClick={() => setIsFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center gap-2 md:gap-3 flex-shrink-0">
-            <i data-lucide="plus" className="w-4 h-4 md:w-5 md:h-5"></i>
-            <span className="hidden sm:inline">Novo Lançamento</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsPrivacyEnabled(!isPrivacyEnabled)}
+              className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all active:scale-95"
+              title={isPrivacyEnabled ? "Mostrar valores" : "Ocultar valores"}
+            >
+              <i data-lucide={isPrivacyEnabled ? "eye-off" : "eye"} className="w-5 h-5"></i>
+            </button>
+            <button onClick={() => setIsFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center gap-2 md:gap-3 flex-shrink-0">
+              <i data-lucide="plus" className="w-4 h-4 md:w-5 md:h-5"></i>
+              <span className="hidden sm:inline">Novo Lançamento</span>
+            </button>
+          </div>
         </header>
         <main className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 md:py-10">
           {renderContent()}

@@ -7,10 +7,10 @@ interface StatCardProps {
   icon: React.ReactNode;
   trend?: string;
   trendUp?: boolean;
-  color: string;
+  isVisible?: boolean;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, trendUp, color }) => {
+export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, trendUp, color, isVisible = true }) => {
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
       <div className="flex justify-between items-start mb-4">
@@ -25,7 +25,9 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, t
       </div>
       <div>
         <h3 className="text-slate-500 text-sm font-medium">{title}</h3>
-        <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
+        <p className={`text-2xl font-bold text-slate-800 mt-1 transition-all ${!isVisible ? 'blur-md select-none' : ''}`}>
+          {isVisible ? value : 'R$ ••••••'}
+        </p>
       </div>
     </div>
   );
