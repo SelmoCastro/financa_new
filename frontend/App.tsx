@@ -304,6 +304,7 @@ const App: React.FC = () => {
           <FixedItems
             items={forecast.fixedItems}
             onUpdateTransaction={handleUpdateTransaction}
+            onDeleteTransaction={handleDeleteTransaction}
             transactions={transactions}
           />
         );
