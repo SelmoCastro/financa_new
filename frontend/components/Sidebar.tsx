@@ -13,6 +13,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'dashboard', label: 'Dashboard', icon: 'layout-grid' },
     { id: 'timeline', label: 'Linha do Tempo', icon: 'clock' },
     { id: 'recent', label: 'Lançamentos', icon: 'list' },
+    { id: 'fixed', label: 'Controle Fixos', icon: 'anchor' },
     { id: 'history', label: 'Extrato', icon: 'receipt' },
   ];
 

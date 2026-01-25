@@ -5,6 +5,8 @@ import { Transaction, TransactionType } from './types';
 import { StatCard } from './components/StatCard';
 import { TransactionForm } from './components/TransactionForm';
 import { Sidebar } from './components/Sidebar';
+import { FixedItems } from './components/FixedItems';
+import { useFixedTransactions } from './hooks/useFixedTransactions';
 import api from './services/api';
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
@@ -142,98 +144,7 @@ const App: React.FC = () => {
     };
   }, [transactions, totals.income]);
 
-  const forecast = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const currentMonthKey = `${currentYear}-${currentMonth}`;
-
-    // 1. Identify all UNIQUE fixed transactions from history
-    const fixedDefinitions: Record<string, { amount: number, type: 'INCOME' | 'EXPENSE', day: number, lastSeen: string }> = {};
-
-    transactions.filter(t => t.isFixed).forEach(t => {
-      // Key by description (simple heuristic)
-      // Improve: normalize description
-      const key = t.description.toLowerCase().trim();
-      const d = new Date(t.date);
-      // Only keep the latest occurrence's amount/day
-      // We assume the most recent one is the most accurate
-      fixedDefinitions[key] = {
-        amount: Number(t.amount),
-        type: t.type,
-        day: d.getDate(), // Day of month it usually happens
-        lastSeen: `${d.getFullYear()}-${d.getMonth()}`
-      };
-    });
-
-    // 2. Check which ones are MISSING in the current month
-    const missingFixed: { description: string, amount: number, type: 'INCOME' | 'EXPENSE' }[] = [];
-
-    Object.entries(fixedDefinitions).forEach(([desc, def]) => {
-      // Check if this description exists in current month transactions
-      const existsInCurrent = transactions.some(t => {
-        const d = new Date(t.date);
-        return d.getMonth() === currentMonth &&
-          d.getFullYear() === currentYear &&
-          t.description.toLowerCase().trim() === desc;
-      });
-
-      if (!existsInCurrent) {
-        // It's missing! Add to forecast
-        missingFixed.push({
-          description: desc.charAt(0).toUpperCase() + desc.slice(1),
-          amount: def.amount,
-          type: def.type
-        });
-      }
-    });
-
-    // 3. Calculate Projected Balance
-    let projectedBalance = totals.balance;
-    missingFixed.forEach(item => {
-      if (item.type === 'INCOME') projectedBalance += item.amount;
-      else projectedBalance -= item.amount;
-    });
-
-    // 4. "Top Villains" (Most expensive descriptions)
-    const expensesByDesc: Record<string, number> = {};
-    transactions.filter(t => t.type === 'EXPENSE').forEach(t => {
-      const key = t.description.trim(); // Case sensitive or insensitive? Let's keep sensitive for now or normalized?
-      // Simple normalization
-      const normKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
-      expensesByDesc[normKey] = (expensesByDesc[normKey] || 0) + Number(t.amount);
-    });
-
-    const topVillains = Object.entries(expensesByDesc)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 3);
-
-    // 5. Fixed Income Commitment (Comprometimento de Renda)
-    // Sum of all fixed expenses (actual + missing) vs Income
-    let totalFixedExpense = 0;
-
-    // Actual fixed expenses this month
-    transactions.forEach(t => {
-      const d = new Date(t.date);
-      if (t.isFixed && t.type === 'EXPENSE' && d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-        totalFixedExpense += Number(t.amount);
-      }
-    });
-    // Add missing fixed (projected)
-    missingFixed.filter(t => t.type === 'EXPENSE').forEach(t => totalFixedExpense += t.amount);
-
-    const income = totals.income || 1;
-    const fixedRatio = (totalFixedExpense / income) * 100;
-
-    return {
-      projectedBalance,
-      missingFixed,
-      topVillains,
-      fixedRatio: Math.min(fixedRatio, 100),
-      totalFixedExpense
-    };
-  }, [transactions, totals.balance, totals.income]);
+  const forecast = useFixedTransactions(transactions, totals);
 
 
   const categorySummary = useMemo(() => {
@@ -388,6 +299,14 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'fixed':
+        return (
+          <FixedItems
+            items={forecast.fixedItems}
+            onUpdateTransaction={handleUpdateTransaction}
+            transactions={transactions}
+          />
+        );
       case 'dashboard':
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
