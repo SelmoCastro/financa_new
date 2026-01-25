@@ -708,17 +708,7 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-indigo-900 p-8 rounded-[2.5rem] text-white shadow-xl overflow-hidden relative group">
-              <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-                <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
-                  <i data-lucide="info" className="w-8 h-8 text-indigo-300"></i>
-                </div>
-                <div className="text-center md:text-left space-y-1">
-                  <h4 className="text-lg font-black">Finanza Lite v1.0.4</h4>
-                  <p className="text-xs text-indigo-200 font-medium">Plataforma de código aberto focada em privacidade e simplicidade.</p>
-                </div>
-              </div>
-            </div>
+
           </div>
         );
 
