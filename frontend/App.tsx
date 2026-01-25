@@ -141,6 +141,65 @@ const App: React.FC = () => {
     };
   }, [transactions, totals.income]);
 
+  const forecast = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const currentMonthKey = `${currentYear}-${currentMonth}`;
+
+    // 1. Identify all UNIQUE fixed transactions from history
+    const fixedDefinitions: Record<string, { amount: number, type: 'INCOME' | 'EXPENSE', day: number, lastSeen: string }> = {};
+
+    transactions.filter(t => t.isFixed).forEach(t => {
+      // Key by description (simple heuristic)
+      // Improve: normalize description
+      const key = t.description.toLowerCase().trim();
+      const d = new Date(t.date);
+      // Only keep the latest occurrence's amount/day
+      // We assume the most recent one is the most accurate
+      fixedDefinitions[key] = {
+        amount: Number(t.amount),
+        type: t.type,
+        day: d.getDate(), // Day of month it usually happens
+        lastSeen: `${d.getFullYear()}-${d.getMonth()}`
+      };
+    });
+
+    // 2. Check which ones are MISSING in the current month
+    const missingFixed: { description: string, amount: number, type: 'INCOME' | 'EXPENSE' }[] = [];
+
+    Object.entries(fixedDefinitions).forEach(([desc, def]) => {
+      // Check if this description exists in current month transactions
+      const existsInCurrent = transactions.some(t => {
+        const d = new Date(t.date);
+        return d.getMonth() === currentMonth &&
+          d.getFullYear() === currentYear &&
+          t.description.toLowerCase().trim() === desc;
+      });
+
+      if (!existsInCurrent) {
+        // It's missing! Add to forecast
+        missingFixed.push({
+          description: desc.charAt(0).toUpperCase() + desc.slice(1),
+          amount: def.amount,
+          type: def.type
+        });
+      }
+    });
+
+    // 3. Calculate Projected Balance
+    let projectedBalance = totals.balance;
+    missingFixed.forEach(item => {
+      if (item.type === 'INCOME') projectedBalance += item.amount;
+      else projectedBalance -= item.amount;
+    });
+
+    return {
+      projectedBalance,
+      missingFixed
+    };
+  }, [transactions, totals.balance]);
+
 
   const categorySummary = useMemo(() => {
     const categories: Record<string, number> = {};
@@ -346,16 +405,29 @@ const App: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                   <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Gastos por Categoria</h3>
-                    <div className="h-[250px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={categorySummary.slice(0, 5)} layout="vertical">
-                          <XAxis type="number" hide />
-                          <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} width={70} />
-                          <Bar dataKey="value" radius={[0, 10, 10, 0]} fill="#6366f1" barSize={16} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
+                    {forecast.missingFixed.length > 0 ? (
+                      <>
+                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Fixos Pendentes</h3>
+                        <div className="space-y-3">
+                          {forecast.missingFixed.map((item, idx) => (
+                            <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+                              <span className="text-xs font-bold text-slate-700">{item.description}</span>
+                              <span className={`text-xs font-black ${item.type === 'INCOME' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                {item.type === 'INCOME' ? '+' : '-'} R$ {item.amount.toLocaleString('pt-BR')}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                        <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3">
+                          <i data-lucide="check-circle" className="w-6 h-6"></i>
+                        </div>
+                        <p className="text-sm font-bold text-slate-600">Tudo em dia!</p>
+                        <p className="text-[10px] text-slate-400">Nenhuma conta fixa pendente.</p>
+                      </div>
+                    )}
                   </div>
                   <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-center">
                     <div className="text-center space-y-2 mb-6">
