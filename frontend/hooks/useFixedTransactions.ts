@@ -80,6 +80,19 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         const income = totals.income || 1;
         const fixedRatio = (totalFixedExpense / income) * 100;
 
+        // 5. "Top Villains" (Most expensive descriptions)
+        const expensesByDesc: Record<string, number> = {};
+        transactions.filter(t => t.type === 'EXPENSE').forEach(t => {
+            const key = t.description.trim();
+            const normKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+            expensesByDesc[normKey] = (expensesByDesc[normKey] || 0) + Number(t.amount);
+        });
+
+        const topVillains = Object.entries(expensesByDesc)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 3);
+
         // Convert fixedDefinitions record to array for the list view
         const fixedItems = Object.entries(fixedDefinitions).map(([key, value]) => ({
             name: key.charAt(0).toUpperCase() + key.slice(1),
@@ -91,7 +104,8 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
             missingFixed,
             fixedRatio: Math.min(fixedRatio, 100),
             totalFixedExpense,
-            fixedItems // The list for the new screen
+            fixedItems,
+            topVillains // Restoration
         };
     }, [transactions, totals.balance, totals.income]);
 };
