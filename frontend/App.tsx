@@ -195,11 +195,45 @@ const App: React.FC = () => {
       else projectedBalance -= item.amount;
     });
 
+    // 4. "Top Villains" (Most expensive descriptions)
+    const expensesByDesc: Record<string, number> = {};
+    transactions.filter(t => t.type === 'EXPENSE').forEach(t => {
+      const key = t.description.trim(); // Case sensitive or insensitive? Let's keep sensitive for now or normalized?
+      // Simple normalization
+      const normKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+      expensesByDesc[normKey] = (expensesByDesc[normKey] || 0) + Number(t.amount);
+    });
+
+    const topVillains = Object.entries(expensesByDesc)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 3);
+
+    // 5. Fixed Income Commitment (Comprometimento de Renda)
+    // Sum of all fixed expenses (actual + missing) vs Income
+    let totalFixedExpense = 0;
+
+    // Actual fixed expenses this month
+    transactions.forEach(t => {
+      const d = new Date(t.date);
+      if (t.isFixed && t.type === 'EXPENSE' && d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+        totalFixedExpense += Number(t.amount);
+      }
+    });
+    // Add missing fixed (projected)
+    missingFixed.filter(t => t.type === 'EXPENSE').forEach(t => totalFixedExpense += t.amount);
+
+    const income = totals.income || 1;
+    const fixedRatio = (totalFixedExpense / income) * 100;
+
     return {
       projectedBalance,
-      missingFixed
+      missingFixed,
+      topVillains,
+      fixedRatio: Math.min(fixedRatio, 100),
+      totalFixedExpense
     };
-  }, [transactions, totals.balance]);
+  }, [transactions, totals.balance, totals.income]);
 
 
   const categorySummary = useMemo(() => {
@@ -432,14 +466,53 @@ const App: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-center">
-                    <div className="text-center space-y-2 mb-6">
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Ticket Médio</p>
-                      <h4 className="text-3xl font-black text-slate-800">R$ {(totals.expense / (transactions.filter(t => t.type === 'EXPENSE').length || 1)).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</h4>
+                  <div className="space-y-6">
+                    {/* Top Vilões */}
+                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
+                      <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Top Gastos</h3>
+                        <i data-lucide="trophy" className="w-4 h-4 text-amber-500"></i>
+                      </div>
+                      <div className="space-y-4 relative z-10">
+                        {forecast.topVillains.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className={`text-xs font-black w-5 h-5 flex items-center justify-center rounded-full ${idx === 0 ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
+                                {idx + 1}
+                              </span>
+                              <span className={`text-sm font-bold ${isPrivacyEnabled ? 'blur-sm' : 'text-slate-700'}`}>{item.name}</span>
+                            </div>
+                            <span className={`text-sm font-black text-slate-800 ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
+                              {isPrivacyEnabled ? 'R$ •••' : `R$ ${item.value.toLocaleString('pt-BR')}`}
+                            </span>
+                          </div>
+                        ))}
+                        {forecast.topVillains.length === 0 && <p className="text-xs text-slate-400">Sem dados suficientes.</p>}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-6">
-                      <div className="text-center"><p className="text-[10px] font-bold text-slate-400 uppercase">Total Transações</p><p className="text-lg font-black text-slate-700">{transactions.length}</p></div>
-                      <div className="text-center border-l border-slate-100"><p className="text-[10px] font-bold text-slate-400 uppercase">Maior Gasto</p><p className="text-lg font-black text-rose-500">R$ {Math.max(...transactions.filter(t => t.type === 'EXPENSE').map(t => Number(t.amount)), 0).toLocaleString('pt-BR')}</p></div>
+
+                    {/* Fixed Commitment */}
+                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Comprometimento</h3>
+                        <span className={`text-xs font-black px-2 py-1 rounded-lg ${forecast.fixedRatio > 60 ? 'bg-rose-100 text-rose-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                          {forecast.fixedRatio.toFixed(0)}%
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-medium mb-4">Da sua renda mensal já está comprometida com fixos.</p>
+
+                      <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                        <div
+                          className="h-full bg-slate-800"
+                          style={{ width: `${forecast.fixedRatio}%` }}
+                          title="Custos Fixos"
+                        ></div>
+                        <div className="h-full bg-emerald-400 flex-1" title="Livre"></div>
+                      </div>
+                      <div className="flex justify-between mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        <span>Fixo: R$ {forecast.totalFixedExpense.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+                        <span>Livre</span>
+                      </div>
                     </div>
                   </div>
                 </div>
