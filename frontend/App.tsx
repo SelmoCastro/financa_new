@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
 import { Transaction, TransactionType } from './types';
-import { MONTHLY_CHART_DATA } from './constants';
 import { StatCard } from './components/StatCard';
 import { TransactionForm } from './components/TransactionForm';
 import { Sidebar } from './components/Sidebar';
@@ -102,6 +101,49 @@ const App: React.FC = () => {
     }));
   }, [transactions]);
 
+  const monthlyChartData = useMemo(() => {
+    // 1. Group by Year-Month (e.g., "2024-05")
+    const groupedByMonth: Record<string, { income: number; expenses: number }> = {};
+
+    transactions.forEach(t => {
+      const date = new Date(t.date);
+      // Ensure we use local time or simplified ISO date to avoid timezone issues
+      // Using slice(0, 7) on ISO string works if dates are consistent YYYY-MM-DD
+      const monthKey = t.date.toString().substring(0, 7);
+
+      if (!groupedByMonth[monthKey]) {
+        groupedByMonth[monthKey] = { income: 0, expenses: 0 };
+      }
+
+      if (t.type === 'INCOME') {
+        groupedByMonth[monthKey].income += Number(t.amount);
+      } else {
+        groupedByMonth[monthKey].expenses += Number(t.amount);
+      }
+    });
+
+    // 2. Sort keys and map to array
+    const sortedDirectKeys = Object.keys(groupedByMonth).sort();
+
+    // If no data, show at least current month empty? Or just return empty
+    if (sortedDirectKeys.length === 0) return [];
+
+    return sortedDirectKeys.map(key => {
+      const [year, month] = key.split('-');
+      // Format month name (e.g. "Mai")
+      const dateObj = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const monthName = dateObj.toLocaleDateString('pt-BR', { month: 'short' });
+      // Capitalize first letter
+      const formattedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+      return {
+        month: formattedMonth,
+        income: groupedByMonth[key].income,
+        expenses: groupedByMonth[key].expenses
+      };
+    });
+  }, [transactions]);
+
   const handleAddTransaction = async (newTx: Omit<Transaction, 'id'>) => {
     try {
       const response = await api.post('/transactions', newTx);
@@ -191,7 +233,7 @@ const App: React.FC = () => {
                   </div>
                   <div className="h-[250px] md:h-[320px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={MONTHLY_CHART_DATA}>
+                      <AreaChart data={monthlyChartData}>
                         <defs>
                           <linearGradient id="gradInc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.1} /><stop offset="95%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
                           <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1} /><stop offset="95%" stopColor="#f43f5e" stopOpacity={0} /></linearGradient>
