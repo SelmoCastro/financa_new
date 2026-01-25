@@ -618,7 +618,7 @@ const App: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[8px] md:text-[10px] uppercase font-black tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg truncate">{tx.category}</span>
-                          <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{new Date(tx.date + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                          <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{new Date(tx.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</span>
                         </div>
                       </div>
                     </div>
@@ -768,7 +768,7 @@ const App: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 md:px-8 py-5 md:py-6 hidden sm:table-cell"><span className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-tighter">{tx.category}</span></td>
-                        <td className="px-6 md:px-8 py-5 md:py-6 text-sm font-bold text-slate-400 hidden md:table-cell">{new Date(tx.date + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
+                        <td className="px-6 md:px-8 py-5 md:py-6 text-sm font-bold text-slate-400 hidden md:table-cell">{new Date(tx.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
                         <td className={`px-6 md:px-8 py-5 md:py-6 text-right font-black ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'}`}>{tx.type === 'INCOME' ? '+' : '-'} R$ {Number(tx.amount).toLocaleString('pt-BR')}</td>
                       </tr>
                     ))}
