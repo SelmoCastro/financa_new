@@ -101,6 +101,46 @@ const App: React.FC = () => {
   }, [transactions]);
 
 
+  const rule503020 = useMemo(() => {
+    const needsCategories = ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação'];
+    const wantsCategories = ['Lazer', 'Outros'];
+    const savingsCategories = ['Investimentos'];
+
+    let needs = 0;
+    let wants = 0;
+    let savings = 0;
+
+    transactions.forEach(t => {
+      // Only count expenses (negative flows) or specific savings flows
+      // Note: Savings might be negative (expense) or transfer. Assuming Expense for Investimentos in this simple model if it's money leaving main account to broker, or specific category logic. 
+      // Actually, typically 'Investimentos' is an 'EXPENSE' in terms of cash flow out of checking, or 'INCOME' if selling. 
+      // Let's assume all 'EXPENSE' types are relevant, plus we need to see how to handle 'Investimentos'.
+      // If the user categorized 'Investimentos' as EXPENSE (buying stock), it goes to savings bucket.
+
+      if (t.type === 'EXPENSE') {
+        const amount = Number(t.amount);
+        if (needsCategories.includes(t.category)) {
+          needs += amount;
+        } else if (wantsCategories.includes(t.category)) {
+          wants += amount;
+        } else if (savingsCategories.includes(t.category)) {
+          savings += amount;
+        } else {
+          // Default to wants if unknown
+          wants += amount;
+        }
+      }
+    });
+
+    const totalIncome = totals.income || 1; // Avoid division by zero
+
+    return {
+      needs: { value: needs, percent: (needs / totalIncome) * 100, target: 50 },
+      wants: { value: wants, percent: (wants / totalIncome) * 100, target: 30 },
+      savings: { value: savings, percent: (savings / totalIncome) * 100, target: 20 }
+    };
+  }, [transactions, totals.income]);
+
 
   const categorySummary = useMemo(() => {
     const categories: Record<string, number> = {};
@@ -330,7 +370,72 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="lg:col-span-4">
+
+              <div className="lg:col-span-4 space-y-6 md:space-y-8">
+                <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800">Regra 50/30/20</h3>
+                      <p className="text-sm text-slate-500">Saúde Financeira</p>
+                    </div>
+                    <div className="p-2 bg-indigo-50 rounded-lg">
+                      <i data-lucide="pie-chart" className="w-5 h-5 text-indigo-600"></i>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Needs */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-bold text-slate-600">Necessidades (50%)</span>
+                        <span className="font-black text-slate-800">{rule503020.needs.percent.toFixed(1)}%</span>
+                      </div>
+                      <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${rule503020.needs.percent > 50 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                          style={{ width: `${Math.min(rule503020.needs.percent, 100)}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-slate-400 font-medium">
+                        R$ {rule503020.needs.value.toLocaleString('pt-BR')} gastos
+                      </p>
+                    </div>
+
+                    {/* Wants */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-bold text-slate-600">Desejos (30%)</span>
+                        <span className="font-black text-slate-800">{rule503020.wants.percent.toFixed(1)}%</span>
+                      </div>
+                      <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${rule503020.wants.percent > 30 ? 'bg-amber-500' : 'bg-indigo-500'}`}
+                          style={{ width: `${Math.min(rule503020.wants.percent, 100)}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-slate-400 font-medium">
+                        R$ {rule503020.wants.value.toLocaleString('pt-BR')} gastos
+                      </p>
+                    </div>
+
+                    {/* Savings */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-bold text-slate-600">Objetivos (20%)</span>
+                        <span className="font-black text-slate-800">{rule503020.savings.percent.toFixed(1)}%</span>
+                      </div>
+                      <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-blue-500"
+                          style={{ width: `${Math.min(rule503020.savings.percent, 100)}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-slate-400 font-medium">
+                        R$ {rule503020.savings.value.toLocaleString('pt-BR')} reservados
+                      </p>
+                    </div>
+                  </div>
+                </div>
                 <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-800 mb-6">Alocação de Recursos</h3>
                   <div className="h-64 relative mx-auto">
