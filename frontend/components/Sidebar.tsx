@@ -73,6 +73,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
           >
             <i data-lucide={isOpen ? 'chevron-left' : 'chevron-right'} className="w-6 h-6"></i>
           </button>
+
+          {isOpen && (
+            <div className="mt-4 text-center">
+              <p className="text-[10px] font-mono text-slate-600 opacity-50">v1.0.0</p>
+            </div>
+          )}
         </div>
       </aside>
 
