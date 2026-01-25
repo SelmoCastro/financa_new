@@ -102,9 +102,9 @@ const App: React.FC = () => {
 
 
   const rule503020 = useMemo(() => {
-    const needsCategories = ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação'];
-    const wantsCategories = ['Lazer', 'Outros'];
-    const savingsCategories = ['Investimentos'];
+    const needsCategories = ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação', 'Contas e Serviços'];
+    const wantsCategories = ['Lazer', 'Outros', 'Compras', 'Restaurantes', 'Assinaturas', 'Viagem', 'Cuidados Pessoais', 'Presentes'];
+    const savingsCategories = ['Investimentos (Aporte)', 'Dívidas/Financiamentos'];
 
     let needs = 0;
     let wants = 0;

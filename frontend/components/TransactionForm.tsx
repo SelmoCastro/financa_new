@@ -11,12 +11,12 @@ interface TransactionFormProps {
   editingTransaction?: Transaction | null;
 }
 
-export const TransactionForm: React.FC<TransactionFormProps> = ({ 
-  onAdd, 
+export const TransactionForm: React.FC<TransactionFormProps> = ({
+  onAdd,
   onUpdate,
-  onClose, 
+  onClose,
   existingCategories,
-  editingTransaction 
+  editingTransaction
 }) => {
   const [description, setDescription] = useState('');
   const [displayAmount, setDisplayAmount] = useState('');
@@ -57,9 +57,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const numericAmount = parseFloat(displayAmount.replace(/\./g, '').replace(',', '.'));
-    
+
     if (!description || isNaN(numericAmount) || numericAmount <= 0 || !category) return;
-    
+
     const transactionData = {
       description,
       amount: numericAmount,
@@ -90,7 +90,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-200/50 rounded-full transition-colors text-slate-400">
-             <i data-lucide="x" className="w-5 h-5"></i>
+            <i data-lucide="x" className="w-5 h-5"></i>
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
@@ -150,18 +150,21 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
           <div className="space-y-1.5">
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Categoria</label>
-            <input
-              list="category-suggestions"
-              className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700"
-              placeholder="Digite ou escolha uma categoria..."
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            />
-            <datalist id="category-suggestions">
-              {suggestions.map(cat => (
-                <option key={cat} value={cat} />
-              ))}
-            </datalist>
+            <div className="relative">
+              <select
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="" disabled>Selecione uma categoria...</option>
+                {suggestions.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                <i data-lucide="chevron-down" className="w-5 h-5"></i>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 group cursor-pointer" onClick={() => setIsFixed(!isFixed)}>

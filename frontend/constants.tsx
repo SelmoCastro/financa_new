@@ -2,8 +2,14 @@
 import { Transaction, Budget, MonthlyData } from './types';
 
 export const CATEGORIES = [
-  'Alimentação', 'Moradia', 'Transporte', 'Lazer', 
-  'Saúde', 'Educação', 'Investimentos', 'Salário', 'Outros'
+  // Receitas
+  'Salário', 'Freelance', 'Investimentos (Receita)', 'Presentes', 'Outras Receitas',
+  // Despesas Fixas (Necessidades)
+  'Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Contas e Serviços',
+  // Despesas Variáveis (Desejos)
+  'Lazer', 'Compras', 'Restaurantes', 'Assinaturas', 'Viagem', 'Cuidados Pessoais',
+  // Investimentos/Dívidas
+  'Investimentos (Aporte)', 'Dívidas/Financiamentos'
 ];
 
 export const INITIAL_TRANSACTIONS: Transaction[] = [
