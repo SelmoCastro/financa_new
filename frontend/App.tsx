@@ -51,16 +51,56 @@ const App: React.FC = () => {
   }, [activeTab, sidebarOpen, isFormOpen, transactions, filterType, editingTransaction, userName]);
 
   const totals = useMemo(() => {
-    return transactions.reduce((acc, t) => {
-      // Backend returns number, but just to be safe with JSON
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+    const current = { income: 0, expense: 0 };
+    const previous = { income: 0, expense: 0 };
+    const overall = { income: 0, expense: 0 };
+
+    transactions.forEach(t => {
       const amount = Number(t.amount);
-      if (t.type === 'INCOME') acc.income += amount;
-      else acc.expense += amount;
-      return acc;
-    }, { income: 0, expense: 0 });
+      const date = new Date(t.date);
+      const tMonth = date.getMonth();
+      const tYear = date.getFullYear();
+
+      // Overall totals (for Balance)
+      if (t.type === 'INCOME') overall.income += amount;
+      else overall.expense += amount;
+
+      // Current Month
+      if (tMonth === currentMonth && tYear === currentYear) {
+        if (t.type === 'INCOME') current.income += amount;
+        else current.expense += amount;
+      }
+
+      // Previous Month
+      if (tMonth === previousMonth && tYear === previousYear) {
+        if (t.type === 'INCOME') previous.income += amount;
+        else previous.expense += amount;
+      }
+    });
+
+    const calculateVariation = (curr: number, prev: number) => {
+      if (prev === 0) return curr > 0 ? 100 : 0;
+      return ((curr - prev) / prev) * 100;
+    };
+
+    return {
+      income: overall.income,
+      expense: overall.expense,
+      balance: overall.income - overall.expense,
+      currentIncome: current.income,
+      currentExpense: current.expense,
+      incomeTrend: calculateVariation(current.income, previous.income),
+      expenseTrend: calculateVariation(current.expense, previous.expense)
+    };
   }, [transactions]);
 
-  const balance = totals.income - totals.expense;
+
 
   const categorySummary = useMemo(() => {
     const categories: Record<string, number> = {};
@@ -218,10 +258,24 @@ const App: React.FC = () => {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              <StatCard title="Saldo Total" value={`R$ ${balance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<i data-lucide="banknote"></i>} />
-              <StatCard title="Entradas" value={`R$ ${totals.income.toLocaleString('pt-BR')}`} color="bg-emerald-50 text-emerald-600" icon={<i data-lucide="trending-up"></i>} />
-              <StatCard title="Saídas" value={`R$ ${totals.expense.toLocaleString('pt-BR')}`} color="bg-rose-50 text-rose-600" icon={<i data-lucide="trending-down"></i>} />
-              <StatCard title="Saving Rate" value={`${totals.income > 0 ? ((balance / totals.income) * 100).toFixed(1) : 0}%`} color="bg-amber-50 text-amber-600" icon={<i data-lucide="activity"></i>} />
+              <StatCard title="Saldo Total" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<i data-lucide="banknote"></i>} />
+              <StatCard
+                title="Entradas (Mês)"
+                value={`R$ ${totals.currentIncome.toLocaleString('pt-BR')}`}
+                color="bg-emerald-50 text-emerald-600"
+                icon={<i data-lucide="trending-up"></i>}
+                trend={`${Math.abs(totals.incomeTrend).toFixed(1)}%`}
+                trendUp={totals.incomeTrend >= 0}
+              />
+              <StatCard
+                title="Saídas (Mês)"
+                value={`R$ ${totals.currentExpense.toLocaleString('pt-BR')}`}
+                color="bg-rose-50 text-rose-600"
+                icon={<i data-lucide="trending-down"></i>}
+                trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`}
+                trendUp={totals.expenseTrend <= 0}
+              />
+              <StatCard title="Saving Rate" value={`${totals.income > 0 ? ((totals.balance / totals.income) * 100).toFixed(1) : 0}%`} color="bg-amber-50 text-amber-600" icon={<i data-lucide="activity"></i>} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
