@@ -12,7 +12,7 @@ export default async function (req, res) {
     app.enableCors({
         origin: '*',
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        credentials: true,
+        allowedHeaders: 'Content-Type, Accept, Authorization',
     });
 
     app.use(helmet());
