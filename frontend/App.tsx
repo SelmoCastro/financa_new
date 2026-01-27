@@ -143,6 +143,15 @@ const AppContent: React.FC = () => {
             transactions={transactions}
           />
         );
+      case 'history':
+        return (
+          <HistoryView
+            transactions={transactions}
+            isPrivacyEnabled={isPrivacyEnabled}
+            onEdit={openEditForm}
+            onDelete={handleDeleteTransaction}
+          />
+        );
       case 'settings':
         return <SettingsView userName={userName} transactions={transactions} onLogout={handleLogout} />;
       default:
@@ -158,7 +167,11 @@ const AppContent: React.FC = () => {
           <div className="min-w-0">
             <p className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-0.5 truncate">Gestão Financeira</p>
             <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight capitalize truncate">
-              {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'timeline' ? 'Linha do Tempo' : activeTab === 'recent' ? 'Lançamentos' : activeTab === 'fixed' ? 'Controle Fixos' : 'Configurações'}
+              {activeTab === 'dashboard' ? 'Dashboard' :
+                activeTab === 'timeline' ? 'Linha do Tempo' :
+                  activeTab === 'recent' ? 'Lançamentos' :
+                    activeTab === 'fixed' ? 'Controle Fixos' :
+                      activeTab === 'history' ? 'Extrato' : 'Configurações'}
               {userName && (
                 <span className="block text-xs text-indigo-600 font-bold mt-1">Olá, {userName}</span>
               )}
