@@ -154,7 +154,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
 
                                             <div className="flex items-center gap-6">
                                                 <span className={`font-black text-lg ${item.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-700'}`}>
-                                                    R$ {item.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                    <span className="mr-1">R$</span>{item.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                                 </span>
                                                 <div className="flex gap-2">
                                                     <button
