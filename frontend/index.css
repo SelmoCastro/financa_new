@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply antialiased text-slate-900 bg-slate-50 font-sans tracking-tight;
+    @apply antialiased text-slate-900 bg-slate-50 font-sans tracking-tight overflow-x-hidden;
   }
 }
 
