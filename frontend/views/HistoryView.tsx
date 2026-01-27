@@ -52,7 +52,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                             </div>
                             <div className="flex flex-col items-end gap-2 flex-shrink-0">
                                 <p className={`font-black text-base ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'} ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
-                                    {isPrivacyEnabled ? 'R$ •••••••' : `${tx.type === 'INCOME' ? '+' : '-'} R$ {Number(tx.amount).toLocaleString('pt-BR')}`}
+                                    {isPrivacyEnabled ? 'R$ •••••••' : `${tx.type === 'INCOME' ? '+' : '-'} R$ ${Number(tx.amount).toLocaleString('pt-BR')}`}
                                 </p>
                                 <div className="flex gap-1">
                                     <button onClick={() => onEdit(tx)} className="p-2 text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"><i data-lucide="edit-3" className="w-4 h-4"></i></button>
@@ -102,7 +102,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                     <td className="px-8 py-6"><span className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-tighter">{tx.category}</span></td>
                                     <td className="px-8 py-6 text-sm font-bold text-slate-400">{new Date(tx.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
                                     <td className={`px-8 py-6 text-right font-black ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'} ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
-                                        {isPrivacyEnabled ? 'R$ •••••••' : `${tx.type === 'INCOME' ? '+' : '-'} R$ {Number(tx.amount).toLocaleString('pt-BR')}`}
+                                        {isPrivacyEnabled ? 'R$ •••••••' : `${tx.type === 'INCOME' ? '+' : '-'} R$ ${Number(tx.amount).toLocaleString('pt-BR')}`}
                                     </td>
                                     <td className="px-8 py-6 text-right">
                                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
