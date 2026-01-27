@@ -4,7 +4,10 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { AuthGuard } from '@nestjs/passport';
 
-@Controller('transactions')
+@Controller({
+  path: 'transactions',
+  version: '1',
+})
 @UseGuards(AuthGuard('jwt'))
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) { }
