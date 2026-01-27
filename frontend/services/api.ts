@@ -1,8 +1,13 @@
 
 import axios from 'axios';
 
+const getBaseUrl = () => {
+    const url = import.meta.env.VITE_API_URL || 'https://financa-new.vercel.app';
+    return url.replace(/\/$/, '') + '/v1';
+};
+
 const api = axios.create({
-    baseURL: (import.meta.env.VITE_API_URL || 'https://financa-new.vercel.app') + '/v1',
+    baseURL: getBaseUrl(),
 });
 
 api.interceptors.request.use((config) => {
