@@ -1,7 +1,9 @@
-import { Controller, Get, Request } from '@nestjs/common';
+import { Controller, Get, Request, Version, VERSION_NEUTRAL } from '@nestjs/common';
 import { AppService } from './app.service';
 
-@Controller()
+@Controller({
+  version: VERSION_NEUTRAL,
+})
 export class AppController {
   constructor(private readonly appService: AppService) { }
 
