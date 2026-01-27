@@ -24,16 +24,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
         const current = { income: 0, expense: 0 };
         const previous = { income: 0, expense: 0 };
         const overall = { income: 0, expense: 0 };
+        const balanceTotal = { value: 0 }; // Balance strictly up to today
+
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
         transactions.forEach(t => {
             const amount = Number(t.amount);
             const date = new Date(t.date);
+            const tDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
             const tMonth = date.getMonth();
             const tYear = date.getFullYear();
 
-            // Overall totals (for Balance)
+            // Overall totals (Raw Sum - kept for reference if needed, but not for Balance)
             if (t.type === 'INCOME') overall.income += amount;
             else overall.expense += amount;
+
+            // Balance Calculation (Strictly <= Today)
+            if (tDateOnly <= todayStart) {
+                if (t.type === 'INCOME') balanceTotal.value += amount;
+                else balanceTotal.value -= amount;
+            }
 
             // Current Month
             if (tMonth === currentMonth && tYear === currentYear) {
@@ -56,7 +67,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
         return {
             income: overall.income,
             expense: overall.expense,
-            balance: overall.income - overall.expense,
+            balance: balanceTotal.value, // Now returns correct "Current Balance"
             currentIncome: current.income,
             currentExpense: current.expense,
             incomeTrend: calculateVariation(current.income, previous.income),

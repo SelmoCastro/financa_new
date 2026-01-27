@@ -62,6 +62,22 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
 
         // 3. Calculate Projected Balance
         let projectedBalance = totals.balance;
+
+        // Add "Future" transactions available in DB for the current month (which are excluded from Current Balance)
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        transactions.forEach(t => {
+            const tDate = new Date(t.date);
+            const tDateOnly = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate());
+
+            // If it's in the future, but within current month/year
+            if (tDateOnly > todayStart && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
+                if (t.type === 'INCOME') projectedBalance += Number(t.amount);
+                else projectedBalance -= Number(t.amount);
+            }
+        });
+
+        // Add "Missing Fixed" items (not in DB yet)
         missingFixed.forEach(item => {
             if (item.type === 'INCOME') projectedBalance += item.amount;
             else projectedBalance -= item.amount;
