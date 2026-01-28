@@ -46,9 +46,17 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories }) 
         }
 
         try {
+            // Parse "1.234,56" -> 1234.56
+            const rawAmount = parseFloat(form.amount.replace(/\./g, '').replace(',', '.'));
+
+            if (isNaN(rawAmount) || rawAmount <= 0) {
+                addToast('Valor inválido', 'warning');
+                return;
+            }
+
             await api.post('/budgets', {
                 category: form.category,
-                amount: parseFloat(form.amount)
+                amount: rawAmount
             });
             addToast('Orçamento salvo com sucesso!', 'success');
             setForm({ category: '', amount: '' });
@@ -160,10 +168,13 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories }) 
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Teto Mensal (R$)</label>
                                 <input
-                                    type="number"
-                                    step="0.01"
+                                    type="text"
                                     value={form.amount}
-                                    onChange={e => setForm({ ...form, amount: e.target.value })}
+                                    onChange={(e) => {
+                                        let value = e.target.value.replace(/\D/g, '');
+                                        value = (Number(value) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                                        setForm({ ...form, amount: value });
+                                    }}
                                     className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none text-lg"
                                     placeholder="0,00"
                                 />
