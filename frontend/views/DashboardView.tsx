@@ -196,6 +196,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     <Tooltip
                                         cursor={{ fill: '#f8fafc' }}
                                         contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
+                                        formatter={(value: number) => isPrivacyEnabled ? '••••' : `R$ ${value.toLocaleString('pt-BR')}`}
                                     />
                                     <Legend verticalAlign="top" height={36} iconType="circle" />
                                     <Bar name="Receitas" dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} />
@@ -214,8 +215,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         {forecast.missingFixed.map((item, idx) => (
                                             <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
                                                 <span className="text-xs font-bold text-slate-700">{item.description}</span>
-                                                <span className={`text-xs font-black ${item.type === 'INCOME' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                    {item.type === 'INCOME' ? '+' : '-'} R$ {item.amount.toLocaleString('pt-BR')}
+                                                <span className={`text-xs font-black ${isPrivacyEnabled ? 'blur-sm select-none' : (item.type === 'INCOME' ? 'text-emerald-500' : 'text-rose-500')}`}>
+                                                    {isPrivacyEnabled ? 'R$ •••' : `${item.type === 'INCOME' ? '+' : '-'} R$ ${item.amount.toLocaleString('pt-BR')}`}
                                                 </span>
                                             </div>
                                         ))}
@@ -275,7 +276,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     <div className="h-full bg-emerald-400 flex-1" title="Livre"></div>
                                 </div>
                                 <div className="flex justify-between mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                    <span>Fixo: R$ {forecast.totalFixedExpense.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+                                    <span className={isPrivacyEnabled ? 'blur-sm select-none' : ''}>
+                                        {isPrivacyEnabled ? 'Fixo: R$ •••' : `Fixo: R$ ${forecast.totalFixedExpense.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
+                                    </span>
                                     <span>Livre</span>
                                 </div>
                             </div>
@@ -309,8 +312,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.min(rule503020.needs.percent, 100)}%` }}
                                     ></div>
                                 </div>
-                                <p className="text-xs text-slate-400 font-medium">
-                                    R$ {rule503020.needs.value.toLocaleString('pt-BR')} gastos
+                                <p className={`text-xs text-slate-400 font-medium ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                    {isPrivacyEnabled ? 'R$ ••• gastos' : `R$ ${rule503020.needs.value.toLocaleString('pt-BR')} gastos`}
                                 </p>
                             </div>
 
@@ -326,8 +329,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.min(rule503020.wants.percent, 100)}%` }}
                                     ></div>
                                 </div>
-                                <p className="text-xs text-slate-400 font-medium">
-                                    R$ {rule503020.wants.value.toLocaleString('pt-BR')} gastos
+                                <p className={`text-xs text-slate-400 font-medium ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                    {isPrivacyEnabled ? 'R$ ••• gastos' : `R$ ${rule503020.wants.value.toLocaleString('pt-BR')} gastos`}
                                 </p>
                             </div>
 
@@ -343,8 +346,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.min(rule503020.savings.percent, 100)}%` }}
                                     ></div>
                                 </div>
-                                <p className="text-xs text-slate-400 font-medium">
-                                    R$ {rule503020.savings.value.toLocaleString('pt-BR')} reservados
+                                <p className={`text-xs text-slate-400 font-medium ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                    {isPrivacyEnabled ? 'R$ ••• reservados' : `R$ ${rule503020.savings.value.toLocaleString('pt-BR')} reservados`}
                                 </p>
                             </div>
                         </div>
@@ -357,7 +360,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     <Pie data={categorySummary} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value">
                                         {categorySummary.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                                     </Pie>
-                                    <Tooltip />
+                                    <Tooltip formatter={(value: number) => isPrivacyEnabled ? '••••' : `R$ ${value.toLocaleString('pt-BR')}`} />
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -372,7 +375,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
                                         <span className="text-sm font-bold text-slate-600 truncate max-w-[120px]">{item.name}</span>
                                     </div>
-                                    <span className="text-sm font-black text-slate-800">R$ {item.value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+                                    <span className={`text-sm font-black text-slate-800 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                        {isPrivacyEnabled ? 'R$ •••' : `R$ ${item.value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
+                                    </span>
                                 </div>
                             ))}
                         </div>
