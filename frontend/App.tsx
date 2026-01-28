@@ -8,6 +8,7 @@ import api from './services/api';
 import { useNavigate } from 'react-router-dom';
 import { useFixedTransactions } from './hooks/useFixedTransactions';
 import { DashboardView } from './views/DashboardView';
+import { BudgetsView } from './views/BudgetsView';
 import { TimelineView } from './views/TimelineView';
 import { HistoryView } from './views/HistoryView';
 import { SettingsView } from './views/SettingsView';
@@ -142,6 +143,10 @@ const AppContent: React.FC = () => {
             onDeleteTransaction={handleDeleteTransaction}
             transactions={transactions}
           />
+        );
+      case 'budgets':
+        return (
+          <BudgetsView existingCategories={Array.from(new Set(transactions.map(t => t.category)))} />
         );
       case 'history':
         return (

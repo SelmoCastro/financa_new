@@ -16,6 +16,7 @@ model User {
   updatedAt DateTime @updatedAt
   
   transactions Transaction[]
+  budgets      Budget[]
 }
 
 model Transaction {
@@ -35,4 +36,16 @@ model Transaction {
   @@index([userId])
   @@index([date])
   @@index([userId, date])
+}
+
+model Budget {
+  id        String   @id @default(uuid())
+  category  String
+  amount    Float
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, category])
 }

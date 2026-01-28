@@ -11,6 +11,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'layout-grid' },
+    { id: 'budgets', label: 'Orçamentos', icon: 'target' },
     { id: 'timeline', label: 'Linha do Tempo', icon: 'clock' },
     { id: 'fixed', label: 'Controle Fixos', icon: 'anchor' },
     { id: 'history', label: 'Extrato', icon: 'receipt' },
