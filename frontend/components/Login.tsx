@@ -9,11 +9,13 @@ export const Login: React.FC = () => {
     const [password, setPassword] = useState('');
     const [name, setName] = useState(''); // Only for register
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setIsLoading(true);
 
         try {
             if (isRegister) {
@@ -28,9 +30,18 @@ export const Login: React.FC = () => {
             }
         } catch (err: any) {
             console.error(err);
-            setError(err.response?.data?.message || 'Erro ao realizar operação');
+            const msg = err.response?.data?.message || 'Erro ao realizar operação. Verifique sua conexão.';
+            setError(msg);
+            alert(msg); // Fallback to ensure visibility
+        } finally {
+            setIsLoading(false);
         }
     };
+
+    React.useEffect(() => {
+        // @ts-ignore
+        if (window.lucide) window.lucide.createIcons();
+    }, [error, isRegister]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -86,9 +97,10 @@ export const Login: React.FC = () => {
 
                     <button
                         type="submit"
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl uppercase text-xs tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 mt-4"
+                        disabled={isLoading}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl uppercase text-xs tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 mt-4"
                     >
-                        {isRegister ? 'Cadastrar' : 'Entrar'}
+                        {isLoading ? 'Carregando...' : (isRegister ? 'Cadastrar' : 'Entrar')}
                     </button>
                 </form>
 
