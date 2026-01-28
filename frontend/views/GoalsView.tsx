@@ -43,6 +43,14 @@ export const GoalsView: React.FC = () => {
         fetchGoals();
     }, []);
 
+    useEffect(() => {
+        // @ts-ignore
+        if (window.lucide) {
+            // @ts-ignore
+            window.lucide.createIcons();
+        }
+    }, [goals]);
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
 
