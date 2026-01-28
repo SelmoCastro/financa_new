@@ -26,6 +26,11 @@ export const GoalsView: React.FC = () => {
         deadline: ''
     });
 
+    // Deposit Modal State
+    const [depositModalOpen, setDepositModalOpen] = useState(false);
+    const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+    const [depositAmount, setDepositAmount] = useState('');
+
     const fetchGoals = async () => {
         setIsLoading(true);
         try {
@@ -115,11 +120,6 @@ export const GoalsView: React.FC = () => {
         return amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
-    return (
-    const [depositModalOpen, setDepositModalOpen] = useState(false);
-    const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
-    const [depositAmount, setDepositAmount] = useState('');
-
     const openDepositModal = (goal: Goal) => {
         setSelectedGoal(goal);
         setDepositAmount('');
@@ -153,8 +153,6 @@ export const GoalsView: React.FC = () => {
         // @ts-ignore
         if (window.lucide) window.lucide.createIcons();
     }, [goals, depositModalOpen]); // Refresh icons when deposit modal opens too
-
-    // ... (rest of the file until return)
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
