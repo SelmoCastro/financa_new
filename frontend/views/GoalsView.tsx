@@ -65,9 +65,12 @@ export const GoalsView: React.FC = () => {
             setForm({ title: '', targetAmount: '', currentAmount: '', deadline: '' });
             setIsModalOpen(false);
             fetchGoals();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao salvar meta:', error);
-            addToast('Erro ao criar meta.', 'error');
+            const msg = error.response?.data?.message
+                ? (Array.isArray(error.response.data.message) ? error.response.data.message[0] : error.response.data.message)
+                : 'Erro ao criar meta.';
+            addToast(msg, 'error');
         }
     };
 
