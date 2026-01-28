@@ -167,17 +167,29 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories }) 
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Teto Mensal (R$)</label>
-                                <input
-                                    type="text"
-                                    value={form.amount}
-                                    onChange={(e) => {
-                                        let value = e.target.value.replace(/\D/g, '');
-                                        value = (Number(value) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                                        setForm({ ...form, amount: value });
-                                    }}
-                                    className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none text-lg"
-                                    placeholder="0,00"
-                                />
+                                <div className="relative">
+                                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">R$</span>
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={form.amount}
+                                        onChange={(e) => {
+                                            const digits = e.target.value.replace(/\D/g, '');
+                                            if (!digits) {
+                                                setForm({ ...form, amount: '' });
+                                                return;
+                                            }
+                                            const amount = parseInt(digits) / 100;
+                                            const formatted = amount.toLocaleString('pt-BR', {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            });
+                                            setForm({ ...form, amount: formatted });
+                                        }}
+                                        className="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 text-lg"
+                                        placeholder="0,00"
+                                    />
+                                </div>
                             </div>
                             <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl mt-4 transition-all active:scale-95 shadow-xl shadow-indigo-200">
                                 Salvar Orçamento
