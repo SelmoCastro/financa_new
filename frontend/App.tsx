@@ -163,8 +163,8 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       <div className={`flex-1 sidebar-transition ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pb-24 lg:pb-0`}>
-        <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-slate-200/50 px-4 md:px-8 py-4 md:py-6 flex justify-between items-center">
-          <div className="min-w-0">
+        <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-slate-200/50 px-4 md:px-8 py-4 md:py-6 flex justify-between items-center w-full max-w-[100vw] overflow-hidden">
+          <div className="min-w-0 flex-1 mr-2">
             <p className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-0.5 truncate">Gestão Financeira</p>
             <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight capitalize truncate">
               {activeTab === 'dashboard' ? 'Dashboard' :
