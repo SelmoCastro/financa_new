@@ -12,7 +12,11 @@ interface Goal {
     color?: string;
 }
 
-export const GoalsView: React.FC = () => {
+interface GoalsViewProps {
+    isPrivacyEnabled: boolean;
+}
+
+export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
     const [goals, setGoals] = useState<Goal[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -210,13 +214,15 @@ export const GoalsView: React.FC = () => {
                                 </div>
 
                                 <h3 className="text-lg font-bold text-slate-800 mb-1">{goal.title}</h3>
-                                <p className="text-xs text-slate-400 font-bold uppercase mb-4">
-                                    Meta: {formatCurrency(goal.targetAmount)}
+                                <p className={`text-xs text-slate-400 font-bold uppercase mb-4 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                    Meta: {isPrivacyEnabled ? 'R$ •••' : formatCurrency(goal.targetAmount)}
                                 </p>
 
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-end">
-                                        <span className="text-2xl font-black text-slate-800">{formatCurrency(goal.currentAmount)}</span>
+                                        <span className={`text-2xl font-black text-slate-800 ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
+                                            {isPrivacyEnabled ? 'R$ •••' : formatCurrency(goal.currentAmount)}
+                                        </span>
                                         <span className={`text-xs font-black px-2 py-1 rounded-lg ${isComplete ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
                                             {progress.toFixed(0)}%
                                         </span>

@@ -121,10 +121,13 @@ const AppContent: React.FC = () => {
         return <DashboardView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} />;
       case 'budgets':
         return (
-          <BudgetsView existingCategories={Array.from(new Set(transactions.map(t => t.category)))} />
+          <BudgetsView
+            existingCategories={Array.from(new Set(transactions.map(t => t.category)))}
+            isPrivacyEnabled={isPrivacyEnabled}
+          />
         );
       case 'goals':
-        return <GoalsView />;
+        return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
       case 'timeline':
         return <TimelineView transactions={transactions} />;
       case 'fixed':

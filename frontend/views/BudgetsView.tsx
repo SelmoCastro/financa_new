@@ -13,9 +13,10 @@ interface Budget {
 
 interface BudgetsViewProps {
     existingCategories: string[];
+    isPrivacyEnabled: boolean;
 }
 
-export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories }) => {
+export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories, isPrivacyEnabled }) => {
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,13 +118,15 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories }) 
                                 <div>
                                     <h3 className="font-bold text-slate-700 text-lg">{budget.category}</h3>
                                     <p className="text-xs text-slate-400 font-medium mt-1">
-                                        Gasto: <span className="text-slate-600 font-bold">R$ {budget.spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                        Gasto: <span className={`text-slate-600 font-bold ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                            {isPrivacyEnabled ? 'R$ •••' : `R$ ${budget.spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                        </span>
                                     </p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Teto</p>
-                                    <p className="text-lg font-black text-indigo-600">
-                                        R$ {budget.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    <p className={`text-lg font-black text-indigo-600 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                        {isPrivacyEnabled ? 'R$ •••' : `R$ ${budget.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                                     </p>
                                 </div>
                             </div>
