@@ -10,14 +10,27 @@ interface SettingsViewProps {
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ userName, transactions, onLogout }) => {
-    const handleExportData = () => {
-        const dataStr = JSON.stringify(transactions, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-        const exportFileDefaultName = 'finanza-backup.json';
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
+    const handleExportData = async () => {
+        try {
+            // Using require/import based on how you access api
+            // Assuming api is imported from services/api
+            const { default: api } = await import('../services/api');
+
+            const response = await api.get('/transactions/export', {
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'finanza-export.csv');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Erro ao exportar:', error);
+            alert('Falha ao baixar o relatório.');
+        }
     };
 
     const handleResetApp = () => {
@@ -67,8 +80,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, transactio
                                     <i data-lucide="download"></i>
                                 </div>
                                 <div className="text-left">
-                                    <p className="font-bold text-slate-800 text-sm">Exportar Dados</p>
-                                    <p className="text-[10px] text-slate-500 font-medium">Baixar backup em JSON</p>
+                                    <p className="font-bold text-slate-800 text-sm">Exportar Relatório</p>
+                                    <p className="text-[10px] text-slate-500 font-medium">Baixar CSV para Excel</p>
                                 </div>
                             </button>
                             <button

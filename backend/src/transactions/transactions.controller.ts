@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Res, NotFoundException } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -20,6 +20,14 @@ export class TransactionsController {
   @Get()
   findAll(@Request() req) {
     return this.transactionsService.findAll(req.user.userId);
+  }
+
+  @Get('export')
+  async export(@Request() req, @Res() res) {
+    const csv = await this.transactionsService.export(req.user.userId);
+    res.header('Content-Type', 'text/csv');
+    res.header('Content-Disposition', 'attachment; filename="finanza-export.csv"');
+    return res.send(csv);
   }
 
   @Get(':id')
