@@ -12,6 +12,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'layout-grid' },
     { id: 'budgets', label: 'Orçamentos', icon: 'target' },
+    { id: 'goals', label: 'Metas', icon: 'trophy' },
     { id: 'timeline', label: 'Linha do Tempo', icon: 'clock' },
     { id: 'fixed', label: 'Controle Fixos', icon: 'anchor' },
     { id: 'history', label: 'Extrato', icon: 'receipt' },
