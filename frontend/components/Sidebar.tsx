@@ -77,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
 
           {isOpen && (
             <div className="mt-4 text-center">
-              <p className="text-[10px] font-mono text-slate-600 opacity-50">v1.0.0</p>
+              <p className="text-[10px] font-mono text-slate-600 opacity-50">v1.1.0</p>
             </div>
           )}
         </div>
