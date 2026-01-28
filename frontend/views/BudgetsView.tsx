@@ -34,9 +34,15 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories }) 
         }
     };
 
+
     useEffect(() => {
         fetchBudgets();
     }, []);
+
+    useEffect(() => {
+        // @ts-ignore
+        if (window.lucide) window.lucide.createIcons();
+    }, [budgets, isModalOpen]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
