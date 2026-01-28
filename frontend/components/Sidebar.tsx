@@ -84,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
       </aside>
 
       {/* Mobile Nav */}
-      <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg border-t border-slate-200 flex lg:hidden justify-around items-center px-2 pb-[env(safe-area-inset-bottom)] pt-3 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] overflow-x-auto min-h-[80px]">
+      <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg border-t border-slate-200 flex lg:hidden justify-around items-center px-2 pb-6 pt-3 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] overflow-x-auto min-h-[80px]">
         {[...menuItems, { id: 'settings', label: 'Ajustes', icon: 'settings' }].map((item) => (
           <button
             key={item.id}
