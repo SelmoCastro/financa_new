@@ -116,6 +116,47 @@ export const GoalsView: React.FC = () => {
     };
 
     return (
+    const [depositModalOpen, setDepositModalOpen] = useState(false);
+    const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+    const [depositAmount, setDepositAmount] = useState('');
+
+    const openDepositModal = (goal: Goal) => {
+        setSelectedGoal(goal);
+        setDepositAmount('');
+        setDepositModalOpen(true);
+    };
+
+    const confirmDeposit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedGoal || !depositAmount) return;
+
+        const amount = parseFloat(depositAmount.replace(/\./g, '').replace(',', '.'));
+
+        if (isNaN(amount) || amount <= 0) {
+            addToast('Valor inválido.', 'warning');
+            return;
+        }
+
+        try {
+            const newAmount = selectedGoal.currentAmount + amount;
+            await api.patch(`/goals/${selectedGoal.id}`, { currentAmount: newAmount });
+            addToast(`R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} guardados!`, 'success');
+            setDepositModalOpen(false);
+            fetchGoals();
+        } catch (error) {
+            console.error(error);
+            addToast('Erro ao depositar.', 'error');
+        }
+    };
+
+    useEffect(() => {
+        // @ts-ignore
+        if (window.lucide) window.lucide.createIcons();
+    }, [goals, depositModalOpen]); // Refresh icons when deposit modal opens too
+
+    // ... (rest of the file until return)
+
+    return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header Action */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -165,7 +206,7 @@ export const GoalsView: React.FC = () => {
                                     <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
                                         <i data-lucide="target" className="w-6 h-6"></i>
                                     </div>
-                                    <button onClick={() => handleDeposit(goal)} className="p-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors active:scale-90" title="Adicionar dinheiro">
+                                    <button onClick={() => openDepositModal(goal)} className="p-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors active:scale-90" title="Adicionar dinheiro">
                                         <i data-lucide="plus" className="w-6 h-6"></i>
                                     </button>
                                 </div>
@@ -202,11 +243,16 @@ export const GoalsView: React.FC = () => {
                 </div>
             )}
 
-            {/* Modal */}
+            {/* Create Goal Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8 animate-in zoom-in-95 duration-200">
-                        <h2 className="text-xl font-black text-slate-800 mb-6">Novo Objetivo</h2>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-black text-slate-800">Novo Objetivo</h2>
+                            <button type="button" onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
+                                <i data-lucide="x" className="w-5 h-5 text-slate-500"></i>
+                            </button>
+                        </div>
                         <form onSubmit={handleSave} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Nome da Meta</label>
@@ -256,21 +302,55 @@ export const GoalsView: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-100 transition-colors"
-                                >
-                                    Cancelar
-                                </button>
+                            <div className="pt-4">
                                 <button
                                     type="submit"
-                                    className="flex-1 py-4 rounded-2xl font-black text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+                                    className="w-full py-4 rounded-2xl font-black text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
                                 >
                                     Criar Meta
                                 </button>
                             </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Deposit Modal */}
+            {depositModalOpen && selectedGoal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-xl font-black text-slate-800">Novo Aporte</h2>
+                                <p className="text-xs text-slate-500 font-medium mt-1">{selectedGoal.title}</p>
+                            </div>
+                            <button onClick={() => setDepositModalOpen(false)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
+                                <i data-lucide="x" className="w-5 h-5 text-slate-500"></i>
+                            </button>
+                        </div>
+
+                        <form onSubmit={confirmDeposit} className="space-y-6">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Quanto quer guardar?</label>
+                                <div className="relative">
+                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl pointer-events-none">R$</span>
+                                    <input
+                                        autoFocus
+                                        className="w-full pl-14 pr-6 py-6 bg-slate-50 border-none rounded-3xl font-black text-3xl text-slate-800 focus:ring-4 focus:ring-indigo-100 outline-none transition-all placeholder:text-slate-300"
+                                        placeholder="0,00"
+                                        value={depositAmount}
+                                        onChange={e => setDepositAmount(formatInputCurrency(e.target.value))}
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full py-4 rounded-2xl font-black text-white bg-emerald-500 hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200 active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <i data-lucide="piggy-bank" className="w-5 h-5"></i>
+                                Guardar Dinheiro
+                            </button>
                         </form>
                     </div>
                 </div>
