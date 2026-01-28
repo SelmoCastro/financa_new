@@ -84,15 +84,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
       </aside>
 
       {/* Mobile Nav */}
-      <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg border-t border-slate-200 flex lg:hidden justify-around items-center p-4 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] overflow-x-auto">
+      <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg border-t border-slate-200 flex lg:hidden justify-around items-center px-2 pb-[env(safe-area-inset-bottom)] pt-3 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] overflow-x-auto min-h-[80px]">
         {[...menuItems, { id: 'settings', label: 'Ajustes', icon: 'settings' }].map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`flex flex-col items-center gap-1.5 transition-colors px-2 min-w-[60px] ${activeTab === item.id ? 'text-indigo-600' : 'text-slate-400'}`}
+            className={`flex flex-col items-center justify-center gap-1.5 transition-colors px-1 min-w-[64px] h-[54px] rounded-xl active:scale-95 ${activeTab === item.id ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400'}`}
           >
-            <i data-lucide={item.icon} className="w-5 h-5"></i>
-            <span className="text-[8px] font-bold tracking-wider uppercase whitespace-nowrap">{item.label}</span>
+            <i data-lucide={item.icon} className="w-6 h-6"></i>
+            <span className="text-[10px] font-bold tracking-tight uppercase whitespace-nowrap leading-none">{item.label}</span>
           </button>
         ))}
       </nav>

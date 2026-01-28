@@ -165,8 +165,8 @@ export const GoalsView: React.FC = () => {
                                     <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
                                         <i data-lucide="target" className="w-6 h-6"></i>
                                     </div>
-                                    <button onClick={() => handleDeposit(goal)} className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-xl transition-colors" title="Adicionar dinheiro">
-                                        <i data-lucide="plus" className="w-5 h-5"></i>
+                                    <button onClick={() => handleDeposit(goal)} className="p-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors active:scale-90" title="Adicionar dinheiro">
+                                        <i data-lucide="plus" className="w-6 h-6"></i>
                                     </button>
                                 </div>
 
