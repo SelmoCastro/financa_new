@@ -187,7 +187,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             <h3 className="text-lg font-bold text-slate-800">Performance Mensal</h3>
                             <p className="text-sm text-slate-500">Fluxo consolidado de caixa</p>
                         </div>
-                        <div className="h-[250px] md:h-[320px]">
+                        <div className="h-[250px] md:h-[320px] w-full min-h-[250px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={monthlyChartData} barSize={20}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
