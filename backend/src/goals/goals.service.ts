@@ -8,9 +8,11 @@ export class GoalsService {
   constructor(private prisma: PrismaService) { }
 
   create(createGoalDto: CreateGoalDto, userId: string) {
+    const { deadline, ...rest } = createGoalDto;
     return this.prisma.goal.create({
       data: {
-        ...createGoalDto,
+        ...rest,
+        deadline: deadline ? new Date(deadline) : undefined, // Explicit conversion
         userId
       }
     });
