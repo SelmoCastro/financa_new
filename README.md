@@ -1,5 +1,5 @@
 
-# 🚀 Finanza AI - Dashboard Financeiro Simplificado
+# 🚀 Finanza AI - Dashboard Financeiro (v1.1.0)
 
 ![App Icon](https://raw.githubusercontent.com/selmocastro/finanza-new/main/frontend/public/icon.png)
 
@@ -10,11 +10,13 @@ Dashboard financeiro moderno e minimalista construído com **React (Vite)** e **
 ## ✨ Features
 
 - **Dashboard Visual**: Gráficos de fluxo de caixa e alocação de despesas.
+- **Orçamentos (Novidade)**: Defina tetos de gastos por categoria e acompanhe em tempo real.
+- **Metas & Sonhos (Novidade)**: Crie cofres para seus objetivos (Viagem, Carro, Reserva) e faça aportes.
+- **Mobile First**: Experiência otimizada para celulares (PWA, Touch, SafeArea).
 - **Timeline**: Visualize suas transações em uma linha do tempo vertical.
 - **Controle de Fixos**: Gerencie assinaturas e contas fixas separado dos gastos variáveis.
 - **Regra 50/30/20**: Feedback visual automático sobre sua saúde financeira.
-- **Privacidade**: Modo "Blur" para ocultar valores sensíveis.
-- **PWA Ready**: Instale no celular ou desktop.
+- **Privacidade Total**: Modo "Blur" protege seus dados sensíveis com um clique.
 
 ---
 
