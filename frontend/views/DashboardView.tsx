@@ -90,7 +90,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
         let savings = 0;
 
         transactions.forEach(t => {
-            if (t.type === 'EXPENSE') {
+            // Fix: Parse date as "Calendar Date" (YYYY-MM-DD)
+            const datePart = new Date(t.date).toISOString().split('T')[0];
+            const [y, m, d] = datePart.split('-').map(Number);
+            const date = new Date(y, m - 1, d); // Local Midnight
+
+            const tMonth = date.getMonth();
+            const tYear = date.getFullYear();
+
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+
+            if (t.type === 'EXPENSE' && tMonth === currentMonth && tYear === currentYear) {
                 const amount = Number(t.amount);
                 if (needsCategories.includes(t.category)) {
                     needs += amount;
@@ -104,7 +115,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
             }
         });
 
-        const totalIncome = totals.income || 1;
+        const totalIncome = totals.currentIncome || 1;
 
         return {
             needs: { value: needs, percent: (needs / totalIncome) * 100, target: 50 },
@@ -117,7 +128,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
 
     const categorySummary = useMemo(() => {
         const categories: Record<string, number> = {};
-        transactions.filter(t => t.type === 'EXPENSE').forEach(t => {
+        transactions.filter(t => {
+            // Fix: Parse date as "Calendar Date" (YYYY-MM-DD)
+            const datePart = new Date(t.date).toISOString().split('T')[0];
+            const [y, m, d] = datePart.split('-').map(Number);
+            const date = new Date(y, m - 1, d); // Local Midnight
+
+            const tMonth = date.getMonth();
+            const tYear = date.getFullYear();
+
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+
+            return t.type === 'EXPENSE' && tMonth === currentMonth && tYear === currentYear;
+        }).forEach(t => {
             categories[t.category] = (categories[t.category] || 0) + Number(t.amount);
         });
         return Object.entries(categories)

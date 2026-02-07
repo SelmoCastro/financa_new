@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Transaction } from '../types';
 
-export const useFixedTransactions = (transactions: Transaction[], totals: { balance: number, income: number }) => {
+export const useFixedTransactions = (transactions: Transaction[], totals: { balance: number, income: number, currentIncome?: number }) => {
     return useMemo(() => {
         const now = new Date();
         const currentMonth = now.getMonth();
@@ -86,19 +86,32 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         // 4. Fixed Income Commitment
         let totalFixedExpense = 0;
         transactions.forEach(t => {
-            const d = new Date(t.date);
-            if (t.isFixed && t.type === 'EXPENSE' && d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+            // Fix: Parse date as "Calendar Date" (YYYY-MM-DD)
+            const datePart = new Date(t.date).toISOString().split('T')[0];
+            const [y, m, d] = datePart.split('-').map(Number);
+            const date = new Date(y, m - 1, d); // Local Midnight
+
+            if (t.isFixed && t.type === 'EXPENSE' && date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
                 totalFixedExpense += Number(t.amount);
             }
         });
         missingFixed.filter(t => t.type === 'EXPENSE').forEach(t => totalFixedExpense += t.amount);
 
-        const income = totals.income || 1;
+        // Use currentIncome if available, otherwise fallback to total income (though usually unrelated)
+        // Or better, use 1 to avoid division by zero.
+        const income = totals.currentIncome || totals.income || 1;
         const fixedRatio = (totalFixedExpense / income) * 100;
 
-        // 5. "Top Villains" (Most expensive descriptions)
+        // 5. "Top Villains" (Most expensive descriptions - THIS MONTH ONLY)
         const expensesByDesc: Record<string, number> = {};
-        transactions.filter(t => t.type === 'EXPENSE').forEach(t => {
+        transactions.filter(t => {
+            // Fix: Parse date as "Calendar Date" (YYYY-MM-DD)
+            const datePart = new Date(t.date).toISOString().split('T')[0];
+            const [y, m, d] = datePart.split('-').map(Number);
+            const date = new Date(y, m - 1, d); // Local Midnight
+
+            return t.type === 'EXPENSE' && date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+        }).forEach(t => {
             const key = t.description.trim();
             const normKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
             expensesByDesc[normKey] = (expensesByDesc[normKey] || 0) + Number(t.amount);
@@ -121,7 +134,7 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
             fixedRatio: Math.min(fixedRatio, 100),
             totalFixedExpense,
             fixedItems,
-            topVillains // Restoration
+            topVillains
         };
-    }, [transactions, totals.balance, totals.income]);
+    }, [transactions, totals.balance, totals.income, totals.currentIncome]);
 };
