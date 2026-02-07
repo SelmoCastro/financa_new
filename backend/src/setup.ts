@@ -7,7 +7,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 export function configureApp(app: INestApplication) {
     // CORS
     app.enableCors({
-        origin: '*',
+        origin: process.env.FRONTEND_URL || ['http://localhost:5173', 'http://localhost:3000'],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         allowedHeaders: 'Content-Type, Accept, Authorization',
     });
