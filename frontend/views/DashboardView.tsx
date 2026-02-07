@@ -30,7 +30,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
 
         transactions.forEach(t => {
             const amount = Number(t.amount);
-            const date = new Date(t.date);
+
+            // Fix: Parse date as "Calendar Date" (YYYY-MM-DD) to avoid Timezone shifts (e.g. Day 1 -> Day 30/31)
+            const datePart = new Date(t.date).toISOString().split('T')[0];
+            const [y, m, d] = datePart.split('-').map(Number);
+            const date = new Date(y, m - 1, d); // Local Midnight
+
             const tDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
             const tMonth = date.getMonth();
