@@ -7,7 +7,12 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 export function configureApp(app: INestApplication) {
     // CORS
     app.enableCors({
-        origin: process.env.FRONTEND_URL || ['http://localhost:5173', 'http://localhost:3000'],
+        origin: [
+            'http://localhost:5173',
+            'http://localhost:3000',
+            'https://financa-new.vercel.app',
+            ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : []),
+        ],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         allowedHeaders: 'Content-Type, Accept, Authorization',
     });
