@@ -1,0 +1,37 @@
+{
+  "name": "antigravity-awesome-skills",
+  "version": "4.11.0",
+  "description": "626+ agentic skills for Claude Code, Gemini CLI, Cursor, Antigravity & more. Installer CLI.",
+  "license": "MIT",
+  "scripts": {
+    "validate": "python3 scripts/validate_skills.py",
+    "validate:strict": "python3 scripts/validate_skills.py --strict",
+    "index": "python3 scripts/generate_index.py",
+    "readme": "python3 scripts/update_readme.py",
+    "chain": "npm run validate && npm run index && npm run readme",
+    "catalog": "node scripts/build-catalog.js",
+    "build": "npm run chain && npm run catalog",
+    "test": "node scripts/tests/validate_skills_headings.test.js && python3 scripts/tests/test_validate_skills_headings.py"
+  },
+  "devDependencies": {
+    "yaml": "^2.8.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sickn33/antigravity-awesome-skills.git"
+  },
+  "bin": {
+    "antigravity-awesome-skills": "bin/install.js"
+  },
+  "files": [
+    "bin"
+  ],
+  "keywords": [
+    "claude-code",
+    "cursor",
+    "gemini-cli",
+    "antigravity",
+    "agentic-skills",
+    "ai-coding"
+  ]
+}
