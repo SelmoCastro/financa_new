@@ -1,8 +1,11 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Alert, Platform, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTransactions } from '../../hooks/useTransactions';
+import { useMonth } from '../../context/MonthContext';
+import { MonthSelector } from '../../components/MonthSelector';
+import { getYearMonth, parseDate } from '../../utils/dateUtils';
 import api from '../../services/api';
 import TransactionModal from '../../components/TransactionModal';
 
@@ -13,16 +16,32 @@ const CATEGORIES = [
 
 export default function TransactionsScreen() {
     const insets = useSafeAreaInsets();
+    const { selectedDate } = useMonth();
     const { transactions, loading, refreshing, onRefresh, setTransactions, isPrivacyEnabled, togglePrivacy } = useTransactions();
 
     const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
+    const [searchQuery, setSearchQuery] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
 
     // Derived
     const filteredTransactions = useMemo(() => {
-        if (filter === 'ALL') return transactions;
-        return transactions.filter(t => t.type === filter);
-    }, [transactions, filter]);
+        const { year: targetYear, month: targetMonth } = getYearMonth(selectedDate);
+
+        return transactions.filter(t => {
+            const date = parseDate(t.date);
+            const { year, month } = getYearMonth(date);
+            const matchesDate = year === targetYear && month === targetMonth;
+
+            if (filter !== 'ALL' && t.type !== filter) return false;
+
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                return t.description.toLowerCase().includes(query) || t.category.toLowerCase().includes(query);
+            }
+
+            return true;
+        });
+    }, [transactions, filter, selectedDate, searchQuery]);
 
     const totals = useMemo(() => {
         return filteredTransactions.reduce((acc, t) => {
@@ -71,11 +90,16 @@ export default function TransactionsScreen() {
         <View className="flex-1 bg-slate-50">
             <View className="bg-white pb-4 rounded-b-3xl shadow-sm z-10" style={{ paddingTop: insets.top + 10 }}>
                 <View className="px-6 mb-4 flex-row justify-between items-center">
-                    <View className="flex-row items-center gap-3">
-                        <Text className="text-2xl font-bold text-slate-800">Extrato</Text>
-                        <TouchableOpacity onPress={togglePrivacy} className="p-1 px-2 bg-slate-100 rounded-lg">
-                            <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={16} color="#64748b" />
-                        </TouchableOpacity>
+                    <View>
+                        <View className="flex-row items-center gap-3">
+                            <Text className="text-2xl font-bold text-slate-800">Extrato</Text>
+                            <TouchableOpacity onPress={togglePrivacy} className="p-1 px-2 bg-slate-100 rounded-lg">
+                                <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={16} color="#64748b" />
+                            </TouchableOpacity>
+                        </View>
+                        <View className="mt-2 text-center items-start">
+                            <MonthSelector />
+                        </View>
                     </View>
                     <TouchableOpacity
                         onPress={() => setModalVisible(true)}
@@ -84,6 +108,25 @@ export default function TransactionsScreen() {
                         <MaterialIcons name="add" size={20} color="white" />
                         <Text className="text-white font-bold text-xs uppercase">Novo</Text>
                     </TouchableOpacity>
+                </View>
+
+                {/* Search Bar */}
+                <View className="px-6 mb-4">
+                    <View className="flex-row items-center bg-slate-100 rounded-2xl px-4 py-3 border border-slate-200">
+                        <MaterialIcons name="search" size={24} color="#94a3b8" />
+                        <TextInput
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholder="Buscar transações..."
+                            className="flex-1 ml-3 font-medium text-slate-700"
+                            placeholderTextColor="#94a3b8"
+                        />
+                        {searchQuery.length > 0 && (
+                            <TouchableOpacity onPress={() => setSearchQuery('')}>
+                                <MaterialIcons name="close" size={20} color="#94a3b8" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
 
                 {/* Filter Tabs */}

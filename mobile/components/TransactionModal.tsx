@@ -3,6 +3,7 @@ import { View, Text, Modal, TouchableOpacity, TextInput, ScrollView, Platform, A
 import { MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../services/api';
+import { triggerHaptic } from '../utils/haptics';
 
 const CATEGORIES = [
     'Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Lazer',
@@ -67,10 +68,12 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
 
             await api.post('/transactions', payload);
 
+            triggerHaptic.success();
             onSuccess();
             onClose();
             Alert.alert('Sucesso', 'Transação salva com sucesso!');
         } catch (error) {
+            triggerHaptic.error();
             console.error('Erro ao salvar:', error);
             Alert.alert('Erro', 'Não foi possível salvar a transação.');
         } finally {
