@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTransactions } from '../../hooks/useTransactions';
+import { Skeleton } from '../../components/Skeleton';
 import { useFixedTransactions } from '../../hooks/useFixedTransactions';
 import TransactionModal from '../../components/TransactionModal';
 
@@ -154,7 +155,45 @@ export default function DashboardScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#4f46e5" />
+          <View className="px-4 space-y-4">
+            {/* Header Skeleton */}
+            <View className="flex-row items-center justify-between mb-6">
+              <View>
+                <Skeleton width={120} height={14} style={{ marginBottom: 4, backgroundColor: '#e2e8f0' }} />
+                <Skeleton width={180} height={24} style={{ backgroundColor: '#e2e8f0' }} />
+              </View>
+              <View className="flex-row gap-3">
+                <Skeleton width={40} height={40} borderRadius={20} style={{ backgroundColor: '#e2e8f0' }} />
+                <Skeleton width={40} height={40} borderRadius={20} style={{ backgroundColor: '#e2e8f0' }} />
+                <Skeleton width={40} height={40} borderRadius={20} style={{ backgroundColor: '#e2e8f0' }} />
+              </View>
+            </View>
+
+            {/* Cards Grid Skeleton */}
+            <View className="flex-row flex-wrap gap-4 mb-6">
+              <View className="w-[47%] bg-white p-4 rounded-2xl shadow-sm border border-slate-100 h-24 justify-between">
+                <Skeleton width={80} height={12} style={{ backgroundColor: '#f1f5f9' }} />
+                <Skeleton width={100} height={20} style={{ backgroundColor: '#f1f5f9' }} />
+              </View>
+              <View className="w-[47%] bg-white p-4 rounded-2xl shadow-sm border border-slate-100 h-24 justify-between">
+                <Skeleton width={80} height={12} style={{ backgroundColor: '#f1f5f9' }} />
+                <Skeleton width={100} height={20} style={{ backgroundColor: '#f1f5f9' }} />
+              </View>
+              <View className="w-[47%] bg-white p-4 rounded-2xl shadow-sm border border-slate-100 h-24 justify-between">
+                <Skeleton width={80} height={12} style={{ backgroundColor: '#f1f5f9' }} />
+                <Skeleton width={100} height={20} style={{ backgroundColor: '#f1f5f9' }} />
+              </View>
+              <View className="w-[47%] bg-white p-4 rounded-2xl shadow-sm border border-slate-100 h-24 justify-between">
+                <Skeleton width={80} height={12} style={{ backgroundColor: '#f1f5f9' }} />
+                <Skeleton width={100} height={20} style={{ backgroundColor: '#f1f5f9' }} />
+              </View>
+            </View>
+
+            {/* Content Skeleton */}
+            <View className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm h-40 justify-center">
+              <Skeleton width="100%" height="100%" borderRadius={16} style={{ backgroundColor: '#f8fafc' }} />
+            </View>
+          </View>
         ) : (
           <View className="px-4 space-y-4">
             {/* Commitment */}
@@ -178,7 +217,11 @@ export default function DashboardScreen() {
             <View className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
               <Text className="text-xs font-bold text-slate-500 uppercase mb-4">Fixos Pendentes</Text>
               {forecast.missingFixed.length === 0 ? (
-                <Text className="text-slate-400 text-xs">Tudo pago!</Text>
+                <View className="items-center py-6 opacity-50">
+                  <MaterialIcons name="check-circle-outline" size={48} color="#10b981" />
+                  <Text className="text-slate-500 text-sm font-bold mt-2">Tudo pago!</Text>
+                  <Text className="text-slate-400 text-xs text-center mt-1">Você está em dia com suas contas fixas.</Text>
+                </View>
               ) : (
                 forecast.missingFixed.map((item, idx) => (
                   <View key={idx} className="flex-row justify-between items-center py-2 border-b border-slate-50 last:border-0">
@@ -195,17 +238,25 @@ export default function DashboardScreen() {
                 <Text className="text-xs font-bold text-slate-500 uppercase">Top Gastos do Mês</Text>
                 <MaterialIcons name="trending-down" size={16} color="#eab308" />
               </View>
-              {topVillains.map((item, idx) => (
-                <View key={idx} className="flex-row justify-between items-center mb-3 last:mb-0">
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-5 h-5 bg-slate-100 rounded-full items-center justify-center">
-                      <Text className="text-[10px] font-bold text-slate-500">{idx + 1}</Text>
-                    </View>
-                    <Text className="text-sm font-bold text-slate-700">{item.name}</Text>
-                  </View>
-                  <Text className="text-sm font-black text-slate-800">{formatValue(item.value)}</Text>
+              {topVillains.length === 0 ? (
+                <View className="items-center py-6 opacity-50">
+                  <MaterialIcons name="savings" size={48} color="#eab308" />
+                  <Text className="text-slate-500 text-sm font-bold mt-2">Nenhum gasto alto</Text>
+                  <Text className="text-slate-400 text-xs text-center mt-1">Seus gastos estão sob controle este mês.</Text>
                 </View>
-              ))}
+              ) : (
+                topVillains.map((item, idx) => (
+                  <View key={idx} className="flex-row justify-between items-center mb-3 last:mb-0">
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-5 h-5 bg-slate-100 rounded-full items-center justify-center">
+                        <Text className="text-[10px] font-bold text-slate-500">{idx + 1}</Text>
+                      </View>
+                      <Text className="text-sm font-bold text-slate-700">{item.name}</Text>
+                    </View>
+                    <Text className="text-sm font-black text-slate-800">{formatValue(item.value)}</Text>
+                  </View>
+                ))
+              )}
             </View>
           </View>
         )}

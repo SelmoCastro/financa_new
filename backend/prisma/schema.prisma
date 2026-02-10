@@ -14,7 +14,7 @@ model User {
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   transactions Transaction[]
   budgets      Budget[]
   goals        Goal[]
@@ -30,13 +30,15 @@ model Transaction {
   isFixed     Boolean  @default(false)
   userId      String
   user        User     @relation(fields: [userId], references: [id])
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([date])
   @@index([userId, date])
+  @@index([userId, type, date])
+  @@index([userId, category, date])
 }
 
 model Budget {
@@ -52,13 +54,13 @@ model Budget {
 }
 
 model Goal {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   title         String
   targetAmount  Float
-  currentAmount Float    @default(0)
+  currentAmount Float     @default(0)
   deadline      DateTime?
   userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  user          User      @relation(fields: [userId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
