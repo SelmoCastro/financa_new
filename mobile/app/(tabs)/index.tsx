@@ -7,11 +7,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTransactions } from '../../hooks/useTransactions';
 import { Skeleton } from '../../components/Skeleton';
 import { useFixedTransactions } from '../../hooks/useFixedTransactions';
+import { useMonth } from '../../context/MonthContext';
+import { MonthSelector } from '../../components/MonthSelector';
 import TransactionModal from '../../components/TransactionModal';
 
 export default function DashboardScreen() {
   const { logout } = useAuth();
   const insets = useSafeAreaInsets();
+  const { selectedDate } = useMonth();
   const { transactions, loading, refreshing, onRefresh, isPrivacyEnabled, togglePrivacy } = useTransactions();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -23,9 +26,9 @@ export default function DashboardScreen() {
   };
 
   const { totals, rule503020 } = useMemo(() => {
-    const now = new Date();
-    const { year: currentYear, month: currentMonth } = getYearMonth(now);
-    const todayStart = getStartOfDay(now);
+    const { year: currentYear, month: currentMonth } = getYearMonth(selectedDate);
+    const todayStart = getStartOfDay(new Date()); // Keep "today" as actual today for balance calculation? Or should balance reflect history? Usually balance is current.
+    // Let's assume balance is always current actual balance, but income/expense are refined by month.
 
     const current = { income: 0, expense: 0 };
     const balanceTotal = { value: 0 };
@@ -83,7 +86,7 @@ export default function DashboardScreen() {
         savings: { value: savings, percent: (savings / totalIncome) * 100 }
       }
     };
-  }, [transactions]);
+  }, [transactions, selectedDate]);
 
   const forecast = useFixedTransactions(transactions, totals);
 
@@ -110,6 +113,9 @@ export default function DashboardScreen() {
             <View>
               <Text className="text-slate-500 text-sm">Bem-vindo de volta,</Text>
               <Text className="text-2xl font-black text-slate-800">Resumo Financeiro</Text>
+              <View className="mt-2">
+                <MonthSelector />
+              </View>
             </View>
             <View className="flex-row gap-3">
               <TouchableOpacity onPress={() => openModal('EXPENSE')} className="p-2 bg-indigo-600 rounded-full shadow-lg shadow-indigo-200">

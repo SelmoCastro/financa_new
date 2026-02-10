@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { AuthProvider } from '../context/AuthContext';
 import { TransactionsProvider } from '../context/TransactionsContext';
+import { MonthProvider } from '../context/MonthContext';
 import '../global.css';
 
 export {
@@ -37,9 +38,11 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <TransactionsProvider>
-        <RootLayoutNav />
-      </TransactionsProvider>
+      <MonthProvider>
+        <TransactionsProvider>
+          <RootLayoutNav />
+        </TransactionsProvider>
+      </MonthProvider>
     </AuthProvider>
   );
 }
