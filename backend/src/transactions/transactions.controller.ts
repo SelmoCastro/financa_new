@@ -22,6 +22,11 @@ export class TransactionsController {
     return this.transactionsService.findAll(req.user.userId);
   }
 
+  @Get('dashboard')
+  getDashboard(@Request() req) {
+    return this.transactionsService.getDashboardSummary(req.user.userId);
+  }
+
   @Get('export')
   async export(@Request() req, @Res() res) {
     const csv = await this.transactionsService.export(req.user.userId);
