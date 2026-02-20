@@ -14,11 +14,15 @@ import { TimelineView } from './views/TimelineView';
 import { HistoryView } from './views/HistoryView';
 import { SettingsView } from './views/SettingsView';
 import { ToastProvider, useToast } from './context/ToastContext';
+import { MonthProvider, useMonth } from './context/MonthContext';
+import { MonthSelector } from './components/MonthSelector';
+import { getYearMonth } from './utils/dateUtils';
 
 const AppContent: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Usuário');
@@ -27,6 +31,7 @@ const AppContent: React.FC = () => {
   const { addToast } = useToast();
 
   const fetchTransactions = async () => {
+    setIsLoading(true);
     try {
       const response = await api.get('/transactions');
       setTransactions(response.data);
@@ -37,6 +42,8 @@ const AppContent: React.FC = () => {
       } else {
         addToast('Erro ao carregar dados.', 'error');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -51,17 +58,52 @@ const AppContent: React.FC = () => {
       // @ts-ignore
       window.lucide.createIcons();
     }
-  }, [activeTab, sidebarOpen, isFormOpen, transactions, editingTransaction, userName]);
+  }, [activeTab, sidebarOpen, isFormOpen, transactions, editingTransaction, userName, isLoading]);
+
+  const { selectedDate } = useMonth();
 
   const totals = useMemo(() => {
     let income = 0;
     let expense = 0;
+    let currentIncome = 0;
+    let currentExpense = 0;
+
+    const { year: targetYear, month: targetMonth } = getYearMonth(selectedDate);
+
     transactions.forEach(t => {
-      if (t.type === 'INCOME') income += Number(t.amount);
-      else expense += Number(t.amount);
+      const amount = Number(t.amount);
+      const txDate = new Date(t.date);
+      const { year: txYear, month: txMonth } = getYearMonth(txDate);
+
+      // Saldo geral (todas até a data atual, ou simplesmente todas para simplificar na web como era antes)
+      if (t.type === 'INCOME') income += amount;
+      else expense += amount;
+
+      // Totais do mês selecionado
+      if (txYear === targetYear && txMonth === targetMonth) {
+        if (t.type === 'INCOME') currentIncome += amount;
+        else currentExpense += amount;
+      }
     });
-    return { income, expense, balance: income - expense, currentIncome: 0, currentExpense: 0, incomeTrend: 0, expenseTrend: 0 };
-  }, [transactions]);
+
+    return {
+      income,
+      expense,
+      balance: income - expense,
+      currentIncome,
+      currentExpense,
+      incomeTrend: 0,
+      expenseTrend: 0
+    };
+  }, [transactions, selectedDate]);
+
+  const monthFilteredTransactions = useMemo(() => {
+    const { year: targetYear, month: targetMonth } = getYearMonth(selectedDate);
+    return transactions.filter(t => {
+      const { year: txYear, month: txMonth } = getYearMonth(t.date);
+      return txYear === targetYear && txMonth === targetMonth;
+    });
+  }, [transactions, selectedDate]);
 
   const forecast = useFixedTransactions(transactions, totals);
 
@@ -118,18 +160,18 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} />;
+        return <DashboardView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} />;
       case 'budgets':
         return (
           <BudgetsView
-            existingCategories={Array.from(new Set(transactions.map(t => t.category)))}
+            existingCategories={Array.from(new Set(monthFilteredTransactions.map(t => t.category)))}
             isPrivacyEnabled={isPrivacyEnabled}
           />
         );
       case 'goals':
         return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
       case 'timeline':
-        return <TimelineView transactions={transactions} />;
+        return <TimelineView transactions={monthFilteredTransactions} />;
       case 'fixed':
         return (
           <FixedItems
@@ -142,7 +184,7 @@ const AppContent: React.FC = () => {
       case 'history': // Maps to "Extrato" sidebar item
         return (
           <HistoryView
-            transactions={transactions}
+            transactions={monthFilteredTransactions}
             isPrivacyEnabled={isPrivacyEnabled}
             onEdit={openEditForm}
             onDelete={handleDeleteTransaction}
@@ -174,6 +216,9 @@ const AppContent: React.FC = () => {
                 <span className="block text-xs text-indigo-600 font-bold mt-1">Olá, {userName}</span>
               )}
             </h2>
+            <div className="mt-3">
+              <MonthSelector />
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -210,7 +255,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ToastProvider>
-      <AppContent />
+      <MonthProvider>
+        <AppContent />
+      </MonthProvider>
     </ToastProvider>
   );
 };
