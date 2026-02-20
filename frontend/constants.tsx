@@ -12,13 +12,13 @@ export const CATEGORIES = [
   'Investimentos (Aporte)', 'Dívidas/Financiamentos'
 ];
 
-export const INITIAL_TRANSACTIONS: Transaction[] = [
-  { id: '1', description: 'Salário Mensal', amount: 5000, date: '2024-05-01', category: 'Salário', type: 'INCOME' },
-  { id: '2', description: 'Aluguel', amount: 1500, date: '2024-05-02', category: 'Moradia', type: 'EXPENSE' },
-  { id: '3', description: 'Supermercado', amount: 600, date: '2024-05-05', category: 'Alimentação', type: 'EXPENSE' },
-  { id: '4', description: 'Freelance Design', amount: 1200, date: '2024-05-10', category: 'Outros', type: 'INCOME' },
-  { id: '5', description: 'Gasolina', amount: 300, date: '2024-05-12', category: 'Transporte', type: 'EXPENSE' },
-  { id: '6', description: 'Restaurante Fim de Semana', amount: 250, date: '2024-05-15', category: 'Lazer', type: 'EXPENSE' },
+export const MOCK_TRANSACTIONS: Transaction[] = [
+  { id: '1', description: 'Salário Mensal', amount: 5000, date: '2024-05-01', category: { id: 'c1', name: 'Salário', type: 'INCOME' }, type: 'INCOME' },
+  { id: '2', description: 'Aluguel', amount: 1500, date: '2024-05-02', category: { id: 'c2', name: 'Moradia', type: 'EXPENSE' }, type: 'EXPENSE' },
+  { id: '3', description: 'Supermercado', amount: 600, date: '2024-05-05', category: { id: 'c3', name: 'Alimentação', type: 'EXPENSE' }, type: 'EXPENSE' },
+  { id: '4', description: 'Freelance Design', amount: 1200, date: '2024-05-10', category: { id: 'c4', name: 'Outros', type: 'INCOME' }, type: 'INCOME' },
+  { id: '5', description: 'Gasolina', amount: 300, date: '2024-05-12', category: { id: 'c5', name: 'Transporte', type: 'EXPENSE' }, type: 'EXPENSE' },
+  { id: '6', description: 'Restaurante Fim de Semana', amount: 250, date: '2024-05-15', category: { id: 'c6', name: 'Lazer', type: 'EXPENSE' }, type: 'EXPENSE' },
 ];
 
 export const MONTHLY_CHART_DATA: MonthlyData[] = [

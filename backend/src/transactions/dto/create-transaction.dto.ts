@@ -13,10 +13,22 @@ export class CreateTransactionDto {
     date: string; // ISO string
 
     @IsString()
-    @IsNotEmpty()
-    category: string;
+    @IsOptional()
+    categoryId?: string;
 
-    @IsString() // Ideally @IsEnum(TransactionType) but keeping string for now to match current simple implementation
+    @IsString()
+    @IsOptional()
+    categoryLegacy?: string;
+
+    @IsString()
+    @IsOptional()
+    accountId?: string;
+
+    @IsString()
+    @IsOptional()
+    creditCardId?: string;
+
+    @IsString()
     type: string; // 'INCOME' | 'EXPENSE'
 
     @IsBoolean()

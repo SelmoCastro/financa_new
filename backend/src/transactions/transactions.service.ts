@@ -19,6 +19,65 @@ export class TransactionsService {
     });
   }
 
+  async importBatch(transactionsData: CreateTransactionDto[], userId: string) {
+    if (!transactionsData || transactionsData.length === 0) return { importedCount: 0 };
+
+    const validTransactions = transactionsData.map(t => ({
+      description: t.description,
+      amount: Number(t.amount),
+      date: new Date(t.date),
+      type: t.type,
+      isFixed: t.isFixed,
+      categoryId: t.categoryId,
+      categoryLegacy: t.categoryLegacy,
+      accountId: t.accountId,
+      creditCardId: t.creditCardId,
+      userId,
+    }));
+
+    // Determinar o range de datas
+    const minDate = new Date(Math.min(...validTransactions.map(t => t.date.getTime())));
+    const maxDate = new Date(Math.max(...validTransactions.map(t => t.date.getTime())));
+    const targetAccountId = validTransactions[0]?.accountId;
+
+    // Buscar transações existentes no período para mesma conta/usuário
+    const existingTransactions = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        accountId: targetAccountId,
+        date: { gte: minDate, lte: maxDate }
+      },
+      select: { date: true, amount: true, description: true }
+    });
+
+    // Hash para busca rápida de existentes (ignorando whitespace ou cases)
+    const existingSet = new Set(
+      existingTransactions.map(t => `${t.date.toISOString().split('T')[0]}_${t.amount}_${t.description.trim().toLowerCase()}`)
+    );
+
+    const toInsert = validTransactions.filter(t => {
+      const hash = `${t.date.toISOString().split('T')[0]}_${t.amount}_${t.description.trim().toLowerCase()}`;
+      if (existingSet.has(hash)) {
+        // Já existe uma transação igual, não insere
+        return false;
+      }
+      // Adiciona ao set para caso o próprio CSV tenha múltiplos idênticos repetidos que não deviam
+      existingSet.add(hash);
+      return true;
+    });
+
+    if (toInsert.length > 0) {
+      await this.prisma.transaction.createMany({
+        data: toInsert
+      });
+    }
+
+    return {
+      importedCount: toInsert.length,
+      duplicateCount: validTransactions.length - toInsert.length
+    };
+  }
+
   findAll(userId: string) {
     return this.prisma.transaction.findMany({
       where: { userId },
@@ -82,7 +141,7 @@ export class TransactionsService {
 
     // 3. Rule 50/30/20 (Expenses only, current month)
     const categoryGroup = await this.prisma.transaction.groupBy({
-      by: ['category'],
+      by: ['categoryId', 'categoryLegacy'],
       where: {
         userId,
         type: 'EXPENSE',
@@ -102,13 +161,16 @@ export class TransactionsService {
     let wants = 0;
     let savings = 0;
 
+    const categories = await this.prisma.category.findMany({ where: { userId } });
+    const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+
     categoryGroup.forEach(g => {
-      const cat = g.category;
+      const catName = (g.categoryId ? categoryMap.get(g.categoryId) : g.categoryLegacy) || 'Outros';
       const val = g._sum.amount || 0;
 
-      if (needsCategories.includes(cat)) needs += val;
-      else if (wantsCategories.includes(cat)) wants += val;
-      else if (savingsCategories.includes(cat)) savings += val;
+      if (needsCategories.includes(catName)) needs += val;
+      else if (wantsCategories.includes(catName)) wants += val;
+      else if (savingsCategories.includes(catName)) savings += val;
       else wants += val;
     });
 
@@ -132,6 +194,7 @@ export class TransactionsService {
     const transactions = await this.prisma.transaction.findMany({
       where: { userId },
       orderBy: { date: 'desc' },
+      include: { category: true }
     });
 
     // CSV Header
@@ -140,7 +203,8 @@ export class TransactionsService {
       const date = new Date(t.date).toLocaleDateString('pt-BR');
       const amount = t.amount.toString().replace('.', ','); // Excel PT-BR uses comma for decimals
       const type = t.type === 'INCOME' ? 'Receita' : 'Despesa';
-      return [date, `"${t.description}"`, amount, type, `"${t.category}"`].join(';');
+      const categoryName = t.category?.name || t.categoryLegacy || 'Sem categoria';
+      return [date, `"${t.description}"`, amount, type, `"${categoryName}"`].join(';');
     });
 
     return [headers.join(';'), ...rows].join('\n');
