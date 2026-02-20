@@ -1,7 +1,3 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../src/app.module';
-import { configureApp } from '../src/setup';
-
 let cachedApp;
 
 export default async function (req, res) {
@@ -22,6 +18,10 @@ export default async function (req, res) {
 
     try {
         if (!cachedApp) {
+            const { NestFactory } = await import('@nestjs/core');
+            const { AppModule } = await import('../src/app.module.js');
+            const { configureApp } = await import('../src/setup.js');
+
             const app = await NestFactory.create(AppModule);
 
             configureApp(app);
