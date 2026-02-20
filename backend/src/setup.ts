@@ -7,28 +7,16 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 export function configureApp(app: INestApplication) {
     // CORS
     app.enableCors({
-        origin: [
-            'http://localhost:5173',
-            'http://localhost:3000',
-            'https://financa-new.vercel.app',
-            ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : []),
-        ],
+        origin: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        allowedHeaders: 'Content-Type, Accept, Authorization',
+        credentials: true,
+        allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
     });
 
     // Security Headers
     app.use(helmet({
-        contentSecurityPolicy: {
-            directives: {
-                defaultSrc: ["'self'"],
-                scriptSrc: ["'self'", "https://unpkg.com", "https://esm.sh", "'unsafe-inline'"],
-                styleSrc: ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
-                fontSrc: ["'self'", "https://fonts.gstatic.com"],
-                imgSrc: ["'self'", "data:", "https://esm.sh"],
-                connectSrc: ["'self'"],
-            },
-        },
+        crossOriginResourcePolicy: false,
+        crossOriginOpenerPolicy: false,
     }));
 
     // API Versioning
