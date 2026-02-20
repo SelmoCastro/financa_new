@@ -57,14 +57,19 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
             if (cols.length < 5) cols = line.split(';').map(c => c.replace(/^"|"$/g, ''));
 
             if (cols.length >= 4) {
-                const dateStr = cols[0];
-                const desc1 = cols[1] || '';
-                const desc2 = cols[2] || '';
-
+                let dateStr = cols[0];
+                let desc1 = cols[1] || '';
+                let desc2 = cols[2] || '';
                 let valStr = cols[4] || cols[3]; // Tenta na coluna 5, senao na 4
+
                 if (bankType === 'NUBANK') {
                     // Nubank CSV typical format: Data,Valor,Identificador,Descrição
                     valStr = cols[1];
+                } else if (bankType === 'BB') {
+                    // Banco do Brasil CSV typical format: Data, Dependencia, Histórico, Data Balancete, Documento, Valor
+                    dateStr = cols[0];
+                    desc2 = cols[2]; // Histórico
+                    valStr = cols[5]; // Valor
                 }
 
                 if (!dateStr || !valStr) continue;
@@ -182,6 +187,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             <select value={bankType} onChange={e => setBankType(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-indigo-500 outline-none appearance-none">
                                 <option value="INTER">Banco Inter / Padrão (Data, Docs, Valor, Tipo)</option>
                                 <option value="NUBANK">Nubank</option>
+                                <option value="BB">Banco do Brasil</option>
                             </select>
                         </div>
 
