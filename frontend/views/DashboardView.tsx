@@ -5,19 +5,25 @@ import { Transaction } from '../types';
 import { StatCard } from '../components/StatCard';
 import { useFixedTransactions } from '../hooks/useFixedTransactions';
 
+import { Skeleton } from '../components/Skeleton';
+
 interface DashboardViewProps {
     transactions: Transaction[];
     isPrivacyEnabled: boolean;
+    isLoading?: boolean;
 }
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled }) => {
+import { useMonth } from '../context/MonthContext';
+
+export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false }) => {
+    const { selectedDate } = useMonth();
 
     const totals = useMemo(() => {
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
+        const now = new Date(); // Keep for balance strictly up to today
+        const currentMonth = selectedDate.getMonth();
+        const currentYear = selectedDate.getFullYear();
         const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
         const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
@@ -78,7 +84,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
             incomeTrend: calculateVariation(current.income, previous.income),
             expenseTrend: calculateVariation(current.expense, previous.expense)
         };
-    }, [transactions]);
+    }, [transactions, selectedDate]);
 
     const rule503020 = useMemo(() => {
         const needsCategories = ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação', 'Contas e Serviços'];
@@ -98,8 +104,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
             const tMonth = date.getMonth();
             const tYear = date.getFullYear();
 
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
+            const currentMonth = selectedDate.getMonth();
+            const currentYear = selectedDate.getFullYear();
 
             if (t.type === 'EXPENSE' && tMonth === currentMonth && tYear === currentYear) {
                 const amount = Number(t.amount);
@@ -122,7 +128,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
             wants: { value: wants, percent: (wants / totalIncome) * 100, target: 30 },
             savings: { value: savings, percent: (savings / totalIncome) * 100, target: 20 }
         };
-    }, [transactions, totals.income]);
+    }, [transactions, totals.income, selectedDate]);
 
     const forecast = useFixedTransactions(transactions, totals);
 
@@ -137,8 +143,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
             const tMonth = date.getMonth();
             const tYear = date.getFullYear();
 
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
+            const currentMonth = selectedDate.getMonth();
+            const currentYear = selectedDate.getFullYear();
 
             return t.type === 'EXPENSE' && tMonth === currentMonth && tYear === currentYear;
         }).forEach(t => {
@@ -147,7 +153,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
         return Object.entries(categories)
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
-    }, [transactions]);
+    }, [transactions, selectedDate]);
 
     const monthlyChartData = useMemo(() => {
         const groupedByMonth: Record<string, { income: number; expenses: number }> = {};
@@ -187,26 +193,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                <StatCard title="Saldo Projetado" value={`R$ ${forecast.projectedBalance.toLocaleString('pt-BR')}`} color="bg-indigo-600 text-indigo-50" icon={<i data-lucide="crosshair" className="text-white"></i>} isVisible={!isPrivacyEnabled} />
-                <StatCard title="Saldo Atual" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<i data-lucide="banknote"></i>} isVisible={!isPrivacyEnabled} />
-                <StatCard
-                    title="Entradas (Mês)"
-                    value={`R$ ${totals.currentIncome.toLocaleString('pt-BR')}`}
-                    color="bg-emerald-50 text-emerald-600"
-                    icon={<i data-lucide="trending-up"></i>}
-                    trend={`${Math.abs(totals.incomeTrend).toFixed(1)}%`}
-                    trendUp={totals.incomeTrend >= 0}
-                    isVisible={!isPrivacyEnabled}
-                />
-                <StatCard
-                    title="Saídas (Mês)"
-                    value={`R$ ${totals.currentExpense.toLocaleString('pt-BR')}`}
-                    color="bg-rose-50 text-rose-600"
-                    icon={<i data-lucide="trending-down"></i>}
-                    trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`}
-                    trendUp={totals.expenseTrend <= 0}
-                    isVisible={!isPrivacyEnabled}
-                />
+                {isLoading ? (
+                    <>
+                        <Skeleton className="h-[120px] rounded-3xl" />
+                        <Skeleton className="h-[120px] rounded-3xl" />
+                        <Skeleton className="h-[120px] rounded-3xl" />
+                        <Skeleton className="h-[120px] rounded-3xl" />
+                    </>
+                ) : (
+                    <>
+                        <StatCard title="Saldo Projetado" value={`R$ ${forecast.projectedBalance.toLocaleString('pt-BR')}`} color="bg-indigo-600 text-indigo-50" icon={<i data-lucide="crosshair" className="text-white"></i>} isVisible={!isPrivacyEnabled} />
+                        <StatCard title="Saldo Atual" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<i data-lucide="banknote"></i>} isVisible={!isPrivacyEnabled} />
+                        <StatCard
+                            title="Entradas (Mês)"
+                            value={`R$ ${totals.currentIncome.toLocaleString('pt-BR')}`}
+                            color="bg-emerald-50 text-emerald-600"
+                            icon={<i data-lucide="trending-up"></i>}
+                            trend={`${Math.abs(totals.incomeTrend).toFixed(1)}%`}
+                            trendUp={totals.incomeTrend >= 0}
+                            isVisible={!isPrivacyEnabled}
+                        />
+                        <StatCard
+                            title="Saídas (Mês)"
+                            value={`R$ ${totals.currentExpense.toLocaleString('pt-BR')}`}
+                            color="bg-rose-50 text-rose-600"
+                            icon={<i data-lucide="trending-down"></i>}
+                            trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`}
+                            trendUp={totals.expenseTrend <= 0}
+                            isVisible={!isPrivacyEnabled}
+                        />
+                    </>
+                )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
@@ -217,27 +234,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             <p className="text-sm text-slate-500">Fluxo consolidado de caixa</p>
                         </div>
                         <div className="h-[250px] md:h-[320px] w-full min-h-[250px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={monthlyChartData} barSize={20}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dx={-5} />
-                                    <Tooltip
-                                        cursor={{ fill: '#f8fafc' }}
-                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
-                                        formatter={(value: number) => isPrivacyEnabled ? '••••' : `R$ ${value.toLocaleString('pt-BR')}`}
-                                    />
-                                    <Legend verticalAlign="top" height={36} iconType="circle" />
-                                    <Bar name="Receitas" dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                    <Bar name="Despesas" dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                            {isLoading ? (
+                                <Skeleton className="w-full h-full rounded-2xl" />
+                            ) : (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={monthlyChartData} barSize={20}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dy={10} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dx={-5} />
+                                        <Tooltip
+                                            cursor={{ fill: '#f8fafc' }}
+                                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
+                                            formatter={(value: number) => isPrivacyEnabled ? '••••' : `R$ ${value.toLocaleString('pt-BR')}`}
+                                        />
+                                        <Legend verticalAlign="top" height={36} iconType="circle" />
+                                        <Bar name="Receitas" dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                        <Bar name="Despesas" dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                            {forecast.missingFixed.length > 0 ? (
+                            {isLoading ? (
+                                <div className="space-y-4">
+                                    <Skeleton className="h-4 w-32" />
+                                    <Skeleton className="h-10 w-full" />
+                                    <Skeleton className="h-10 w-full" />
+                                    <Skeleton className="h-10 w-full" />
+                                </div>
+                            ) : forecast.missingFixed.length > 0 ? (
                                 <>
                                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Fixos Pendentes</h3>
                                     <div className="space-y-3">
