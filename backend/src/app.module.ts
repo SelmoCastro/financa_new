@@ -14,6 +14,8 @@ import { AccountsModule } from './accounts/accounts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CreditCardsModule } from './credit-cards/credit-cards.module';
 
+import { PrismaService } from './prisma/prisma.service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -26,6 +28,7 @@ import { CreditCardsModule } from './credit-cards/credit-cards.module';
   controllers: [AppController],
   providers: [
     AppService,
+    PrismaService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
