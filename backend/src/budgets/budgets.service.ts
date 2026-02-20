@@ -42,7 +42,10 @@ export class BudgetsService {
         where: {
           userId,
           type: 'EXPENSE',
-          category: budget.category,
+          OR: [
+            { categoryLegacy: budget.category },
+            { category: { name: budget.category } }
+          ],
           date: {
             gte: startOfMonth,
             lte: endOfMonth

@@ -69,7 +69,7 @@ export const parseVoiceCommand = (text: string): Partial<Transaction> => {
 
     return {
         amount,
-        category,
+        categoryLegacy: category, // Fallback until backend parses real categories via voices
         description,
         type,
         date: new Date().toISOString()

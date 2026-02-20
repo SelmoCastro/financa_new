@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { TransactionType, Transaction } from '../types';
-import { CATEGORIES } from '../constants';
+import { TransactionType, Transaction, Account, CreditCard, Category } from '../types';
+import api from '../services/api';
 
 interface TransactionFormProps {
   onAdd: (transaction: Omit<Transaction, 'id'>) => void;
@@ -21,9 +21,18 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [description, setDescription] = useState('');
   const [displayAmount, setDisplayAmount] = useState('');
   const [type, setType] = useState<TransactionType>('EXPENSE');
-  const [category, setCategory] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isFixed, setIsFixed] = useState(false);
+
+  // New States
+  const [accountId, setAccountId] = useState('');
+  const [creditCardId, setCreditCardId] = useState('');
+
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingEntities, setIsLoadingEntities] = useState(true);
 
   const formatCurrency = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -36,45 +45,74 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   };
 
   useEffect(() => {
-    if (editingTransaction) {
+    const fetchEntities = async () => {
+      try {
+        const [accRes, cardsRes, catRes] = await Promise.all([
+          api.get('/accounts'),
+          api.get('/credit-cards'),
+          api.get('/categories')
+        ]);
+        setAccounts(accRes.data);
+        setCreditCards(cardsRes.data);
+        setCategories(catRes.data);
+
+        // Auto-select first account if available
+        if (accRes.data.length > 0 && !editingTransaction) {
+          setAccountId(accRes.data[0].id);
+        }
+      } catch (err) {
+        console.error('Error fetching entities for form', err);
+      } finally {
+        setIsLoadingEntities(false);
+      }
+    };
+    fetchEntities();
+  }, [editingTransaction]);
+
+  useEffect(() => {
+    if (editingTransaction && !isLoadingEntities) {
       setDescription(editingTransaction.description);
       const initialValue = (editingTransaction.amount * 100).toString();
       setDisplayAmount(formatCurrency(initialValue));
       setType(editingTransaction.type);
-      setCategory(editingTransaction.category);
-      setDate(editingTransaction.date);
+
+      // Select correct IDs
+      setCategoryId(editingTransaction.categoryId || '');
+      setAccountId(editingTransaction.accountId || '');
+      setCreditCardId(editingTransaction.creditCardId || '');
+
+      setDate(editingTransaction.date.split('T')[0]);
       setIsFixed(!!editingTransaction.isFixed);
     }
-  }, [editingTransaction]);
+  }, [editingTransaction, isLoadingEntities]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     setDisplayAmount(formatCurrency(rawValue));
   };
 
-  const suggestions = Array.from(new Set([...CATEGORIES, ...existingCategories]));
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const numericAmount = parseFloat(displayAmount.replace(/\./g, '').replace(',', '.'));
 
-    if (!description || isNaN(numericAmount) || numericAmount <= 0 || !category) return;
+    if (!description || isNaN(numericAmount) || numericAmount <= 0) return;
 
     const transactionData = {
       description,
       amount: numericAmount,
       type,
-      category: category.trim(),
-      date,
+      categoryId: categoryId || undefined,
+      accountId: accountId || undefined,
+      creditCardId: creditCardId || undefined,
+      date: new Date(date).toISOString(),
       isFixed
     };
 
     if (editingTransaction && onUpdate) {
-      onUpdate({ ...transactionData, id: editingTransaction.id });
+      onUpdate({ ...transactionData, id: editingTransaction.id } as unknown as Transaction);
     } else {
-      onAdd(transactionData);
+      onAdd(transactionData as unknown as Omit<Transaction, 'id'>);
     }
-    onClose();
   };
 
 
@@ -152,21 +190,74 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Categoria</label>
-            <div className="relative">
-              <select
-                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="" disabled>Selecione uma categoria...</option>
-                {suggestions.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                <i data-lucide="chevron-down" className="w-5 h-5"></i>
+          {/* New fields: Category, Account and Card */}
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Categoria (Opcional)</label>
+              <div className="relative">
+                <select
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                >
+                  <option value="">Nenhuma / Outros</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <i data-lucide="chevron-down" className="w-5 h-5"></i>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Conta Financeira</label>
+                <div className="relative">
+                  <select
+                    required
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                    value={accountId}
+                    onChange={(e) => setAccountId(e.target.value)}
+                  >
+                    <option value="" disabled>Selecione...</option>
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id}>{acc.name}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cartão de Crédito</label>
+                <div className="relative">
+                  <select
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                    value={creditCardId}
+                    onChange={(e) => {
+                      setCreditCardId(e.target.value);
+                      if (e.target.value) {
+                        // auto map account of credit card when selected
+                        const selectedCard = creditCards.find(c => c.id === e.target.value);
+                        if (selectedCard && selectedCard.accountId) {
+                          setAccountId(selectedCard.accountId);
+                        }
+                      }
+                    }}
+                  >
+                    <option value="">Nenhum (Débito)</option>
+                    {creditCards.map(card => (
+                      <option key={card.id} value={card.id}>{card.name}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

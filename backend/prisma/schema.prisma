@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -18,6 +19,62 @@ model User {
   transactions Transaction[]
   budgets      Budget[]
   goals        Goal[]
+  accounts     Account[]
+  creditCards  CreditCard[]
+  categories   Category[]
+}
+
+model Account {
+  id      String @id @default(uuid())
+  name    String
+  type    String // e.g., 'CHECKING', 'SAVINGS', 'WALLET', 'BROKERAGE'
+  balance Float  @default(0)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+
+  transactions Transaction[]
+  creditCards  CreditCard[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model CreditCard {
+  id         String  @id @default(uuid())
+  name       String
+  limit      Float
+  closingDay Int
+  dueDay     Int
+  accountId  String // A conta de onde o dinheiro sai para pagar a fatura
+  account    Account @relation(fields: [accountId], references: [id])
+  userId     String
+  user       User    @relation(fields: [userId], references: [id])
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Category {
+  id     String  @id @default(uuid())
+  name   String
+  color  String?
+  icon   String?
+  type   String // 'INCOME', 'EXPENSE', 'TRANSFER'
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Transaction {
@@ -25,11 +82,27 @@ model Transaction {
   description String
   amount      Float
   date        DateTime
-  category    String
-  type        String
+  type        String // 'INCOME', 'EXPENSE', 'TRANSFER'
   isFixed     Boolean  @default(false)
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  receiptUrl  String?
+
+  // Relations
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  categoryLegacy String? @map("category")
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id])
+
+  creditCardId String?
+  creditCard   CreditCard? @relation(fields: [creditCardId], references: [id])
+
+  installmentCount   Int?
+  currentInstallment Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -38,7 +111,9 @@ model Transaction {
   @@index([date])
   @@index([userId, date])
   @@index([userId, type, date])
-  @@index([userId, category, date])
+  @@index([userId, categoryId, date])
+  @@index([accountId])
+  @@index([creditCardId])
 }
 
 model Budget {

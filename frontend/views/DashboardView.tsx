@@ -109,11 +109,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
 
             if (t.type === 'EXPENSE' && tMonth === currentMonth && tYear === currentYear) {
                 const amount = Number(t.amount);
-                if (needsCategories.includes(t.category)) {
+                const categoryName = t.category?.name || t.categoryLegacy || 'Outros';
+                if (needsCategories.includes(categoryName)) {
                     needs += amount;
-                } else if (wantsCategories.includes(t.category)) {
+                } else if (wantsCategories.includes(categoryName)) {
                     wants += amount;
-                } else if (savingsCategories.includes(t.category)) {
+                } else if (savingsCategories.includes(categoryName)) {
                     savings += amount;
                 } else {
                     wants += amount;
@@ -148,7 +149,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
 
             return t.type === 'EXPENSE' && tMonth === currentMonth && tYear === currentYear;
         }).forEach(t => {
-            categories[t.category] = (categories[t.category] || 0) + Number(t.amount);
+            const categoryName = t.category?.name || t.categoryLegacy || 'Outros';
+            categories[categoryName] = (categories[categoryName] || 0) + Number(t.amount);
         });
         return Object.entries(categories)
             .map(([name, value]) => ({ name, value }))

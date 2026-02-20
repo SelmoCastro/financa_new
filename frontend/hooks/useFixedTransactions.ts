@@ -32,7 +32,7 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
                     day: d.getDate(),
                     lastSeen: `${d.getFullYear()}-${d.getMonth()}`,
                     lastTransactionId: t.id,
-                    category: t.category
+                    category: t.category?.name || t.categoryLegacy || 'Outros'
                 };
             }
         });

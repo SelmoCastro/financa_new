@@ -10,6 +10,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { GoalsModule } from './goals/goals.module';
+import { AccountsModule } from './accounts/accounts.module';
+import { CategoriesModule } from './categories/categories.module';
+import { CreditCardsModule } from './credit-cards/credit-cards.module';
 
 @Module({
   imports: [
@@ -18,7 +21,7 @@ import { GoalsModule } from './goals/goals.module';
       ttl: 60000,
       limit: 100,
     }]),
-    UsersModule, AuthModule, PrismaModule, TransactionsModule, BudgetsModule, GoalsModule
+    UsersModule, AuthModule, PrismaModule, TransactionsModule, BudgetsModule, GoalsModule, AccountsModule, CategoriesModule, CreditCardsModule
   ],
   controllers: [AppController],
   providers: [

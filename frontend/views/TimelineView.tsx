@@ -51,7 +51,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
                                                     <div className="flex justify-between items-start gap-2">
                                                         <div className="space-y-1 overflow-hidden">
                                                             <div className="flex items-center gap-2">
-                                                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest truncate">{tx.category}</p>
+                                                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest truncate">{tx.category?.name || tx.categoryLegacy || 'Outros'}</p>
                                                                 {tx.isFixed && <i data-lucide="repeat" className="w-3 h-3 text-indigo-400"></i>}
                                                             </div>
                                                             <h4 className="font-bold text-slate-800 text-base md:text-lg group-hover:text-indigo-600 transition-colors truncate">{tx.description}</h4>

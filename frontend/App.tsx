@@ -1,7 +1,5 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Transaction } from './types';
-import { TransactionForm } from './components/TransactionForm';
 import { Sidebar } from './components/Sidebar';
 import { FixedItems } from './components/FixedItems';
 import api from './services/api';
@@ -13,16 +11,24 @@ import { GoalsView } from './views/GoalsView';
 import { TimelineView } from './views/TimelineView';
 import { HistoryView } from './views/HistoryView';
 import { SettingsView } from './views/SettingsView';
+import { AccountsView } from './views/AccountsView';
+import { ImportOverlay } from './components/ImportOverlay';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { MonthProvider, useMonth } from './context/MonthContext';
 import { MonthSelector } from './components/MonthSelector';
+import { Transaction, Budget, Account, CreditCard } from './types';
+import { TransactionForm } from './components/TransactionForm';
 import { getYearMonth } from './utils/dateUtils';
 
 const AppContent: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Usuário');
@@ -30,17 +36,25 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const fetchTransactions = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get('/transactions');
-      setTransactions(response.data);
+      const [txRes, bRes, accRes, ccRes] = await Promise.all([
+        api.get<Transaction[]>('/transactions'),
+        api.get<Budget[]>('/budgets'),
+        api.get<Account[]>('/accounts'),
+        api.get<CreditCard[]>('/credit-cards')
+      ]);
+      setTransactions(txRes.data);
+      setBudgets(bRes.data);
+      setAccounts(accRes.data);
+      setCreditCards(ccRes.data);
     } catch (error) {
-      console.error('Erro ao buscar transações:', error);
+      console.error('Data fetch error:', error);
       if ((error as any).response?.status === 401) {
         navigate('/login');
       } else {
-        addToast('Erro ao carregar dados.', 'error');
+        addToast('Erro ao carregar dados. Verifique a conexão com o backend.', 'error');
       }
     } finally {
       setIsLoading(false);
@@ -48,7 +62,7 @@ const AppContent: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchTransactions();
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -58,7 +72,7 @@ const AppContent: React.FC = () => {
       // @ts-ignore
       window.lucide.createIcons();
     }
-  }, [activeTab, sidebarOpen, isFormOpen, transactions, editingTransaction, userName, isLoading]);
+  }, [activeTab, sidebarOpen, isFormOpen, transactions, editingTransaction, userName, isLoading, isImportOpen]);
 
   const { selectedDate } = useMonth();
 
@@ -161,6 +175,8 @@ const AppContent: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} />;
+      case 'accounts':
+        return <AccountsView isPrivacyEnabled={isPrivacyEnabled} />;
       case 'budgets':
         return (
           <BudgetsView
@@ -206,12 +222,13 @@ const AppContent: React.FC = () => {
             <p className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-0.5 truncate">Gestão Financeira</p>
             <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight capitalize truncate">
               {activeTab === 'dashboard' ? 'Dashboard' :
-                activeTab === 'timeline' ? 'Linha do Tempo' :
-                  activeTab === 'goals' ? 'Metas & Sonhos' :
-                    activeTab === 'budgets' ? 'Orçamentos' :
-                      activeTab === 'fixed' ? 'Controle Fixos' :
-                        activeTab === 'history' ? 'Extrato' :
-                          'Configurações'}
+                activeTab === 'accounts' ? 'Contas & Cartões' :
+                  activeTab === 'timeline' ? 'Linha do Tempo' :
+                    activeTab === 'goals' ? 'Metas & Sonhos' :
+                      activeTab === 'budgets' ? 'Orçamentos' :
+                        activeTab === 'fixed' ? 'Controle Fixos' :
+                          activeTab === 'history' ? 'Extrato' :
+                            'Configurações'}
               {userName && (
                 <span className="block text-xs text-indigo-600 font-bold mt-1">Olá, {userName}</span>
               )}
@@ -230,6 +247,13 @@ const AppContent: React.FC = () => {
             >
               <i data-lucide={isPrivacyEnabled ? "eye-off" : "eye"} className="w-5 h-5"></i>
             </button>
+            <button
+              className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all"
+              onClick={() => setIsImportOpen(true)}
+            >
+              <i data-lucide="upload-cloud" className="w-4 h-4"></i>
+              <span className="hidden sm:inline">Importar</span>
+            </button>
             <button onClick={() => setIsFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center gap-2 md:gap-3 flex-shrink-0">
               <i data-lucide="plus" className="w-4 h-4 md:w-5 md:h-5"></i>
               <span className="hidden sm:inline">Novo Lançamento</span>
@@ -245,9 +269,25 @@ const AppContent: React.FC = () => {
         <TransactionForm
           onAdd={handleAddTransaction}
           onUpdate={handleUpdateTransaction}
-          onClose={() => { setIsFormOpen(false); setEditingTransaction(null); }}
-          existingCategories={Array.from(new Set(transactions.map(t => t.category)))}
+          onClose={() => {
+            setIsFormOpen(false);
+            setEditingTransaction(null);
+          }}
+          existingCategories={Array.from(new Set(transactions.map(t => typeof t.category === 'object' && t.category !== null ? t.category.name : t.categoryLegacy || 'Outros'))).filter(Boolean)}
           editingTransaction={editingTransaction}
+        />
+      )}
+
+      {isImportOpen && (
+        <ImportOverlay
+          onClose={() => setIsImportOpen(false)}
+          onImportSuccess={() => {
+            setIsImportOpen(false);
+            fetchData();
+            addToast('Extrato importado com sucesso!', 'success');
+          }}
+          accounts={accounts}
+          creditCards={creditCards}
         />
       )}
     </div>

@@ -17,6 +17,11 @@ export class TransactionsController {
     return this.transactionsService.create(createTransactionDto, req.user.userId);
   }
 
+  @Post('import')
+  importBatch(@Body() createTransactionsDto: CreateTransactionDto[], @Request() req) {
+    return this.transactionsService.importBatch(createTransactionsDto, req.user.userId);
+  }
+
   @Get()
   findAll(@Request() req) {
     return this.transactionsService.findAll(req.user.userId);
