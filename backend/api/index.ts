@@ -16,15 +16,26 @@ export default async function (req, res) {
         return;
     }
 
-    if (!cachedApp) {
-        const app = await NestFactory.create(AppModule);
+    try {
+        if (!cachedApp) {
+            const app = await NestFactory.create(AppModule);
 
-        configureApp(app);
+            configureApp(app);
 
-        await app.init();
-        cachedApp = app;
+            await app.init();
+            cachedApp = app;
+        }
+
+        const instance = cachedApp.getHttpAdapter().getInstance();
+        return instance(req, res);
+    } catch (err: any) {
+        console.error('VERCEL CRASH ERROR:', err);
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({
+            error: 'Serverless Bootstrap Failed',
+            message: err?.message,
+            stack: err?.stack
+        }));
     }
-
-    const instance = cachedApp.getHttpAdapter().getInstance();
-    return instance(req, res);
 }
