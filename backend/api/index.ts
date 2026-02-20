@@ -1,6 +1,14 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from '../src/app.module';
+import { configureApp } from '../src/setup';
+
 let cachedApp;
 
 export default async function (req, res) {
+    if (req.headers['x-test-alive']) {
+        return res.status(200).json({ alive: true, message: "Deploy is working" });
+    }
+
     // CORS manual hardcoded fallback para Serveless
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,10 +22,6 @@ export default async function (req, res) {
 
     try {
         if (!cachedApp) {
-            const { NestFactory } = await import('@nestjs/core');
-            const { AppModule } = await import('../src/app.module');
-            const { configureApp } = await import('../src/setup');
-
             const app = await NestFactory.create(AppModule);
 
             configureApp(app);
