@@ -216,9 +216,11 @@ const AppContent: React.FC = () => {
                 <span className="block text-xs text-indigo-600 font-bold mt-1">Olá, {userName}</span>
               )}
             </h2>
-            <div className="mt-3">
-              <MonthSelector />
-            </div>
+            {activeTab === 'dashboard' && (
+              <div className="mt-3 animate-in fade-in duration-300">
+                <MonthSelector />
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <button
