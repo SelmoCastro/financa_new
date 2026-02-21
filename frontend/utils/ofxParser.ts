@@ -30,12 +30,12 @@ export async function parseOFX(content: string): Promise<ParsedOFXTransaction[]>
 
     for (const block of matches) {
         // Parser das principais TAGS
-        const typeMatch = block.match(/<TRNTYPE>(.+?)(?:\r?\n|<|$)/);
-        const dateMatch = block.match(/<DTPOSTED>([0-9]{8,14})(?:\[.*?\])?(?:\r?\n|<|$)/);
-        const amountMatch = block.match(/<TRNAMT>([-0-9.,]+)(?:\r?\n|<|$)/);
-        const fitIdMatch = block.match(/<FITID>(.+?)(?:\r?\n|<|$)/);
-        const memoMatch = block.match(/<MEMO>(.+?)(?:\r?\n|<|$)/); // Ou <NAME> dependendo do banco
-        const nameMatch = block.match(/<NAME>(.+?)(?:\r?\n|<|$)/);
+        const typeMatch = block.match(/<TRNTYPE>([^<]+)/);
+        const dateMatch = block.match(/<DTPOSTED>([0-9]{8,14})/);
+        const amountMatch = block.match(/<TRNAMT>([-0-9.,]+)/);
+        const fitIdMatch = block.match(/<FITID>([^<]+)/);
+        const memoMatch = block.match(/<MEMO>([^<]+)/); // Captura tudo até o próximo <
+        const nameMatch = block.match(/<NAME>([^<]+)/);
 
         // Tratamento de Descrição (Pega MEMO, se falhar tenta NAME)
         let rawDescription = (memoMatch ? memoMatch[1] : (nameMatch ? nameMatch[1] : 'Transação Desconhecida')).trim();
