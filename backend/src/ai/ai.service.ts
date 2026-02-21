@@ -32,13 +32,15 @@ export class AiService {
         }
 
         const prompt = `Classifique extratos bancários brasileiros usando a Regra 50-30-20.
-Retorne um JSON ONDE A CHAVE É A DESCRIÇÃO ORIGINAL EXATA e o valor é {c: "Categoria", r: Regra(0,20,30,50), i: "1Emoji"}.
+Retorne um JSON ONDE A CHAVE É A DESCRIÇÃO ORIGINAL EXATA e o valor é {c: "Categoria Exata", r: Regra(0,20,30,50), i: "1Emoji"}.
 
-Regras:
-50=Essencial(Moradia,Mercado,Saúde,Contas)
-30=Desejo(Uber,Ifood,Lazer,Roupas)
-20=Investimento/Dívida
-0=Entrada/Salário/PixRecebido(Se "Pix enviado" usar 30).
+USE APENAS ESTAS CATEGORIAS EXATAS (Nenhuma a mais):
+50 (Necessidades): "Moradia", "Contas Residenciais", "Mercado / Padaria", "Transporte Fixo", "Saúde e Farmácia", "Educação", "Impostos Anuais e Seguros", "Impostos Mensais"
+30 (Desejos): "Restaurante / Delivery", "Transporte App", "Lazer / Assinaturas", "Compras / Vestuário", "Cuidados Pessoais", "Viagens"
+20 (Objetivos): "Aplicações / Poupança", "Pagamento de Dívidas"
+0 (Entradas): "Salário", "Renda Extra", "Rendimento de Investimentos", "Transferência Recebida", "Empréstimo Recebido"
+
+Se for devolução/estorno, use 0. Pix enviado: 30.
 
 Dados:
 ${JSON.stringify(descriptions)}`;

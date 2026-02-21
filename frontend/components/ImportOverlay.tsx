@@ -285,37 +285,37 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none"
                                             >
                                                 {/* Fallback Dinâmico: Se a IA inventar uma categoria, nós a mostramos aqui em vez de voltar pro índice 0 (Salário) */}
-                                                {!["Salário", "Freelance", "Investimentos", "Entradas", "Alimentação", "Restaurante", "Moradia", "Contas e Serviços", "Transporte", "Saúde", "Educação", "Compras", "Lazer", "Assinaturas", "Impostos", "Transferência", "Outros"].includes(tx.categoryLegacy) && (
+                                                {!["Moradia", "Contas Residenciais", "Mercado / Padaria", "Transporte Fixo", "Saúde e Farmácia", "Educação", "Impostos Anuais e Seguros", "Impostos Mensais", "Restaurante / Delivery", "Transporte App", "Lazer / Assinaturas", "Compras / Vestuário", "Cuidados Pessoais", "Viagens", "Aplicações / Poupança", "Pagamento de Dívidas", "Salário", "Renda Extra", "Rendimento de Investimentos", "Transferência Recebida", "Empréstimo Recebido"].includes(tx.categoryLegacy) && (
                                                     <option value={tx.categoryLegacy}>{tx.categoryLegacy} (IA)</option>
                                                 )}
-                                                <optgroup label="Receitas">
+                                                <optgroup label="Entradas (Rendas)">
                                                     <option value="Salário">Salário</option>
-                                                    <option value="Freelance">Freelance / Renda Extra</option>
-                                                    <option value="Investimentos">Rendimento de Investimentos</option>
-                                                    <option value="Entradas">Transferência Recebida</option>
+                                                    <option value="Renda Extra">Renda Extra</option>
+                                                    <option value="Rendimento de Investimentos">Rendimento de Investimentos</option>
+                                                    <option value="Transferência Recebida">Transferência Recebida</option>
+                                                    <option value="Empréstimo Recebido">Empréstimo Recebido</option>
                                                 </optgroup>
-                                                <optgroup label="Alimentação">
-                                                    <option value="Alimentação">Alimentação / Mercado</option>
-                                                    <option value="Restaurante">Restaurante / Delivery</option>
+                                                <optgroup label="Necessidades (Essencial)">
+                                                    <option value="Moradia">Moradia</option>
+                                                    <option value="Contas Residenciais">Contas Residenciais</option>
+                                                    <option value="Mercado / Padaria">Mercado / Padaria</option>
+                                                    <option value="Transporte Fixo">Transporte Fixo</option>
+                                                    <option value="Saúde e Farmácia">Saúde e Farmácia</option>
+                                                    <option value="Educação">Educação</option>
+                                                    <option value="Impostos Anuais e Seguros">Impostos Anuais e Seguros</option>
+                                                    <option value="Impostos Mensais">Impostos Mensais</option>
                                                 </optgroup>
-                                                <optgroup label="Moradia">
-                                                    <option value="Moradia">Aluguel / Condomínio</option>
-                                                    <option value="Contas e Serviços">Contas e Serviços (Luz, Água, Gás)</option>
+                                                <optgroup label="Desejos (Estilo de Vida)">
+                                                    <option value="Restaurante / Delivery">Restaurante / Delivery</option>
+                                                    <option value="Transporte App">Transporte App</option>
+                                                    <option value="Lazer / Assinaturas">Lazer / Assinaturas</option>
+                                                    <option value="Compras / Vestuário">Compras / Vestuário</option>
+                                                    <option value="Cuidados Pessoais">Cuidados Pessoais</option>
+                                                    <option value="Viagens">Viagens</option>
                                                 </optgroup>
-                                                <optgroup label="Transporte">
-                                                    <option value="Transporte">Transporte / Combustível</option>
-                                                </optgroup>
-                                                <optgroup label="Saúde e Educação">
-                                                    <option value="Saúde">Saúde / Farmácia</option>
-                                                    <option value="Educação">Educação / Cursos</option>
-                                                </optgroup>
-                                                <optgroup label="Outros Gastos">
-                                                    <option value="Compras">Compras / Vestuário</option>
-                                                    <option value="Lazer">Lazer / Entretenimento</option>
-                                                    <option value="Assinaturas">Assinaturas (Netflix, Spotify...)</option>
-                                                    <option value="Impostos">Impostos / Taxas</option>
-                                                    <option value="Transferência">Transferência Enviada</option>
-                                                    <option value="Outros">Outros</option>
+                                                <optgroup label="Objetivos (Quitação e Reserva)">
+                                                    <option value="Aplicações / Poupança">Aplicações / Poupança</option>
+                                                    <option value="Pagamento de Dívidas">Pagamento de Dívidas</option>
                                                 </optgroup>
                                             </select>
                                         </div>
