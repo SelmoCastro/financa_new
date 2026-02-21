@@ -112,6 +112,19 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
         }
     };
 
+    const handleDelete = async (goal: Goal) => {
+        if (!confirm(`Tem certeza que deseja excluir sua meta '${goal.title}'? Essa ação não pode ser desfeita.`)) return;
+
+        try {
+            await api.delete(`/goals/${goal.id}`);
+            addToast('Meta excluída com sucesso!', 'success');
+            fetchGoals();
+        } catch (error) {
+            console.error('Erro ao excluir meta:', error);
+            addToast('Erro ao excluir a meta', 'error');
+        }
+    };
+
     const formatCurrency = (val: number | string) => {
         if (typeof val === 'string') return val;
         return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -208,9 +221,14 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                     <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
                                         <i data-lucide="target" className="w-6 h-6"></i>
                                     </div>
-                                    <button onClick={() => openDepositModal(goal)} className="p-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors active:scale-90" title="Adicionar dinheiro">
-                                        <i data-lucide="plus" className="w-6 h-6"></i>
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleDelete(goal)} className="p-3 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-colors active:scale-90" title="Excluir Meta">
+                                            <i data-lucide="trash-2" className="w-5 h-5"></i>
+                                        </button>
+                                        <button onClick={() => openDepositModal(goal)} className="p-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors active:scale-90" title="Adicionar dinheiro">
+                                            <i data-lucide="plus" className="w-5 h-5"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <h3 className="text-lg font-bold text-slate-800 mb-1">{goal.title}</h3>

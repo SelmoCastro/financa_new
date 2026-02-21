@@ -75,6 +75,19 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories, is
         }
     };
 
+    const handleDelete = async (id: string, categoryName: string) => {
+        if (!confirm(`Tem certeza que deseja excluir o orçamento de ${categoryName}?`)) return;
+
+        try {
+            await api.delete(`/budgets/${id}`);
+            addToast('Orçamento excluído com sucesso!', 'success');
+            fetchBudgets();
+        } catch (error) {
+            console.error('Erro ao excluir:', error);
+            addToast('Erro ao excluir orçamento', 'error');
+        }
+    };
+
     const getProgressColor = (percentage: number) => {
         if (percentage >= 100) return 'bg-rose-500';
         if (percentage >= 80) return 'bg-amber-400';
@@ -123,11 +136,20 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories, is
                                         </span>
                                     </p>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Teto</p>
-                                    <p className={`text-lg font-black text-indigo-600 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                        {isPrivacyEnabled ? 'R$ •••' : `R$ ${budget.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                                    </p>
+                                <div className="flex gap-2 text-right">
+                                    <button
+                                        onClick={() => handleDelete(budget.id, budget.category)}
+                                        className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors h-fit self-start"
+                                        title="Excluir Orçamento"
+                                    >
+                                        <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                    </button>
+                                    <div>
+                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Teto</p>
+                                        <p className={`text-lg font-black text-indigo-600 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                            {isPrivacyEnabled ? 'R$ •••' : `R$ ${budget.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
