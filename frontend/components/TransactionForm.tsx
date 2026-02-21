@@ -201,9 +201,35 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   onChange={(e) => setCategoryId(e.target.value)}
                 >
                   <option value="">Nenhuma / Outros</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
+                  <optgroup label="Entradas (Rendas)">
+                    <option value="Salário">Salário</option>
+                    <option value="Renda Extra">Renda Extra</option>
+                    <option value="Rendimento de Investimentos">Rendimento de Investimentos</option>
+                    <option value="Transferência Recebida">Transferência Recebida</option>
+                    <option value="Empréstimo Recebido">Empréstimo Recebido</option>
+                  </optgroup>
+                  <optgroup label="Necessidades (Essencial)">
+                    <option value="Moradia">Moradia</option>
+                    <option value="Contas Residenciais">Contas Residenciais</option>
+                    <option value="Mercado / Padaria">Mercado / Padaria</option>
+                    <option value="Transporte Fixo">Transporte Fixo</option>
+                    <option value="Saúde e Farmácia">Saúde e Farmácia</option>
+                    <option value="Educação">Educação</option>
+                    <option value="Impostos Anuais e Seguros">Impostos Anuais e Seguros</option>
+                    <option value="Impostos Mensais">Impostos Mensais</option>
+                  </optgroup>
+                  <optgroup label="Desejos (Estilo de Vida)">
+                    <option value="Restaurante / Delivery">Restaurante / Delivery</option>
+                    <option value="Transporte App">Transporte App</option>
+                    <option value="Lazer / Assinaturas">Lazer / Assinaturas</option>
+                    <option value="Compras / Vestuário">Compras / Vestuário</option>
+                    <option value="Cuidados Pessoais">Cuidados Pessoais</option>
+                    <option value="Viagens">Viagens</option>
+                  </optgroup>
+                  <optgroup label="Objetivos (Quitação e Reserva)">
+                    <option value="Aplicações / Poupança">Aplicações / Poupança</option>
+                    <option value="Pagamento de Dívidas">Pagamento de Dívidas</option>
+                  </optgroup>
                 </select>
                 <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                   <i data-lucide="chevron-down" className="w-5 h-5"></i>

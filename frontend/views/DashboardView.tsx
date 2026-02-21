@@ -109,7 +109,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
 
             if (t.type === 'EXPENSE' && tMonth === currentMonth && tYear === currentYear) {
                 const amount = Number(t.amount);
-                const categoryName = t.category?.name || t.categoryLegacy || 'Outros';
+                // Group expenses by category name (Legacy direct string from DB/AI)
+                const categoryName = t.categoryLegacy || t.category?.name || 'Outros';
                 if (needsCategories.includes(categoryName)) {
                     needs += amount;
                 } else if (wantsCategories.includes(categoryName)) {
