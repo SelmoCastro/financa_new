@@ -45,7 +45,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                         {tx.isFixed && <i data-lucide="repeat" className="w-3.5 h-3.5 text-indigo-400"></i>}
                                     </div>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-[8px] uppercase font-black tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg truncate">{tx.category?.name || tx.categoryLegacy || 'Outros'}</span>
+                                        <span className="text-[8px] uppercase font-black tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg truncate">{tx.categoryLegacy || tx.category?.name || 'Outros'}</span>
                                         <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{new Date(tx.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</span>
                                     </div>
                                 </div>
@@ -99,7 +99,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                             <span className="font-bold text-slate-700 truncate block">{tx.description}</span>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-6"><span className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-tighter">{tx.category?.name || tx.categoryLegacy || 'Outros'}</span></td>
+                                    <td className="px-8 py-6">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200">
+                                            {tx.categoryLegacy || tx.category?.name || 'Outros'}
+                                        </span>
+                                    </td>
                                     <td className="px-8 py-6 text-sm font-bold text-slate-400">{new Date(tx.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
                                     <td className={`px-8 py-6 text-right font-black ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'} ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
                                         {isPrivacyEnabled ? 'R$ •••••••' : `${tx.type === 'INCOME' ? '+' : '-'} R$ ${Number(tx.amount).toLocaleString('pt-BR')}`}
