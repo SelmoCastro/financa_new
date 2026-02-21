@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const getBaseUrl = () => {
     // @ts-ignore
-    const url = import.meta.env.VITE_API_URL || 'https://financa-new.vercel.app';
+    const url = import.meta.env.VITE_API_URL || 'https://financa-new-api.vercel.app';
     return url.replace(/\/$/, '') + '/v1';
 };
 
