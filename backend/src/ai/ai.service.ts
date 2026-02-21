@@ -31,39 +31,42 @@ export class AiService {
             return this.fallbackClassification(descriptions);
         }
 
-        const prompt = `
-Aja como um analista financeiro especialista. Vou te passar uma lista de descrições de faturas de cartão de crédito/extrato bancário do Brasil.
-Classifique CADA UMA DELAS nas categorias padrão de finanças pessoais seguindo estritamente a Regra 50-30-20:
-- 50: Gastos Essenciais (Moradia, Alimentação Básica, Saúde, Transporte, Contas Residenciais)
-- 30: Desejos/Estilo de Vida (Restaurantes, iFood, Lazer, Assinaturas, Roupas, Viagens, Uber não-essencial)
-- 20: Reserva Financeira / Pagamento de Dívidas (Investimentos, Empréstimos, Poupança)
+        const prompt = `Classifique extratos bancários brasileiros usando a Regra 50-30-20.
+Retorne um JSON ONDE A CHAVE É A DESCRIÇÃO ORIGINAL EXATA e o valor é {c: "Categoria", r: Regra(0,20,30,50), i: "1Emoji"}.
 
-Para PIX ou Transferências com nomes de pessoas ou "PIX RECEBIDO" classifique como: "Entradas/Transferências" (Regra: 0).
-Se for "PIX ENVIADO" sem contexto claro, use "Transferência (Saída)" (Regra: 30).
+Regras:
+50=Essencial(Moradia,Mercado,Saúde,Contas)
+30=Desejo(Uber,Ifood,Lazer,Roupas)
+20=Investimento/Dívida
+0=Entrada/Salário/PixRecebido(Se "Pix enviado" usar 30).
 
-Devolva APENAS um objeto JSON válido (sem blocos de código markdown \`\`\`json), onde a chave é exatamente a descrição original e o valor é um objeto contendo:
-- "category" (string com a categoria sugerida)
-- "rule" (número inteiro: 50, 30, 20 ou 0 para entradas)
-- "icon" (uma string de UM caractere emoji que represente o gasto. Ex: 🍔, 🚗, 💊, 🏠)
-
-Transações a classificar:
-${JSON.stringify(descriptions, null, 2)}
-    `;
+Dados:
+${JSON.stringify(descriptions)}`;
 
         try {
-            this.logger.log(`Enviando ${descriptions.length} transações para a API Gemini (Camada 2)...`);
+            this.logger.log(`Enviando ${descriptions.length} txs p/ Gemini (Prompt Otimizado)`);
 
             const response = await this.ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
                 config: {
-                    temperature: 0.1, // Temperatura baixa para respostas consistentes/determinísticas
-                    responseMimeType: 'application/json', // Força retorno estruturado
+                    temperature: 0.0, // Zero criatividade, máxima exatidão estrutural
+                    responseMimeType: 'application/json',
                 }
             });
 
             const responseText = response.text || '{}';
-            const parsedData = JSON.parse(responseText);
+            const rawData = JSON.parse(responseText);
+
+            // Mapeia do formato minificado {c, r, i} de volta para a Interface do backend
+            const parsedData: Record<string, ClassificationResult> = {};
+            for (const [key, value] of Object.entries<any>(rawData)) {
+                parsedData[key] = {
+                    category: value.c || 'Outros',
+                    rule: typeof value.r === 'number' ? value.r : 30,
+                    icon: value.i || '🏷️'
+                };
+            }
 
             this.logger.log(`Gemini classificou as transações com sucesso.`);
             return parsedData;
