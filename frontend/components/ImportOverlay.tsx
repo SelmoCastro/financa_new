@@ -168,7 +168,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${step === 2 ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-100 text-indigo-600'}`}>
                             <i data-lucide={step === 2 ? 'check-square' : 'upload-cloud'} className="w-5 h-5"></i>
                         </div>
-                        {step === 1 ? 'Importar Extrato CSV' : 'Revisar & Importar'}
+                        {step === 1 ? 'Importar Extrato OFX' : 'Revisar & Importar'}
                     </h3>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                         <i data-lucide="x" className="w-5 h-5"></i>
@@ -200,7 +200,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors cursor-pointer ${file ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:bg-slate-50'}`}
                             onClick={() => fileInputRef.current?.click()} onDragOver={handleDragOver} onDrop={handleDrop}
                         >
-                            <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+                            <input type="file" accept=".ofx,.qfx" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
                             {file ? (
                                 <div className="space-y-2">
                                     <i data-lucide="file-check-2" className="w-10 h-10 text-indigo-500 mx-auto"></i>
@@ -209,7 +209,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             ) : (
                                 <div className="space-y-2">
                                     <i data-lucide="file-spreadsheet" className="w-10 h-10 text-slate-400 mx-auto"></i>
-                                    <p className="font-bold text-slate-700">Selecione ou arraste seu CSV</p>
+                                    <p className="font-bold text-slate-700">Selecione ou arraste seu OFX/QFX</p>
                                 </div>
                             )}
                         </div>
