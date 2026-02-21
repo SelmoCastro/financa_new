@@ -75,6 +75,15 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                     tipoStr = (cols[5] || '').toLowerCase(); // "entrada" / "saída"
                 }
 
+                // Filtro genérico: ignorar linhas de saldo (não são transações)
+                const descCombinada = `${desc1} ${desc2}`.toLowerCase().trim();
+                const PADROES_SALDO = [
+                    'saldo anterior', 'saldo do dia', 'saldo final', 'saldo em',
+                    'saldo disponivel', 'saldo devedor', 'saldo', 's a l d o'
+                ];
+                // Só ignora se a descrição for APENAS sobre saldo (sem outras palavras ricas)
+                if (PADROES_SALDO.some(p => descCombinada === p || descCombinada.startsWith(p + ' ') && descCombinada.length < 30)) continue;
+
                 if (!dateStr || !valStr) continue;
 
                 // Data YYYY-MM-DD
