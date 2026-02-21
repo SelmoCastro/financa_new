@@ -15,6 +15,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { CreditCardsModule } from './credit-cards/credit-cards.module';
 
 import { PrismaService } from './prisma/prisma.service';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { PrismaService } from './prisma/prisma.service';
       ttl: 60000,
       limit: 100,
     }]),
-    UsersModule, AuthModule, PrismaModule, TransactionsModule, BudgetsModule, GoalsModule, AccountsModule, CategoriesModule, CreditCardsModule
+    UsersModule, AuthModule, PrismaModule, TransactionsModule, BudgetsModule, GoalsModule, AccountsModule, CategoriesModule, CreditCardsModule, AiModule
   ],
   controllers: [AppController],
   providers: [

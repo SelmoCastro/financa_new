@@ -86,6 +86,9 @@ model Transaction {
   isFixed     Boolean  @default(false)
   receiptUrl  String?
 
+  classificationRule Int?    @map("classification_rule") // 50, 30, ou 20
+  fitId              String? // OFX FITID ou SHA-256 fallback Hash
+
   // Relations
   userId String
   user   User   @relation(fields: [userId], references: [id])
@@ -106,6 +109,8 @@ model Transaction {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, fitId]) // Restrição primária de Anti-Double Entry
 
   @@index([userId])
   @@index([date])

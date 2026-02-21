@@ -1,0 +1,301 @@
+{
+  "count": 37,
+  "transactions": [
+    {
+      "id": "ad413989-ad1c-4326-b2c9-3c0f49ae8a43",
+      "description": "Pix Emanoelle",
+      "amount": 20,
+      "date": "2026-02-12T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Outros"
+    },
+    {
+      "id": "034e2f24-fa1b-4d84-9f44-5e08d0ef31c2",
+      "description": "Compra BIg",
+      "amount": 13.67,
+      "date": "2026-02-12T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Compras"
+    },
+    {
+      "id": "2800a6bd-0989-4fe5-b542-8edd43f50600",
+      "description": "Água luz ",
+      "amount": 1.49,
+      "date": "2026-02-12T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Contas e Serviços"
+    },
+    {
+      "id": "def3dcb1-8bb0-49f4-ab31-25f64840e50a",
+      "description": "PIX emanoelle",
+      "amount": 15,
+      "date": "2026-02-12T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Outros"
+    },
+    {
+      "id": "11880055-fdcb-4e6f-af17-c9b38cfb3af0",
+      "description": "Gasolina",
+      "amount": 50,
+      "date": "2026-02-12T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Transporte"
+    },
+    {
+      "id": "c5487104-3a24-403c-9b63-2e6b84840091",
+      "description": "Compra Big",
+      "amount": 3,
+      "date": "2026-02-12T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Assinaturas"
+    },
+    {
+      "id": "cea49982-c7a5-4716-a617-edde9a2f5615",
+      "description": "Pix Emanoella",
+      "amount": 20,
+      "date": "2026-02-13T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Outros"
+    },
+    {
+      "id": "a1b47304-c607-403b-b319-604dc719a6df",
+      "description": "Pix elamoelle ",
+      "amount": 20,
+      "date": "2026-02-13T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Outros"
+    },
+    {
+      "id": "9f73df37-78cb-45e3-9d37-8220b7e94150",
+      "description": "Milho praia ",
+      "amount": 20,
+      "date": "2026-02-13T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Alimentação"
+    },
+    {
+      "id": "500e9ea4-d3b7-4797-ae12-14b6653c38da",
+      "description": "Compras",
+      "amount": 150,
+      "date": "2026-02-13T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Alimentação"
+    },
+    {
+      "id": "d0000570-44ba-4f0c-b684-aa54c5dfe29c",
+      "description": "Compras ",
+      "amount": 250,
+      "date": "2026-02-13T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Alimentação"
+    },
+    {
+      "id": "65a00ca9-cba1-4548-a816-73ec15160950",
+      "description": "Recarga  Celular ",
+      "amount": 35,
+      "date": "2026-02-13T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Celular"
+    },
+    {
+      "id": "f29c7890-a494-4db5-aa6a-74c40aa2ba5e",
+      "description": "Ubatuba",
+      "amount": 10,
+      "date": "2026-02-14T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "8593a84e-7b85-4458-84a1-a56dcc2ba730",
+      "description": "Ubatuba",
+      "amount": 50,
+      "date": "2026-02-14T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "b3d25206-0dd8-44a2-8a47-e64e2d367691",
+      "description": "Ubatuba",
+      "amount": 10,
+      "date": "2026-02-14T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "0053b46d-bf5f-4b37-b854-e7667d15cdfa",
+      "description": "Ubatuba",
+      "amount": 50,
+      "date": "2026-02-14T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "d5a6f5cc-9bb2-4f08-a583-06e25a28fbf0",
+      "description": "Pix Emanoelle",
+      "amount": 36,
+      "date": "2026-02-14T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "6f44d08b-96e5-4802-bf53-6fa564bf90ab",
+      "description": "Bolo niver",
+      "amount": 45,
+      "date": "2026-02-14T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Alimentação"
+    },
+    {
+      "id": "ebfbd18f-871c-4a90-a480-f81b25e354ab",
+      "description": "Pix Nair",
+      "amount": 25,
+      "date": "2026-02-14T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "673b8e0f-cf72-4c78-95b4-71f489fe41c6",
+      "description": "Ubatuba",
+      "amount": 13,
+      "date": "2026-02-14T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "ec2a472c-6929-439f-960a-006ec52b66c0",
+      "description": "Ubatuba",
+      "amount": 50,
+      "date": "2026-02-14T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "c328e9d8-7969-4608-89b3-4e4f034fa128",
+      "description": "Pix Nair",
+      "amount": 75,
+      "date": "2026-02-14T00:00:00.000Z",
+      "type": "INCOME",
+      "category": "Lazer"
+    },
+    {
+      "id": "aade7a25-d536-4f99-b7a8-2a7ed4e55069",
+      "description": "Zezinho praia - Ubatura",
+      "amount": 50,
+      "date": "2026-02-15T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "b87da39f-c63d-4184-a224-06099aa85c59",
+      "description": "Ubutuba",
+      "amount": 25,
+      "date": "2026-02-15T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "045dbb08-63d9-4dfe-a691-b7de60d265a2",
+      "description": "Presente Manu",
+      "amount": 100,
+      "date": "2026-02-15T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Presentes"
+    },
+    {
+      "id": "0011f159-8cec-45bd-8e64-4476895db188",
+      "description": "Ubatuba",
+      "amount": 66,
+      "date": "2026-02-16T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "1b64ff0e-a618-4e0b-a80d-479b2fb1b0a8",
+      "description": "Ubatuba",
+      "amount": 35,
+      "date": "2026-02-16T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "89073ccc-559f-4f1a-81ba-d2cba6cec366",
+      "description": "Ubatuba",
+      "amount": 25,
+      "date": "2026-02-16T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "ff5797d5-f700-4c5d-9375-2210477bf355",
+      "description": "Ubatuba",
+      "amount": 15,
+      "date": "2026-02-16T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "048aacf3-3278-4756-a265-66c5f01e5676",
+      "description": "Ubatuba",
+      "amount": 10,
+      "date": "2026-02-16T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "cff5fdea-7cb1-4841-abb0-cde1f7599c35",
+      "description": "Ubatuba",
+      "amount": 20,
+      "date": "2026-02-17T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "6b53af21-9e13-4659-9734-2e5bc872a728",
+      "description": "Ração",
+      "amount": 18,
+      "date": "2026-02-17T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Outras Receitas"
+    },
+    {
+      "id": "5c4eab33-b12d-444f-bf68-9bd8b4a27a30",
+      "description": "Gás ",
+      "amount": 100,
+      "date": "2026-02-17T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Alimentação"
+    },
+    {
+      "id": "b2766562-8abe-4bf9-badc-aa5d25c72663",
+      "description": "Ubatuba",
+      "amount": 9.9,
+      "date": "2026-02-18T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "dcbcf536-06a9-4fb1-ad05-8d86813dbe39",
+      "description": "Compra Big Compra",
+      "amount": 4.5,
+      "date": "2026-02-18T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Lazer"
+    },
+    {
+      "id": "eb7bee33-e4d5-4345-9ee1-5df012c69221",
+      "description": "Emprestimo Melkor",
+      "amount": 100,
+      "date": "2026-02-18T00:00:00.000Z",
+      "type": "INCOME",
+      "category": "Lazer"
+    },
+    {
+      "id": "91fa6ac3-3d30-47f2-b504-fa50efc8d9a5",
+      "description": "Parcelas Caixas",
+      "amount": 332.54,
+      "date": "2026-12-25T00:00:00.000Z",
+      "type": "EXPENSE",
+      "category": "Investimentos (Aporte)"
+    }
+  ]
+}

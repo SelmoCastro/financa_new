@@ -1,13 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Res, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Res } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
+import { ImportValidateTransactionDto, ImportConfirmTransactionDto } from './dto/import-transaction.dto';
 
-@Controller({
-  path: 'transactions',
-  version: '1',
-})
+@Controller('transactions')
 @UseGuards(AuthGuard('jwt'))
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) { }
@@ -17,9 +16,14 @@ export class TransactionsController {
     return this.transactionsService.create(createTransactionDto, req.user.userId);
   }
 
-  @Post('import')
-  importBatch(@Body() createTransactionsDto: CreateTransactionDto[], @Request() req) {
-    return this.transactionsService.importBatch(createTransactionsDto, req.user.userId);
+  @Post('import/validate')
+  validateImport(@Body() importData: ImportValidateTransactionDto[], @Request() req) {
+    return this.transactionsService.validateImport(importData, req.user.userId);
+  }
+
+  @Post('import/confirm')
+  confirmImport(@Body() importData: ImportConfirmTransactionDto[], @Request() req) {
+    return this.transactionsService.confirmImport(importData, req.user.userId);
   }
 
   @Get()
@@ -27,26 +31,23 @@ export class TransactionsController {
     return this.transactionsService.findAll(req.user.userId);
   }
 
-  @Get('dashboard')
-  getDashboard(@Request() req) {
+  @Get('dashboard-summary')
+  getDashboardSummary(@Request() req) {
     return this.transactionsService.getDashboardSummary(req.user.userId);
   }
 
   @Get('export')
-  async export(@Request() req, @Res() res) {
-    const csv = await this.transactionsService.export(req.user.userId);
-    res.header('Content-Type', 'text/csv');
-    res.header('Content-Disposition', 'attachment; filename="finanza-export.csv"');
-    return res.send(csv);
+  async export(@Request() req, @Res() res: Response) {
+    const csvData = await this.transactionsService.export(req.user.userId);
+    res.header('Content-Type', 'text/csv; charset=utf-8');
+    res.attachment('financa_export.csv');
+    // Adiciona o BOM para o Excel reconhecer UTF-8
+    res.send('\uFEFF' + csvData);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req) {
-    const transaction = await this.transactionsService.findOne(id, req.user.userId);
-    if (!transaction) {
-      throw new NotFoundException('Transação não encontrada');
-    }
-    return transaction;
+  findOne(@Param('id') id: string, @Request() req) {
+    return this.transactionsService.findOne(id, req.user.userId);
   }
 
   @Patch(':id')
