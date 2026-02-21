@@ -288,6 +288,7 @@ const AppContent: React.FC = () => {
           }}
           accounts={accounts}
           creditCards={creditCards}
+          existingTransactions={transactions}
         />
       )}
     </div>
