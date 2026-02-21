@@ -284,6 +284,10 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                 onChange={(e) => updateCategory(tx.id, e.target.value)}
                                                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none"
                                             >
+                                                {/* Fallback Dinâmico: Se a IA inventar uma categoria, nós a mostramos aqui em vez de voltar pro índice 0 (Salário) */}
+                                                {!["Salário", "Freelance", "Investimentos", "Entradas", "Alimentação", "Restaurante", "Moradia", "Contas e Serviços", "Transporte", "Saúde", "Educação", "Compras", "Lazer", "Assinaturas", "Impostos", "Transferência", "Outros"].includes(tx.categoryLegacy) && (
+                                                    <option value={tx.categoryLegacy}>{tx.categoryLegacy} (IA)</option>
+                                                )}
                                                 <optgroup label="Receitas">
                                                     <option value="Salário">Salário</option>
                                                     <option value="Freelance">Freelance / Renda Extra</option>
