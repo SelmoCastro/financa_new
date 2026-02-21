@@ -22,6 +22,11 @@ export class BudgetsController {
     return this.budgetsService.findAll(req.user.userId);
   }
 
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateBudgetDto: UpdateBudgetDto, @Request() req) {
+    return this.budgetsService.update(id, updateBudgetDto, req.user.userId);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req) {
     return this.budgetsService.remove(id, req.user.userId);
