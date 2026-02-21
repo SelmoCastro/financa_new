@@ -7,6 +7,7 @@ interface ImportOverlayProps {
     onClose: () => void;
     accounts: Account[];
     creditCards: CreditCard[];
+    existingTransactions?: any[];
 }
 
 interface ParsedTransaction {
@@ -17,9 +18,10 @@ interface ParsedTransaction {
     type: 'INCOME' | 'EXPENSE';
     categoryLegacy: string;
     selected: boolean;
+    isPotentialDuplicate?: boolean; // mesma data + valor já existe no banco
 }
 
-export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, onClose, accounts, creditCards }) => {
+export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, onClose, accounts, creditCards, existingTransactions = [] }) => {
     const [step, setStep] = useState<1 | 2>(1);
     const [file, setFile] = useState<File | null>(null);
     const [parsedTxs, setParsedTxs] = useState<ParsedTransaction[]>([]);
@@ -45,6 +47,15 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
         const text = await file.text();
         const lines = text.split('\n');
         const parsed: ParsedTransaction[] = [];
+
+        // Construir Set de hashes das transações existentes (data + valor)
+        // Formato: "YYYY-MM-DD_123.45" — para detectar mesmo dia + mesmo valor
+        const existingHashes = new Set(
+            existingTransactions.map(t => {
+                const d = new Date(t.date).toISOString().split('T')[0];
+                return `${d}_${Math.abs(Number(t.amount)).toFixed(2)}`;
+            })
+        );
 
         let isHeader = true;
         for (let i = 0; i < lines.length; i++) {
@@ -123,7 +134,8 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                     amount: Math.abs(amount),
                     type,
                     categoryLegacy,
-                    selected: true
+                    isPotentialDuplicate: existingHashes.has(`${date}_${Math.abs(amount).toFixed(2)}`),
+                    selected: !existingHashes.has(`${date}_${Math.abs(amount).toFixed(2)}`), // pré-desmarca se suspeito
                 });
             }
         }
@@ -246,16 +258,22 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                         <div className="flex-1 overflow-auto bg-slate-50 p-6">
                             <div className="space-y-3">
                                 {parsedTxs.map(tx => (
-                                    <div key={tx.id} className={`flex items-center gap-4 bg-white p-4 rounded-2xl border transition-colors ${tx.selected ? 'border-indigo-200 shadow-sm' : 'border-slate-200 opacity-50'}`}>
+                                    <div key={tx.id} className={`flex items-center gap-4 bg-white p-4 rounded-2xl border transition-colors ${tx.isPotentialDuplicate
+                                        ? 'border-orange-300 bg-orange-50/40'
+                                        : tx.selected ? 'border-indigo-200 shadow-sm' : 'border-slate-200 opacity-50'
+                                        }`}>
                                         <input
                                             type="checkbox"
                                             checked={tx.selected}
                                             onChange={() => toggleSelect(tx.id)}
                                             className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                         />
-                                        <div className="w-24 shrink-0">
+                                        <div className="w-28 shrink-0">
                                             <span className="text-xs font-bold text-slate-400 block">{tx.date.split('-').reverse().join('/')}</span>
                                             <span className={`text-sm font-black ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-700'}`}>R$ {tx.amount.toLocaleString('pt-BR')}</span>
+                                            {tx.isPotentialDuplicate && (
+                                                <span className="text-[10px] font-bold text-orange-500 block mt-0.5">⚠️ Possível duplicata</span>
+                                            )}
                                         </div>
                                         <div className="flex-1">
                                             <input
