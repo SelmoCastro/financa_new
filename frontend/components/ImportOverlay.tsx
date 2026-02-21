@@ -262,15 +262,35 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                 onChange={(e) => updateCategory(tx.id, e.target.value)}
                                                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none"
                                             >
-                                                <option value="Alimentação">Alimentação</option>
-                                                <option value="Transporte">Transporte</option>
-                                                <option value="Moradia">Moradia</option>
-                                                <option value="Saúde">Saúde</option>
-                                                <option value="Lazer">Lazer</option>
-                                                <option value="Compras">Compras</option>
-                                                <option value="Contas e Serviços">Contas e Serviços</option>
-                                                <option value="Entradas">Entradas/Receitas</option>
-                                                <option value="Outros">Outros</option>
+                                                <optgroup label="Receitas">
+                                                    <option value="Salário">Salário</option>
+                                                    <option value="Freelance">Freelance / Renda Extra</option>
+                                                    <option value="Investimentos">Rendimento de Investimentos</option>
+                                                    <option value="Entradas">Transferência Recebida</option>
+                                                </optgroup>
+                                                <optgroup label="Alimentação">
+                                                    <option value="Alimentação">Alimentação / Mercado</option>
+                                                    <option value="Restaurante">Restaurante / Delivery</option>
+                                                </optgroup>
+                                                <optgroup label="Moradia">
+                                                    <option value="Moradia">Aluguel / Condomínio</option>
+                                                    <option value="Contas e Serviços">Contas e Serviços (Luz, Água, Gás)</option>
+                                                </optgroup>
+                                                <optgroup label="Transporte">
+                                                    <option value="Transporte">Transporte / Combustível</option>
+                                                </optgroup>
+                                                <optgroup label="Saúde e Educação">
+                                                    <option value="Saúde">Saúde / Farmácia</option>
+                                                    <option value="Educação">Educação / Cursos</option>
+                                                </optgroup>
+                                                <optgroup label="Outros Gastos">
+                                                    <option value="Compras">Compras / Vestuário</option>
+                                                    <option value="Lazer">Lazer / Entretenimento</option>
+                                                    <option value="Assinaturas">Assinaturas (Netflix, Spotify...)</option>
+                                                    <option value="Impostos">Impostos / Taxas</option>
+                                                    <option value="Transferência">Transferência Enviada</option>
+                                                    <option value="Outros">Outros</option>
+                                                </optgroup>
                                             </select>
                                         </div>
                                     </div>
