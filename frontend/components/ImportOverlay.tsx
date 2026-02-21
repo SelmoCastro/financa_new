@@ -60,16 +60,19 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                 let dateStr = cols[0];
                 let desc1 = cols[1] || '';
                 let desc2 = cols[2] || '';
-                let valStr = cols[4] || cols[3]; // Tenta na coluna 5, senao na 4
+                let valStr = cols[4] || cols[3];
+                let tipoStr = '';
 
                 if (bankType === 'NUBANK') {
-                    // Nubank CSV typical format: Data,Valor,Identificador,Descrição
+                    // Nubank CSV: Data,Valor,Identificador,Descrição
                     valStr = cols[1];
                 } else if (bankType === 'BB') {
-                    // Banco do Brasil CSV typical format: Data, Dependencia, Histórico, Data Balancete, Documento, Valor
+                    // Banco do Brasil CSV: "Data","Lançamento","Detalhes","Nº documento","Valor","Tipo Lançamento"
                     dateStr = cols[0];
-                    desc2 = cols[2]; // Histórico
-                    valStr = cols[5]; // Valor
+                    desc1 = cols[1]; // Lançamento (ex: "Pix - Enviado")
+                    desc2 = cols[2]; // Detalhes (ex: "07:42 AUTO POSTO COLORADO")
+                    valStr = cols[4]; // Valor (ex: "-50,00")
+                    tipoStr = (cols[5] || '').toLowerCase(); // "entrada" / "saída"
                 }
 
                 if (!dateStr || !valStr) continue;
@@ -85,8 +88,16 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                 const amount = parseFloat(rawVal);
                 if (isNaN(amount)) continue;
 
-                const type = amount >= 0 ? 'INCOME' : 'EXPENSE';
-                const finalDesc = desc2 && desc2.length > 3 ? desc2 : desc1; // Pega o melhor descritor
+                // Para BB: usar a coluna "Tipo Lançamento" (Entrada/Saída). Para outros: usar sinal do valor
+                let type: 'INCOME' | 'EXPENSE';
+                if (bankType === 'BB' && tipoStr) {
+                    type = tipoStr.includes('entrada') ? 'INCOME' : 'EXPENSE';
+                } else {
+                    type = amount >= 0 ? 'INCOME' : 'EXPENSE';
+                }
+
+                // Para BB: combinar Lançamento + Detalhes. Se Detalhes for mais descritivo, usar ele
+                const finalDesc = (desc2 && desc2.length > 5) ? `${desc1} - ${desc2}`.trim() : (desc1 || 'Transação CSV');
 
                 // Tinder Financeiro: Categorização por Palavra-Chave
                 let categoryLegacy = 'Outros';
