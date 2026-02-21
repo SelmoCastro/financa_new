@@ -15,6 +15,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
     const [isLoading, setIsLoading] = useState(true);
     const [isCardFormOpen, setIsCardFormOpen] = useState(false);
     const [isAccountFormOpen, setIsAccountFormOpen] = useState(false);
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const { addToast } = useToast();
 
     const fetchAccountsAndCards = async () => {
@@ -42,7 +44,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
     useEffect(() => {
         //@ts-ignore
         if (window.lucide) window.lucide.createIcons();
-    }, [accounts, creditCards, isCardFormOpen, isAccountFormOpen]);
+    }, [accounts, creditCards, isCardFormOpen, isAccountFormOpen, openMenuId]);
 
     const totalBalance = accounts.reduce((acc, curr) => acc + Number(curr.balance), 0);
 
@@ -58,8 +60,22 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
 
     const handleAccountSaved = () => {
         setIsAccountFormOpen(false);
+        setEditingAccount(null);
         fetchAccountsAndCards();
-        addToast('Conta salva!', 'success');
+        addToast(editingAccount ? 'Conta atualizada!' : 'Conta criada!', 'success');
+    };
+
+    const handleDeleteAccount = async (id: string, name: string) => {
+        if (!confirm(`Tem certeza que deseja excluir a conta '${name}'? Essa ação não pode ser desfeita e pode afetar transações antigas.`)) return;
+        setOpenMenuId(null);
+        try {
+            await api.delete(`/accounts/${id}`);
+            addToast('Conta excluída com sucesso!', 'success');
+            fetchAccountsAndCards();
+        } catch (error) {
+            console.error('Erro ao excluir conta:', error);
+            addToast('Erro ao excluir a conta.', 'error');
+        }
     };
 
     if (isLoading) {
@@ -71,6 +87,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
 
     return (
         <div className="space-y-8 animate-in mt-4 fade-in duration-500">
+            {openMenuId && (
+                <div className="fixed inset-0 z-30" onClick={() => setOpenMenuId(null)}></div>
+            )}
 
             {/* Resumo de Contas */}
             <section>
@@ -106,9 +125,37 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                 <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center border border-slate-100">
                                     <i data-lucide={acc.type === 'CHECKING' ? 'landmark' : acc.type === 'WALLET' ? 'banknote' : 'piggy-bank'} className="w-6 h-6"></i>
                                 </div>
-                                <button className="text-slate-300 hover:text-indigo-500 transition-colors">
-                                    <i data-lucide="more-vertical" className="w-5 h-5"></i>
-                                </button>
+                                <div className="relative z-40">
+                                    <button
+                                        onClick={() => setOpenMenuId(openMenuId === acc.id ? null : acc.id)}
+                                        className="text-slate-300 hover:text-indigo-500 transition-colors p-2"
+                                    >
+                                        <i data-lucide="more-vertical" className="w-5 h-5"></i>
+                                    </button>
+
+                                    {openMenuId === acc.id && (
+                                        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                                            <button
+                                                onClick={() => {
+                                                    setEditingAccount(acc);
+                                                    setIsAccountFormOpen(true);
+                                                    setOpenMenuId(null);
+                                                }}
+                                                className="w-full text-left px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center gap-2"
+                                            >
+                                                <i data-lucide="edit-3" className="w-4 h-4"></i>
+                                                Editar Conta
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteAccount(acc.id, acc.name)}
+                                                className="w-full text-left px-4 py-3 text-sm font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center gap-2"
+                                            >
+                                                <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                Excluir Conta
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <h5 className="text-lg font-bold text-slate-800 mb-1">{acc.name}</h5>
                             <p className="text-sm text-slate-400 font-medium mb-4">{
@@ -193,8 +240,12 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
 
             {isAccountFormOpen && (
                 <AccountForm
+                    accountToEdit={editingAccount}
                     onSave={handleAccountSaved}
-                    onClose={() => setIsAccountFormOpen(false)}
+                    onClose={() => {
+                        setIsAccountFormOpen(false);
+                        setEditingAccount(null);
+                    }}
                 />
             )}
 

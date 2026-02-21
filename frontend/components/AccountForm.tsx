@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import api from '../services/api';
 
 interface AccountFormProps {
+    accountToEdit?: any;
     onSave: () => void;
     onClose: () => void;
 }
 
-export const AccountForm: React.FC<AccountFormProps> = ({ onSave, onClose }) => {
-    const [name, setName] = useState('');
-    const [type, setType] = useState('CHECKING');
-    const [balance, setBalance] = useState('');
+export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave, onClose }) => {
+    const [name, setName] = useState(accountToEdit?.name || '');
+    const [type, setType] = useState(accountToEdit?.type || 'CHECKING');
+    const [balance, setBalance] = useState(accountToEdit ? accountToEdit.balance.toString() : '');
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -17,11 +18,19 @@ export const AccountForm: React.FC<AccountFormProps> = ({ onSave, onClose }) => 
         setIsLoading(true);
 
         try {
-            await api.post('/accounts', {
-                name,
-                type,
-                balance: Number(balance),
-            });
+            if (accountToEdit) {
+                await api.patch(`/accounts/${accountToEdit.id}`, {
+                    name,
+                    type,
+                    balance: Number(balance),
+                });
+            } else {
+                await api.post('/accounts', {
+                    name,
+                    type,
+                    balance: Number(balance),
+                });
+            }
             onSave();
         } catch (error) {
             console.error('Erro ao salvar conta', error);
@@ -39,7 +48,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ onSave, onClose }) => 
                         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
                             <i data-lucide="wallet" className="w-5 h-5"></i>
                         </div>
-                        Adicionar Conta
+                        {accountToEdit ? 'Editar Conta' : 'Adicionar Conta'}
                     </h3>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                         <i data-lucide="x" className="w-5 h-5"></i>
@@ -103,7 +112,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ onSave, onClose }) => 
                             disabled={isLoading}
                             className="flex-1 px-4 py-3 text-white font-bold bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-all disabled:opacity-50"
                         >
-                            {isLoading ? 'Salvando...' : 'Criar Conta'}
+                            {isLoading ? 'Salvando...' : (accountToEdit ? 'Atualizar Conta' : 'Criar Conta')}
                         </button>
                     </div>
                 </form>
