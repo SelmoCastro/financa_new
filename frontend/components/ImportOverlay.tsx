@@ -10,15 +10,21 @@ interface ImportOverlayProps {
     existingTransactions?: any[];
 }
 
+import { parseOFX } from '../utils/ofxParser';
+
 interface ParsedTransaction {
-    id: string;
+    id: string; // Internal temporary ID
+    fitId?: string;
     date: string;
     description: string;
     amount: number;
     type: 'INCOME' | 'EXPENSE';
     categoryLegacy: string;
+    classificationRule?: number; // 50, 30, ou 20
+    suggestedCategory?: string;
+    suggestedIcon?: string;
     selected: boolean;
-    isPotentialDuplicate?: boolean; // mesma data + valor já existe no banco
+    isPotentialDuplicate?: boolean;
 }
 
 export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, onClose, accounts, creditCards, existingTransactions = [] }) => {
@@ -27,8 +33,9 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
     const [parsedTxs, setParsedTxs] = useState<ParsedTransaction[]>([]);
     const [accountId, setAccountId] = useState('');
     const [creditCardId, setCreditCardId] = useState('');
-    const [bankType, setBankType] = useState('INTER');
+    const [bankType, setBankType] = useState('OFX_GENERIC'); // Padronizado provisoriamente
     const [isLoading, setIsLoading] = useState(false);
+    const [aiStatus, setAiStatus] = useState(''); // Status visual para o usuário
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleDragOver = (e: React.DragEvent) => e.preventDefault();
@@ -42,105 +49,76 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
         if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
     };
 
-    const parseCSV = async () => {
-        if (!file) return;
-        const text = await file.text();
-        const lines = text.split('\n');
-        const parsed: ParsedTransaction[] = [];
-
-        // Construir Set de hashes das transações existentes (data + valor)
-        // Formato: "YYYY-MM-DD_123.45" — para detectar mesmo dia + mesmo valor
-        const existingHashes = new Set(
-            existingTransactions.map(t => {
-                const d = new Date(t.date).toISOString().split('T')[0];
-                return `${d}_${Math.abs(Number(t.amount)).toFixed(2)}`;
-            })
-        );
-
-        let isHeader = true;
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            if (isHeader) { isHeader = false; continue; }
-
-            // Suporta formato "valor1","valor2" ou ponto-e-vírgula
-            let cols = line.split('","').map(c => c.replace(/^"|"$/g, ''));
-            if (cols.length < 5) cols = line.split(';').map(c => c.replace(/^"|"$/g, ''));
-
-            if (cols.length >= 4) {
-                let dateStr = cols[0];
-                let desc1 = cols[1] || '';
-                let desc2 = cols[2] || '';
-                let valStr = cols[4] || cols[3];
-                let tipoStr = '';
-
-                if (bankType === 'NUBANK') {
-                    // Nubank CSV: Data,Valor,Identificador,Descrição
-                    valStr = cols[1];
-                } else if (bankType === 'BB') {
-                    // Banco do Brasil CSV: "Data","Lançamento","Detalhes","Nº documento","Valor","Tipo Lançamento"
-                    dateStr = cols[0];
-                    desc1 = cols[1]; // Lançamento (ex: "Pix - Enviado")
-                    desc2 = cols[2]; // Detalhes (ex: "07:42 AUTO POSTO COLORADO")
-                    valStr = cols[4]; // Valor (ex: "-50,00")
-                    tipoStr = (cols[5] || '').toLowerCase(); // "entrada" / "saída"
-                }
-
-                // Filtro genérico: ignorar linhas de saldo (não são transações)
-                const descCombinada = `${desc1} ${desc2}`.toLowerCase().trim();
-                const PADROES_SALDO = [
-                    'saldo anterior', 'saldo do dia', 'saldo final', 'saldo em',
-                    'saldo disponivel', 'saldo devedor', 'saldo', 's a l d o'
-                ];
-                // Só ignora se a descrição for APENAS sobre saldo (sem outras palavras ricas)
-                if (PADROES_SALDO.some(p => descCombinada === p || descCombinada.startsWith(p + ' ') && descCombinada.length < 30)) continue;
-
-                if (!dateStr || !valStr) continue;
-
-                // Data YYYY-MM-DD
-                let date = dateStr;
-                if (dateStr.includes('/')) {
-                    const parts = dateStr.split('/');
-                    if (parts.length === 3) date = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                }
-
-                const rawVal = valStr.replace(/\./g, '').replace(',', '.');
-                const amount = parseFloat(rawVal);
-                if (isNaN(amount)) continue;
-
-                // Para BB: usar a coluna "Tipo Lançamento" (Entrada/Saída). Para outros: usar sinal do valor
-                let type: 'INCOME' | 'EXPENSE';
-                if (bankType === 'BB' && tipoStr) {
-                    type = tipoStr.includes('entrada') ? 'INCOME' : 'EXPENSE';
-                } else {
-                    type = amount >= 0 ? 'INCOME' : 'EXPENSE';
-                }
-
-                // Para BB: combinar Lançamento + Detalhes. Se Detalhes for mais descritivo, usar ele
-                const finalDesc = (desc2 && desc2.length > 5) ? `${desc1} - ${desc2}`.trim() : (desc1 || 'Transação CSV');
-
-                // Tinder Financeiro: Categorização por Palavra-Chave
-                let categoryLegacy = 'Outros';
-                const lower = finalDesc.toLowerCase();
-                if (lower.includes('uber') || lower.includes('99app') || lower.includes('posto')) categoryLegacy = 'Transporte';
-                else if (lower.includes('ifood') || lower.includes('mercado') || lower.includes('padaria') || lower.includes('restaurante')) categoryLegacy = 'Alimentação';
-                else if (lower.includes('farmacia') || lower.includes('drogaria') || lower.includes('saude')) categoryLegacy = 'Saúde';
-                else if (lower.includes('pagamento') || lower.includes('salario')) categoryLegacy = 'Entradas';
-
-                parsed.push({
-                    id: Math.random().toString(36).substr(2, 9),
-                    date,
-                    description: finalDesc || 'Transação CSV',
-                    amount: Math.abs(amount),
-                    type,
-                    categoryLegacy,
-                    isPotentialDuplicate: existingHashes.has(`${date}_${Math.abs(amount).toFixed(2)}`),
-                    selected: !existingHashes.has(`${date}_${Math.abs(amount).toFixed(2)}`), // pré-desmarca se suspeito
-                });
-            }
+    const processFile = async () => {
+        if (!file || !accountId) {
+            alert('Selecione um arquivo e uma conta de destino.');
+            return;
         }
-        setParsedTxs(parsed);
-        setStep(2);
+
+        setIsLoading(true);
+        setAiStatus('Lendo arquivo local...');
+
+        try {
+            const text = await file.text();
+
+            // 1. Parse Seguro Local (Dumb Parser)
+            let localTransactions = [];
+            if (file.name.toLowerCase().endsWith('.ofx') || file.name.toLowerCase().endsWith('.qfx')) {
+                localTransactions = await parseOFX(text);
+            } else {
+                alert('Por favor, envie um arquivo .ofx ou .qfx. O suporte a CSV legado foi desativado para garantir a integridade dos seus dados.');
+                setIsLoading(false);
+                return;
+            }
+
+            if (localTransactions.length === 0) {
+                alert('Nenhuma transação encontrada no arquivo OFX/QFX.');
+                setIsLoading(false);
+                return;
+            }
+
+            // Preparando Payload
+            const payload = localTransactions.map(t => ({
+                ...t,
+                accountId,
+                creditCardId: creditCardId || undefined
+            }));
+
+            // 2. Draft/Preview API - O Cérebro Backend
+            setAiStatus('✨ A IA está analisando seus gastos...');
+            const response = await api.post('/transactions/import/validate', payload);
+            const { preview, skippedCount } = response.data;
+
+            if (skippedCount > 0) {
+                console.log(`Silent Skip: ${skippedCount} transações ignoradas pois já existiam no banco (FITID Exato).`);
+            }
+
+            // 3. Montar a Tela de Revisão
+            const uiTransactions: ParsedTransaction[] = preview.map((t: any) => ({
+                id: Math.random().toString(36).substr(2, 9),
+                fitId: t.fitId,
+                date: t.date.split('T')[0],
+                description: t.description,
+                amount: t.amount,
+                type: t.type,
+                categoryLegacy: t.suggestedCategory || 'Outros',
+                classificationRule: t.suggestedRule || 30,
+                suggestedCategory: t.suggestedCategory,
+                suggestedIcon: t.suggestedIcon,
+                isPotentialDuplicate: t.isFuzzyDuplicate, // Do BD Frontend (Data + Valor idênticos)
+                selected: !t.isFuzzyDuplicate // Só vem selecionado se tiver certeza que é novo
+            }));
+
+            setParsedTxs(uiTransactions);
+            setStep(2);
+
+        } catch (error) {
+            console.error('Erro ao processar arquivo:', error);
+            alert('Falha ao processar arquivo ou integrar com IA.');
+        } finally {
+            setIsLoading(false);
+            setAiStatus('');
+        }
     };
 
     const toggleSelect = (id: string) => {
@@ -160,21 +138,23 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
         const payload = selectedTxs.map(t => ({
             description: t.description,
             amount: t.amount,
-            date: new Date(`${t.date}T12:00:00Z`).toISOString(),
+            date: t.date,
             type: t.type,
-            isFixed: false,
+            fitId: t.fitId,
+            classificationRule: t.classificationRule,
             categoryLegacy: t.categoryLegacy,
             accountId,
-            creditCardId: creditCardId || undefined,
+            creditCardId: creditCardId || undefined
         }));
 
         try {
-            const res = await api.post('/transactions/import', payload);
-            alert(`${res.data.importedCount} de ${selectedTxs.length} transações foram salvas com sucesso.\n${res.data.duplicateCount} foram ignoradas por já existirem no sistema.`);
+            const res = await api.post('/transactions/import/confirm', payload);
+            alert(`${res.data.importedCount} transações importadas com sucesso!`);
             onImportSuccess();
+            onClose();
         } catch (error) {
-            console.error('Import error:', error);
-            alert('Houve um erro durante a gravação das transações. Tente novamente.');
+            console.error('Erro na importação:', error);
+            alert('Falha ao importar as transações. Elas podem ser duplicadas.');
         } finally {
             setIsLoading(false);
         }
@@ -214,14 +194,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Formato do Extrato</label>
-                            <select value={bankType} onChange={e => setBankType(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-indigo-500 outline-none appearance-none">
-                                <option value="INTER">Banco Inter / Padrão (Data, Docs, Valor, Tipo)</option>
-                                <option value="NUBANK">Nubank</option>
-                                <option value="BB">Banco do Brasil</option>
-                            </select>
-                        </div>
+                        {/* Formato de Extrato Removido - Agora o Parser de OFX é Universal para todos os Bancos */}
 
                         <div
                             className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors cursor-pointer ${file ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200 hover:bg-slate-50'}`}
@@ -241,9 +214,20 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             )}
                         </div>
 
-                        <div className="pt-4 flex gap-3">
-                            <button onClick={onClose} className="flex-1 px-4 py-3 text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Cancelar</button>
-                            <button onClick={parseCSV} disabled={!file || !accountId} className="flex-1 px-4 py-3 text-white font-bold bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-600/20 disabled:opacity-50">Lançar & Revisar</button>
+                        <div className="pt-4 flex flex-col gap-3">
+                            <div className="flex gap-3">
+                                <button onClick={onClose} disabled={isLoading} className="flex-[0.5] px-4 py-3 text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors disabled:opacity-50">Cancelar</button>
+                                <button onClick={processFile} disabled={!file || !accountId || isLoading} className="flex-1 flex gap-2 justify-center px-4 py-3 text-white font-bold bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-600/20 disabled:opacity-50">
+                                    {isLoading ? <i data-lucide="loader-2" className="w-5 h-5 animate-spin"></i> : <i data-lucide="sparkles" className="w-5 h-5"></i>}
+                                    {isLoading ? 'Analisando...' : 'Lançar & Revisar com IA'}
+                                </button>
+                            </div>
+
+                            {aiStatus && (
+                                <div className="text-center p-2 rounded-lg bg-indigo-50">
+                                    <p className="text-xs font-semibold text-indigo-600 animate-pulse">{aiStatus}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -275,13 +259,24 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                 <span className="text-[10px] font-bold text-orange-500 block mt-0.5">⚠️ Possível duplicata</span>
                                             )}
                                         </div>
-                                        <div className="flex-1">
+                                        <div className="flex-1 flex flex-col gap-2">
                                             <input
                                                 type="text"
                                                 value={tx.description}
                                                 onChange={e => setParsedTxs(prev => prev.map(t => t.id === tx.id ? { ...t, description: e.target.value } : t))}
                                                 className="w-full bg-transparent text-sm font-bold text-slate-800 focus:outline-none focus:border-b border-indigo-200"
                                             />
+                                            {tx.suggestedCategory && (
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className="text-xs px-2 py-0.5 rounded outline outline-1 outline-indigo-200 bg-indigo-50 text-indigo-700 flex items-center gap-1 font-semibold">
+                                                        <span>{tx.suggestedIcon}</span>
+                                                        {tx.suggestedCategory}
+                                                    </span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">
+                                                        Regra {tx.classificationRule}%
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="w-48 shrink-0">
                                             <select
@@ -335,6 +330,6 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };

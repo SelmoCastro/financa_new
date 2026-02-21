@@ -1,12 +1,15 @@
-
 import { Injectable } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class TransactionsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private aiService: AiService
+  ) { }
 
   create(createTransactionDto: CreateTransactionDto, userId: string) {
     return this.prisma.transaction.create({
@@ -19,15 +22,91 @@ export class TransactionsService {
     });
   }
 
-  async importBatch(transactionsData: CreateTransactionDto[], userId: string) {
+  async validateImport(transactionsData: any[], userId: string) {
+    if (!transactionsData || transactionsData.length === 0) return { valid: [], duplicateFitIds: [] };
+
+    const fitIds = transactionsData.map(t => t.fitId).filter(Boolean);
+    const targetAccountId = transactionsData[0]?.accountId;
+
+    // 1. Silent Skip: Acha todos os FITIDs exatos já persistidos no banco.
+    let existingFitIds = new Set<string>();
+    if (fitIds.length > 0) {
+      const existing = await this.prisma.transaction.findMany({
+        where: { userId, fitId: { in: fitIds } },
+        select: { fitId: true }
+      });
+      existingFitIds = new Set(existing.map(e => e.fitId!));
+    }
+
+    // 2. Fuzzy Hash (Mesma quantia e mesma data na mesma conta, mas FITID/Nome diferente)
+    const minDate = new Date(Math.min(...transactionsData.map(t => new Date(t.date).getTime())));
+    const maxDate = new Date(Math.max(...transactionsData.map(t => new Date(t.date).getTime())));
+
+    const fuzzyExisting = await this.prisma.transaction.findMany({
+      where: { userId, accountId: targetAccountId, date: { gte: minDate, lte: maxDate } },
+      select: { date: true, amount: true }
+    });
+
+    const fuzzySet = new Set(
+      fuzzyExisting.map(t => `${t.date.toISOString().split('T')[0]}_${t.amount}`)
+    );
+
+    const toReview: any[] = [];
+    const descriptionsToClassify = new Set<string>();
+
+    for (const raw of transactionsData) {
+      if (raw.fitId && existingFitIds.has(raw.fitId)) {
+        continue; // Silent Skip
+      }
+
+      const txDate = new Date(raw.date);
+      const hash = `${txDate.toISOString().split('T')[0]}_${raw.amount}`;
+      const isFuzzyDuplicate = fuzzySet.has(hash);
+
+      // Adicionamos a UI flags
+      toReview.push({
+        ...raw,
+        isFuzzyDuplicate, // Avisa a interface: "Tem algo desse dia com esse valor já!"
+      });
+
+      // Se a UI permitir, já pega o nome:
+      descriptionsToClassify.add(raw.description);
+    }
+
+    // Camada 2 - IA
+    let aiClassifications = {};
+    if (descriptionsToClassify.size > 0) {
+      aiClassifications = await this.aiService.classifyTransactions(Array.from(descriptionsToClassify));
+    }
+
+    // Merge IA results with the preview payload
+    const finalPreview = toReview.map(tx => {
+      const suggestion = aiClassifications[tx.description];
+      return {
+        ...tx,
+        suggestedCategory: suggestion?.category || 'Outros',
+        suggestedRule: suggestion?.rule || 30,
+        suggestedIcon: suggestion?.icon || '🏷️'
+      };
+    });
+
+    return {
+      preview: finalPreview,
+      skippedCount: transactionsData.length - toReview.length
+    };
+  }
+
+  async confirmImport(transactionsData: any[], userId: string) {
     if (!transactionsData || transactionsData.length === 0) return { importedCount: 0 };
 
-    const validTransactions = transactionsData.map(t => ({
+    const toInsert = transactionsData.map(t => ({
       description: t.description,
       amount: Number(t.amount),
       date: new Date(t.date),
       type: t.type,
-      isFixed: t.isFixed,
+      isFixed: t.isFixed || false,
+      fitId: t.fitId,
+      classificationRule: t.classificationRule || 30, // Default 30 - Desejos
       categoryId: t.categoryId,
       categoryLegacy: t.categoryLegacy,
       accountId: t.accountId,
@@ -35,48 +114,14 @@ export class TransactionsService {
       userId,
     }));
 
-    // Determinar o range de datas
-    const minDate = new Date(Math.min(...validTransactions.map(t => t.date.getTime())));
-    const maxDate = new Date(Math.max(...validTransactions.map(t => t.date.getTime())));
-    const targetAccountId = validTransactions[0]?.accountId;
-
-    // Buscar transações existentes no período para mesma conta/usuário
-    const existingTransactions = await this.prisma.transaction.findMany({
-      where: {
-        userId,
-        accountId: targetAccountId,
-        date: { gte: minDate, lte: maxDate }
-      },
-      select: { date: true, amount: true, description: true }
+    const result = await this.prisma.transaction.createMany({
+      data: toInsert,
+      skipDuplicates: true // A barreira final. Impede erro se passar um fitId que já existe.
     });
 
-    // Hash para busca rápida de existentes (ignorando whitespace ou cases)
-    const existingSet = new Set(
-      existingTransactions.map(t => `${t.date.toISOString().split('T')[0]}_${t.amount}_${t.description.trim().toLowerCase()}`)
-    );
-
-    const toInsert = validTransactions.filter(t => {
-      const hash = `${t.date.toISOString().split('T')[0]}_${t.amount}_${t.description.trim().toLowerCase()}`;
-      if (existingSet.has(hash)) {
-        // Já existe uma transação igual, não insere
-        return false;
-      }
-      // Adiciona ao set para caso o próprio CSV tenha múltiplos idênticos repetidos que não deviam
-      existingSet.add(hash);
-      return true;
-    });
-
-    if (toInsert.length > 0) {
-      await this.prisma.transaction.createMany({
-        data: toInsert
-      });
-    }
-
-    return {
-      importedCount: toInsert.length,
-      duplicateCount: validTransactions.length - toInsert.length
-    };
+    return { importedCount: result.count };
   }
+
 
   findAll(userId: string) {
     return this.prisma.transaction.findMany({
