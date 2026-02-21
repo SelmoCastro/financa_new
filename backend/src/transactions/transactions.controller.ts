@@ -6,7 +6,10 @@ import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { ImportValidateTransactionDto, ImportConfirmTransactionDto } from './dto/import-transaction.dto';
 
-@Controller('transactions')
+@Controller({
+  path: 'transactions',
+  version: '1',
+})
 @UseGuards(AuthGuard('jwt'))
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) { }
