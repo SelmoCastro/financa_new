@@ -29,6 +29,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
         currentAmount: '',
         deadline: ''
     });
+    const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
     // Deposit Modal State
     const [depositModalOpen, setDepositModalOpen] = useState(false);
@@ -72,14 +73,25 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
         }
 
         try {
-            await api.post('/goals', {
-                title: form.title,
-                targetAmount: target,
-                currentAmount: current,
-                deadline: form.deadline || undefined
-            });
-            addToast('Meta criada com sucesso! 🚀', 'success');
+            if (editingGoal) {
+                await api.patch(`/goals/${editingGoal.id}`, {
+                    title: form.title,
+                    targetAmount: target,
+                    currentAmount: current,
+                    deadline: form.deadline || undefined
+                });
+                addToast('Meta atualizada com sucesso! 🎯', 'success');
+            } else {
+                await api.post('/goals', {
+                    title: form.title,
+                    targetAmount: target,
+                    currentAmount: current,
+                    deadline: form.deadline || undefined
+                });
+                addToast('Meta criada com sucesso! 🚀', 'success');
+            }
             setForm({ title: '', targetAmount: '', currentAmount: '', deadline: '' });
+            setEditingGoal(null);
             setIsModalOpen(false);
             fetchGoals();
         } catch (error: any) {
@@ -137,6 +149,17 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
         return amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
+    const openEditModal = (goal: Goal) => {
+        setEditingGoal(goal);
+        setForm({
+            title: goal.title,
+            targetAmount: goal.targetAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            currentAmount: goal.currentAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            deadline: goal.deadline ? new Date(goal.deadline).toISOString().split('T')[0] : ''
+        });
+        setIsModalOpen(true);
+    };
+
     const openDepositModal = (goal: Goal) => {
         setSelectedGoal(goal);
         setDepositAmount('');
@@ -180,7 +203,11 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                     <p className="text-slate-500 font-medium">Visualize e conquiste seus sonhos.</p>
                 </div>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => {
+                        setEditingGoal(null);
+                        setForm({ title: '', targetAmount: '', currentAmount: '', deadline: '' });
+                        setIsModalOpen(true);
+                    }}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-200 transition-all active:scale-95 flex items-center gap-2"
                 >
                     <i data-lucide="plus-circle" className="w-5 h-5"></i>
@@ -222,10 +249,13 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                         <i data-lucide="target" className="w-6 h-6"></i>
                                     </div>
                                     <div className="flex gap-2">
+                                        <button onClick={() => openEditModal(goal)} className="p-3 bg-slate-50 hover:bg-slate-100 text-indigo-600 rounded-xl transition-colors active:scale-90" title="Editar Meta">
+                                            <i data-lucide="edit-3" className="w-5 h-5"></i>
+                                        </button>
                                         <button onClick={() => handleDelete(goal)} className="p-3 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-colors active:scale-90" title="Excluir Meta">
                                             <i data-lucide="trash-2" className="w-5 h-5"></i>
                                         </button>
-                                        <button onClick={() => openDepositModal(goal)} className="p-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors active:scale-90" title="Adicionar dinheiro">
+                                        <button onClick={() => openDepositModal(goal)} className="p-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl transition-colors active:scale-90" title="Adicionar dinheiro">
                                             <i data-lucide="plus" className="w-5 h-5"></i>
                                         </button>
                                     </div>
@@ -270,8 +300,8 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8 animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-black text-slate-800">Novo Objetivo</h2>
-                            <button type="button" onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
+                            <h2 className="text-xl font-black text-slate-800">{editingGoal ? 'Editar Objetivo' : 'Novo Objetivo'}</h2>
+                            <button type="button" onClick={() => { setIsModalOpen(false); setEditingGoal(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
                                 <i data-lucide="x" className="w-5 h-5 text-slate-500"></i>
                             </button>
                         </div>
@@ -329,7 +359,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                     type="submit"
                                     className="w-full py-4 rounded-2xl font-black text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
                                 >
-                                    Criar Meta
+                                    {editingGoal ? 'Atualizar Meta' : 'Criar Meta'}
                                 </button>
                             </div>
                         </form>

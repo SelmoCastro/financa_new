@@ -69,7 +69,17 @@ export class BudgetsService {
 
   // Not used yet, but kept stubbed
   findOne(id: number) { return `This action returns a #${id} budget`; }
-  update(id: number, updateBudgetDto: UpdateBudgetDto) { return `This action updates a #${id} budget`; }
+
+  async update(id: string, updateBudgetDto: UpdateBudgetDto, userId: string) {
+    if (updateBudgetDto.amount) {
+      updateBudgetDto.amount = Number(updateBudgetDto.amount);
+    }
+    await this.prisma.budget.updateMany({
+      where: { id, userId },
+      data: updateBudgetDto
+    });
+    return this.prisma.budget.findFirst({ where: { id, userId } });
+  }
 
   async remove(id: string, userId: string) {
     return this.prisma.budget.deleteMany({
