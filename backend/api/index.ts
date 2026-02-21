@@ -31,6 +31,12 @@ export default async function (req, res) {
         }
 
         const instance = cachedApp.getHttpAdapter().getInstance();
+
+        // Remove '/api' prefix from incoming Vercel Serverless request since the Nest Controller only expects '/v1'
+        if (req.url && req.url.startsWith('/api/')) {
+            req.url = req.url.replace('/api/', '/');
+        }
+
         return instance(req, res);
     } catch (err: any) {
         console.error('VERCEL CRASH ERROR:', err);
