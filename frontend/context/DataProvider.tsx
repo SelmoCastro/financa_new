@@ -53,7 +53,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Fetch summary focusing on the selected month
             const [txRes, bRes, accRes, ccRes, summaryRes] = await Promise.all([
-                api.get<Transaction[]>(`/transactions?year=${year}&month=${month}`),
+                api.get<Transaction[]>('/transactions'),
                 api.get<Budget[]>('/budgets'),
                 api.get<Account[]>('/accounts'),
                 api.get<CreditCard[]>('/credit-cards'),

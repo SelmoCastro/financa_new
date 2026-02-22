@@ -17,6 +17,7 @@ import { DataProvider, useData } from './context/DataProvider';
 import { MonthSelector } from './components/MonthSelector';
 import { Transaction } from './types';
 import { TransactionForm } from './components/TransactionForm';
+import { getYearMonth } from './utils/dateUtils';
 
 const AppContent: React.FC = () => {
   const {
@@ -53,8 +54,15 @@ const AppContent: React.FC = () => {
     expenseTrend: 0
   }), [dashboardSummary]);
 
-  // Timeline and History now use strictly the month-filtered ones passed from the API
-  const monthFilteredTransactions = transactions;
+  // Timeline, History e Budgets utilizam transações filtradas localmente.
+  // O array `transactions` base tem todo o histórico para a Dashboard projetar Saldo e Gráficos corretamente.
+  const monthFilteredTransactions = useMemo(() => {
+    const { year: currentYear, month: currentMonth } = getYearMonth(selectedDate);
+    return transactions.filter(t => {
+      const { year: tYear, month: tMonth } = getYearMonth(t.date);
+      return tYear === currentYear && tMonth === currentMonth;
+    });
+  }, [transactions, selectedDate]);
 
   const forecast = useFixedTransactions(transactions, totals);
 
