@@ -20,7 +20,7 @@ Dashboard financeiro moderno e minimalista construído com **React (Vite)** e **
 
 ---
 
-## 🛠️ Tecnologias
+##mas  🛠️ Tecnologias
 
 ### Frontend
 - **React 18** + **TypeScript** + **Vite**

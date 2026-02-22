@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { toYYYYMMDD } from '../utils/dateUtils';
 
 interface Goal {
     id: string;
@@ -155,7 +156,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
             title: goal.title,
             targetAmount: goal.targetAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
             currentAmount: goal.currentAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            deadline: goal.deadline ? new Date(goal.deadline).toISOString().split('T')[0] : ''
+            deadline: goal.deadline ? toYYYYMMDD(goal.deadline) : ''
         });
         setIsModalOpen(true);
     };

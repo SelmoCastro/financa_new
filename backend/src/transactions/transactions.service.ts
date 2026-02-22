@@ -11,14 +11,32 @@ export class TransactionsService {
     private aiService: AiService
   ) { }
 
-  create(createTransactionDto: CreateTransactionDto, userId: string) {
-    return this.prisma.transaction.create({
-      data: {
-        ...createTransactionDto,
-        amount: Number(createTransactionDto.amount), // Ensure number
-        date: new Date(createTransactionDto.date),   // Ensure Date object
-        userId,
-      },
+  async create(createTransactionDto: CreateTransactionDto, userId: string) {
+    const amount = Number(createTransactionDto.amount);
+    const date = new Date(createTransactionDto.date);
+    const { type, accountId } = createTransactionDto;
+
+    return this.prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.create({
+        data: {
+          ...createTransactionDto,
+          amount,
+          date,
+          userId,
+        },
+      });
+
+      if (accountId) {
+        const adjustment = type === 'INCOME' ? amount : (type === 'EXPENSE' ? -amount : 0);
+        if (adjustment !== 0) {
+          await tx.account.updateMany({
+            where: { id: accountId, userId },
+            data: { balance: { increment: adjustment } },
+          });
+        }
+      }
+
+      return transaction;
     });
   }
 
@@ -99,41 +117,91 @@ export class TransactionsService {
   async confirmImport(transactionsData: any[], userId: string) {
     if (!transactionsData || transactionsData.length === 0) return { importedCount: 0 };
 
-    const toInsert = transactionsData.map(t => ({
-      description: t.description,
-      amount: Number(t.amount),
-      date: new Date(t.date),
-      type: t.type,
-      isFixed: t.isFixed || false,
-      fitId: t.fitId,
-      classificationRule: t.classificationRule || 30, // Default 30 - Desejos
-      categoryId: t.categoryId,
-      categoryLegacy: t.categoryLegacy,
-      accountId: t.accountId,
-      creditCardId: t.creditCardId,
-      userId,
-    }));
+    return this.prisma.$transaction(async (tx) => {
+      // Get existing fitIds in the batch
+      const fitIds = transactionsData.map(t => t.fitId).filter(Boolean);
+      let existingFitIds = new Set<string>();
+      if (fitIds.length > 0) {
+        const existing = await tx.transaction.findMany({
+          where: { userId, fitId: { in: fitIds } },
+          select: { fitId: true }
+        });
+        existingFitIds = new Set(existing.map(e => e.fitId!));
+      }
 
-    const result = await this.prisma.transaction.createMany({
-      data: toInsert,
-      skipDuplicates: true // A barreira final. Impede erro se passar um fitId que já existe.
+      const toInsert = transactionsData
+        .filter(t => !(t.fitId && existingFitIds.has(t.fitId)))
+        .map(t => ({
+          description: t.description,
+          amount: Number(t.amount),
+          date: new Date(t.date),
+          type: t.type,
+          isFixed: t.isFixed || false,
+          fitId: t.fitId,
+          classificationRule: t.classificationRule || 30, // Default 30 - Desejos
+          categoryId: t.categoryId,
+          categoryLegacy: t.categoryLegacy,
+          accountId: t.accountId,
+          creditCardId: t.creditCardId,
+          userId,
+        }));
+
+      if (toInsert.length === 0) return { importedCount: 0 };
+
+      // Apenas transações com FITID novo (skipDuplicates age como fallback)
+      const result = await tx.transaction.createMany({
+        data: toInsert,
+        skipDuplicates: true
+      });
+
+      // Calcular o delta consolidado por conta SOMENTE das que foram marcadas para inserção
+      const accountDeltas: Record<string, number> = {};
+      for (const t of toInsert) {
+        if (t.accountId) {
+          const adj = t.type === 'INCOME' ? t.amount : (t.type === 'EXPENSE' ? -t.amount : 0);
+          accountDeltas[t.accountId] = (accountDeltas[t.accountId] || 0) + adj;
+        }
+      }
+
+      for (const [accId, delta] of Object.entries(accountDeltas)) {
+        if (delta !== 0) {
+          await tx.account.updateMany({
+            where: { id: accId, userId },
+            data: { balance: { increment: delta } }
+          });
+        }
+      }
+
+      return { importedCount: result.count };
     });
-
-    return { importedCount: result.count };
   }
 
 
-  findAll(userId: string) {
+  findAll(userId: string, year?: number, month?: number) {
+    let whereClause: any = { userId };
+
+    if (year !== undefined && month !== undefined) {
+      const startOfMonth = new Date(year, month, 1);
+      const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+      whereClause.date = {
+        gte: startOfMonth,
+        lte: endOfMonth
+      };
+    }
+
     return this.prisma.transaction.findMany({
-      where: { userId },
+      where: whereClause,
       orderBy: { date: 'desc' },
     });
   }
 
-  async getDashboardSummary(userId: string) {
+  async getDashboardSummary(userId: string, year?: number, month?: number) {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const targetYear = year !== undefined ? year : now.getFullYear();
+    const targetMonth = month !== undefined ? month : now.getMonth(); // 0-indexed month
+
+    const startOfMonth = new Date(targetYear, targetMonth, 1);
+    const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
 
     // 1. Calculate General Balance (All time)
     const balanceAgg = await this.prisma.transaction.aggregate({
@@ -261,20 +329,79 @@ export class TransactionsService {
     });
   }
 
-  update(id: string, updateTransactionDto: UpdateTransactionDto, userId: string) {
-    return this.prisma.transaction.updateMany({
-      where: { id, userId }, // basic security check
-      data: {
-        ...updateTransactionDto,
-        amount: updateTransactionDto.amount ? Number(updateTransactionDto.amount) : undefined,
-        date: updateTransactionDto.date ? new Date(updateTransactionDto.date) : undefined,
-      },
+  async update(id: string, updateTransactionDto: UpdateTransactionDto, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const oldTx = await tx.transaction.findFirst({
+        where: { id, userId }
+      });
+
+      if (!oldTx) return null;
+
+      // 1. Reverter saldo antigo se houver accountId
+      if (oldTx.accountId) {
+        const revertAdj = oldTx.type === 'INCOME' ? -oldTx.amount : (oldTx.type === 'EXPENSE' ? oldTx.amount : 0);
+        if (revertAdj !== 0) {
+          await tx.account.updateMany({
+            where: { id: oldTx.accountId, userId },
+            data: { balance: { increment: revertAdj } }
+          });
+        }
+      }
+
+      // 2. Atualizar a transação
+      const newAmount = updateTransactionDto.amount !== undefined ? Number(updateTransactionDto.amount) : oldTx.amount;
+      const newType = updateTransactionDto.type || oldTx.type;
+
+      let newAccountId = oldTx.accountId;
+      if (updateTransactionDto.accountId !== undefined) {
+        newAccountId = updateTransactionDto.accountId; // Pode ser null se o cliente remover a conta na edição
+      }
+
+      await tx.transaction.updateMany({
+        where: { id, userId },
+        data: {
+          ...updateTransactionDto,
+          amount: updateTransactionDto.amount ? Number(updateTransactionDto.amount) : undefined,
+          date: updateTransactionDto.date ? new Date(updateTransactionDto.date) : undefined,
+        }
+      });
+
+      // 3. Aplicar saldo novo se houver accountId
+      if (newAccountId) {
+        const applyAdj = newType === 'INCOME' ? newAmount : (newType === 'EXPENSE' ? -newAmount : 0);
+        if (applyAdj !== 0) {
+          await tx.account.updateMany({
+            where: { id: newAccountId, userId },
+            data: { balance: { increment: applyAdj } }
+          });
+        }
+      }
+
+      return tx.transaction.findFirst({ where: { id, userId } });
     });
   }
 
-  remove(id: string, userId: string) {
-    return this.prisma.transaction.deleteMany({
-      where: { id, userId },
+  async remove(id: string, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const oldTx = await tx.transaction.findFirst({
+        where: { id, userId }
+      });
+
+      if (!oldTx) return { count: 0 };
+
+      if (oldTx.accountId) {
+        const revertAdj = oldTx.type === 'INCOME' ? -oldTx.amount : (oldTx.type === 'EXPENSE' ? oldTx.amount : 0);
+        if (revertAdj !== 0) {
+          await tx.account.updateMany({
+            where: { id: oldTx.accountId, userId },
+            data: { balance: { increment: revertAdj } }
+          });
+        }
+      }
+
+      return tx.transaction.deleteMany({
+        where: { id, userId },
+      });
     });
   }
 }

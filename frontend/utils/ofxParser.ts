@@ -1,3 +1,5 @@
+import { toYYYYMMDD } from './dateUtils';
+
 // Função utility para criar HASH criptográfico simples
 async function generateSha256(message: string): Promise<string> {
     const msgBuffer = new TextEncoder().encode(message);
@@ -76,7 +78,7 @@ export async function parseOFX(content: string): Promise<ParsedOFXTransaction[]>
         if (fitIdMatch && fitIdMatch[1].trim() !== '') {
             finalFitId = fitIdMatch[1].trim();
         } else {
-            const fallBackString = `${dateObj.toISOString().split('T')[0]}_${amount}_${rawDescription}`;
+            const fallBackString = `${toYYYYMMDD(dateObj)}_${amount}_${rawDescription}`;
             finalFitId = await generateSha256(fallBackString);
         }
 

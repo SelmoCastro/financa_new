@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { FixedItems } from './components/FixedItems';
-import api from './services/api';
 import { useNavigate } from 'react-router-dom';
 import { useFixedTransactions } from './hooks/useFixedTransactions';
 import { DashboardView } from './views/DashboardView';
@@ -15,17 +13,17 @@ import { AccountsView } from './views/AccountsView';
 import { ImportOverlay } from './components/ImportOverlay';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { MonthProvider, useMonth } from './context/MonthContext';
+import { DataProvider, useData } from './context/DataProvider';
 import { MonthSelector } from './components/MonthSelector';
-import { Transaction, Budget, Account, CreditCard } from './types';
+import { Transaction } from './types';
 import { TransactionForm } from './components/TransactionForm';
-import { getYearMonth } from './utils/dateUtils';
 
 const AppContent: React.FC = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    transactions, accounts, creditCards, dashboardSummary, isLoading, refreshData,
+    addTransaction, updateTransaction, deleteTransaction
+  } = useData();
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -35,36 +33,7 @@ const AppContent: React.FC = () => {
   const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false);
   const navigate = useNavigate();
   const { addToast } = useToast();
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [txRes, bRes, accRes, ccRes] = await Promise.all([
-        api.get<Transaction[]>('/transactions'),
-        api.get<Budget[]>('/budgets'),
-        api.get<Account[]>('/accounts'),
-        api.get<CreditCard[]>('/credit-cards')
-      ]);
-      setTransactions(txRes.data);
-      setBudgets(bRes.data);
-      setAccounts(accRes.data);
-      setCreditCards(ccRes.data);
-    } catch (error) {
-      console.error('Data fetch error:', error);
-      if ((error as any).response?.status === 401) {
-        navigate('/login');
-      } else {
-        addToast('Erro ao carregar dados. Verifique a conexão com o backend.', 'error');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { selectedDate } = useMonth();
 
   useEffect(() => {
     // @ts-ignore
@@ -74,89 +43,35 @@ const AppContent: React.FC = () => {
     }
   }, [activeTab, sidebarOpen, isFormOpen, transactions, editingTransaction, userName, isLoading, isImportOpen]);
 
-  const { selectedDate } = useMonth();
+  const totals = useMemo(() => ({
+    balance: dashboardSummary?.balance || 0,
+    income: dashboardSummary?.currentMonth?.income || 0,
+    expense: dashboardSummary?.currentMonth?.expense || 0,
+    currentIncome: dashboardSummary?.currentMonth?.income || 0,
+    currentExpense: dashboardSummary?.currentMonth?.expense || 0,
+    incomeTrend: 0,
+    expenseTrend: 0
+  }), [dashboardSummary]);
 
-  const totals = useMemo(() => {
-    let income = 0;
-    let expense = 0;
-    let currentIncome = 0;
-    let currentExpense = 0;
-
-    const { year: targetYear, month: targetMonth } = getYearMonth(selectedDate);
-
-    transactions.forEach(t => {
-      const amount = Number(t.amount);
-      const txDate = new Date(t.date);
-      const { year: txYear, month: txMonth } = getYearMonth(txDate);
-
-      // Saldo geral (todas até a data atual, ou simplesmente todas para simplificar na web como era antes)
-      if (t.type === 'INCOME') income += amount;
-      else expense += amount;
-
-      // Totais do mês selecionado
-      if (txYear === targetYear && txMonth === targetMonth) {
-        if (t.type === 'INCOME') currentIncome += amount;
-        else currentExpense += amount;
-      }
-    });
-
-    return {
-      income,
-      expense,
-      balance: income - expense,
-      currentIncome,
-      currentExpense,
-      incomeTrend: 0,
-      expenseTrend: 0
-    };
-  }, [transactions, selectedDate]);
-
-  const monthFilteredTransactions = useMemo(() => {
-    const { year: targetYear, month: targetMonth } = getYearMonth(selectedDate);
-    return transactions.filter(t => {
-      const { year: txYear, month: txMonth } = getYearMonth(t.date);
-      return txYear === targetYear && txMonth === targetMonth;
-    });
-  }, [transactions, selectedDate]);
+  // Timeline and History now use strictly the month-filtered ones passed from the API
+  const monthFilteredTransactions = transactions;
 
   const forecast = useFixedTransactions(transactions, totals);
 
   const handleAddTransaction = async (newTx: Omit<Transaction, 'id'>) => {
-    try {
-      const response = await api.post('/transactions', newTx);
-      setTransactions(prev => [response.data, ...prev]);
-      setIsFormOpen(false);
-      addToast('Transação salva com sucesso!', 'success');
-    } catch (error) {
-      console.error('Erro ao adicionar:', error);
-      addToast('Erro ao salvar transação', 'error');
-    }
+    await addTransaction(newTx);
+    setIsFormOpen(false);
   };
 
   const handleUpdateTransaction = async (updatedTx: Transaction) => {
-    try {
-      const { id, ...data } = updatedTx;
-      await api.patch(`/transactions/${id}`, data);
-      setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...data } : t));
-      setEditingTransaction(null);
-      setIsFormOpen(false);
-      addToast('Transação atualizada!', 'success');
-    } catch (error) {
-      console.error('Erro ao atualizar:', error);
-      addToast('Erro ao atualizar transação', 'error');
-    }
+    await updateTransaction(updatedTx);
+    setEditingTransaction(null);
+    setIsFormOpen(false);
   };
 
   const handleDeleteTransaction = async (id: string) => {
     if (confirm('Deseja realmente excluir este lançamento?')) {
-      try {
-        await api.delete(`/transactions/${id}`);
-        setTransactions(prev => prev.filter(t => t.id !== id));
-        addToast('Transação removida.', 'info');
-      } catch (error) {
-        console.error('Erro ao deletar:', error);
-        addToast('Erro ao deletar transação', 'error');
-      }
+      await deleteTransaction(id);
     }
   };
 
@@ -180,7 +95,7 @@ const AppContent: React.FC = () => {
       case 'budgets':
         return (
           <BudgetsView
-            existingCategories={Array.from(new Set(monthFilteredTransactions.map(t => t.category)))}
+            existingCategories={Array.from(new Set(monthFilteredTransactions.map(t => typeof t.category === 'object' && t.category !== null ? t.category.name : t.categoryLegacy || 'Outros'))).filter(Boolean)}
             isPrivacyEnabled={isPrivacyEnabled}
           />
         );
@@ -197,7 +112,7 @@ const AppContent: React.FC = () => {
             transactions={transactions}
           />
         );
-      case 'history': // Maps to "Extrato" sidebar item
+      case 'history':
         return (
           <HistoryView
             transactions={monthFilteredTransactions}
@@ -283,7 +198,7 @@ const AppContent: React.FC = () => {
           onClose={() => setIsImportOpen(false)}
           onImportSuccess={() => {
             setIsImportOpen(false);
-            fetchData();
+            refreshData();
             addToast('Extrato importado com sucesso!', 'success');
           }}
           accounts={accounts}
@@ -299,7 +214,9 @@ const App: React.FC = () => {
   return (
     <ToastProvider>
       <MonthProvider>
-        <AppContent />
+        <DataProvider>
+          <AppContent />
+        </DataProvider>
       </MonthProvider>
     </ToastProvider>
   );

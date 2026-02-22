@@ -6,17 +6,33 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 export function configureApp(app: INestApplication) {
     // CORS
+    const allowedOrigins = process.env.FRONTEND_URL
+        ? [process.env.FRONTEND_URL, 'http://localhost:5173'] // Produção + Local dev
+        : 'http://localhost:5173';
+
     app.enableCors({
-        origin: true,
+        origin: allowedOrigins,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
         allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
     });
 
-    // Security Headers
+    // Security Headers (Helmet com CSP restritivo)
     app.use(helmet({
-        crossOriginResourcePolicy: false,
-        crossOriginOpenerPolicy: false,
+        crossOriginResourcePolicy: { policy: "cross-origin" },
+        crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "'unsafe-inline'"], // Allow if needed for Swagger
+                styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+                imgSrc: ["'self'", "data:", "https:"],
+                connectSrc: ["'self'", ...(Array.isArray(allowedOrigins) ? allowedOrigins : [allowedOrigins])],
+                fontSrc: ["'self'", "https://fonts.gstatic.com"],
+                objectSrc: ["'none'"],
+                upgradeInsecureRequests: [],
+            },
+        },
     }));
 
     // API Versioning

@@ -1,6 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { Transaction } from '../types';
+import { toYYYYMMDD } from '../utils/dateUtils';
 
 interface TimelineViewProps {
     transactions: Transaction[];
@@ -12,7 +13,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
         const groups: Record<string, Transaction[]> = {};
 
         sorted.forEach(t => {
-            const dateKey = t.date.toString().split('T')[0];
+            const dateKey = toYYYYMMDD(t.date);
             if (!groups[dateKey]) groups[dateKey] = [];
             groups[dateKey].push(t);
         });
