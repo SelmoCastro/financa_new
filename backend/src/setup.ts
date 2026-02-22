@@ -5,13 +5,15 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 export function configureApp(app: INestApplication) {
-    // CORS
-    const allowedOrigins = process.env.FRONTEND_URL
-        ? [process.env.FRONTEND_URL, 'http://localhost:5173'] // Produção + Local dev
-        : 'http://localhost:5173';
+    // CORS (Aceita Regex)
+    const frontendUrl = process.env.FRONTEND_URL || 'https://financa-new.vercel.app';
+    const allowedOriginsCORS = [frontendUrl, 'http://localhost:5173', 'http://localhost:3000', /\.vercel\.app$/];
+
+    // CSP (Aceita Wildcard mas não Regex)
+    const allowedOriginsCSP = [frontendUrl, 'http://localhost:5173', 'http://localhost:3000', 'https://*.vercel.app'];
 
     app.enableCors({
-        origin: allowedOrigins,
+        origin: allowedOriginsCORS,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
         allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
@@ -27,7 +29,7 @@ export function configureApp(app: INestApplication) {
                 scriptSrc: ["'self'", "'unsafe-inline'"], // Allow if needed for Swagger
                 styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
                 imgSrc: ["'self'", "data:", "https:"],
-                connectSrc: ["'self'", ...(Array.isArray(allowedOrigins) ? allowedOrigins : [allowedOrigins])],
+                connectSrc: ["'self'", ...allowedOriginsCSP],
                 fontSrc: ["'self'", "https://fonts.gstatic.com"],
                 objectSrc: ["'none'"],
                 upgradeInsecureRequests: [],
