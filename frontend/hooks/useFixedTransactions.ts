@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Transaction } from '../types';
+import { toMidnightDate } from '../utils/dateUtils';
 
 export const useFixedTransactions = (transactions: Transaction[], totals: { balance: number, income: number, currentIncome?: number }) => {
     return useMemo(() => {
@@ -86,10 +87,8 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         // 4. Fixed Income Commitment
         let totalFixedExpense = 0;
         transactions.forEach(t => {
-            // Fix: Parse date as "Calendar Date" (YYYY-MM-DD)
-            const datePart = new Date(t.date).toISOString().split('T')[0];
-            const [y, m, d] = datePart.split('-').map(Number);
-            const date = new Date(y, m - 1, d); // Local Midnight
+            // Parse date using generalized utility
+            const date = toMidnightDate(t.date);
 
             if (t.isFixed && t.type === 'EXPENSE' && date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
                 totalFixedExpense += Number(t.amount);
@@ -105,10 +104,8 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         // 5. "Top Villains" (Most expensive descriptions - THIS MONTH ONLY)
         const expensesByDesc: Record<string, number> = {};
         transactions.filter(t => {
-            // Fix: Parse date as "Calendar Date" (YYYY-MM-DD)
-            const datePart = new Date(t.date).toISOString().split('T')[0];
-            const [y, m, d] = datePart.split('-').map(Number);
-            const date = new Date(y, m - 1, d); // Local Midnight
+            // Parse date using generalized utility
+            const date = toMidnightDate(t.date);
 
             return t.type === 'EXPENSE' && date.getMonth() === currentMonth && date.getFullYear() === currentYear;
         }).forEach(t => {

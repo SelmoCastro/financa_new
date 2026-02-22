@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Res, Query } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -30,13 +30,21 @@ export class TransactionsController {
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.transactionsService.findAll(req.user.userId);
+  findAll(@Request() req, @Query('year') year?: string, @Query('month') month?: string) {
+    return this.transactionsService.findAll(
+      req.user.userId,
+      year ? parseInt(year, 10) : undefined,
+      month ? parseInt(month, 10) : undefined
+    );
   }
 
   @Get('dashboard-summary')
-  getDashboardSummary(@Request() req) {
-    return this.transactionsService.getDashboardSummary(req.user.userId);
+  getDashboardSummary(@Request() req, @Query('year') year?: string, @Query('month') month?: string) {
+    return this.transactionsService.getDashboardSummary(
+      req.user.userId,
+      year ? parseInt(year, 10) : undefined,
+      month ? parseInt(month, 10) : undefined
+    );
   }
 
   @Get('export')

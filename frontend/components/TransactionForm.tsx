@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { TransactionType, Transaction, Account, CreditCard, Category } from '../types';
 import api from '../services/api';
+import { toYYYYMMDD } from '../utils/dateUtils';
 
 interface TransactionFormProps {
   onAdd: (transaction: Omit<Transaction, 'id'>) => void;
@@ -22,7 +23,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [displayAmount, setDisplayAmount] = useState('');
   const [type, setType] = useState<TransactionType>('EXPENSE');
   const [categoryId, setCategoryId] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(toYYYYMMDD(new Date()));
   const [isFixed, setIsFixed] = useState(false);
 
   // New States
@@ -81,7 +82,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       setAccountId(editingTransaction.accountId || '');
       setCreditCardId(editingTransaction.creditCardId || '');
 
-      setDate(editingTransaction.date.split('T')[0]);
+      setDate(toYYYYMMDD(editingTransaction.date));
       setIsFixed(!!editingTransaction.isFixed);
     }
   }, [editingTransaction, isLoadingEntities]);

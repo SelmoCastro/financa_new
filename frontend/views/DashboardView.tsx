@@ -16,121 +16,36 @@ interface DashboardViewProps {
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
 import { useMonth } from '../context/MonthContext';
+import { useData } from '../context/DataProvider';
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false }) => {
     const { selectedDate } = useMonth();
 
-    const totals = useMemo(() => {
-        const now = new Date(); // Keep for balance strictly up to today
-        const currentMonth = selectedDate.getMonth();
-        const currentYear = selectedDate.getFullYear();
-        const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-        const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    const { dashboardSummary } = useData();
 
-        const current = { income: 0, expense: 0 };
-        const previous = { income: 0, expense: 0 };
-        const overall = { income: 0, expense: 0 };
-        const balanceTotal = { value: 0 }; // Balance strictly up to today
-
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        transactions.forEach(t => {
-            const amount = Number(t.amount);
-
-            // Fix: Parse date as "Calendar Date" (YYYY-MM-DD) to avoid Timezone shifts (e.g. Day 1 -> Day 30/31)
-            const datePart = new Date(t.date).toISOString().split('T')[0];
-            const [y, m, d] = datePart.split('-').map(Number);
-            const date = new Date(y, m - 1, d); // Local Midnight
-
-            const tDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-            const tMonth = date.getMonth();
-            const tYear = date.getFullYear();
-
-            // Overall totals (Raw Sum - kept for reference if needed, but not for Balance)
-            if (t.type === 'INCOME') overall.income += amount;
-            else overall.expense += amount;
-
-            // Balance Calculation (Strictly <= Today)
-            if (tDateOnly <= todayStart) {
-                if (t.type === 'INCOME') balanceTotal.value += amount;
-                else balanceTotal.value -= amount;
-            }
-
-            // Current Month
-            if (tMonth === currentMonth && tYear === currentYear) {
-                if (t.type === 'INCOME') current.income += amount;
-                else current.expense += amount;
-            }
-
-            // Previous Month
-            if (tMonth === previousMonth && tYear === previousYear) {
-                if (t.type === 'INCOME') previous.income += amount;
-                else previous.expense += amount;
-            }
-        });
-
-        const calculateVariation = (curr: number, prev: number) => {
-            if (prev === 0) return curr > 0 ? 100 : 0;
-            return ((curr - prev) / prev) * 100;
-        };
-
-        return {
-            income: overall.income,
-            expense: overall.expense,
-            balance: balanceTotal.value, // Now returns correct "Current Balance"
-            currentIncome: current.income,
-            currentExpense: current.expense,
-            incomeTrend: calculateVariation(current.income, previous.income),
-            expenseTrend: calculateVariation(current.expense, previous.expense)
-        };
-    }, [transactions, selectedDate]);
+    const totals = useMemo(() => ({
+        income: dashboardSummary?.currentMonth?.income || 0,
+        expense: dashboardSummary?.currentMonth?.expense || 0,
+        balance: dashboardSummary?.balance || 0,
+        currentIncome: dashboardSummary?.currentMonth?.income || 0,
+        currentExpense: dashboardSummary?.currentMonth?.expense || 0,
+        incomeTrend: 0,
+        expenseTrend: 0
+    }), [dashboardSummary]);
 
     const rule503020 = useMemo(() => {
-        const needsCategories = ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação', 'Contas e Serviços'];
-        const wantsCategories = ['Lazer', 'Outros', 'Compras', 'Restaurantes', 'Assinaturas', 'Viagem', 'Cuidados Pessoais', 'Presentes'];
-        const savingsCategories = ['Investimentos (Aporte)', 'Dívidas/Financiamentos'];
-
-        let needs = 0;
-        let wants = 0;
-        let savings = 0;
-
-        transactions.forEach(t => {
-            // Fix: Parse date as "Calendar Date" (YYYY-MM-DD)
-            const datePart = new Date(t.date).toISOString().split('T')[0];
-            const [y, m, d] = datePart.split('-').map(Number);
-            const date = new Date(y, m - 1, d); // Local Midnight
-
-            const tMonth = date.getMonth();
-            const tYear = date.getFullYear();
-
-            const currentMonth = selectedDate.getMonth();
-            const currentYear = selectedDate.getFullYear();
-
-            if (t.type === 'EXPENSE' && tMonth === currentMonth && tYear === currentYear) {
-                const amount = Number(t.amount);
-                // Group expenses by category name (Legacy direct string from DB/AI)
-                const categoryName = t.categoryLegacy || t.category?.name || 'Outros';
-                if (needsCategories.includes(categoryName)) {
-                    needs += amount;
-                } else if (wantsCategories.includes(categoryName)) {
-                    wants += amount;
-                } else if (savingsCategories.includes(categoryName)) {
-                    savings += amount;
-                } else {
-                    wants += amount;
-                }
-            }
-        });
-
-        const totalIncome = totals.currentIncome || 1;
+        if (!dashboardSummary) return {
+            needs: { value: 0, percent: 0, target: 50 },
+            wants: { value: 0, percent: 0, target: 30 },
+            savings: { value: 0, percent: 0, target: 20 }
+        };
 
         return {
-            needs: { value: needs, percent: (needs / totalIncome) * 100, target: 50 },
-            wants: { value: wants, percent: (wants / totalIncome) * 100, target: 30 },
-            savings: { value: savings, percent: (savings / totalIncome) * 100, target: 20 }
+            needs: { ...dashboardSummary.rule503020.needs, target: 50 },
+            wants: { ...dashboardSummary.rule503020.wants, target: 30 },
+            savings: { ...dashboardSummary.rule503020.savings, target: 20 }
         };
-    }, [transactions, totals.income, selectedDate]);
+    }, [dashboardSummary]);
 
     const forecast = useFixedTransactions(transactions, totals);
 

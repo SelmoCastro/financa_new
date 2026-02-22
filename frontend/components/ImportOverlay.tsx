@@ -11,6 +11,7 @@ interface ImportOverlayProps {
 }
 
 import { parseOFX } from '../utils/ofxParser';
+import { toYYYYMMDD } from '../utils/dateUtils';
 
 interface ParsedTransaction {
     id: string; // Internal temporary ID
@@ -97,7 +98,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
             const uiTransactions: ParsedTransaction[] = preview.map((t: any) => ({
                 id: Math.random().toString(36).substr(2, 9),
                 fitId: t.fitId,
-                date: t.date.split('T')[0],
+                date: toYYYYMMDD(t.date),
                 description: t.description,
                 amount: t.amount,
                 type: t.type,
