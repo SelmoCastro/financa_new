@@ -56,5 +56,14 @@ O sistema foi posto à prova contra as top 10 ameaças atuais (OWASP), testando 
 - **CORS Estrito**: Limitar o CORS da API estritamente para a URL oficial da Vercel para impedir bots e requests via Postman não credenciados ou domínios de phishing.
 
 ---
+
+## 🛠️ 4. Correções e Estabilização (Pós-Auditoria / Hotfixes)
+
+Durante a fase de testes e utilização prática em Nuvem (Vercel), aplicamos correções finas que estabilizaram a resiliência técnica do projeto:
+- **CORS Flexível e Seguro**: A política restritiva de CORS foi adaptada via *Expressões Regulares (Regex)*, permitindo o funcionamento pleno não apenas na URL oficial (Produção), mas em toda raiz de subdomínios `*.vercel.app` para suportar ambientes de Preview.
+- **Validação Estrita de DTOs (NestJS Whitelist)**: Identificou-se que a camada protetora do Nest.js descartava os hashes de sessão (FITIDs) do Parser OFX de forma silenciosa. A aplicação de `@IsOptional` e do pacote `class-validator` garantiu a integridade do dado até a persistência, permitindo o *Silent Skip* de transações repetidas perfeitamente.
+- **Dashboard Data Flow**: A arquitetura *Server-Side Aggregation* foi calibrada para prover o Histórico Vitalício 100% íntegro de conta para os motores de renderização da *Performance Mensal* e *Regras 50-30-20*, sem pesar na thread do celular.
+
+---
 **Conclusão Final**:
 A arquitetura base atingiu estado maduro, perfazendo um aplicativo seguro e escalável. O foco pós-correção de segredos deve residir na User Experience e novas Funcionalidades Opcionais.
