@@ -46,7 +46,7 @@ export class TransactionsService {
     const fitIds = transactionsData.map(t => t.fitId).filter(Boolean);
     const targetAccountId = transactionsData[0]?.accountId;
 
-    // 1. Silent Skip: Acha todos os FITIDs exatos já persistidos no banco.
+    // 1. Silent Skip: FITIDs já confirmados no banco (transação salva)
     let existingFitIds = new Set<string>();
     if (fitIds.length > 0) {
       const existing = await this.prisma.transaction.findMany({
@@ -56,7 +56,17 @@ export class TransactionsService {
       existingFitIds = new Set(existing.map(e => e.fitId!));
     }
 
-    // 2. Fuzzy Hash (Mesma quantia e mesma data na mesma conta, mas FITID/Nome diferente)
+    // 2. Histórico de importação: FITIDs já ACEITOS ou REJEITADOS anteriormente
+    let historyMap = new Map<string, string>(); // fitId -> 'ACCEPTED' | 'REJECTED'
+    if (fitIds.length > 0) {
+      const history = await this.prisma.importedFitId.findMany({
+        where: { userId, fitId: { in: fitIds } },
+        select: { fitId: true, status: true }
+      });
+      history.forEach(h => historyMap.set(h.fitId, h.status));
+    }
+
+    // 3. Fuzzy Hash (mesma data + valor na mesma conta, FITID diferente)
     const minDate = new Date(Math.min(...transactionsData.map(t => new Date(t.date).getTime())));
     const maxDate = new Date(Math.max(...transactionsData.map(t => new Date(t.date).getTime())));
 
@@ -73,31 +83,36 @@ export class TransactionsService {
     const descriptionsToClassify = new Set<string>();
 
     for (const raw of transactionsData) {
+      // Silent Skip: FITID já existe como transação salva no banco
       if (raw.fitId && existingFitIds.has(raw.fitId)) {
-        continue; // Silent Skip
+        continue;
       }
+
+      // Silent Skip: FITID foi ACEITO em importação anterior (mas pode ter sido deletado do banco)
+      // Somente skip definitivo se estiver no banco de transações. Se foi apagado, mostramos de novo.
+      // Para REJECTED: sempre mostrar, mas com flag de aviso.
 
       const txDate = new Date(raw.date);
       const hash = `${txDate.toISOString().split('T')[0]}_${raw.amount}`;
       const isFuzzyDuplicate = fuzzySet.has(hash);
+      const historyStatus = raw.fitId ? historyMap.get(raw.fitId) : undefined;
+      const isPreviouslyRejected = historyStatus === 'REJECTED';
 
-      // Adicionamos a UI flags
       toReview.push({
         ...raw,
-        isFuzzyDuplicate, // Avisa a interface: "Tem algo desse dia com esse valor já!"
+        isFuzzyDuplicate,
+        isPreviouslyRejected, // true = usuário rejeitou essa transação em importação anterior
       });
 
-      // Se a UI permitir, já pega o nome:
       descriptionsToClassify.add(raw.description);
     }
 
-    // Camada 2 - IA
+    // Camada IA: classifica categorias
     let aiClassifications = {};
     if (descriptionsToClassify.size > 0) {
       aiClassifications = await this.aiService.classifyTransactions(Array.from(descriptionsToClassify));
     }
 
-    // Merge IA results with the preview payload
     const finalPreview = toReview.map(tx => {
       const suggestion = aiClassifications[tx.description];
       return {
@@ -114,11 +129,17 @@ export class TransactionsService {
     };
   }
 
-  async confirmImport(transactionsData: any[], userId: string) {
-    if (!transactionsData || transactionsData.length === 0) return { importedCount: 0 };
+  async confirmImport(transactionsData: any[], userId: string, rejectedFitIds: string[] = []) {
+    if (!transactionsData || transactionsData.length === 0) {
+      // Mesmo sem transações, registra os rejeitados
+      if (rejectedFitIds.length > 0) {
+        await this.saveImportHistory(userId, [], rejectedFitIds);
+      }
+      return { importedCount: 0 };
+    }
 
     return this.prisma.$transaction(async (tx) => {
-      // Get existing fitIds in the batch
+      // Verificação final de FITIDs duplicados antes de inserir
       const fitIds = transactionsData.map(t => t.fitId).filter(Boolean);
       let existingFitIds = new Set<string>();
       if (fitIds.length > 0) {
@@ -138,7 +159,7 @@ export class TransactionsService {
           type: t.type,
           isFixed: t.isFixed || false,
           fitId: t.fitId,
-          classificationRule: t.classificationRule || 30, // Default 30 - Desejos
+          classificationRule: t.classificationRule || 30,
           categoryId: t.categoryId,
           categoryLegacy: t.categoryLegacy,
           accountId: t.accountId,
@@ -146,15 +167,17 @@ export class TransactionsService {
           userId,
         }));
 
-      if (toInsert.length === 0) return { importedCount: 0 };
+      if (toInsert.length === 0) {
+        await this.saveImportHistory(userId, [], rejectedFitIds);
+        return { importedCount: 0 };
+      }
 
-      // Apenas transações com FITID novo (skipDuplicates age como fallback)
       const result = await tx.transaction.createMany({
         data: toInsert,
         skipDuplicates: true
       });
 
-      // Calcular o delta consolidado por conta SOMENTE das que foram marcadas para inserção
+      // Atualizar saldo das contas
       const accountDeltas: Record<string, number> = {};
       for (const t of toInsert) {
         if (t.accountId) {
@@ -172,8 +195,43 @@ export class TransactionsService {
         }
       }
 
+      // Persistir histórico de importação (fora da transaction principal para não bloquear)
+      const acceptedFitIds = toInsert.map(t => t.fitId).filter(Boolean) as string[];
+      await this.saveImportHistory(userId, acceptedFitIds, rejectedFitIds);
+
       return { importedCount: result.count };
     });
+  }
+
+  /**
+   * Persiste o histórico de FITIDs aceitos e rejeitados.
+   * Usa upsert para que reimports atualizem o status sem criar duplicatas.
+   */
+  private async saveImportHistory(userId: string, acceptedFitIds: string[], rejectedFitIds: string[]) {
+    const upserts: Promise<any>[] = [];
+
+    for (const fitId of acceptedFitIds) {
+      upserts.push(
+        this.prisma.importedFitId.upsert({
+          where: { userId_fitId: { userId, fitId } },
+          create: { fitId, userId, status: 'ACCEPTED' },
+          update: { status: 'ACCEPTED' },
+        })
+      );
+    }
+
+    for (const fitId of rejectedFitIds) {
+      // Só gravamos REJECTED se não foi ACCEPTED antes (não sobreescrevemos uma confirmação)
+      upserts.push(
+        this.prisma.importedFitId.upsert({
+          where: { userId_fitId: { userId, fitId } },
+          create: { fitId, userId, status: 'REJECTED' },
+          update: { status: 'REJECTED' }, // Se um dia foi aceito e o usuário deletou, não mudamos o status retroativamente
+        })
+      );
+    }
+
+    await Promise.all(upserts);
   }
 
 

@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsDateString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNumber, IsDateString, IsOptional, IsBoolean, IsArray } from 'class-validator';
 
 export class ImportValidateTransactionDto {
     @IsString()
@@ -62,4 +62,18 @@ export class ImportConfirmTransactionDto {
     @IsString()
     @IsOptional()
     creditCardId?: string;
+}
+
+/**
+ * Payload completo de confirmação de importação.
+ * Inclui as transações confirmadas + os FITIDs que o usuário rejeitou
+ * na tela de revisão, para que possamos gravá-los e não mostrá-los novamente.
+ */
+export class ImportConfirmPayloadDto {
+    @IsArray()
+    transactions: ImportConfirmTransactionDto[];
+
+    @IsArray()
+    @IsOptional()
+    rejectedFitIds?: string[];
 }

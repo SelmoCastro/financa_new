@@ -88,10 +88,98 @@ ${JSON.stringify(descriptions)}`;
         for (const desc of descriptions) {
             result[desc] = {
                 category: 'Outros',
-                rule: 30, // Fallback joga na conta de desejos
+                rule: 30,
                 icon: '🏷️'
             };
         }
         return result;
     }
+
+    /**
+     * Extrai dados de transação de uma imagem de comprovante (PIX, TED, DOC, recibo, etc.)
+     * usando Gemini Vision. Retorna um array de transações no formato compatível com o import.
+     */
+    async extractFromReceipt(imageBase64: string, mimeType: string): Promise<ReceiptTransaction[]> {
+        if (!this.ai) {
+            this.logger.warn('AiService: Gemini não disponível. Não é possível processar comprovante.');
+            return [];
+        }
+
+        const prompt = `Você é um extrator de dados financeiros. Analise esta imagem de comprovante bancário brasileiro.
+
+Extraia as transações presentes e retorne um JSON array com o seguinte formato:
+[
+  {
+    "date": "YYYY-MM-DD",
+    "amount": 150.00,
+    "description": "PIX para João Silva",
+    "type": "EXPENSE",
+    "suggestedCategory": "Transferência Recebida",
+    "suggestedRule": 30,
+    "suggestedIcon": "💸"
+  }
+]
+
+Regras:
+- "type": use "EXPENSE" para pagamentos/transferências enviadas, "INCOME" para recebimentos
+- "amount": sempre positivo, sem sinal
+- "date": formato YYYY-MM-DD. Se o ano não aparecer, use o ano atual (${new Date().getFullYear()})
+- "description": nome do destinatário/remetente + tipo (PIX, TED, DOC, Pagamento)
+- "suggestedCategory": use uma dessas:
+  EXPENSE → "Transferência Recebida", "Restaurante / Delivery", "Mercado / Padaria", "Compras / Vestuário", "Outros"
+  INCOME → "Transferência Recebida", "Salário", "Renda Extra"
+- Se não conseguir extrair dados suficientes (imagem ilegível, não é comprovante), retorne []
+- Retorne APENAS o JSON array, sem texto adicional`;
+
+        try {
+            this.logger.log('Enviando comprovante para Gemini Vision...');
+
+            const response = await this.ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType,
+                                    data: imageBase64,
+                                }
+                            }
+                        ]
+                    }
+                ],
+                config: {
+                    temperature: 0.0,
+                    responseMimeType: 'application/json',
+                }
+            });
+
+            const responseText = response.text || '[]';
+            // Remove possível markdown code block
+            const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const parsed = JSON.parse(cleaned);
+
+            if (!Array.isArray(parsed)) return [];
+
+            this.logger.log(`Gemini extraiu ${parsed.length} transações do comprovante.`);
+            return parsed;
+
+        } catch (error) {
+            this.logger.error('Erro ao extrair dados do comprovante via Gemini:', error);
+            return [];
+        }
+    }
 }
+
+export interface ReceiptTransaction {
+    date: string;
+    amount: number;
+    description: string;
+    type: 'INCOME' | 'EXPENSE';
+    suggestedCategory?: string;
+    suggestedRule?: number;
+    suggestedIcon?: string;
+}
+

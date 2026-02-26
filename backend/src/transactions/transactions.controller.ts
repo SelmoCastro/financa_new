@@ -1,10 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Res, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Res, Query, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
-import { ImportValidateTransactionDto, ImportConfirmTransactionDto } from './dto/import-transaction.dto';
+import { ImportValidateTransactionDto, ImportConfirmPayloadDto } from './dto/import-transaction.dto';
+import { AiService } from '../ai/ai.service';
+import { memoryStorage } from 'multer';
+
 
 @Controller({
   path: 'transactions',
@@ -12,7 +16,10 @@ import { ImportValidateTransactionDto, ImportConfirmTransactionDto } from './dto
 })
 @UseGuards(AuthGuard('jwt'))
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) { }
+  constructor(
+    private readonly transactionsService: TransactionsService,
+    private readonly aiService: AiService,
+  ) { }
 
   @Post()
   create(@Body() createTransactionDto: CreateTransactionDto, @Request() req) {
@@ -24,9 +31,44 @@ export class TransactionsController {
     return this.transactionsService.validateImport(importData, req.user.userId);
   }
 
+  @Post('import/receipt')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (_req, file, cb) => {
+      const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+      if (allowed.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new BadRequestException(`Tipo de arquivo não suportado: ${file.mimetype}. Use JPG, PNG, WEBP ou PDF.`), false);
+      }
+    },
+  }))
+  async importReceipt(@UploadedFile() file: Express.Multer.File, @Request() req) {
+    if (!file) {
+      throw new BadRequestException('Nenhum arquivo enviado.');
+    }
+
+    const imageBase64 = file.buffer.toString('base64');
+    const transactions = await this.aiService.extractFromReceipt(imageBase64, file.mimetype);
+
+    if (transactions.length === 0) {
+      return {
+        preview: [],
+        message: 'Não foi possível extrair transações deste arquivo. Tente com uma imagem mais nítida.'
+      };
+    }
+
+    return { preview: transactions };
+  }
+
   @Post('import/confirm')
-  confirmImport(@Body() importData: ImportConfirmTransactionDto[], @Request() req) {
-    return this.transactionsService.confirmImport(importData, req.user.userId);
+  confirmImport(@Body() payload: ImportConfirmPayloadDto, @Request() req) {
+    return this.transactionsService.confirmImport(
+      payload.transactions,
+      req.user.userId,
+      payload.rejectedFitIds || []
+    );
   }
 
   @Get()
