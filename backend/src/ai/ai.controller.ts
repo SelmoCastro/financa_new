@@ -3,7 +3,10 @@ import { AuthGuard } from '@nestjs/passport';
 import { AiService } from './ai.service';
 import { ReportsService } from '../reports/reports.service';
 
-@Controller('ai')
+@Controller({
+    path: 'ai',
+    version: '1',
+})
 @UseGuards(AuthGuard('jwt'))
 export class AiController {
     constructor(
@@ -17,7 +20,7 @@ export class AiController {
         @Query('year') year?: string,
         @Query('month') month?: string
     ) {
-        const userId = req.user.id;
+        const userId = req.user.userId;
         const now = new Date();
         const y = year ? parseInt(year) : now.getFullYear();
         const m = month ? parseInt(month) : now.getMonth();
@@ -33,7 +36,7 @@ export class AiController {
 
     @Post('chat')
     async postChat(@Request() req, @Body('message') message: string) {
-        const userId = req.user.id;
+        const userId = req.user.userId;
 
         // Contexto básico: resumo do mês atual para o chat
         const now = new Date();
