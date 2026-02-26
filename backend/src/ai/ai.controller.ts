@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Request, Inject, forwardRef } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AiService } from './ai.service';
 import { TransactionsService } from '../transactions/transactions.service';
@@ -8,6 +8,7 @@ import { TransactionsService } from '../transactions/transactions.service';
 export class AiController {
     constructor(
         private readonly aiService: AiService,
+        @Inject(forwardRef(() => TransactionsService))
         private readonly transactionsService: TransactionsService,
     ) { }
 

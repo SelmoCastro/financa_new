@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,6 +8,7 @@ import { AiService } from '../ai/ai.service';
 export class TransactionsService {
   constructor(
     private prisma: PrismaService,
+    @Inject(forwardRef(() => AiService))
     private aiService: AiService
   ) { }
 
