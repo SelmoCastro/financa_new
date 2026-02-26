@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 
 interface ClassificationResult {
     category: string;
@@ -10,24 +10,35 @@ interface ClassificationResult {
 @Injectable()
 export class AiService {
     private readonly logger = new Logger(AiService.name);
-    private ai: GoogleGenAI | null = null;
+    private openai: OpenAI | null = null;
+
+    // Modelos gratuitos recomendados no OpenRouter
+    private readonly VISION_MODEL = 'google/gemini-2.0-flash-exp:free';
+    private readonly TEXT_MODEL = 'google/gemini-2.0-flash-exp:free';
 
     constructor() {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.OPENROUTER_API_KEY;
         if (apiKey) {
-            this.ai = new GoogleGenAI({ apiKey });
-            this.logger.log('Gemini AI Service inicializado com sucesso.');
+            this.openai = new OpenAI({
+                apiKey: apiKey,
+                baseURL: 'https://openrouter.ai/api/v1',
+                defaultHeaders: {
+                    'HTTP-Referer': 'https://financa-new.vercel.app', // Opcional, para o ranking do OpenRouter
+                    'X-Title': 'Finanza AI',
+                },
+            });
+            this.logger.log(`OpenRouter Service inicializado com modelo: ${this.TEXT_MODEL}`);
         } else {
-            this.logger.warn('GEMINI_API_KEY não configurada. Serviço AI rodará em modo Fallback (Desativado).');
+            this.logger.warn('OPENROUTER_API_KEY não configurada. Serviço AI rodará em modo Fallback (Desativado).');
         }
     }
 
     /**
      * Recebe um array de descrições de transações e retorna a classificação delas
-     * de acordo com a regra 50-30-20.
+     * usando a Regra 50-30-20 via OpenRouter.
      */
     async classifyTransactions(descriptions: string[]): Promise<Record<string, ClassificationResult>> {
-        if (!this.ai || descriptions.length === 0) {
+        if (!this.openai || descriptions.length === 0) {
             return this.fallbackClassification(descriptions);
         }
 
@@ -46,21 +57,17 @@ Dados:
 ${JSON.stringify(descriptions)}`;
 
         try {
-            this.logger.log(`Enviando ${descriptions.length} txs p/ Gemini (Prompt Otimizado)`);
+            this.logger.log(`OpenRouter: Classificando ${descriptions.length} transações...`);
 
-            const response = await this.ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: {
-                    temperature: 0.0, // Zero criatividade, máxima exatidão estrutural
-                    responseMimeType: 'application/json',
-                }
+            const response = await this.openai.chat.completions.create({
+                model: this.TEXT_MODEL,
+                messages: [{ role: 'user', content: prompt }],
+                response_format: { type: 'json_object' },
             });
 
-            const responseText = response.text || '{}';
+            const responseText = response.choices[0]?.message?.content || '{}';
             const rawData = JSON.parse(responseText);
 
-            // Mapeia do formato minificado {c, r, i} de volta para a Interface do backend
             const parsedData: Record<string, ClassificationResult> = {};
             for (const [key, value] of Object.entries<any>(rawData)) {
                 parsedData[key] = {
@@ -70,44 +77,24 @@ ${JSON.stringify(descriptions)}`;
                 };
             }
 
-            this.logger.log(`Gemini classificou as transações com sucesso.`);
             return parsedData;
-
         } catch (error) {
-            this.logger.error('Erro na API da Gemini. Usando fallback.', error);
+            this.logger.error('Erro na API do OpenRouter. Usando fallback.', error);
             return this.fallbackClassification(descriptions);
         }
     }
 
     /**
-     * Caso a API do Google caia ou a chave não exista, usamos o fallback
-     * que devolverá tudo categorizado como 'Outros' (Camada 0).
-     */
-    private fallbackClassification(descriptions: string[]): Record<string, ClassificationResult> {
-        const result: Record<string, ClassificationResult> = {};
-        for (const desc of descriptions) {
-            result[desc] = {
-                category: 'Outros',
-                rule: 30,
-                icon: '🏷️'
-            };
-        }
-        return result;
-    }
-
-    /**
-     * Extrai dados de transação de uma imagem de comprovante (PIX, TED, DOC, recibo, etc.)
-     * usando Gemini Vision. Retorna um array de transações no formato compatível com o import.
+     * Extrai dados de transação de uma imagem de comprovante usando OpenRouter (Vision).
      */
     async extractFromReceipt(imageBase64: string, mimeType: string): Promise<ReceiptTransaction[]> {
-        if (!this.ai) {
-            this.logger.warn('AiService: Gemini não disponível. Não é possível processar comprovante.');
+        if (!this.openai) {
+            this.logger.warn('AiService: OpenRouter não disponível.');
             return [];
         }
 
-        const prompt = `Você é um extrator de dados financeiros. Analise esta imagem de comprovante bancário brasileiro.
-
-Extraia as transações presentes e retorne um JSON array com o seguinte formato:
+        const prompt = `Analise esta imagem de comprovante bancário brasileiro.
+Extraia as transações e retorne um JSON array com o seguinte formato:
 [
   {
     "date": "YYYY-MM-DD",
@@ -121,55 +108,53 @@ Extraia as transações presentes e retorne um JSON array com o seguinte formato
 ]
 
 Regras:
-- "type": use "EXPENSE" para pagamentos/transferências enviadas, "INCOME" para recebimentos
-- "amount": sempre positivo, sem sinal
-- "date": formato YYYY-MM-DD. Se o ano não aparecer, use o ano atual (${new Date().getFullYear()})
-- "description": nome do destinatário/remetente + tipo (PIX, TED, DOC, Pagamento)
-- "suggestedCategory": use uma dessas:
-  EXPENSE → "Transferência Recebida", "Restaurante / Delivery", "Mercado / Padaria", "Compras / Vestuário", "Outros"
-  INCOME → "Transferência Recebida", "Salário", "Renda Extra"
-- Se não conseguir extrair dados suficientes (imagem ilegível, não é comprovante), retorne []
-- Retorne APENAS o JSON array, sem texto adicional`;
+- "type": "EXPENSE" para saídas, "INCOME" para entradas
+- "amount": sempre positivo
+- "date": formato YYYY-MM-DD. Ano atual: ${new Date().getFullYear()}
+- Se não houver dados, retorne []
+- Retorne APENAS o JSON array.`;
 
         try {
-            this.logger.log('Enviando comprovante para Gemini Vision...');
+            this.logger.log(`OpenRouter: Processando comprovante com ${this.VISION_MODEL}...`);
 
-            const response = await this.ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: [
+            const response = await this.openai.chat.completions.create({
+                model: this.VISION_MODEL,
+                messages: [
                     {
                         role: 'user',
-                        parts: [
-                            { text: prompt },
+                        content: [
+                            { type: 'text', text: prompt },
                             {
-                                inlineData: {
-                                    mimeType,
-                                    data: imageBase64,
-                                }
-                            }
-                        ]
-                    }
+                                type: 'image_url',
+                                image_url: {
+                                    url: `data:${mimeType};base64,${imageBase64}`,
+                                },
+                            },
+                        ],
+                    },
                 ],
-                config: {
-                    temperature: 0.0,
-                    responseMimeType: 'application/json',
-                }
+                // OpenRouter/OpenAI response_format para vision pode variar, mas gemini via OR aceita json
+                response_format: { type: 'json_object' }
             });
 
-            const responseText = response.text || '[]';
-            // Remove possível markdown code block
-            const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            const parsed = JSON.parse(cleaned);
+            const responseText = response.choices[0]?.message?.content || '[]';
+            // Alguns modelos retornam { "transactions": [...] } ou direto o array
+            const rawData = JSON.parse(responseText);
+            const parsed = Array.isArray(rawData) ? rawData : (rawData.transactions || []);
 
-            if (!Array.isArray(parsed)) return [];
-
-            this.logger.log(`Gemini extraiu ${parsed.length} transações do comprovante.`);
             return parsed;
-
         } catch (error) {
-            this.logger.error('Erro ao extrair dados do comprovante via Gemini:', error);
+            this.logger.error('Erro ao extrair via OpenRouter Vision:', error);
             return [];
         }
+    }
+
+    private fallbackClassification(descriptions: string[]): Record<string, ClassificationResult> {
+        const result: Record<string, ClassificationResult> = {};
+        for (const desc of descriptions) {
+            result[desc] = { category: 'Outros', rule: 30, icon: '🏷️' };
+        }
+        return result;
     }
 }
 
@@ -182,4 +167,3 @@ export interface ReceiptTransaction {
     suggestedRule?: number;
     suggestedIcon?: string;
 }
-
