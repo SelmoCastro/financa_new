@@ -17,9 +17,13 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 
 import { useMonth } from '../context/MonthContext';
 import { useData } from '../context/DataProvider';
+import api from '../services/api';
+import { Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false }) => {
     const { selectedDate } = useMonth();
+    const [insights, setInsights] = React.useState<string | null>(null);
+    const [isFetchingInsights, setIsFetchingInsights] = React.useState(false);
 
     const { dashboardSummary } = useData();
 
@@ -108,8 +112,71 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
         });
     }, [transactions]);
 
+    const fetchInsights = async () => {
+        setIsFetchingInsights(true);
+        try {
+            const response = await api.get('/ai/insights', {
+                params: {
+                    year: selectedDate.getFullYear(),
+                    month: selectedDate.getMonth()
+                }
+            });
+            setInsights(response.data.insights);
+        } catch (error) {
+            console.error('Erro ao buscar insights:', error);
+            setInsights('Não foi possível carregar os insights no momento.');
+        } finally {
+            setIsFetchingInsights(false);
+        }
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* AI Insights Section */}
+            <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-6 md:p-8 text-white shadow-xl shadow-indigo-100 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
+
+                <div className="flex-1 space-y-4 relative z-10">
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-white/20 rounded-xl">
+                            <Sparkles className="w-5 h-5" />
+                        </div>
+                        <h2 className="text-xl font-bold">Insights Inteligentes</h2>
+                    </div>
+
+                    {isFetchingInsights ? (
+                        <div className="space-y-3">
+                            <div className="h-4 w-3/4 bg-white/20 rounded animate-pulse"></div>
+                            <div className="h-4 w-1/2 bg-white/20 rounded animate-pulse"></div>
+                            <div className="h-4 w-2/3 bg-white/20 rounded animate-pulse"></div>
+                        </div>
+                    ) : insights ? (
+                        <div className="prose prose-invert max-w-none">
+                            <ul className="grid grid-cols-1 md:grid-cols-1 gap-2 list-none p-0 m-0">
+                                {insights.split('\n').filter(line => line.trim()).map((line, i) => (
+                                    <li key={i} className="flex items-start gap-3 text-sm font-medium leading-relaxed bg-white/5 p-3 rounded-2xl border border-white/10">
+                                        <div className="w-2 h-2 mt-2 bg-indigo-300 rounded-full flex-shrink-0" />
+                                        {line.replace(/^[-\d.]\s*/, '')}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ) : (
+                        <p className="text-indigo-100 text-sm">
+                            Peça para a nossa IA analisar seus gastos desse mês e te dar dicas personalizadas.
+                        </p>
+                    )}
+                </div>
+
+                <button
+                    onClick={fetchInsights}
+                    disabled={isFetchingInsights}
+                    className="relative z-10 flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-2xl font-bold hover:bg-indigo-50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-lg"
+                >
+                    {isFetchingInsights ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {insights ? 'Atualizar Dicas' : 'Analisar meu Mês'}
+                </button>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {isLoading ? (
                     <>

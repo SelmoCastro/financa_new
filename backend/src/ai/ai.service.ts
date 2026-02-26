@@ -85,6 +85,124 @@ ${JSON.stringify(descriptions)}`;
     }
 
     /**
+     * Gera insights financeiros baseados no resumo do mês (saldo, gastos por categoria, regra 50/30/20).
+     */
+    async getFinancialInsights(summary: any): Promise<string> {
+        if (!this.openai) {
+            return 'Serviço AI não disponível no momento.';
+        }
+
+        const prompt = `Você é um mentor financeiro pessoal experiente. Analise o resumo mensal abaixo e forneça 3 insights ou conselhos práticos e rápidos para o usuário.
+        
+Seja direto, motivador e use uma linguagem amigável em português (Brasil). 
+Foque em: economias possíveis, alertas de desvio na regra 50/30/20 ou elogios por metas batidas.
+
+DADOS DO MÊS:
+${JSON.stringify(summary, null, 2)}
+
+FORMATO DE RESPOSTA:
+- Bullet point 1
+- Bullet point 2
+- Bullet point 3
+
+Responda APENAS os 3 bullet points, sem introdução.`;
+
+        try {
+            this.logger.log('OpenRouter: Gerando insights financeiros...');
+
+            const response = await this.openai.chat.completions.create({
+                model: this.TEXT_MODEL,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7,
+            });
+
+            return response.choices[0]?.message?.content || 'Não foi possível gerar insights agora. Tente novamente mais tarde.';
+        } catch (error) {
+            this.logger.error('Erro ao gerar insights via OpenRouter:', error);
+            return 'Erro na conexão com a inteligência artificial.';
+        }
+    }
+
+    /**
+     * Limpa descrições de extratos bancários (remove códigos, asteriscos, cidades).
+     * Ex: "PG * IFOOD * SAO PAULO" -> "iFood"
+     */
+    async cleanDescriptions(descriptions: string[]): Promise<Record<string, string>> {
+        if (!this.openai || descriptions.length === 0) {
+            return {};
+        }
+
+        const prompt = `Você é um especialista em conciliação bancária. Limpe as descrições de transações abaixo para torná-las legíveis e profissionais.
+        
+Regras:
+1. Remova códigos inúteis, números de série, "*" ou prefixos como "PG *".
+2. Remova nomes de cidades ou estados no final (ex: "SAO PAULO BR").
+3. Capitalize corretamente (ex: "IFOOD" -> "iFood").
+4. Preserve o nome principal do estabelecimento ou serviço.
+5. Retorne um JSON ONDE A CHAVE É A DESCRIÇÃO ORIGINAL EXATA e o valor é a descrição limpa.
+
+DADOS:
+${JSON.stringify(descriptions)}
+
+Responda APENAS o JSON.`;
+
+        try {
+            this.logger.log('OpenRouter: Limpando nomes de transações...');
+
+            const response = await this.openai.chat.completions.create({
+                model: this.TEXT_MODEL,
+                messages: [{ role: 'user', content: prompt }],
+                response_format: { type: 'json_object' },
+            });
+
+            const responseText = response.choices[0]?.message?.content || '{}';
+            return JSON.parse(responseText);
+        } catch (error) {
+            this.logger.error('Erro ao limpar descrições via OpenRouter:', error);
+            return {};
+        }
+    }
+
+    /**
+     * Chat financeiro interativo que recebe contexto do dashboard.
+     */
+    async chat(message: string, context: any): Promise<string> {
+        if (!this.openai) {
+            return 'Serviço de chat não disponível.';
+        }
+
+        const prompt = `Você é o "Finanza AI", um assistente financeiro pessoal inteligente e prestativo.
+        
+CONTEXTO ATUAL DO USUÁRIO (Dados do Dashboard):
+${JSON.stringify(context, null, 2)}
+
+INSTRUÇÕES:
+1. Responda de forma concisa e amigável em Português (Brasil).
+2. Use os dados de contexto para responder perguntas específicas sobre gastos, saldo ou categorias.
+3. Se não tiver certeza ou os dados não estiverem no contexto, seja honesto.
+4. Mantenha um tom encorajador.
+
+MENSAGEM DO USUÁRIO: "${message}"
+
+Sua resposta curta e direta:`;
+
+        try {
+            this.logger.log(`OpenRouter: Processando chat - "${message.substring(0, 30)}..."`);
+
+            const response = await this.openai.chat.completions.create({
+                model: this.TEXT_MODEL,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7,
+            });
+
+            return response.choices[0]?.message?.content || 'Desculpe, não consegui processar sua pergunta agora.';
+        } catch (error) {
+            this.logger.error('Erro no chat via OpenRouter:', error);
+            return 'Ocorreu um erro ao conversar com a IA.';
+        }
+    }
+
+    /**
      * Extrai dados de transação de uma imagem de comprovante usando OpenRouter (Vision).
      */
     async extractFromReceipt(imageBase64: string, mimeType: string): Promise<ReceiptTransaction[]> {

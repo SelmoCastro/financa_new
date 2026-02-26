@@ -17,6 +17,7 @@ import { DataProvider, useData } from './context/DataProvider';
 import { MonthSelector } from './components/MonthSelector';
 import { Transaction } from './types';
 import { TransactionForm } from './components/TransactionForm';
+import { ChatWidget } from './components/ChatWidget';
 import { getYearMonth } from './utils/dateUtils';
 
 const AppContent: React.FC = () => {
@@ -214,6 +215,9 @@ const AppContent: React.FC = () => {
           existingTransactions={transactions}
         />
       )}
+
+      {/* AI Assistant Chat */}
+      {!isLoading && <ChatWidget />}
     </div>
   );
 };

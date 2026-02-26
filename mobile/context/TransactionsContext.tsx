@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
 import { Transaction } from '../types';
 import api from '../services/api';
+import { useAuth } from './AuthContext';
 
 interface TransactionsContextData {
     transactions: Transaction[];
@@ -22,6 +23,7 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false);
+    const { token } = useAuth();
 
     const fetchTransactions = useCallback(async () => {
         try {
@@ -48,8 +50,10 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
 
     // Initial fetch
     useEffect(() => {
-        fetchTransactions();
-    }, []);
+        if (token) {
+            fetchTransactions();
+        }
+    }, [token]);
 
     return (
         <TransactionsContext.Provider

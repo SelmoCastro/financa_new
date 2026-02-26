@@ -107,16 +107,25 @@ export class TransactionsService {
       descriptionsToClassify.add(raw.description);
     }
 
-    // Camada IA: classifica categorias
+    // Camada IA: limpa nomes e classifica categorias
     let aiClassifications = {};
+    let cleanNames: Record<string, string> = {};
+
     if (descriptionsToClassify.size > 0) {
-      aiClassifications = await this.aiService.classifyTransactions(Array.from(descriptionsToClassify));
+      const descriptionsArray = Array.from(descriptionsToClassify);
+      [aiClassifications, cleanNames] = await Promise.all([
+        this.aiService.classifyTransactions(descriptionsArray),
+        this.aiService.cleanDescriptions(descriptionsArray)
+      ]);
     }
 
     const finalPreview = toReview.map(tx => {
       const suggestion = aiClassifications[tx.description];
+      const cleanedDescription = cleanNames[tx.description] || tx.description;
       return {
         ...tx,
+        description: cleanedDescription, // Sobrescreve com o nome limpo pela IA
+        originalDescription: tx.description, // Mantém o original para referência se necessário
         suggestedCategory: suggestion?.category || 'Outros',
         suggestedRule: suggestion?.rule || 30,
         suggestedIcon: suggestion?.icon || '🏷️'

@@ -18,6 +18,9 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() req) {
+    console.log('--- REQUISIÇÃO RECEBIDA DO MOBILE ---');
+    console.log('Email:', req.email);
+    console.log('Senha contém caracteres:', req.password ? req.password.length : 0);
     // In a real app we'd use a LocalGuard, but for simplicity we'll validate here or rely on service
     // Ideally: @UseGuards(LocalAuthGuard) -> req.user
     // For now, let's assume body has email/password and we validate manually if not using LocalStrategy

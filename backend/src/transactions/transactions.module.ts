@@ -8,5 +8,6 @@ import { AiModule } from '../ai/ai.module';
   imports: [PrismaModule, AiModule],
   controllers: [TransactionsController],
   providers: [TransactionsService],
+  exports: [TransactionsService]
 })
 export class TransactionsModule { }

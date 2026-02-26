@@ -1,10 +1,11 @@
 import React, { useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useFixedTransactions } from '../../hooks/useFixedTransactions';
 import api from '../../services/api';
+import * as Haptics from 'expo-haptics';
 
 export default function FixedScreen() {
     const insets = useSafeAreaInsets();
@@ -54,9 +55,15 @@ export default function FixedScreen() {
                     <View>
                         <View className="flex-row items-center gap-3">
                             <Text className="text-2xl font-bold text-slate-800">Controle de Fixos</Text>
-                            <TouchableOpacity onPress={togglePrivacy} className="p-1 px-2 bg-slate-100 rounded-lg">
-                                <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={16} color="#64748b" />
-                            </TouchableOpacity>
+                            <View className="rounded-lg overflow-hidden bg-slate-100">
+                                <Pressable
+                                    onPress={() => { togglePrivacy(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                                    className="p-1 px-2"
+                                >
+                                    <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={16} color="#64748b" />
+                                </Pressable>
+                            </View>
                         </View>
                         <Text className="text-slate-500 text-sm">Gerencie suas contas recorrentes</Text>
                     </View>
@@ -99,12 +106,15 @@ export default function FixedScreen() {
                                     <Text className={`font-black text-base ${item.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-700'}`}>
                                         {formatValue(item.amount)}
                                     </Text>
-                                    <TouchableOpacity
-                                        onPress={() => handleDelete(item.lastTransactionId)}
-                                        className="p-1 bg-red-50 rounded-lg"
-                                    >
-                                        <MaterialIcons name="delete" size={16} color="#ef4444" />
-                                    </TouchableOpacity>
+                                    <View className="rounded-lg overflow-hidden bg-red-50">
+                                        <Pressable
+                                            onPress={() => { handleDelete(item.lastTransactionId); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                            android_ripple={{ color: 'rgba(239,68,68,0.2)' }}
+                                            className="p-1"
+                                        >
+                                            <MaterialIcons name="delete" size={16} color="#ef4444" />
+                                        </Pressable>
+                                    </View>
                                 </View>
                             </View>
                         ))}
