@@ -1,7 +1,10 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { DeviceEventEmitter } from 'react-native';
 
-const API_URL = 'https://financa-new-api.vercel.app/v1'; // Direct backend URL
+const API_URL = 'https://financa-new-api.vercel.app/v1'; // Production Vercel URL
+// Para teste local, use o seu IP:
+// const API_URL = 'http://192.168.18.114:3000/v1';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -17,12 +20,19 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
     (response) => {
+        console.log(`[API Response] ${response.config.url} - Status: ${response.status}`);
         if (response.data && response.data.data !== undefined) {
+            console.log('[API Interceptor] Unwrapping data body...');
             response.data = response.data.data;
         }
         return response;
     },
-    (error) => {
+    async (error) => {
+        const isAuthRoute = error.config?.url?.includes('/auth/');
+        if (!isAuthRoute && error.response && (error.response.status === 401 || error.response.status === 403)) {
+            console.log('[API] 401 Unauthorized detectado (rota protegida). Emitindo evento de logout...');
+            DeviceEventEmitter.emit('auth:unauthorized');
+        }
         return Promise.reject(error);
     }
 );

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
+import * as Haptics from 'expo-haptics';
 
 interface Goal {
     id: string;
@@ -116,12 +117,15 @@ export default function GoalsScreen() {
                         <View>
                             <LinkHeader title="Metas & Sonhos" subtitle="Realize seus objetivos" isPrivacyEnabled={isPrivacyEnabled} togglePrivacy={togglePrivacy} />
                         </View>
-                        <TouchableOpacity
-                            onPress={() => setModalVisible(true)}
-                            className="bg-indigo-600 p-3 rounded-full shadow-lg shadow-indigo-200 active:scale-95"
-                        >
-                            <MaterialIcons name="add" size={24} color="white" />
-                        </TouchableOpacity>
+                        <View className="rounded-full overflow-hidden shadow-lg shadow-indigo-200">
+                            <Pressable
+                                onPress={() => { setModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                                className="bg-indigo-600 p-3"
+                            >
+                                <MaterialIcons name="add" size={24} color="white" />
+                            </Pressable>
+                        </View>
                     </View>
                 </View>
 
@@ -146,15 +150,19 @@ export default function GoalsScreen() {
                                             Meta: {formatValue(goal.targetAmount)}
                                         </Text>
                                     </View>
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setSelectedGoal(goal);
-                                            setDepositModalVisible(true);
-                                        }}
-                                        className="bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 active:scale-95"
-                                    >
-                                        <Text className="text-emerald-700 font-bold text-xs">+ Depositar</Text>
-                                    </TouchableOpacity>
+                                    <View className="rounded-lg overflow-hidden border border-emerald-100 bg-emerald-50">
+                                        <Pressable
+                                            onPress={() => {
+                                                setSelectedGoal(goal);
+                                                setDepositModalVisible(true);
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            }}
+                                            android_ripple={{ color: 'rgba(16,185,129,0.2)' }}
+                                            className="px-3 py-1.5"
+                                        >
+                                            <Text className="text-emerald-700 font-bold text-xs">+ Depositar</Text>
+                                        </Pressable>
+                                    </View>
                                 </View>
 
                                 <View className="h-4 w-full bg-slate-100 rounded-full overflow-hidden mb-3 relative">
@@ -162,7 +170,7 @@ export default function GoalsScreen() {
                                         className="h-full bg-indigo-500 absolute left-0 top-0 bottom-0 z-10"
                                         style={{ width: `${Math.min(goal.progress || 0, 100)}%` }}
                                     />
-                                    <Text className="absolute w-full text-center text-[10px] font-bold text-slate-500 z-20 top-[1px]">
+                                    <Text className="absolute w-full text-center text-xs font-bold text-slate-500 z-20 top-[1px]">
                                         {(Number(goal.progress) || 0).toFixed(1)}%
                                     </Text>
                                 </View>
@@ -192,9 +200,15 @@ export default function GoalsScreen() {
                     <View className="bg-white rounded-t-3xl p-6">
                         <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-xl font-bold text-slate-800">Nova Meta</Text>
-                            <TouchableOpacity onPress={() => setModalVisible(false)} className="p-2 bg-slate-100 rounded-full">
-                                <MaterialIcons name="close" size={20} color="#64748b" />
-                            </TouchableOpacity>
+                            <View className="rounded-full overflow-hidden bg-slate-100">
+                                <Pressable
+                                    onPress={() => { setModalVisible(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    className="p-2"
+                                    android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                                >
+                                    <MaterialIcons name="close" size={20} color="#64748b" />
+                                </Pressable>
+                            </View>
                         </View>
 
                         <View className="space-y-4 mb-6">
@@ -219,12 +233,15 @@ export default function GoalsScreen() {
                             </View>
                         </View>
 
-                        <TouchableOpacity
-                            onPress={handleSave}
-                            className="w-full bg-indigo-600 py-4 rounded-2xl items-center shadow-lg shadow-indigo-200 active:scale-95 mb-4"
-                        >
-                            <Text className="text-white font-bold text-lg">Criar Meta</Text>
-                        </TouchableOpacity>
+                        <View className="rounded-2xl overflow-hidden shadow-lg shadow-indigo-200 mb-4">
+                            <Pressable
+                                onPress={() => { handleSave(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                                className="w-full bg-indigo-600 py-4 items-center"
+                            >
+                                <Text className="text-white font-bold text-lg">Criar Meta</Text>
+                            </Pressable>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -243,9 +260,15 @@ export default function GoalsScreen() {
                                 <Text className="text-lg font-bold text-slate-800">Novo Aporte</Text>
                                 <Text className="text-xs text-slate-500">{selectedGoal?.title}</Text>
                             </View>
-                            <TouchableOpacity onPress={() => setDepositModalVisible(false)} className="p-2 bg-slate-100 rounded-full">
-                                <MaterialIcons name="close" size={20} color="#64748b" />
-                            </TouchableOpacity>
+                            <View className="rounded-full overflow-hidden bg-slate-100">
+                                <Pressable
+                                    onPress={() => { setDepositModalVisible(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    className="p-2"
+                                    android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                                >
+                                    <MaterialIcons name="close" size={20} color="#64748b" />
+                                </Pressable>
+                            </View>
                         </View>
 
                         <View className="mb-6">
@@ -260,12 +283,15 @@ export default function GoalsScreen() {
                             />
                         </View>
 
-                        <TouchableOpacity
-                            onPress={handleDeposit}
-                            className="w-full bg-emerald-500 py-4 rounded-2xl items-center shadow-lg shadow-emerald-200 active:scale-95"
-                        >
-                            <Text className="text-white font-bold text-lg">Confirmar Depósito</Text>
-                        </TouchableOpacity>
+                        <View className="rounded-2xl overflow-hidden shadow-lg shadow-emerald-200">
+                            <Pressable
+                                onPress={() => { handleDeposit(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                                className="w-full bg-emerald-500 py-4 items-center"
+                            >
+                                <Text className="text-white font-bold text-lg">Confirmar Depósito</Text>
+                            </Pressable>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -278,9 +304,15 @@ const LinkHeader = ({ title, subtitle, isPrivacyEnabled, togglePrivacy }: any) =
     <View>
         <View className="flex-row items-center gap-3">
             <Text className="text-2xl font-bold text-slate-800">{title}</Text>
-            <TouchableOpacity onPress={togglePrivacy} className="p-1 px-2 bg-slate-100 rounded-lg">
-                <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={16} color="#64748b" />
-            </TouchableOpacity>
+            <View className="rounded-lg overflow-hidden bg-slate-100">
+                <Pressable
+                    onPress={() => { togglePrivacy(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                    android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                    className="p-1 px-2"
+                >
+                    <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={16} color="#64748b" />
+                </Pressable>
+            </View>
         </View>
         <Text className="text-slate-500 text-sm">{subtitle}</Text>
     </View>

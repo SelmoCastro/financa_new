@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
+import * as Haptics from 'expo-haptics';
 
 interface Budget {
     id: string;
@@ -96,12 +97,15 @@ export default function BudgetsScreen() {
                         <View>
                             <LinkHeader title="Orçamentos" subtitle="Controle seus gastos mensais" isPrivacyEnabled={isPrivacyEnabled} togglePrivacy={togglePrivacy} />
                         </View>
-                        <TouchableOpacity
-                            onPress={() => setModalVisible(true)}
-                            className="bg-indigo-600 p-3 rounded-full shadow-lg shadow-indigo-200 active:scale-95"
-                        >
-                            <MaterialIcons name="add" size={24} color="white" />
-                        </TouchableOpacity>
+                        <View className="rounded-full overflow-hidden shadow-lg shadow-indigo-200">
+                            <Pressable
+                                onPress={() => { setModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                                className="bg-indigo-600 p-3"
+                            >
+                                <MaterialIcons name="add" size={24} color="white" />
+                            </Pressable>
+                        </View>
                     </View>
                 </View>
 
@@ -165,9 +169,15 @@ export default function BudgetsScreen() {
                     <View className="bg-white rounded-t-3xl p-6">
                         <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-xl font-bold text-slate-800">Novo Orçamento</Text>
-                            <TouchableOpacity onPress={() => setModalVisible(false)} className="p-2 bg-slate-100 rounded-full">
-                                <MaterialIcons name="close" size={20} color="#64748b" />
-                            </TouchableOpacity>
+                            <View className="rounded-full overflow-hidden bg-slate-100">
+                                <Pressable
+                                    onPress={() => { setModalVisible(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    className="p-2"
+                                    android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                                >
+                                    <MaterialIcons name="close" size={20} color="#64748b" />
+                                </Pressable>
+                            </View>
                         </View>
 
                         <View className="space-y-4 mb-6">
@@ -192,12 +202,15 @@ export default function BudgetsScreen() {
                             </View>
                         </View>
 
-                        <TouchableOpacity
-                            onPress={handleSave}
-                            className="w-full bg-indigo-600 py-4 rounded-2xl items-center shadow-lg shadow-indigo-200 active:scale-95 mb-4"
-                        >
-                            <Text className="text-white font-bold text-lg">Salvar Orçamento</Text>
-                        </TouchableOpacity>
+                        <View className="rounded-2xl overflow-hidden shadow-lg shadow-indigo-200 mb-4">
+                            <Pressable
+                                onPress={() => { handleSave(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                                className="w-full bg-indigo-600 py-4 items-center"
+                            >
+                                <Text className="text-white font-bold text-lg">Salvar Orçamento</Text>
+                            </Pressable>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -210,9 +223,15 @@ const LinkHeader = ({ title, subtitle, isPrivacyEnabled, togglePrivacy }: any) =
     <View>
         <View className="flex-row items-center gap-3">
             <Text className="text-2xl font-bold text-slate-800">{title}</Text>
-            <TouchableOpacity onPress={togglePrivacy} className="p-1 px-2 bg-slate-100 rounded-lg">
-                <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={16} color="#64748b" />
-            </TouchableOpacity>
+            <View className="rounded-lg overflow-hidden bg-slate-100">
+                <Pressable
+                    onPress={() => { togglePrivacy(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                    android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                    className="p-1 px-2"
+                >
+                    <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={16} color="#64748b" />
+                </Pressable>
+            </View>
         </View>
         <Text className="text-slate-500 text-sm">{subtitle}</Text>
     </View>

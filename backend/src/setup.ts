@@ -7,10 +7,10 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 export function configureApp(app: INestApplication) {
     // CORS (Aceita Regex)
     const frontendUrl = process.env.FRONTEND_URL || 'https://financa-new.vercel.app';
-    const allowedOriginsCORS = [frontendUrl, 'http://localhost:5173', 'http://localhost:3000', /\.vercel\.app$/];
+    const allowedOriginsCORS = [frontendUrl, 'http://localhost:5173', 'http://localhost:3000', /\.vercel\.app$/, /^exp:\/\//, /^http:\/\/192\.168\.\d+\.\d+:\d+$/];
 
     // CSP (Aceita Wildcard mas não Regex)
-    const allowedOriginsCSP = [frontendUrl, 'http://localhost:5173', 'http://localhost:3000', 'https://*.vercel.app'];
+    const allowedOriginsCSP = [frontendUrl, 'http://localhost:5173', 'http://localhost:3000', 'https://*.vercel.app', 'exp://*', 'http://192.168.*'];
 
     app.enableCors({
         origin: allowedOriginsCORS,

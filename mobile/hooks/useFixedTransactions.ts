@@ -57,7 +57,9 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
                         day: d.getDate(),
                         lastSeen: `${d.getFullYear()}-${d.getMonth()}`,
                         lastTransactionId: t.id,
-                        category: t.category
+                        category: typeof t.category === 'string'
+                            ? t.category
+                            : (t.category as any)?.name ?? (t as any).categoryLegacy ?? 'Sem categoria'
                     };
                 }
             }
@@ -125,7 +127,8 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         });
 
         const income = totals.currentIncome || totals.income || 1;
-        const fixedRatio = (totalFixedExpense / income) * 100;
+        const totalFixedExpenseSafe = totalFixedExpense || 0;
+        const fixedRatio = (totalFixedExpenseSafe / income) * 100;
 
         const topVillains = Object.entries(expensesByDesc)
             .map(([name, value]) => ({ name, value }))
@@ -138,10 +141,10 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         })).sort((a, b) => a.day - b.day);
 
         return {
-            projectedBalance,
+            projectedBalance: projectedBalance || 0,
             missingFixed,
-            fixedRatio: Math.min(fixedRatio, 100),
-            totalFixedExpense,
+            fixedRatio: Math.min(fixedRatio, 100) || 0,
+            totalFixedExpense: totalFixedExpenseSafe,
             fixedItems,
             topVillains
         };

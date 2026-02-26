@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useMonth } from '../context/MonthContext';
-import { triggerHaptic } from '../utils/haptics';
+import * as Haptics from 'expo-haptics';
 
 export const MonthSelector = () => {
     const { selectedDate, changeMonth } = useMonth();
@@ -16,18 +16,57 @@ export const MonthSelector = () => {
     const displayDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
     return (
-        <View className="flex-row items-center justify-center bg-slate-100 rounded-full px-4 py-2 self-start mt-1">
-            <TouchableOpacity onPress={() => changeMonth(-1)} className="p-1">
-                <MaterialIcons name="chevron-left" size={24} color="#64748b" />
-            </TouchableOpacity>
+        <View style={styles.container}>
+            <View style={styles.buttonWrapper}>
+                <Pressable
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); changeMonth(-1); }}
+                    android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: true, radius: 24 }}
+                    style={styles.navButton}
+                >
+                    <MaterialIcons name="chevron-left" size={24} color="#64748b" />
+                </Pressable>
+            </View>
 
-            <Text className="mx-4 font-bold text-slate-700 min-w-[120px] text-center">
+            <Text style={styles.dateText}>
                 {displayDate}
             </Text>
 
-            <TouchableOpacity onPress={() => changeMonth(1)} className="p-1">
-                <MaterialIcons name="chevron-right" size={24} color="#64748b" />
-            </TouchableOpacity>
+            <View style={styles.buttonWrapper}>
+                <Pressable
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); changeMonth(1); }}
+                    android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: true, radius: 24 }}
+                    style={styles.navButton}
+                >
+                    <MaterialIcons name="chevron-right" size={24} color="#64748b" />
+                </Pressable>
+            </View>
         </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f1f5f9',
+        borderRadius: 999,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        alignSelf: 'flex-start',
+        marginTop: 4,
+    },
+    buttonWrapper: {
+        borderRadius: 999,
+        overflow: 'hidden',
+    },
+    navButton: {
+        padding: 4,
+    },
+    dateText: {
+        marginHorizontal: 12,
+        fontWeight: 'bold',
+        color: '#334155',
+        textAlign: 'center',
+    },
+});

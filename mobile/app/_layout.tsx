@@ -1,11 +1,10 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Slot, SplashScreen, Stack } from 'expo-router';
+import { SplashScreen, Stack, useSegments, router } from 'expo-router';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
-import { AuthProvider } from '../context/AuthContext';
-import { TransactionsProvider } from '../context/TransactionsContext';
-import { MonthProvider } from '../context/MonthContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider, useAuth } from '../context/AuthContext';
 import '../global.css';
 
 export {
@@ -21,7 +20,6 @@ export default function RootLayout() {
     // Load your custom fonts here if needed
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -37,24 +35,47 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <MonthProvider>
-        <TransactionsProvider>
-          <RootLayoutNav />
-        </TransactionsProvider>
-      </MonthProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const segments = useSegments();
+  const { token, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inTabsGroup = segments[0] === '(tabs)';
+
+    // Log para depuração de rota
+    console.log(`[Router Protection] Token: ${!!token} | In Tabs: ${inTabsGroup} | Path: ${segments.join('/')}`);
+
+    if (!token && inTabsGroup) {
+      // Se não há token e está tentando acessar abas -> Login
+      console.log('[Router Protection] Deslogado em área protegida. Redirecionando para login...');
+      router.replace('/');
+    } else if (token && !inTabsGroup) {
+      // Se há token e está na tela de login -> Dashboard
+      console.log('[Router Protection] Logado em área pública. Redirecionando para dashboard...');
+      router.replace('/(tabs)');
+    }
+  }, [token, isLoading, segments]);
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </ThemeProvider>
   );
