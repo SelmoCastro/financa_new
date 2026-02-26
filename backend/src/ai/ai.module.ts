@@ -1,10 +1,10 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AiService } from './ai.service';
-import { TransactionsModule } from '../transactions/transactions.module';
 import { AiController } from './ai.controller';
+import { ReportsModule } from '../reports/reports.module';
 
 @Module({
-  imports: [forwardRef(() => TransactionsModule)],
+  imports: [ReportsModule],
   controllers: [AiController],
   providers: [AiService],
   exports: [AiService]

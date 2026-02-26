@@ -1,15 +1,14 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Request, Inject, forwardRef } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AiService } from './ai.service';
-import { TransactionsService } from '../transactions/transactions.service';
+import { ReportsService } from '../reports/reports.service';
 
 @Controller('ai')
 @UseGuards(AuthGuard('jwt'))
 export class AiController {
     constructor(
         private readonly aiService: AiService,
-        @Inject(forwardRef(() => TransactionsService))
-        private readonly transactionsService: TransactionsService,
+        private readonly reportsService: ReportsService,
     ) { }
 
     @Get('insights')
@@ -24,7 +23,7 @@ export class AiController {
         const m = month ? parseInt(month) : now.getMonth();
 
         // Obtém o resumo dos dados para o mês selecionado
-        const summary = await this.transactionsService.getDashboardSummary(userId, y, m);
+        const summary = await this.reportsService.getDashboardSummary(userId, y, m);
 
         // Gera os insights usando o resumo como contexto
         const insights = await this.aiService.getFinancialInsights(summary);
@@ -38,7 +37,7 @@ export class AiController {
 
         // Contexto básico: resumo do mês atual para o chat
         const now = new Date();
-        const summary = await this.transactionsService.getDashboardSummary(userId, now.getFullYear(), now.getMonth());
+        const summary = await this.reportsService.getDashboardSummary(userId, now.getFullYear(), now.getMonth());
 
         const response = await this.aiService.chat(message, summary);
 
