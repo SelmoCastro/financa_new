@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,7 +8,6 @@ import { AiService } from '../ai/ai.service';
 export class TransactionsService {
   constructor(
     private prisma: PrismaService,
-    @Inject(forwardRef(() => AiService))
     private aiService: AiService
   ) { }
 
@@ -263,113 +262,6 @@ export class TransactionsService {
     });
   }
 
-  async getDashboardSummary(userId: string, year?: number, month?: number) {
-    const now = new Date();
-    const targetYear = year !== undefined ? year : now.getFullYear();
-    const targetMonth = month !== undefined ? month : now.getMonth(); // 0-indexed month
-
-    const startOfMonth = new Date(targetYear, targetMonth, 1);
-    const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
-
-    // 1. Calculate General Balance (All time)
-    const balanceAgg = await this.prisma.transaction.aggregate({
-      where: { userId },
-      _sum: { amount: true },
-    });
-    // This simple sum assumes INCOME is positive and EXPENSE is negative in DB?
-    // Wait, the schema shows 'type' field ('INCOME' | 'EXPENSE') and amount is Float.
-    // Usually amount is stored absolute. We need to sum separately or condition.
-    // Prisma aggregate doesn't support conditional sum easily in one go without raw query.
-    // Let's do two aggregates or stick to raw query for best perf.
-
-    // Group by Type for Balance
-    const balanceGroup = await this.prisma.transaction.groupBy({
-      by: ['type'],
-      where: { userId },
-      _sum: { amount: true },
-    });
-
-    let totalIncome = 0;
-    let totalExpense = 0;
-
-    balanceGroup.forEach(g => {
-      if (g.type === 'INCOME') totalIncome += (g._sum.amount || 0);
-      else if (g.type === 'EXPENSE') totalExpense += (g._sum.amount || 0);
-    });
-
-    const balance = totalIncome - totalExpense;
-
-    // 2. Current Month Totals
-    const currentMonthGroup = await this.prisma.transaction.groupBy({
-      by: ['type'],
-      where: {
-        userId,
-        date: {
-          gte: startOfMonth,
-          lte: endOfMonth
-        }
-      },
-      _sum: { amount: true },
-    });
-
-    let currentIncome = 0;
-    let currentExpense = 0;
-
-    currentMonthGroup.forEach(g => {
-      if (g.type === 'INCOME') currentIncome += (g._sum.amount || 0);
-      else if (g.type === 'EXPENSE') currentExpense += (g._sum.amount || 0);
-    });
-
-    // 3. Rule 50/30/20 (Expenses only, current month)
-    const categoryGroup = await this.prisma.transaction.groupBy({
-      by: ['categoryId', 'categoryLegacy'],
-      where: {
-        userId,
-        type: 'EXPENSE',
-        date: {
-          gte: startOfMonth,
-          lte: endOfMonth
-        }
-      },
-      _sum: { amount: true },
-    });
-
-    const needsCategories = ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação', 'Contas e Serviços'];
-    const wantsCategories = ['Lazer', 'Outros', 'Compras', 'Restaurantes', 'Assinaturas', 'Viagem', 'Cuidados Pessoais', 'Presentes'];
-    const savingsCategories = ['Investimentos (Aporte)', 'Dívidas/Financiamentos'];
-
-    let needs = 0;
-    let wants = 0;
-    let savings = 0;
-
-    const categories = await this.prisma.category.findMany({ where: { userId } });
-    const categoryMap = new Map(categories.map(c => [c.id, c.name]));
-
-    categoryGroup.forEach(g => {
-      const catName = (g.categoryId ? categoryMap.get(g.categoryId) : g.categoryLegacy) || 'Outros';
-      const val = g._sum.amount || 0;
-
-      if (needsCategories.includes(catName)) needs += val;
-      else if (wantsCategories.includes(catName)) wants += val;
-      else if (savingsCategories.includes(catName)) savings += val;
-      else wants += val;
-    });
-
-    const incomeBase = currentIncome || 1;
-
-    return {
-      balance,
-      currentMonth: {
-        income: currentIncome,
-        expense: currentExpense
-      },
-      rule503020: {
-        needs: { value: needs, percent: (needs / incomeBase) * 100 },
-        wants: { value: wants, percent: (wants / incomeBase) * 100 },
-        savings: { value: savings, percent: (savings / incomeBase) * 100 }
-      }
-    };
-  }
 
   async export(userId: string): Promise<string> {
     const transactions = await this.prisma.transaction.findMany({

@@ -7,6 +7,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { ImportValidateTransactionDto, ImportConfirmPayloadDto } from './dto/import-transaction.dto';
 import { AiService } from '../ai/ai.service';
+import { ReportsService } from '../reports/reports.service';
 import { memoryStorage } from 'multer';
 
 
@@ -19,6 +20,7 @@ export class TransactionsController {
   constructor(
     private readonly transactionsService: TransactionsService,
     private readonly aiService: AiService,
+    private readonly reportsService: ReportsService,
   ) { }
 
   @Post()
@@ -82,7 +84,7 @@ export class TransactionsController {
 
   @Get('dashboard-summary')
   getDashboardSummary(@Request() req, @Query('year') year?: string, @Query('month') month?: string) {
-    return this.transactionsService.getDashboardSummary(
+    return this.reportsService.getDashboardSummary(
       req.user.userId,
       year ? parseInt(year, 10) : undefined,
       month ? parseInt(month, 10) : undefined
