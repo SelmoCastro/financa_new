@@ -12,9 +12,9 @@ export class AiService {
     private readonly logger = new Logger(AiService.name);
     private openai: OpenAI | null = null;
 
-    // Modelos gratuitos recomendados no OpenRouter
-    private readonly VISION_MODEL = 'google/gemini-2.0-flash-exp:free';
-    private readonly TEXT_MODEL = 'google/gemini-2.0-flash-exp:free';
+    // Modelos configuráveis via .env com fallbacks gratuitos
+    private readonly VISION_MODEL = process.env.AI_VISION_MODEL || 'google/gemini-2.0-flash-exp:free';
+    private readonly TEXT_MODEL = process.env.AI_TEXT_MODEL || 'google/gemini-2.0-flash-exp:free';
 
     constructor() {
         const apiKey = process.env.OPENROUTER_API_KEY;
@@ -27,7 +27,7 @@ export class AiService {
                     'X-Title': 'Finanza AI',
                 },
             });
-            this.logger.log(`OpenRouter Service inicializado com modelo: ${this.TEXT_MODEL}`);
+            this.logger.log(`OpenRouter Service inicializado. Text model: ${this.TEXT_MODEL}, Vision model: ${this.VISION_MODEL}`);
         } else {
             this.logger.warn('OPENROUTER_API_KEY não configurada. Serviço AI rodará em modo Fallback (Desativado).');
         }
