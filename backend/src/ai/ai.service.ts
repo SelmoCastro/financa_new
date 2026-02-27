@@ -193,8 +193,13 @@ export class AiService {
             });
 
             const responseText = response.choices[0]?.message?.content || '[]';
-            const rawData = JSON.parse(responseText);
-            const parsed = Array.isArray(rawData) ? rawData : (rawData.transactions || []);
+
+            // Tenta limpar possíveis marcações de markdown do JSON
+            const cleanJson = responseText.replace(/```json|```/g, '').trim();
+            const rawData = JSON.parse(cleanJson);
+
+            // Algumas IAs podem envolver o resultado em uma chave "transactions" ou similar
+            const parsed = Array.isArray(rawData) ? rawData : (rawData.transactions || rawData.data || []);
 
             return parsed;
         } catch (error) {

@@ -153,18 +153,30 @@ export class TransactionsService {
     }
 
     const finalPreview = toReview.map(tx => {
-      const suggestion = aiClassifications[tx.description];
-      const cleanedDescription = cleanNames[tx.description] || tx.description;
+      return this.enrichTransactionWithAi(tx, aiClassifications[tx.description], cleanNames[tx.description], categoryNameToId);
+    });
 
-      // Tenta bater o nome sugerido pela IA com um ID real do banco
-      let matchedCategoryId = suggestion
-        ? categoryNameToId.get(suggestion.category.toLowerCase().trim())
-        : undefined;
+    return {
+      preview: finalPreview,
+      skippedCount: transactionsData.length - toReview.length
+    };
+  }
 
-      // Fallback: Busca difusa se a IA sugeriu um nome parecido mas não exato
-      if (suggestion && !matchedCategoryId) {
-        const suggestedLow = suggestion.category.toLowerCase();
-        // Se a IA sugeriu "Mercado" e temos "Mercado / Padaria", faz o match
+  /**
+   * Helper para enriquecer uma transação com sugestões da IA e fallbacks de match
+   */
+  enrichTransactionWithAi(tx: any, suggestion: any, cleanedName: string | undefined, categoryNameToId: Map<string, string>) {
+    const cleanedDescription = cleanedName || tx.description;
+
+    // Tenta bater o nome sugerido pela IA com um ID real do banco
+    let matchedCategoryId = suggestion
+      ? categoryNameToId.get((suggestion.category || suggestion.c || '').toLowerCase().trim())
+      : undefined;
+
+    // Fallback: Busca difusa se a IA sugeriu um nome parecido mas não exato
+    if (suggestion && !matchedCategoryId) {
+      const suggestedLow = (suggestion.category || suggestion.c || '').toLowerCase().trim();
+      if (suggestedLow) {
         for (const [name, id] of categoryNameToId.entries()) {
           if (name.includes(suggestedLow) || suggestedLow.includes(name)) {
             matchedCategoryId = id;
@@ -172,34 +184,29 @@ export class TransactionsService {
           }
         }
       }
+    }
 
-      // Fallback Final: Keywords clássicas de extrato para quando a IA falha/timeout
-      if (!matchedCategoryId) {
-        const desc = tx.description.toUpperCase();
-        if (desc.includes('IFOOD') || desc.includes('UBER EATS')) matchedCategoryId = categoryNameToId.get('restaurante / delivery');
-        if (desc.includes('UBER') || desc.includes('99APP')) matchedCategoryId = categoryNameToId.get('transporte app');
-        if (desc.includes('MERCADO') || desc.includes('PADARIA') || desc.includes('CONFIANCA')) matchedCategoryId = categoryNameToId.get('mercado / padaria');
-        if (desc.includes('POSTO') || desc.includes('GASOLINA')) matchedCategoryId = categoryNameToId.get('transporte fixo');
-        if (desc.includes('SALARIO') || desc.includes('VENCIMENTO')) matchedCategoryId = categoryNameToId.get('salário');
-        if (desc.includes('TRANSF') || desc.includes('PIX') || desc.includes('TED')) {
-          matchedCategoryId = categoryNameToId.get(tx.amount > 0 ? 'transferência recebida' : 'outros');
-        }
+    // Fallback Final: Keywords clássicas de extrato para quando a IA falha/timeout
+    if (!matchedCategoryId) {
+      const desc = cleanedDescription.toUpperCase();
+      if (desc.includes('IFOOD') || desc.includes('UBER EATS')) matchedCategoryId = categoryNameToId.get('restaurante / delivery');
+      if (desc.includes('UBER') || desc.includes('99APP')) matchedCategoryId = categoryNameToId.get('transporte app');
+      if (desc.includes('MERCADO') || desc.includes('PADARIA') || desc.includes('CONFIANCA')) matchedCategoryId = categoryNameToId.get('mercado / padaria');
+      if (desc.includes('POSTO') || desc.includes('GASOLINA')) matchedCategoryId = categoryNameToId.get('transporte fixo');
+      if (desc.includes('SALARIO') || desc.includes('VENCIMENTO')) matchedCategoryId = categoryNameToId.get('salário');
+      if (desc.includes('TRANSF') || desc.includes('PIX') || desc.includes('TED')) {
+        matchedCategoryId = categoryNameToId.get(tx.amount > 0 ? 'transferência recebida' : 'outros');
       }
-
-      return {
-        ...tx,
-        description: cleanedDescription,
-        originalDescription: tx.description,
-        suggestedCategory: suggestion?.category || 'Outros',
-        suggestedCategoryId: matchedCategoryId,
-        suggestedRule: suggestion?.rule || 30,
-        suggestedIcon: suggestion?.icon || '🏷️'
-      };
-    });
+    }
 
     return {
-      preview: finalPreview,
-      skippedCount: transactionsData.length - toReview.length
+      ...tx,
+      description: cleanedDescription,
+      originalDescription: tx.originalDescription || tx.description,
+      suggestedCategory: suggestion?.category || suggestion?.c || 'Outros',
+      suggestedCategoryId: matchedCategoryId,
+      suggestedRule: suggestion?.rule || suggestion?.r || 30,
+      suggestedIcon: suggestion?.icon || suggestion?.i || '🏷️'
     };
   }
 
