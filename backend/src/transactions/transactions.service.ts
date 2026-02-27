@@ -66,42 +66,63 @@ export class TransactionsService {
       history.forEach(h => historyMap.set(h.fitId, h.status));
     }
 
-    // 3. Fuzzy Hash (mesma data + valor na mesma conta, FITID diferente)
+    // 3. Content Match - Busca transações que batem exatamente em Data + Valor + Descrição
+    // Isso resolve o problema de transações importadas antes do sistema de FITID ou inseridas manualmente.
     const minDate = new Date(Math.min(...transactionsData.map(t => new Date(t.date).getTime())));
     const maxDate = new Date(Math.max(...transactionsData.map(t => new Date(t.date).getTime())));
 
-    const fuzzyExisting = await this.prisma.transaction.findMany({
-      where: { userId, accountId: targetAccountId, date: { gte: minDate, lte: maxDate } },
-      select: { date: true, amount: true }
+    const existingContent = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        date: { gte: minDate, lte: maxDate }
+      },
+      select: { date: true, amount: true, description: true, fitId: true, accountId: true }
     });
 
+    // Set para busca ultra-rápida de duplicatas exatas por conteúdo
+    const contentSet = new Set(
+      existingContent.map(t => `${t.date.toISOString().split('T')[0]}_${t.amount}_${t.description.toUpperCase().trim()}`)
+    );
+
+    // 4. Fuzzy Hash (mesma data + valor apenas, para avisar possível erro)
     const fuzzySet = new Set(
-      fuzzyExisting.map(t => `${t.date.toISOString().split('T')[0]}_${t.amount}`)
+      existingContent
+        .filter(t => t.accountId === targetAccountId)
+        .map(t => `${t.date.toISOString().split('T')[0]}_${t.amount}`)
     );
 
     const toReview: any[] = [];
     const descriptionsToClassify = new Set<string>();
 
     for (const raw of transactionsData) {
-      // Silent Skip: FITID já existe como transação salva no banco
+      const txDate = new Date(raw.date);
+      const dateStr = txDate.toISOString().split('T')[0];
+      const contentKey = `${dateStr}_${raw.amount}_${raw.description.toUpperCase().trim()}`;
+      const fuzzyKey = `${dateStr}_${raw.amount}`;
+
+      // A. Silent Skip: FITID já existe
       if (raw.fitId && existingFitIds.has(raw.fitId)) {
         continue;
       }
 
-      // Silent Skip: FITID foi ACEITO em importação anterior (mas pode ter sido deletado do banco)
-      // Somente skip definitivo se estiver no banco de transações. Se foi apagado, mostramos de novo.
-      // Para REJECTED: sempre mostrar, mas com flag de aviso.
+      // B. Silent Skip: FITID já foi aceito antes no histórico (backup da regra A)
+      if (raw.fitId && historyMap.get(raw.fitId) === 'ACCEPTED') {
+        continue;
+      }
 
-      const txDate = new Date(raw.date);
-      const hash = `${txDate.toISOString().split('T')[0]}_${raw.amount}`;
-      const isFuzzyDuplicate = fuzzySet.has(hash);
+      // C. Silent Skip: Conteúdo IDÊNTICO já existe (previne duplicar manual ou importação antiga sem fitId)
+      if (contentSet.has(contentKey)) {
+        continue;
+      }
+
+      const isFuzzyDuplicate = fuzzySet.has(fuzzyKey);
       const historyStatus = raw.fitId ? historyMap.get(raw.fitId) : undefined;
       const isPreviouslyRejected = historyStatus === 'REJECTED';
 
       toReview.push({
         ...raw,
         isFuzzyDuplicate,
-        isPreviouslyRejected, // true = usuário rejeitou essa transação em importação anterior
+        isPreviouslyRejected,
       });
 
       descriptionsToClassify.add(raw.description);
