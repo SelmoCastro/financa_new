@@ -22,7 +22,7 @@ import { getYearMonth } from './utils/dateUtils';
 
 const AppContent: React.FC = () => {
   const {
-    transactions, accounts, creditCards, dashboardSummary, isLoading, refreshData,
+    transactions, accounts, creditCards, categories, dashboardSummary, isLoading, refreshData,
     addTransaction, updateTransaction, deleteTransaction
   } = useData();
 
@@ -212,6 +212,7 @@ const AppContent: React.FC = () => {
           }}
           accounts={accounts}
           creditCards={creditCards}
+          categories={categories}
           existingTransactions={transactions}
         />
       )}

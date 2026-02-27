@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import api from '../services/api';
-import { Transaction, Budget, Account, CreditCard } from '../types';
+import { Transaction, Budget, Account, CreditCard, Category } from '../types';
 import { useToast } from './ToastContext';
 import { useMonth } from './MonthContext';
 
@@ -21,6 +21,7 @@ interface DataContextType {
     transactions: Transaction[];
     accounts: Account[];
     creditCards: CreditCard[];
+    categories: Category[];
     budgets: Budget[];
     dashboardSummary: DashboardSummary | null;
     isLoading: boolean;
@@ -36,6 +37,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -52,11 +54,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const month = selectedDate.getMonth();
 
             // Fetch summary focusing on the selected month
-            const [txRes, bRes, accRes, ccRes, summaryRes] = await Promise.all([
+            const [txRes, bRes, accRes, ccRes, catRes, summaryRes] = await Promise.all([
                 api.get<Transaction[]>('/transactions'),
                 api.get<Budget[]>('/budgets'),
                 api.get<Account[]>('/accounts'),
                 api.get<CreditCard[]>('/credit-cards'),
+                api.get<Category[]>('/categories'),
                 api.get<DashboardSummary>(`/transactions/dashboard-summary?year=${year}&month=${month}`)
             ]);
 
@@ -64,6 +67,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setBudgets(bRes.data);
             setAccounts(accRes.data);
             setCreditCards(ccRes.data);
+            setCategories(catRes.data);
             setDashboardSummary(summaryRes.data);
         } catch (error: any) {
             console.error('Data fetch error:', error);
@@ -115,7 +119,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return (
         <DataContext.Provider value={{
-            transactions, accounts, creditCards, budgets, dashboardSummary,
+            transactions, accounts, creditCards, categories, budgets, dashboardSummary,
             isLoading, refreshData, addTransaction, updateTransaction, deleteTransaction
         }}>
             {children}

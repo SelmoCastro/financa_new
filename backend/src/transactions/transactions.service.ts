@@ -43,6 +43,14 @@ export class TransactionsService {
   async validateImport(transactionsData: any[], userId: string) {
     if (!transactionsData || transactionsData.length === 0) return { valid: [], duplicateFitIds: [] };
 
+    // 0. Busca categorias do usuário para alimentar a IA
+    const userCategories = await this.prisma.category.findMany({
+      where: { userId },
+      select: { id: true, name: true }
+    });
+    const categoryNames = userCategories.map(c => c.name);
+    const categoryNameToId = new Map(userCategories.map(c => [c.name.toLowerCase(), c.id]));
+
     const fitIds = transactionsData.map(t => t.fitId).filter(Boolean);
     const targetAccountId = transactionsData[0]?.accountId;
 
@@ -135,7 +143,7 @@ export class TransactionsService {
     if (descriptionsToClassify.size > 0) {
       const descriptionsArray = Array.from(descriptionsToClassify);
       [aiClassifications, cleanNames] = await Promise.all([
-        this.aiService.classifyTransactions(descriptionsArray),
+        this.aiService.classifyTransactions(descriptionsArray, categoryNames),
         this.aiService.cleanDescriptions(descriptionsArray)
       ]);
     }
@@ -143,11 +151,18 @@ export class TransactionsService {
     const finalPreview = toReview.map(tx => {
       const suggestion = aiClassifications[tx.description];
       const cleanedDescription = cleanNames[tx.description] || tx.description;
+
+      // Tenta bater o nome sugerido pela IA com um ID real do banco
+      const matchedCategoryId = suggestion
+        ? categoryNameToId.get(suggestion.category.toLowerCase())
+        : undefined;
+
       return {
         ...tx,
         description: cleanedDescription, // Sobrescreve com o nome limpo pela IA
         originalDescription: tx.description, // Mantém o original para referência se necessário
         suggestedCategory: suggestion?.category || 'Outros',
+        suggestedCategoryId: matchedCategoryId,
         suggestedRule: suggestion?.rule || 30,
         suggestedIcon: suggestion?.icon || '🏷️'
       };
