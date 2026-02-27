@@ -7,20 +7,22 @@ Dashboard financeiro moderno e minimalista construído com **React (Vite)** e **
 
 ---
 
-## ✨ Features
+## ✨ Features (Novidades AI & Importação)
 
-- **Dashboard Visual**: Gráficos de fluxo de caixa e alocação de despesas.
-- **Orçamentos (Novidade)**: Defina tetos de gastos por categoria e acompanhe em tempo real.
-- **Metas & Sonhos (Novidade)**: Crie cofres para seus objetivos (Viagem, Carro, Reserva) e faça aportes.
-- **Mobile First**: Experiência otimizada para celulares (PWA, Touch, SafeArea).
-- **Timeline**: Visualize suas transações em uma linha do tempo vertical.
-- **Controle de Fixos**: Gerencie assinaturas e contas fixas separado dos gastos variáveis.
-- **Regra 50/30/20**: Feedback visual automático sobre sua saúde financeira.
-- **Privacidade Total**: Modo "Blur" protege seus dados sensíveis com um clique.
+- **Cérebro AI (OpenRouter + Gemini)**: Categorização automática hiper-precisa baseada nas *suas* categorias reais.
+- **Insights Inteligentes**: Dicas financeiras geradas por IA baseadas nos seus gastos e orçamentos do mês.
+- **Leitor de Cupons Fiscais (Vision)**: Importação de gastos enviando fotos de notas fiscais.
+- **Importação OFX Robusta**: Motor anti-duplicidade em 4 camadas (FITID, Histórico, Content Match e Fuzzy Hash).
+- **Dashboard Visual**: Gráficos interativos (Recharts) com alocação por despesas e receitas mensais.
+- **Orçamentos**: Defina tetos de gastos por categoria e acompanhe o percentual em tempo real.
+- **Metas & Sonhos**: Crie cofres para seus objetivos (Viagem, Carro, Reserva) e registre seus aportes.
+- **Regra 50/30/20**: Análise visual automática (Necessidades, Desejos e Objetivos).
+- **Controle de Fixos**: Separação clara entre o que é custo de vida obrigatório e gastos variáveis.
+- **Privacidade Total**: Modo "Blur" protege todos os valores da tela com um clique.
 
 ---
 
-##mas  🛠️ Tecnologias
+## 🛠️ Tecnologias
 
 ### Frontend
 - **React 18** + **TypeScript** + **Vite**
@@ -32,7 +34,9 @@ Dashboard financeiro moderno e minimalista construído com **React (Vite)** e **
 ### Backend (API v1)
 - **NestJS** (Framework Progressivo)
 - **Prisma ORM** (Acesso a Dados)
-- **PostgreSQL** (Banco de Dados @ Neon/Supabase)
+- **PostgreSQL** (Banco de Dados @ Neon Serverless)
+- **OpenRouter (Google Gemini)** (Inteligência Artificial e LLM)
+- **Multer** (Processamento de uploads / fotos)
 - **Passport/JWT** (Autenticação Segura)
 - **Swagger** (Documentação Automática)
 
@@ -55,12 +59,15 @@ cd financa-new
 cd backend
 npm install
 cp .env.example .env
-# Edite .env com sua DATABASE_URL e JWT_SECRET
+# Edite .env com:
+# - DATABASE_URL
+# - JWT_SECRET
+# - OPENROUTER_API_KEY (Para habilitar a IA)
 npx prisma generate
 npx prisma migrate dev
 npm run start:dev
 ```
-*O backend rodará em `http://localhost:3000` (API: `/api/v1`)*
+*O backend rodará em `http://localhost:3000` (API: `/v1`)*
 
 ### 3. Configurar Frontend
 ```bash
