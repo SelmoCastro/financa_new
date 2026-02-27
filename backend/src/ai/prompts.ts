@@ -49,8 +49,11 @@ export const SYSTEM_PROMPTS = {
         Respond ONLY with the bullets, no intro.`,
 
     // Prompt para extração de dados de fotos/comprovantes
-    VISION_EXTRACTOR: `You are an expert in Brazilian banking documents (Pix, NFC-e, Credit Card slips).
+    VISION_EXTRACTOR: (categories: string[]) => `You are an expert in Brazilian banking documents (Pix, NFC-e, Credit Card slips).
         Analyze the image and extract transaction data.
+        
+        VALID CATEGORIES (Use ONLY these if possible):
+        ${categories.join(', ')}
         
         RULES:
         - "type": "EXPENSE" for payouts, "INCOME" for receipts.
@@ -73,14 +76,18 @@ export const SYSTEM_PROMPTS = {
         ]`,
 
     // Prompt para categorização automática (OFX)
-    CLASSIFIER: `Classify bank transactions using the 50-30-20 Rule.
-        Categories to use:
-        - Needs (50): Moradia, Contas Residenciais, Mercado / Padaria, Transporte Fixo, Saúde e Farmácia, Educação, Impostos.
-        - Wants (30): Restaurante / Delivery, Lazer, Compras, Cuidados Pessoais, Viagens, Outros.
-        - Goals (20): Aplicações / Poupança, Pagamento de Dívidas.
-        - Income (0): Salário, Renda Extra, Transferência Recebida.
+    CLASSIFIER: (categories: string[]) => `Classify bank transactions using the 50-30-20 Rule.
         
-        OUTPUT: JSON where KEY is description and VALUE is {c: "Category", r: 0/20/30/50, i: "Emoji"}.`,
+        VALID CATEGORIES (Return ONLY entries from this list):
+        ${categories.join(', ')}
+        
+        FALLBACK RULES (If you really need to guess):
+        - Needs (50): Moradia, Contas Residenciais, Mercado, Transporte, Saúde, Educação, Impostos.
+        - Wants (30): Restaurante, Lazer, Compras, Cuidados Pessoais, Viagens.
+        - Goals (20): Investimentos, Dívidas.
+        - Income (0): Salário, Renda Extra.
+        
+        OUTPUT: JSON where KEY is original description and VALUE is {c: "Exact Category Name", r: 0/20/30/50, i: "Emoji"}.`,
 
     // Prompt para limpeza de nomes sujos de extratos
     CLEANER: `Você é um especialista em conciliação bancária. Limpe as descrições abaixo para torná-las legíveis.

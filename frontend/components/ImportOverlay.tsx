@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
 import api from '../services/api';
-import { Account, CreditCard } from '../types';
+import { Account, CreditCard, Category } from '../types';
 
 interface ImportOverlayProps {
     onImportSuccess: () => void;
     onClose: () => void;
     accounts: Account[];
     creditCards: CreditCard[];
+    categories: Category[];
     existingTransactions?: any[];
 }
 
@@ -21,8 +22,10 @@ interface ParsedTransaction {
     amount: number;
     type: 'INCOME' | 'EXPENSE';
     categoryLegacy: string;
+    categoryId?: string;
     classificationRule?: number;
     suggestedCategory?: string;
+    suggestedCategoryId?: string;
     suggestedIcon?: string;
     selected: boolean;
     isPotentialDuplicate?: boolean;
@@ -32,7 +35,7 @@ interface ParsedTransaction {
 type ImportMode = 'ofx' | 'receipt';
 type FilterMode = 'all' | 'new' | 'rejected';
 
-export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, onClose, accounts, creditCards }) => {
+export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, onClose, accounts, creditCards, categories }) => {
     const [step, setStep] = useState<1 | 2>(1);
     const [file, setFile] = useState<File | null>(null);
     const [parsedTxs, setParsedTxs] = useState<ParsedTransaction[]>([]);
@@ -166,13 +169,17 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
             amount: t.amount,
             type: t.type,
             categoryLegacy: t.suggestedCategory || 'Outros',
+            categoryId: t.suggestedCategoryId,
             classificationRule: t.suggestedRule || 30,
             suggestedCategory: t.suggestedCategory,
+            suggestedCategoryId: t.suggestedCategoryId,
             suggestedIcon: t.suggestedIcon,
             isPotentialDuplicate: t.isFuzzyDuplicate,
             isPreviouslyRejected: t.isPreviouslyRejected,
-            // Pré-selecionado se: não é duplicata fuzzy E não foi rejeitado antes
-            selected: !t.isFuzzyDuplicate && !t.isPreviouslyRejected,
+            // Perda de interesse em placeholders comuns de banco
+            selected: !t.isFuzzyDuplicate &&
+                !t.isPreviouslyRejected &&
+                !['SALDO ANTERIOR', 'SALDO FINAL', 'RESGATE AUTOMATICO', 'APLICACAO'].some(kw => t.description?.toUpperCase().includes(kw)),
         }));
 
         setParsedTxs(uiTransactions);
@@ -184,8 +191,9 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
         setParsedTxs(prev => prev.map(t => t.id === id ? { ...t, selected: !t.selected } : t));
     };
 
-    const updateCategory = (id: string, newCat: string) => {
-        setParsedTxs(prev => prev.map(t => t.id === id ? { ...t, categoryLegacy: newCat } : t));
+    const updateCategory = (id: string, newCatId: string) => {
+        const cat = categories.find(c => c.id === newCatId);
+        setParsedTxs(prev => prev.map(t => t.id === id ? { ...t, categoryId: newCatId, categoryLegacy: cat?.name || 'Outros' } : t));
     };
 
     // ─── Filtro de visualização ──────────────────────────────────────────────────
@@ -215,6 +223,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                 type: t.type,
                 fitId: t.fitId,
                 classificationRule: t.classificationRule,
+                categoryId: t.categoryId,
                 categoryLegacy: t.categoryLegacy,
                 accountId,
                 creditCardId: creditCardId || undefined
@@ -446,41 +455,25 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                         </div>
                                         <div className="w-48 shrink-0">
                                             <select
-                                                value={tx.categoryLegacy}
+                                                value={tx.categoryId || ''}
                                                 onChange={(e) => updateCategory(tx.id, e.target.value)}
                                                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none"
                                             >
-                                                {!["Moradia", "Contas Residenciais", "Mercado / Padaria", "Transporte Fixo", "Saúde e Farmácia", "Educação", "Impostos Anuais e Seguros", "Impostos Mensais", "Restaurante / Delivery", "Transporte App", "Lazer / Assinaturas", "Compras / Vestuário", "Cuidados Pessoais", "Viagens", "Aplicações / Poupança", "Pagamento de Dívidas", "Salário", "Renda Extra", "Rendimento de Investimentos", "Transferência Recebida", "Empréstimo Recebido"].includes(tx.categoryLegacy) && (
-                                                    <option value={tx.categoryLegacy}>{tx.categoryLegacy} (IA)</option>
+                                                <option value="" disabled>Escolha uma categoria...</option>
+                                                {/* Se a IA sugeriu algo que não está no banco (raro agora com o novo prompt), mostra no topo */}
+                                                {tx.suggestedCategory && !tx.suggestedCategoryId && (
+                                                    <option value="">{tx.suggestedCategory} (IA - Não Cadastrada)</option>
                                                 )}
+
                                                 <optgroup label="Entradas (Rendas)">
-                                                    <option value="Salário">Salário</option>
-                                                    <option value="Renda Extra">Renda Extra</option>
-                                                    <option value="Rendimento de Investimentos">Rendimento de Investimentos</option>
-                                                    <option value="Transferência Recebida">Transferência Recebida</option>
-                                                    <option value="Empréstimo Recebido">Empréstimo Recebido</option>
+                                                    {categories.filter(c => c.type === 'INCOME').map(c => (
+                                                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                    ))}
                                                 </optgroup>
-                                                <optgroup label="Necessidades (Essencial)">
-                                                    <option value="Moradia">Moradia</option>
-                                                    <option value="Contas Residenciais">Contas Residenciais</option>
-                                                    <option value="Mercado / Padaria">Mercado / Padaria</option>
-                                                    <option value="Transporte Fixo">Transporte Fixo</option>
-                                                    <option value="Saúde e Farmácia">Saúde e Farmácia</option>
-                                                    <option value="Educação">Educação</option>
-                                                    <option value="Impostos Anuais e Seguros">Impostos Anuais e Seguros</option>
-                                                    <option value="Impostos Mensais">Impostos Mensais</option>
-                                                </optgroup>
-                                                <optgroup label="Desejos (Estilo de Vida)">
-                                                    <option value="Restaurante / Delivery">Restaurante / Delivery</option>
-                                                    <option value="Transporte App">Transporte App</option>
-                                                    <option value="Lazer / Assinaturas">Lazer / Assinaturas</option>
-                                                    <option value="Compras / Vestuário">Compras / Vestuário</option>
-                                                    <option value="Cuidados Pessoais">Cuidados Pessoais</option>
-                                                    <option value="Viagens">Viagens</option>
-                                                </optgroup>
-                                                <optgroup label="Objetivos (Quitação e Reserva)">
-                                                    <option value="Aplicações / Poupança">Aplicações / Poupança</option>
-                                                    <option value="Pagamento de Dívidas">Pagamento de Dívidas</option>
+                                                <optgroup label="Despesas (Gastos)">
+                                                    {categories.filter(c => c.type === 'EXPENSE').map(c => (
+                                                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                    ))}
                                                 </optgroup>
                                             </select>
                                         </div>

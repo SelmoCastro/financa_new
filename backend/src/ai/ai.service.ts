@@ -39,12 +39,12 @@ export class AiService {
      * Recebe um array de descrições de transações e retorna a classificação delas
      * usando a Regra 50-30-20 via OpenRouter.
      */
-    async classifyTransactions(descriptions: string[]): Promise<Record<string, ClassificationResult>> {
+    async classifyTransactions(descriptions: string[], categories: string[] = []): Promise<Record<string, ClassificationResult>> {
         if (!this.openai || descriptions.length === 0) {
             return this.fallbackClassification(descriptions);
         }
 
-        const prompt = `${SYSTEM_PROMPTS.CLASSIFIER}\n\nDados:\n${JSON.stringify(descriptions)}`;
+        const prompt = `${SYSTEM_PROMPTS.CLASSIFIER(categories)}\n\nDados:\n${JSON.stringify(descriptions)}`;
 
         try {
             this.logger.log(`OpenRouter: Classificando ${descriptions.length} transações...`);
@@ -157,7 +157,7 @@ export class AiService {
     /**
      * Extrai dados de transação de uma imagem de comprovante usando OpenRouter (Vision).
      */
-    async extractFromReceipt(imageBase64: string, mimeType: string): Promise<ReceiptTransaction[]> {
+    async extractFromReceipt(imageBase64: string, mimeType: string, categories: string[] = []): Promise<ReceiptTransaction[]> {
         if (!this.openai) {
             this.logger.warn('AiService: OpenRouter não disponível.');
             return [];
@@ -169,7 +169,7 @@ export class AiService {
             const response = await this.openai.chat.completions.create({
                 model: this.VISION_MODEL,
                 messages: [
-                    { role: 'system', content: SYSTEM_PROMPTS.VISION_EXTRACTOR },
+                    { role: 'system', content: SYSTEM_PROMPTS.VISION_EXTRACTOR(categories) },
                     {
                         role: 'user',
                         content: [
