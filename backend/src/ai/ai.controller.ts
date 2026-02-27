@@ -25,11 +25,11 @@ export class AiController {
         const y = year ? parseInt(year) : now.getFullYear();
         const m = month ? parseInt(month) : now.getMonth();
 
-        // Obtém o resumo dos dados para o mês selecionado
-        const summary = await this.reportsService.getDashboardSummary(userId, y, m);
+        // Obtém o perfil financeiro completo para insights mais inteligentes
+        const profile = await this.reportsService.getFinancialProfile(userId);
 
-        // Gera os insights usando o resumo como contexto
-        const insights = await this.aiService.getFinancialInsights(summary);
+        // Gera os insights usando o perfil como contexto (ajustando para o mês se necessário)
+        const insights = await this.aiService.getFinancialInsights(profile);
 
         return { insights };
     }
@@ -38,11 +38,10 @@ export class AiController {
     async postChat(@Request() req, @Body('message') message: string) {
         const userId = req.user.userId;
 
-        // Contexto básico: resumo do mês atual para o chat
-        const now = new Date();
-        const summary = await this.reportsService.getDashboardSummary(userId, now.getFullYear(), now.getMonth());
+        // Contexto completo: metas, orçamentos e gastos
+        const profile = await this.reportsService.getFinancialProfile(userId);
 
-        const response = await this.aiService.chat(message, summary);
+        const response = await this.aiService.chat(message, profile);
 
         return { response };
     }

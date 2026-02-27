@@ -101,4 +101,53 @@ export class ReportsService {
             }
         };
     }
+
+    /**
+     * Retorna um perfil completo para o "cérebro" da IA.
+     * Inclui metas, orçamentos e principais gastos.
+     */
+    async getFinancialProfile(userId: string) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth();
+
+        // 1. Resumo do mês atual
+        const monthSummary = await this.getDashboardSummary(userId, y, m);
+
+        // 2. Metas do usuário
+        const goals = await this.prisma.goal.findMany({
+            where: { userId },
+            select: { title: true, targetAmount: true, currentAmount: true, deadline: true }
+        });
+
+        // 3. Orçamentos vs Realizado
+        const budgets = await this.prisma.budget.findMany({
+            where: { userId },
+            select: { category: true, amount: true }
+        });
+
+        // 4. Maiores categorias de gasto no mês
+        const topExpenses = await this.prisma.transaction.groupBy({
+            by: ['categoryId', 'categoryLegacy'],
+            where: { userId, type: 'EXPENSE', date: { gte: new Date(y, m, 1) } },
+            _sum: { amount: true },
+            orderBy: { _sum: { amount: 'desc' } },
+            take: 5
+        });
+
+        const categories = await this.prisma.category.findMany({ where: { userId } });
+        const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+
+        const formattedTopExpenses = topExpenses.map(g => ({
+            category: (g.categoryId ? categoryMap.get(g.categoryId) : g.categoryLegacy) || 'Outros',
+            amount: g._sum.amount || 0
+        }));
+
+        return {
+            userSummary: monthSummary,
+            activeGoals: goals,
+            activeBudgets: budgets,
+            topMonthlyExpenses: formattedTopExpenses
+        };
+    }
 }
