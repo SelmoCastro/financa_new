@@ -52,7 +52,12 @@ export class TransactionsController {
     }
 
     const imageBase64 = file.buffer.toString('base64');
-    const transactions = await this.aiService.extractFromReceipt(imageBase64, file.mimetype);
+
+    // Busca categorias do usuário para a IA saber o que sugerir
+    const userCategories = await this.transactionsService.getUserCategories(req.user.userId);
+    const categoryNames = userCategories.map(c => c.name);
+
+    const transactions = await this.aiService.extractFromReceipt(imageBase64, file.mimetype, categoryNames);
 
     if (transactions.length === 0) {
       return {
