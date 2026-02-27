@@ -22,12 +22,13 @@ export class AiService {
             this.openai = new OpenAI({
                 apiKey: apiKey,
                 baseURL: 'https://openrouter.ai/api/v1',
+                timeout: 8000, // 8 segundos (Vercel Hobby tem limite de 10s)
                 defaultHeaders: {
-                    'HTTP-Referer': 'https://financa-new.vercel.app', // Opcional, para o ranking do OpenRouter
+                    'HTTP-Referer': 'https://financa-new.vercel.app',
                     'X-Title': 'Finanza AI',
                 },
             });
-            this.logger.log(`OpenRouter Service inicializado. Text model: ${this.TEXT_MODEL}, Vision model: ${this.VISION_MODEL}`);
+            this.logger.log(`OpenRouter Service inicializado. Timeout: 8s. Models: ${this.TEXT_MODEL} | ${this.VISION_MODEL}`);
         } else {
             this.logger.warn('OPENROUTER_API_KEY não configurada. Serviço AI rodará em modo Fallback (Desativado).');
         }
