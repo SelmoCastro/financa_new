@@ -56,14 +56,20 @@ export class AiService {
             });
 
             const responseText = response.choices[0]?.message?.content || '{}';
-            const rawData = JSON.parse(responseText);
+
+            // Tenta limpar possíveis marcações de markdown do JSON
+            const cleanJson = responseText.replace(/```json|```/g, '').trim();
+            const rawData = JSON.parse(cleanJson);
+
+            // Algumas IAs podem envolver o resultado em uma chave "transactions" ou similar
+            const dataToProcess = rawData.transactions || rawData.classifications || rawData;
 
             const parsedData: Record<string, ClassificationResult> = {};
-            for (const [key, value] of Object.entries<any>(rawData)) {
+            for (const [key, value] of Object.entries<any>(dataToProcess)) {
                 parsedData[key] = {
-                    category: value.c || 'Outros',
-                    rule: typeof value.r === 'number' ? value.r : 30,
-                    icon: value.i || '🏷️'
+                    category: value.c || value.category || 'Outros',
+                    rule: typeof (value.r || value.rule) === 'number' ? (value.r || value.rule) : 30,
+                    icon: value.i || value.icon || '🏷️'
                 };
             }
 

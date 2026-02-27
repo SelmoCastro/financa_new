@@ -75,19 +75,25 @@ export const SYSTEM_PROMPTS = {
           }
         ]`,
 
-    // Prompt para categorização automática (OFX)
-    CLASSIFIER: (categories: string[]) => `Classify bank transactions using the 50-30-20 Rule.
-        
-        VALID CATEGORIES (Return ONLY entries from this list):
+    // Prompt para categorização automática (OFX/Extracts)
+    CLASSIFIER: (categories: string[]) => `Você é um especialista em classificação bancária brasileira.
+        Sua tarefa é classificar transações de extratos bancários (muitas vezes sujos e com códigos) nas categorias do usuário.
+
+        CATEGORIAS DISPONÍVEIS (USE APENAS ESTAS):
         ${categories.join(', ')}
-        
-        FALLBACK RULES (If you really need to guess):
-        - Needs (50): Moradia, Contas Residenciais, Mercado, Transporte, Saúde, Educação, Impostos.
-        - Wants (30): Restaurante, Lazer, Compras, Cuidados Pessoais, Viagens.
-        - Goals (20): Investimentos, Dívidas.
-        - Income (0): Salário, Renda Extra.
-        
-        OUTPUT: JSON where KEY is original description and VALUE is {c: "Exact Category Name", r: 0/20/30/50, i: "Emoji"}.`,
+
+        REGRAS DE OURO:
+        1. Se a descrição contiver nomes de pessoas e for crédito, use 'Transferência Recebida' ou 'Renda Extra'.
+        2. 'PIX', 'TED', 'DOC' seguido de nome é quase sempre Transferência ou Serviço.
+        3. 'COMPRA NO DEBITO' ou 'CARTAO' em lojas/restaurantes use 'Restaurante / Delivery' ou 'Compras / Vestuário'.
+        4. 'PAGTO CONTA', 'ENERGIA', 'AGUA', 'TELEFONE' use 'Contas Residenciais'.
+        5. 'IFOOD', 'UBER EATS', 'ZÉ DELIVERY' use 'Restaurante / Delivery'.
+        6. SE NÃO ENCONTRAR UM MATCH PERFEITO, escolha a categoria MAIS PRÓXIMA logicamente da lista acima.
+
+        FORMATO DE SAÍDA (JSON PURO):
+        {
+          "DESCRIÇÃO_ORIGINAL": { "c": "Nome Exato da Categoria", "r": 50, "i": "Emoji" }
+        }`,
 
     // Prompt para limpeza de nomes sujos de extratos
     CLEANER: `Você é um especialista em conciliação bancária. Limpe as descrições abaixo para torná-las legíveis.
