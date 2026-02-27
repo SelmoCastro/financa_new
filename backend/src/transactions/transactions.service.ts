@@ -157,14 +157,39 @@ export class TransactionsService {
       const cleanedDescription = cleanNames[tx.description] || tx.description;
 
       // Tenta bater o nome sugerido pela IA com um ID real do banco
-      const matchedCategoryId = suggestion
+      let matchedCategoryId = suggestion
         ? categoryNameToId.get(suggestion.category.toLowerCase().trim())
         : undefined;
 
+      // Fallback: Busca difusa se a IA sugeriu um nome parecido mas não exato
+      if (suggestion && !matchedCategoryId) {
+        const suggestedLow = suggestion.category.toLowerCase();
+        // Se a IA sugeriu "Mercado" e temos "Mercado / Padaria", faz o match
+        for (const [name, id] of categoryNameToId.entries()) {
+          if (name.includes(suggestedLow) || suggestedLow.includes(name)) {
+            matchedCategoryId = id;
+            break;
+          }
+        }
+      }
+
+      // Fallback Final: Keywords clássicas de extrato para quando a IA falha/timeout
+      if (!matchedCategoryId) {
+        const desc = tx.description.toUpperCase();
+        if (desc.includes('IFOOD') || desc.includes('UBER EATS')) matchedCategoryId = categoryNameToId.get('restaurante / delivery');
+        if (desc.includes('UBER') || desc.includes('99APP')) matchedCategoryId = categoryNameToId.get('transporte app');
+        if (desc.includes('MERCADO') || desc.includes('PADARIA') || desc.includes('CONFIANCA')) matchedCategoryId = categoryNameToId.get('mercado / padaria');
+        if (desc.includes('POSTO') || desc.includes('GASOLINA')) matchedCategoryId = categoryNameToId.get('transporte fixo');
+        if (desc.includes('SALARIO') || desc.includes('VENCIMENTO')) matchedCategoryId = categoryNameToId.get('salário');
+        if (desc.includes('TRANSF') || desc.includes('PIX') || desc.includes('TED')) {
+          matchedCategoryId = categoryNameToId.get(tx.amount > 0 ? 'transferência recebida' : 'outros');
+        }
+      }
+
       return {
         ...tx,
-        description: cleanedDescription, // Sobrescreve com o nome limpo pela IA
-        originalDescription: tx.description, // Mantém o original para referência se necessário
+        description: cleanedDescription,
+        originalDescription: tx.description,
         suggestedCategory: suggestion?.category || 'Outros',
         suggestedCategoryId: matchedCategoryId,
         suggestedRule: suggestion?.rule || 30,
