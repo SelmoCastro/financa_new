@@ -66,7 +66,18 @@ export class TransactionsController {
       };
     }
 
-    return { preview: transactions };
+    // Mapeia os nomes sugeridos pela IA para os IDs reais do banco usando o novo helper
+    const categoryNameToId = new Map(userCategories.map(c => [c.name.toLowerCase().trim(), c.id]));
+    const enrichedPreview = transactions.map(t => {
+      const suggestion = {
+        category: t.suggestedCategory,
+        rule: t.suggestedRule,
+        icon: t.suggestedIcon
+      };
+      return this.transactionsService.enrichTransactionWithAi(t, suggestion, t.description, categoryNameToId);
+    });
+
+    return { preview: enrichedPreview };
   }
 
   @Post('import/confirm')
