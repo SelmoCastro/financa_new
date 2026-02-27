@@ -40,16 +40,20 @@ export class TransactionsService {
     });
   }
 
+  async getUserCategories(userId: string) {
+    return this.prisma.category.findMany({
+      where: { userId },
+      select: { id: true, name: true, type: true, icon: true }
+    });
+  }
+
   async validateImport(transactionsData: any[], userId: string) {
     if (!transactionsData || transactionsData.length === 0) return { valid: [], duplicateFitIds: [] };
 
     // 0. Busca categorias do usuário para alimentar a IA
-    const userCategories = await this.prisma.category.findMany({
-      where: { userId },
-      select: { id: true, name: true }
-    });
+    const userCategories = await this.getUserCategories(userId);
     const categoryNames = userCategories.map(c => c.name);
-    const categoryNameToId = new Map(userCategories.map(c => [c.name.toLowerCase(), c.id]));
+    const categoryNameToId = new Map(userCategories.map(c => [c.name.toLowerCase().trim(), c.id]));
 
     const fitIds = transactionsData.map(t => t.fitId).filter(Boolean);
     const targetAccountId = transactionsData[0]?.accountId;
@@ -154,7 +158,7 @@ export class TransactionsService {
 
       // Tenta bater o nome sugerido pela IA com um ID real do banco
       const matchedCategoryId = suggestion
-        ? categoryNameToId.get(suggestion.category.toLowerCase())
+        ? categoryNameToId.get(suggestion.category.toLowerCase().trim())
         : undefined;
 
       return {
