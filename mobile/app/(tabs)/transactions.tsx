@@ -13,11 +13,6 @@ import TransactionModal from '../../components/TransactionModal';
 import { ImportModal } from '../../components/ImportModal';
 import { useEffect } from 'react';
 
-const CATEGORIES = [
-    'Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Lazer',
-    'Educação', 'Salário', 'Freelance', 'Investimentos', 'Outros'
-];
-
 export default function TransactionsScreen() {
     const insets = useSafeAreaInsets();
     const { selectedDate } = useMonth();
@@ -75,10 +70,7 @@ export default function TransactionsScreen() {
         }, { income: 0, expense: 0 });
     }, [filteredTransactions]);
 
-    const existingCategories = useMemo(() => {
-        const fromTransactions = new Set(transactions.map(t => t.category));
-        return Array.from(new Set([...CATEGORIES, ...fromTransactions]));
-    }, [transactions]);
+
 
 
 

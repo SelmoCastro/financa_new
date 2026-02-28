@@ -15,6 +15,20 @@ interface Budget {
     isOverBudget: boolean;
 }
 
+const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
+    if (type === 'INCOME') return 'Entradas (Rendas)';
+
+    const needs = ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'];
+    const desires = ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens'];
+    const goals = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
+
+    if (needs.includes(name)) return 'Necessidades (Essencial)';
+    if (desires.includes(name)) return 'Desejos (Estilo de Vida)';
+    if (goals.includes(name)) return 'Objetivos (Quitação e Reserva)';
+
+    return 'Outras Despesas';
+};
+
 export default function BudgetsScreen() {
     const insets = useSafeAreaInsets();
     const { isPrivacyEnabled, togglePrivacy } = useTransactions();
@@ -25,20 +39,48 @@ export default function BudgetsScreen() {
 
     // Form
     const [category, setCategory] = useState('');
+    const [selectedCat, setSelectedCat] = useState<any>(null);
     const [amount, setAmount] = useState('');
+    const [categories, setCategories] = useState<any[]>([]);
+    const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
 
     const fetchBudgets = async () => {
         try {
-            const response = await api.get('/budgets');
-            setBudgets(response.data);
+            const [bRes, cRes] = await Promise.all([
+                api.get('/budgets'),
+                api.get('/categories')
+            ]);
+            setBudgets(bRes.data);
+            setCategories(cRes.data);
         } catch (error) {
-            console.error('Erro ao buscar orçamentos:', error);
-            Alert.alert('Erro', 'Não foi possível carregar os orçamentos.');
+            console.error('Erro ao buscar dados:', error);
+            Alert.alert('Erro', 'Não foi possível carregar os dados.');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
     };
+
+    const groupedCategories = React.useMemo(() => {
+        const groups: Record<string, any[]> = {
+            'Entradas (Rendas)': [],
+            'Necessidades (Essencial)': [],
+            'Desejos (Estilo de Vida)': [],
+            'Objetivos (Quitação e Reserva)': [],
+            'Outras Despesas': []
+        };
+
+        categories.forEach(cat => {
+            const groupName = getCategoryGroup(cat.name, cat.type as any);
+            if (groups[groupName]) {
+                groups[groupName].push(cat);
+            }
+        });
+
+        return Object.entries(groups)
+            .filter(([_, items]) => items.length > 0)
+            .map(([name, items]) => ({ name, items }));
+    }, [categories]);
 
     useEffect(() => {
         fetchBudgets();
@@ -183,12 +225,15 @@ export default function BudgetsScreen() {
                         <View className="space-y-4 mb-6">
                             <View>
                                 <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Categoria</Text>
-                                <TextInput
-                                    value={category}
-                                    onChangeText={setCategory}
-                                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-slate-700"
-                                    placeholder="Ex: Alimentação"
-                                />
+                                <Pressable
+                                    onPress={() => setIsCategoryPickerOpen(true)}
+                                    className="w-full p-4 bg-slate-50 rounded-2xl flex-row justify-between items-center"
+                                >
+                                    <Text className={`font-bold ${category ? 'text-slate-700' : 'text-slate-400'}`}>
+                                        {category || 'Selecione uma categoria'}
+                                    </Text>
+                                    <MaterialIcons name="keyboard-arrow-down" size={20} color="#64748b" />
+                                </Pressable>
                             </View>
                             <View>
                                 <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Teto Mensal (R$)</Text>
@@ -213,6 +258,53 @@ export default function BudgetsScreen() {
                         </View>
                     </View>
                 </View>
+
+                {/* Category Picker Overlay */}
+                <Modal visible={isCategoryPickerOpen} transparent animationType="fade">
+                    <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 24 }}>
+                        <View style={{ backgroundColor: 'white', borderRadius: 32, padding: 16, maxHeight: '80%' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingHorizontal: 8 }}>
+                                <Text style={{ fontSize: 18, fontWeight: '900', color: '#1e293b' }}>Escolher Categoria</Text>
+                                <Pressable onPress={() => setIsCategoryPickerOpen(false)} style={{ padding: 4 }}>
+                                    <MaterialIcons name="close" size={24} color="#94a3b8" />
+                                </Pressable>
+                            </View>
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                {groupedCategories.map(group => (
+                                    <View key={group.name} style={{ marginBottom: 20 }}>
+                                        <Text style={{ fontSize: 10, fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, paddingHorizontal: 8 }}>{group.name}</Text>
+                                        <View style={{ gap: 8 }}>
+                                            {group.items.map(cat => (
+                                                <Pressable
+                                                    key={cat.id}
+                                                    onPress={() => {
+                                                        setCategory(cat.name);
+                                                        setSelectedCat(cat);
+                                                        setIsCategoryPickerOpen(false);
+                                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                    }}
+                                                    style={{
+                                                        flexDirection: 'row',
+                                                        alignItems: 'center',
+                                                        padding: 16,
+                                                        backgroundColor: category === cat.name ? '#f1f5f9' : 'transparent',
+                                                        borderRadius: 16,
+                                                        borderWidth: 1,
+                                                        borderColor: category === cat.name ? '#e2e8f0' : 'transparent'
+                                                    }}
+                                                >
+                                                    <Text style={{ fontSize: 18, marginRight: 12 }}>{cat.icon}</Text>
+                                                    <Text style={{ fontSize: 16, fontWeight: '700', color: category === cat.name ? '#4f46e5' : '#475569', flex: 1 }}>{cat.name}</Text>
+                                                    {category === cat.name && <MaterialIcons name="check" size={20} color="#4f46e5" />}
+                                                </Pressable>
+                                            ))}
+                                        </View>
+                                    </View>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    </View>
+                </Modal>
             </Modal>
         </View>
     );
