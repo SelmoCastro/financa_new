@@ -23,7 +23,7 @@ export class AiService {
             this.openai = new OpenAI({
                 apiKey: apiKey,
                 baseURL: 'https://openrouter.ai/api/v1',
-                timeout: 8000, // 8 segundos (Vercel Hobby tem limite de 10s)
+                timeout: 9500, // 9.5 segundos (Limite Vercel Hobby é 10s)
                 defaultHeaders: {
                     'HTTP-Referer': 'https://financa-new.vercel.app',
                     'X-Title': 'Finanza AI',
@@ -198,8 +198,10 @@ export class AiService {
             const cleanJson = responseText.replace(/```json|```/g, '').trim();
             const rawData = JSON.parse(cleanJson);
 
-            // Algumas IAs podem envolver o resultado em uma chave "transactions" ou similar
-            const parsed = Array.isArray(rawData) ? rawData : (rawData.transactions || rawData.data || []);
+            // Algumas IAs podem envolver o resultado em chaves variadas
+            const parsed = Array.isArray(rawData)
+                ? rawData
+                : (rawData.transactions || rawData.data || rawData.items || rawData.results || []);
 
             return parsed;
         } catch (error) {
