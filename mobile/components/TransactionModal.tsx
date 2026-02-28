@@ -76,6 +76,15 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
         }
     }, [visible, initialType]);
 
+    // Reset category if type changes
+    useEffect(() => {
+        if (!visible) return;
+        if (selectedCategory && selectedCategory.type !== type) {
+            setCategory('');
+            setSelectedCategory(null);
+        }
+    }, [type]);
+
     const groupedCategories = useMemo(() => {
         const groups: Record<string, any[]> = {
             'Entradas (Rendas)': [],
@@ -92,11 +101,17 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
             }
         });
 
-        // Remove empty groups
-        return Object.entries(groups)
-            .filter(([_, items]) => items.length > 0)
+        // Filter groups by transaction type
+        const filteredGroups = Object.entries(groups)
+            .filter(([name, items]) => {
+                if (items.length === 0) return false;
+                if (type === 'INCOME') return name === 'Entradas (Rendas)';
+                return name !== 'Entradas (Rendas)';
+            })
             .map(([name, items]) => ({ name, items }));
-    }, [categories]);
+
+        return filteredGroups;
+    }, [categories, type]);
 
     const handleSave = async () => {
         const rawAmount = parseCurrencyToNumber(amount);

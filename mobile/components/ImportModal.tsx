@@ -44,7 +44,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
     const [duplicateIds, setDuplicateIds] = useState<string[]>([]);
     const [activeTxId, setActiveTxId] = useState<string | null>(null);
 
-    const groupedCategories = React.useMemo(() => {
+    const getFilteredGroups = (type: 'INCOME' | 'EXPENSE') => {
         const groups: Record<string, any[]> = {
             'Entradas (Rendas)': [],
             'Necessidades (Essencial)': [],
@@ -61,9 +61,13 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
         });
 
         return Object.entries(groups)
-            .filter(([_, items]) => items.length > 0)
+            .filter(([name, items]) => {
+                if (items.length === 0) return false;
+                if (type === 'INCOME') return name === 'Entradas (Rendas)';
+                return name !== 'Entradas (Rendas)';
+            })
             .map(([name, items]) => ({ name, items }));
-    }, [categories]);
+    };
 
     useEffect(() => {
         if (visible) {
@@ -280,7 +284,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
                 {isOpen && (
                     <View style={styles.dropdownContainer}>
                         <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
-                            {groupedCategories.map(group => (
+                            {getFilteredGroups(tx.type).map(group => (
                                 <View key={group.name} style={styles.dropdownGroup}>
                                     <Text style={styles.dropdownGroupLabel}>{group.name}</Text>
                                     {group.items.map(c => (
