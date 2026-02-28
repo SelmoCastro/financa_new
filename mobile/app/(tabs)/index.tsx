@@ -15,6 +15,7 @@ import TransactionModal from '../../components/TransactionModal';
 import { MonthlyBarChart } from '../../components/MonthlyBarChart';
 import { AiInsightsWidget } from '../../components/AiInsightsWidget';
 import { AiChatWidget } from '../../components/AiChatWidget';
+import { ImportModal } from '../../components/ImportModal';
 
 export default function DashboardScreen() {
     const insets = useSafeAreaInsets();
@@ -22,7 +23,27 @@ export default function DashboardScreen() {
     const { transactions, loading, refreshing, onRefresh, isPrivacyEnabled, togglePrivacy } = useTransactions();
 
     const [modalVisible, setModalVisible] = useState(false);
+    const [importModalVisible, setImportModalVisible] = useState(false);
     const [transactionType, setTransactionType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
+
+    const [accounts, setAccounts] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchFiltersData = async () => {
+            try {
+                const [accRes, catRes] = await Promise.all([
+                    api.get('/accounts'),
+                    api.get('/categories')
+                ]);
+                setAccounts(accRes.data);
+                setCategories(catRes.data);
+            } catch (err) {
+                console.error('Error fetching data for import:', err);
+            }
+        };
+        fetchFiltersData();
+    }, []);
 
     const openModal = (type: 'INCOME' | 'EXPENSE') => {
         setTransactionType(type);
@@ -135,13 +156,24 @@ export default function DashboardScreen() {
                     {/* Main Row: Title & Add Button */}
                     <View style={styles.headerMainRow}>
                         <Text style={styles.titleText} numberOfLines={1}>Resumo Financeiro</Text>
-                        <Pressable
-                            onPress={() => { openModal('EXPENSE'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-                            android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
-                            style={styles.btnPrimary}
-                        >
-                            <MaterialIcons name="add" size={24} color="white" />
-                        </Pressable>
+
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Pressable
+                                onPress={() => { setImportModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                                className="bg-emerald-600 p-2 px-3 rounded-xl flex-row items-center gap-1 shadow-lg shadow-emerald-200"
+                            >
+                                <MaterialIcons name="file-upload" size={18} color="white" />
+                                <Text className="text-white font-bold text-xs uppercase"></Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={() => { openModal('EXPENSE'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                                style={styles.btnPrimary}
+                            >
+                                <MaterialIcons name="add" size={24} color="white" />
+                            </Pressable>
+                        </View>
                     </View>
 
                     {/* Bottom Row: Month Selector */}
@@ -304,6 +336,14 @@ export default function DashboardScreen() {
                 onClose={() => setModalVisible(false)}
                 onSuccess={handleRefresh}
                 initialType={transactionType}
+            />
+
+            <ImportModal
+                visible={importModalVisible}
+                onClose={() => setImportModalVisible(false)}
+                onSuccess={handleRefresh}
+                accounts={accounts}
+                categories={categories}
             />
 
             <AiChatWidget />
