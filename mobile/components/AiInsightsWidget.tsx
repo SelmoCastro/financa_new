@@ -11,6 +11,7 @@ export function AiInsightsWidget() {
     const [insightsData, setInsightsData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [hasAnalyzed, setHasAnalyzed] = useState(false);
 
     const fetchInsights = async (forceRefresh: boolean = false) => {
         setLoading(true);
@@ -23,6 +24,7 @@ export function AiInsightsWidget() {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             if (res.data && res.data.content) {
                 setInsightsData(res.data);
+                setHasAnalyzed(true);
             } else {
                 setInsightsData(null);
             }
@@ -36,7 +38,10 @@ export function AiInsightsWidget() {
     };
 
     useEffect(() => {
-        fetchInsights(false);
+        // Reset analysis state when month changes so user can manually request it again
+        setInsightsData(null);
+        setHasAnalyzed(false);
+        setError(null);
     }, [selectedDate]);
 
     const handleRefresh = () => {
@@ -66,6 +71,25 @@ export function AiInsightsWidget() {
     }
 
     if (!insightsData || !insightsData.content) {
+        if (!hasAnalyzed && !loading && !error) {
+            return (
+                <View style={styles.promptContainer}>
+                    <View style={styles.promptHeader}>
+                        <MaterialIcons name="auto-awesome" size={24} color="#8b5cf6" />
+                        <Text style={styles.promptTitle}>Finanza AI</Text>
+                    </View>
+                    <Text style={styles.promptText}>
+                        Gera um resumo inteligente dos seus gastos de {getYearMonth(selectedDate).month}/{getYearMonth(selectedDate).year} e receba alertas sobre o seu orçamento.
+                    </Text>
+                    <Pressable
+                        style={({ pressed }) => [styles.analyzeBtn, pressed && { opacity: 0.8 }]}
+                        onPress={() => fetchInsights(false)}
+                    >
+                        <Text style={styles.analyzeBtnText}>Analisar Mês Lançando a Magia</Text>
+                    </Pressable>
+                </View>
+            );
+        }
         return null;
     }
 
@@ -224,5 +248,42 @@ const styles = StyleSheet.create({
         color: '#e11d48',
         fontSize: 12,
         fontWeight: '700',
+    },
+    promptContainer: {
+        backgroundColor: '#1e1b4b',
+        borderRadius: 24,
+        padding: 24,
+        marginHorizontal: 16,
+        marginBottom: 20,
+        gap: 12,
+        borderWidth: 1,
+        borderColor: '#312e81',
+    },
+    promptHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    promptTitle: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    promptText: {
+        color: '#a5b4fc',
+        fontSize: 13,
+        lineHeight: 20,
+    },
+    analyzeBtn: {
+        backgroundColor: '#4f46e5',
+        paddingVertical: 12,
+        borderRadius: 16,
+        alignItems: 'center',
+        marginTop: 4,
+    },
+    analyzeBtnText: {
+        color: 'white',
+        fontWeight: '700',
+        fontSize: 14,
     }
 });
