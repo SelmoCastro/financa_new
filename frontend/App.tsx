@@ -104,7 +104,6 @@ const AppContent: React.FC = () => {
       case 'budgets':
         return (
           <BudgetsView
-            existingCategories={Array.from(new Set(monthFilteredTransactions.map(t => typeof t.category === 'object' && t.category !== null ? t.category.name : t.categoryLegacy || 'Outros'))).filter(Boolean)}
             isPrivacyEnabled={isPrivacyEnabled}
           />
         );

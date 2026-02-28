@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useData } from '../context/DataProvider';
+import { Category } from '../types';
 
 interface Budget {
     id: string;
@@ -12,11 +14,11 @@ interface Budget {
 }
 
 interface BudgetsViewProps {
-    existingCategories: string[];
     isPrivacyEnabled: boolean;
 }
 
-export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories, isPrivacyEnabled }) => {
+export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) => {
+    const { categories } = useData();
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -219,37 +221,41 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ existingCategories, is
                                 <select
                                     value={form.category}
                                     onChange={e => setForm({ ...form, category: e.target.value })}
-                                    className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none cursor-pointer"
                                 >
                                     <option value="">Selecione...</option>
+
                                     <optgroup label="Entradas (Rendas)">
-                                        <option value="Salário">Salário</option>
-                                        <option value="Renda Extra">Renda Extra</option>
-                                        <option value="Rendimento de Investimentos">Rendimento de Investimentos</option>
-                                        <option value="Transferência Recebida">Transferência Recebida</option>
-                                        <option value="Empréstimo Recebido">Empréstimo Recebido</option>
+                                        {categories.filter(c => c.type === 'INCOME').map(c => (
+                                            <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                        ))}
                                     </optgroup>
+
                                     <optgroup label="Necessidades (Essencial)">
-                                        <option value="Moradia">Moradia</option>
-                                        <option value="Contas Residenciais">Contas Residenciais</option>
-                                        <option value="Mercado / Padaria">Mercado / Padaria</option>
-                                        <option value="Transporte Fixo">Transporte Fixo</option>
-                                        <option value="Saúde e Farmácia">Saúde e Farmácia</option>
-                                        <option value="Educação">Educação</option>
-                                        <option value="Impostos Anuais e Seguros">Impostos Anuais e Seguros</option>
-                                        <option value="Impostos Mensais">Impostos Mensais</option>
+                                        {categories.filter(c =>
+                                            ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
+                                                .includes(c.name)
+                                        ).map(c => (
+                                            <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                        ))}
                                     </optgroup>
+
                                     <optgroup label="Desejos (Estilo de Vida)">
-                                        <option value="Restaurante / Delivery">Restaurante / Delivery</option>
-                                        <option value="Transporte App">Transporte App</option>
-                                        <option value="Lazer / Assinaturas">Lazer / Assinaturas</option>
-                                        <option value="Compras / Vestuário">Compras / Vestuário</option>
-                                        <option value="Cuidados Pessoais">Cuidados Pessoais</option>
-                                        <option value="Viagens">Viagens</option>
+                                        {categories.filter(c =>
+                                            ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens']
+                                                .includes(c.name)
+                                        ).map(c => (
+                                            <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                        ))}
                                     </optgroup>
+
                                     <optgroup label="Objetivos (Quitação e Reserva)">
-                                        <option value="Aplicações / Poupança">Aplicações / Poupança</option>
-                                        <option value="Pagamento de Dívidas">Pagamento de Dívidas</option>
+                                        {categories.filter(c =>
+                                            ['Aplicações / Poupança', 'Pagamento de Dívidas']
+                                                .includes(c.name)
+                                        ).map(c => (
+                                            <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                        ))}
                                     </optgroup>
                                 </select>
                             </div>

@@ -65,9 +65,9 @@ export class ReportsService {
             _sum: { amount: true },
         });
 
-        const needsCategories = ['Moradia', 'Alimentação', 'Saúde', 'Transporte', 'Educação', 'Contas e Serviços'];
-        const wantsCategories = ['Lazer', 'Outros', 'Compras', 'Restaurantes', 'Assinaturas', 'Viagem', 'Cuidados Pessoais', 'Presentes'];
-        const savingsCategories = ['Investimentos (Aporte)', 'Dívidas/Financiamentos'];
+        const needsCategories = ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'];
+        const wantsCategories = ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens'];
+        const savingsCategories = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
 
         let needs = 0;
         let wants = 0;
