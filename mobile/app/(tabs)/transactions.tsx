@@ -10,6 +10,8 @@ import { MonthSelector } from '../../components/MonthSelector';
 import { getYearMonth, parseDate } from '../../utils/dateUtils';
 import api from '../../services/api';
 import TransactionModal from '../../components/TransactionModal';
+import { ImportModal } from '../../components/ImportModal';
+import { useEffect } from 'react';
 
 const CATEGORIES = [
     'Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Lazer',
@@ -24,6 +26,26 @@ export default function TransactionsScreen() {
     const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
+    const [importModalVisible, setImportModalVisible] = useState(false);
+
+    const [accounts, setAccounts] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchFiltersData = async () => {
+            try {
+                const [accRes, catRes] = await Promise.all([
+                    api.get('/accounts'),
+                    api.get('/categories')
+                ]);
+                setAccounts(accRes.data);
+                setCategories(catRes.data);
+            } catch (err) {
+                console.error('Error fetching data for import:', err);
+            }
+        };
+        fetchFiltersData();
+    }, []);
 
     // Derived
     const filteredTransactions = useMemo(() => {
@@ -107,14 +129,24 @@ export default function TransactionsScreen() {
                             <MonthSelector />
                         </View>
                     </View>
-                    <Pressable
-                        onPress={() => { setModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-                        android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
-                        className="bg-indigo-600 p-2 px-4 rounded-xl flex-row items-center gap-2 shadow-lg shadow-indigo-200"
-                    >
-                        <MaterialIcons name="add" size={20} color="white" />
-                        <Text className="text-white font-bold text-xs uppercase">Novo</Text>
-                    </Pressable>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Pressable
+                            onPress={() => { setImportModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                            android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                            className="bg-emerald-600 p-2 px-3 rounded-xl flex-row items-center gap-1 shadow-lg shadow-emerald-200"
+                        >
+                            <MaterialIcons name="file-upload" size={18} color="white" />
+                            <Text className="text-white font-bold text-xs uppercase"></Text>
+                        </Pressable>
+                        <Pressable
+                            onPress={() => { setModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                            android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                            className="bg-indigo-600 p-2 px-4 rounded-xl flex-row items-center gap-2 shadow-lg shadow-indigo-200"
+                        >
+                            <MaterialIcons name="add" size={20} color="white" />
+                            <Text className="text-white font-bold text-xs uppercase">Novo</Text>
+                        </Pressable>
+                    </View>
                 </View>
 
                 {/* Search Bar */}
@@ -240,6 +272,14 @@ export default function TransactionsScreen() {
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 onSuccess={onRefresh}
+            />
+
+            <ImportModal
+                visible={importModalVisible}
+                onClose={() => setImportModalVisible(false)}
+                onSuccess={onRefresh}
+                accounts={accounts}
+                categories={categories}
             />
         </View>
     );

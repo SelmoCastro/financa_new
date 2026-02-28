@@ -1,0 +1,413 @@
+import React, { useState, useEffect } from 'react';
+import {
+    View, Text, StyleSheet, Modal, Pressable, ActivityIndicator,
+    ScrollView, SafeAreaView, Platform, Alert, Image, Switch
+} from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import api from '../services/api';
+import * as Haptics from 'expo-haptics';
+
+interface ImportModalProps {
+    visible: boolean;
+    onClose: () => void;
+    onSuccess: () => void;
+    categories: any[];
+    accounts: any[];
+}
+
+export function ImportModal({ visible, onClose, onSuccess, categories, accounts }: ImportModalProps) {
+    const [step, setStep] = useState<1 | 2>(1);
+    const [loading, setLoading] = useState(false);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [rejectedIds, setRejectedIds] = useState<string[]>([]);
+    const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+    const [fileInfo, setFileInfo] = useState<{ name: string, uri: string, type: 'ofx' | 'receipt' } | null>(null);
+
+    // Filter states
+    const [filterType, setFilterType] = useState<'ALL' | 'NEW' | 'REJECTED'>('ALL');
+    const [duplicateIds, setDuplicateIds] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (visible) {
+            setStep(1);
+            setTransactions([]);
+            setRejectedIds([]);
+            setFileInfo(null);
+            setFilterType('ALL');
+            setDuplicateIds([]);
+            if (accounts.length > 0 && !selectedAccountId) {
+                setSelectedAccountId(accounts[0].id);
+            }
+        }
+    }, [visible, accounts]);
+
+    const handlePickDocument = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: ['application/x-ofx', 'text/ofx', '*/*'],
+                copyToCacheDirectory: true,
+            });
+
+            if (result.canceled) return;
+
+            const file = result.assets[0];
+            setFileInfo({ name: file.name, uri: file.uri, type: 'ofx' });
+            processFile(file.uri, file.name, 'application/x-ofx', 'ofx');
+
+        } catch (err) {
+            Alert.alert('Erro', 'Falha ao selecionar arquivo');
+        }
+    };
+
+    const handlePickImage = async () => {
+        try {
+            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (permissionResult.granted === false) {
+                Alert.alert("Permissão necessária", "Você precisa permitir o acesso a galeria.");
+                return;
+            }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                quality: 0.7,
+            });
+
+            if (result.canceled) return;
+
+            const asset = result.assets[0];
+            // Extrair nome do arquivo da URI
+            const filename = asset.uri.split('/').pop() || 'image.jpg';
+
+            setFileInfo({ name: filename, uri: asset.uri, type: 'receipt' });
+            processFile(asset.uri, filename, 'image/jpeg', 'receipt');
+
+        } catch (err) {
+            Alert.alert('Erro', 'Falha ao selecionar imagem');
+        }
+    };
+
+    const processFile = async (uri: string, name: string, mimeType: string, type: 'ofx' | 'receipt') => {
+        if (!selectedAccountId) {
+            Alert.alert('Erro', 'Selecione uma conta de destino primeiro.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', {
+                uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+                name: name,
+                type: mimeType,
+            } as any);
+            formData.append('accountId', selectedAccountId);
+
+            const endpoint = type === 'ofx' ? '/transactions/import/validate' : '/transactions/import/receipt';
+
+            const res = await api.post(endpoint, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            const fetchedTx = res.data.preview || res.data.valid || [];
+
+            // Atribui categoria sugerida
+            const processedList = fetchedTx.map((tx: any) => ({
+                ...tx,
+                categoryId: tx.suggestedCategoryId || tx.categoryId || null,
+                selected: true,
+                id: tx.id || Math.random().toString(), // fake ID for list rendering if missing
+            }));
+
+            setTransactions(processedList);
+            if (res.data.duplicateFitIds) {
+                setDuplicateIds(res.data.duplicateFitIds);
+            }
+            setStep(2);
+        } catch (error: any) {
+            console.error('Import error:', error);
+            const msg = error.response?.data?.message || 'Falha ao ler arquivo. Tente novamente.';
+            Alert.alert('Erro de Importação', msg);
+            setFileInfo(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const toggleTransactionSelection = (id: string, fitId?: string) => {
+        setTransactions(prev => prev.map(t => {
+            if (t.id === id || t.fitId === fitId) {
+                const isSelecting = !t.selected;
+                // Se está desmarcando um OFX que tem fitId, adiciona aos rejeitados
+                if (!isSelecting && fitId) {
+                    setRejectedIds(curr => [...curr, fitId]);
+                } else if (isSelecting && fitId) {
+                    setRejectedIds(curr => curr.filter(item => item !== fitId));
+                }
+                return { ...t, selected: isSelecting };
+            }
+            return t;
+        }));
+    };
+
+    const updateTransactionCategory = (id: string, categoryId: string) => {
+        setTransactions(prev => prev.map(t =>
+            t.id === id ? { ...t, categoryId } : t
+        ));
+    };
+
+    const handleConfirm = async () => {
+        const selectedTxs = transactions.filter(t => t.selected);
+        if (selectedTxs.length === 0) {
+            Alert.alert('Aviso', 'Nenhuma transação selecionada para importação.');
+            return;
+        }
+
+        const missingCategory = selectedTxs.some(t => !t.categoryId);
+        if (missingCategory) {
+            Alert.alert('Atenção', 'Algumas transações estão sem categoria. Isso pode poluir os relatórios. Deseja continuar?', [
+                { text: 'Revisar', style: 'cancel' },
+                { text: 'Continuar', onPress: submitImport }
+            ]);
+            return;
+        }
+
+        submitImport();
+    };
+
+    const submitImport = async () => {
+        setLoading(true);
+        try {
+            const selectedTxs = transactions.filter(t => t.selected).map(t => ({
+                ...t,
+                // Garantir accountId
+                accountId: selectedAccountId
+            }));
+
+            await api.post('/transactions/import/confirm', {
+                transactions: selectedTxs,
+                rejectedFitIds: rejectedIds
+            });
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert('Sucesso', `${selectedTxs.length} transações importadas com sucesso!`);
+            onSuccess();
+            onClose();
+        } catch (error) {
+            console.error('Confirm error:', error);
+            Alert.alert('Erro', 'Falha ao salvar transações no banco de dados.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getFilteredTransactions = () => {
+        switch (filterType) {
+            case 'NEW': return transactions.filter(t => !duplicateIds.includes(t.fitId));
+            case 'REJECTED': return transactions.filter(t => duplicateIds.includes(t.fitId));
+            default: return transactions;
+        }
+    };
+
+    // UI Helper for category selection (Simplified for Mobile)
+    const renderCategoryButtons = (tx: any) => {
+        if (!tx.categoryId) {
+            return (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+                    {categories.slice(0, 5).map(c => (
+                        <Pressable
+                            key={c.id}
+                            style={styles.catChip}
+                            onPress={() => updateTransactionCategory(tx.id, c.id)}
+                        >
+                            <Text style={styles.catChipText}>{c.icon} {c.name}</Text>
+                        </Pressable>
+                    ))}
+                    <Pressable style={styles.catChip}>
+                        <Text style={styles.catChipText}>Mais...</Text>
+                    </Pressable>
+                </ScrollView>
+            );
+        }
+
+        const cat = categories.find(c => c.id === tx.categoryId);
+        return (
+            <View style={[styles.selectedCatBadge, { backgroundColor: cat?.color ? `${cat.color}20` : '#f1f5f9' }]}>
+                <Text style={{ color: cat?.color || '#64748b', fontSize: 12, fontWeight: '600' }}>
+                    {cat?.icon} {cat?.name || 'Selecionada'}
+                </Text>
+            </View>
+        );
+    };
+
+    return (
+        <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>{step === 1 ? 'Importar Transações' : 'Revisar & Importar'}</Text>
+                    <Pressable onPress={onClose} style={styles.closeBtn}>
+                        <MaterialIcons name="close" size={24} color="#64748b" />
+                    </Pressable>
+                </View>
+
+                {loading ? (
+                    <View style={styles.loadingArea}>
+                        <ActivityIndicator size="large" color="#4f46e5" />
+                        <Text style={styles.loadingText}>
+                            {step === 1 ? 'Analisando documento com IA...' : 'Salvando transações...'}
+                        </Text>
+                    </View>
+                ) : step === 1 ? (
+                    <View style={styles.step1Container}>
+                        {/* Account Selector Dummy (For real app, use a picker) */}
+                        <Text style={styles.label}>Conta de Destino</Text>
+                        <View style={styles.accountSelector}>
+                            <Text style={styles.accountText}>
+                                {accounts.find(a => a.id === selectedAccountId)?.name || 'Selecione uma conta'}
+                            </Text>
+                        </View>
+
+                        <Text style={styles.subLabel}>Como você quer importar?</Text>
+
+                        <Pressable style={styles.optionCard} onPress={handlePickDocument}>
+                            <View style={styles.iconCircle}>
+                                <MaterialIcons name="insert-drive-file" size={24} color="#4f46e5" />
+                            </View>
+                            <View style={styles.optionInfo}>
+                                <Text style={styles.optionTitle}>Extrato OFX / QFX</Text>
+                                <Text style={styles.optionDesc}>Puxe direto do aplicativo do seu banco (Itaú, Nubank, etc)</Text>
+                            </View>
+                        </Pressable>
+
+                        <Pressable style={styles.optionCard} onPress={handlePickImage}>
+                            <View style={[styles.iconCircle, { backgroundColor: '#f0fdf4' }]}>
+                                <MaterialIcons name="add-a-photo" size={24} color="#10b981" />
+                            </View>
+                            <View style={styles.optionInfo}>
+                                <Text style={styles.optionTitle}>Foto / Comprovante (IA)</Text>
+                                <Text style={styles.optionDesc}>Tire foto de comprovantes Pix, TED ou notas fiscais.</Text>
+                            </View>
+                        </Pressable>
+
+                    </View>
+                ) : (
+                    <View style={styles.step2Container}>
+                        <View style={styles.filterRow}>
+                            <Pressable
+                                style={[styles.filterChip, filterType === 'ALL' && styles.filterChipActive]}
+                                onPress={() => setFilterType('ALL')}
+                            >
+                                <Text style={[styles.filterText, filterType === 'ALL' && styles.filterTextActive]}>Todas</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.filterChip, filterType === 'NEW' && styles.filterChipActive]}
+                                onPress={() => setFilterType('NEW')}
+                            >
+                                <Text style={[styles.filterText, filterType === 'NEW' && styles.filterTextActive]}>Novas</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.filterChip, filterType === 'REJECTED' && styles.filterChipActive]}
+                                onPress={() => setFilterType('REJECTED')}
+                            >
+                                <Text style={[styles.filterText, filterType === 'REJECTED' && styles.filterTextActive]}>Dúvidas / Rejeitadas</Text>
+                            </Pressable>
+                        </View>
+
+                        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 12 }}>
+                            {getFilteredTransactions().map(tx => (
+                                <View key={tx.id || tx.fitId} style={[styles.txCard, !tx.selected && styles.txCardDisabled]}>
+                                    <View style={styles.txRow}>
+                                        <Switch
+                                            value={tx.selected}
+                                            onValueChange={() => toggleTransactionSelection(tx.id, tx.fitId)}
+                                            trackColor={{ false: '#e2e8f0', true: '#c7d2fe' }}
+                                            thumbColor={tx.selected ? '#4f46e5' : '#f8fafc'}
+                                        />
+                                        <View style={{ flex: 1, marginLeft: 12 }}>
+                                            <Text style={styles.txDate}>{new Date(tx.date).toLocaleDateString('pt-BR')}</Text>
+                                            <Text style={styles.txDesc} numberOfLines={1}>{tx.description}</Text>
+                                            <Text style={[styles.txAmount, { color: tx.amount < 0 ? '#e11d48' : '#059669' }]}>
+                                                R$ {Math.abs(tx.amount).toFixed(2)}
+                                            </Text>
+                                            {duplicateIds.includes(tx.fitId) && (
+                                                <View style={styles.rejectBadge}>
+                                                    <Text style={{ fontSize: 10, color: '#f43f5e', fontWeight: '700' }}>⛔ Rejeitada antes</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                    </View>
+
+                                    {/* Category Area */}
+                                    <View style={styles.categoryArea}>
+                                        {renderCategoryButtons(tx)}
+                                    </View>
+                                </View>
+                            ))}
+                        </ScrollView>
+
+                        <View style={styles.footer}>
+                            <Pressable style={styles.btnSecondary} onPress={() => setStep(1)}>
+                                <Text style={styles.btnSecondaryText}>Voltar</Text>
+                            </Pressable>
+                            <Pressable style={styles.btnPrimary} onPress={handleConfirm}>
+                                <Text style={styles.btnPrimaryText}>
+                                    Confirmar {transactions.filter(t => t.selected).length} itens
+                                </Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                )}
+            </SafeAreaView>
+        </Modal>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: '#f8fafc' },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+    title: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
+    closeBtn: { padding: 8 },
+    loadingArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loadingText: { marginTop: 16, fontSize: 16, color: '#64748b', fontWeight: '500' },
+
+    // Step 1
+    step1Container: { padding: 24, gap: 16 },
+    label: { fontSize: 14, fontWeight: '700', color: '#334155', marginBottom: 4 },
+    subLabel: { fontSize: 14, fontWeight: '700', color: '#334155', marginTop: 16, marginBottom: 8 },
+    accountSelector: { backgroundColor: 'white', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0' },
+    accountText: { fontSize: 16, color: '#1e293b', fontWeight: '500' },
+    optionCard: { flexDirection: 'row', backgroundColor: 'white', padding: 16, borderRadius: 20, alignItems: 'center', gap: 16, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+    iconCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#eef2ff', justifyContent: 'center', alignItems: 'center' },
+    optionInfo: { flex: 1 },
+    optionTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 4 },
+    optionDesc: { fontSize: 12, color: '#64748b', lineHeight: 18 },
+
+    // Step 2
+    step2Container: { flex: 1 },
+    filterRow: { flexDirection: 'row', padding: 16, gap: 8, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+    filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f1f5f9' },
+    filterChipActive: { backgroundColor: '#4f46e5' },
+    filterText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
+    filterTextActive: { color: 'white' },
+
+    txCard: { backgroundColor: 'white', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0', opacity: 1 },
+    txCardDisabled: { opacity: 0.5 },
+    txRow: { flexDirection: 'row', alignItems: 'center' },
+    txDate: { fontSize: 12, color: '#94a3b8', fontWeight: '500' },
+    txDesc: { fontSize: 15, color: '#1e293b', fontWeight: '700', marginVertical: 2 },
+    txAmount: { fontSize: 16, fontWeight: '800' },
+    rejectBadge: { marginTop: 4, alignSelf: 'flex-start', backgroundColor: '#ffe4e6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+
+    categoryArea: { marginTop: 12, borderTopWidth: 1, borderTopColor: '#f8fafc', paddingTop: 12 },
+    catChip: { backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginRight: 8 },
+    catChipText: { fontSize: 12, color: '#475569', fontWeight: '600' },
+    selectedCatBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+
+    footer: { flexDirection: 'row', padding: 16, backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#f1f5f9', gap: 12 },
+    btnSecondary: { flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#f1f5f9', alignItems: 'center' },
+    btnSecondaryText: { color: '#475569', fontWeight: '700', fontSize: 16 },
+    btnPrimary: { flex: 2, padding: 16, borderRadius: 16, backgroundColor: '#4f46e5', alignItems: 'center' },
+    btnPrimaryText: { color: 'white', fontWeight: '700', fontSize: 16 },
+});

@@ -13,6 +13,8 @@ import { useMonth } from '../../context/MonthContext';
 import { MonthSelector } from '../../components/MonthSelector';
 import TransactionModal from '../../components/TransactionModal';
 import { MonthlyBarChart } from '../../components/MonthlyBarChart';
+import { AiInsightsWidget } from '../../components/AiInsightsWidget';
+import { AiChatWidget } from '../../components/AiChatWidget';
 
 export default function DashboardScreen() {
     const insets = useSafeAreaInsets();
@@ -177,6 +179,9 @@ export default function DashboardScreen() {
                     </View>
                 </View>
 
+                {/* AI Insights Widget */}
+                <AiInsightsWidget />
+
                 {loading || summaryLoading ? (
                     <View style={{ paddingHorizontal: 16, gap: 16 }}>
                         {/* Skeleton Sincronizado */}
@@ -300,6 +305,8 @@ export default function DashboardScreen() {
                 onSuccess={handleRefresh}
                 initialType={transactionType}
             />
+
+            <AiChatWidget />
         </View>
     );
 }
