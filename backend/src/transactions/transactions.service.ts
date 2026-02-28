@@ -24,6 +24,7 @@ export class TransactionsService {
           date,
           userId,
         },
+        include: { category: true }
       });
 
       if (accountId) {
@@ -331,6 +332,7 @@ export class TransactionsService {
     return this.prisma.transaction.findMany({
       where: whereClause,
       orderBy: { date: 'desc' },
+      include: { category: true },
     });
   }
 
@@ -358,6 +360,7 @@ export class TransactionsService {
   findOne(id: string, userId: string) {
     return this.prisma.transaction.findFirst({
       where: { id, userId },
+      include: { category: true },
     });
   }
 
@@ -409,7 +412,10 @@ export class TransactionsService {
         }
       }
 
-      return tx.transaction.findFirst({ where: { id, userId } });
+      return tx.transaction.findFirst({
+        where: { id, userId },
+        include: { category: true },
+      });
     });
   }
 

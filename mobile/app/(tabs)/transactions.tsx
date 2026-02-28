@@ -55,7 +55,8 @@ export default function TransactionsScreen() {
 
             if (searchQuery) {
                 const query = searchQuery.toLowerCase();
-                return t.description.toLowerCase().includes(query) || t.category.toLowerCase().includes(query);
+                const catName = t.category?.name || t.categoryLegacy || 'Outros';
+                return t.description.toLowerCase().includes(query) || catName.toLowerCase().includes(query);
             }
 
             return true;
@@ -244,7 +245,7 @@ export default function TransactionsScreen() {
                                         <View className="flex-1">
                                             <Text className="font-bold text-slate-700 text-sm" numberOfLines={1}>{t.description}</Text>
                                             <View className="flex-row items-center gap-2">
-                                                <Text className="text-xs text-slate-400">{t.category}</Text>
+                                                <Text className="text-xs text-slate-400 uppercase font-bold tracking-wider">{t.category?.name || t.categoryLegacy || 'Outros'}</Text>
                                                 <Text className="text-xs text-slate-300">•</Text>
                                                 <Text className="text-xs text-slate-400">{new Date(t.date).toLocaleDateString()}</Text>
                                             </View>
