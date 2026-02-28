@@ -70,6 +70,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     fetchEntities();
   }, [editingTransaction]);
 
+  // Reset category if type changes and current category is no longer valid
+  useEffect(() => {
+    if (isLoadingEntities || !type || !categories.length) return;
+
+    const currentCat = categories.find(c => c.id === categoryId);
+    if (currentCat && currentCat.type !== type) {
+      setCategoryId('');
+    }
+  }, [type, categories, isLoadingEntities]);
+
   useEffect(() => {
     if (editingTransaction && !isLoadingEntities) {
       setDescription(editingTransaction.description);
