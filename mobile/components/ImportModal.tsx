@@ -9,6 +9,20 @@ import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
 import * as Haptics from 'expo-haptics';
 
+const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
+    if (type === 'INCOME') return 'Entradas (Rendas)';
+
+    const needs = ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'];
+    const desires = ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens'];
+    const goals = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
+
+    if (needs.includes(name)) return 'Necessidades (Essencial)';
+    if (desires.includes(name)) return 'Desejos (Estilo de Vida)';
+    if (goals.includes(name)) return 'Objetivos (Quitação e Reserva)';
+
+    return 'Outras Despesas';
+};
+
 interface ImportModalProps {
     visible: boolean;
     onClose: () => void;
@@ -28,6 +42,28 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
     // Filter states
     const [filterType, setFilterType] = useState<'ALL' | 'NEW' | 'REJECTED'>('ALL');
     const [duplicateIds, setDuplicateIds] = useState<string[]>([]);
+    const [activeTxId, setActiveTxId] = useState<string | null>(null);
+
+    const groupedCategories = React.useMemo(() => {
+        const groups: Record<string, any[]> = {
+            'Entradas (Rendas)': [],
+            'Necessidades (Essencial)': [],
+            'Desejos (Estilo de Vida)': [],
+            'Objetivos (Quitação e Reserva)': [],
+            'Outras Despesas': []
+        };
+
+        categories.forEach(cat => {
+            const groupName = getCategoryGroup(cat.name, cat.type);
+            if (groups[groupName]) {
+                groups[groupName].push(cat);
+            }
+        });
+
+        return Object.entries(groups)
+            .filter(([_, items]) => items.length > 0)
+            .map(([name, items]) => ({ name, items }));
+    }, [categories]);
 
     useEffect(() => {
         if (visible) {
@@ -211,33 +247,63 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
         }
     };
 
-    // UI Helper for category selection (Simplified for Mobile)
+    // UI Helper for category selection
     const renderCategoryButtons = (tx: any) => {
-        if (!tx.categoryId) {
-            return (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
-                    {categories.slice(0, 5).map(c => (
-                        <Pressable
-                            key={c.id}
-                            style={styles.catChip}
-                            onPress={() => updateTransactionCategory(tx.id, c.id)}
-                        >
-                            <Text style={styles.catChipText}>{c.icon} {c.name}</Text>
-                        </Pressable>
-                    ))}
-                    <Pressable style={styles.catChip}>
-                        <Text style={styles.catChipText}>Mais...</Text>
-                    </Pressable>
-                </ScrollView>
-            );
-        }
-
         const cat = categories.find(c => c.id === tx.categoryId);
+        const isOpen = activeTxId === tx.id;
+
         return (
-            <View style={[styles.selectedCatBadge, { backgroundColor: cat?.color ? `${cat.color}20` : '#f1f5f9' }]}>
-                <Text style={{ color: cat?.color || '#64748b', fontSize: 12, fontWeight: '600' }}>
-                    {cat?.icon} {cat?.name || 'Selecionada'}
-                </Text>
+            <View>
+                <Pressable
+                    onPress={() => setActiveTxId(isOpen ? null : tx.id)}
+                    style={[styles.selectInput, isOpen && styles.selectInputActive]}
+                >
+                    <View style={styles.selectInputContent}>
+                        <View style={styles.selectInputLabelRow}>
+                            <MaterialIcons
+                                name="category"
+                                size={18}
+                                color={cat ? '#4f46e5' : '#94a3b8'}
+                            />
+                            <Text style={[styles.selectInputText, !cat && styles.selectInputPlaceholder]}>
+                                {cat ? `${cat.icon} ${cat.name}` : 'Selecione uma categoria'}
+                            </Text>
+                        </View>
+                        <MaterialIcons
+                            name={isOpen ? "expand-less" : "expand-more"}
+                            size={20}
+                            color="#64748b"
+                        />
+                    </View>
+                </Pressable>
+
+                {isOpen && (
+                    <View style={styles.dropdownContainer}>
+                        <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
+                            {groupedCategories.map(group => (
+                                <View key={group.name} style={styles.dropdownGroup}>
+                                    <Text style={styles.dropdownGroupLabel}>{group.name}</Text>
+                                    {group.items.map(c => (
+                                        <Pressable
+                                            key={c.id}
+                                            onPress={() => {
+                                                updateTransactionCategory(tx.id, c.id);
+                                                setActiveTxId(null);
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            }}
+                                            style={[styles.dropdownItem, tx.categoryId === c.id && styles.dropdownItemActive]}
+                                        >
+                                            <Text style={[styles.dropdownItemText, tx.categoryId === c.id && styles.dropdownItemTextActive]}>
+                                                {c.icon} {c.name}
+                                            </Text>
+                                            {tx.categoryId === c.id && <MaterialIcons name="check" size={16} color="#4f46e5" />}
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
             </View>
         );
     };
@@ -400,11 +466,84 @@ const styles = StyleSheet.create({
     txAmount: { fontSize: 16, fontWeight: '800' },
     rejectBadge: { marginTop: 4, alignSelf: 'flex-start', backgroundColor: '#ffe4e6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
 
-    categoryArea: { marginTop: 12, borderTopWidth: 1, borderTopColor: '#f8fafc', paddingTop: 12 },
-    catChip: { backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginRight: 8 },
-    catChipText: { fontSize: 12, color: '#475569', fontWeight: '600' },
-    selectedCatBadge: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-
+    categoryArea: { marginTop: 12, borderTopWidth: 1, borderTopColor: '#f8fafc', paddingTop: 8 },
+    selectInput: {
+        backgroundColor: '#f8fafc',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+    },
+    selectInputActive: {
+        borderColor: '#4f46e5',
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
+    },
+    selectInputContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    selectInputLabelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    selectInputText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#1e293b',
+    },
+    selectInputPlaceholder: {
+        color: '#94a3b8',
+        fontWeight: '500',
+    },
+    dropdownContainer: {
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        borderTopWidth: 0,
+        borderBottomLeftRadius: 12,
+        borderBottomRightRadius: 12,
+        maxHeight: 200,
+        zIndex: 1000,
+    },
+    dropdownScroll: {
+        padding: 4,
+    },
+    dropdownGroup: {
+        marginBottom: 8,
+    },
+    dropdownGroupLabel: {
+        fontSize: 9,
+        fontWeight: '900',
+        color: '#94a3b8',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+    },
+    dropdownItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+        borderRadius: 8,
+    },
+    dropdownItemActive: {
+        backgroundColor: '#f0f7ff',
+    },
+    dropdownItemText: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: '#475569',
+    },
+    dropdownItemTextActive: {
+        color: '#4f46e5',
+        fontWeight: '700',
+    },
     footer: { flexDirection: 'row', padding: 16, backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#f1f5f9', gap: 12 },
     btnSecondary: { flex: 1, padding: 16, borderRadius: 16, backgroundColor: '#f1f5f9', alignItems: 'center' },
     btnSecondaryText: { color: '#475569', fontWeight: '700', fontSize: 16 },

@@ -202,13 +202,60 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   onChange={(e) => setCategoryId(e.target.value)}
                 >
                   <option value="">Nenhuma / Outros</option>
-                  {categories
-                    .filter((c) => c.type === type)
-                    .map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
+                  {categories.filter(c => c.type === 'INCOME').length > 0 && type === 'INCOME' && (
+                    <optgroup label="Entradas (Rendas)">
+                      {categories.filter(c => c.type === 'INCOME').map(c => (
+                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+
+                  {type === 'EXPENSE' && (
+                    <>
+                      <optgroup label="Necessidades (Essencial)">
+                        {categories.filter(c =>
+                          ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
+                            .includes(c.name)
+                        ).map(c => (
+                          <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                        ))}
+                      </optgroup>
+
+                      <optgroup label="Desejos (Estilo de Vida)">
+                        {categories.filter(c =>
+                          ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens']
+                            .includes(c.name)
+                        ).map(c => (
+                          <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                        ))}
+                      </optgroup>
+
+                      <optgroup label="Objetivos (Quitação e Reserva)">
+                        {categories.filter(c =>
+                          ['Aplicações / Poupança', 'Pagamento de Dívidas']
+                            .includes(c.name)
+                        ).map(c => (
+                          <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                        ))}
+                      </optgroup>
+
+                      {categories.filter(c =>
+                        !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
+                          'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens',
+                          'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
+                      ).length > 0 && (
+                          <optgroup label="Outras Despesas">
+                            {categories.filter(c =>
+                              !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
+                                'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens',
+                                'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
+                            ).map(c => (
+                              <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                            ))}
+                          </optgroup>
+                        )}
+                    </>
+                  )}
                 </select>
                 <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                   <i data-lucide="chevron-down" className="w-5 h-5"></i>

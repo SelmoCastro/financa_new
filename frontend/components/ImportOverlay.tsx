@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import { Account, CreditCard, Category } from '../types';
 
@@ -35,7 +35,7 @@ interface ParsedTransaction {
 type ImportMode = 'ofx' | 'receipt';
 type FilterMode = 'all' | 'new' | 'rejected';
 
-export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, onClose, accounts, creditCards, categories }) => {
+export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, onClose, accounts, creditCards, categories: propCategories }) => {
     const [step, setStep] = useState<1 | 2>(1);
     const [file, setFile] = useState<File | null>(null);
     const [parsedTxs, setParsedTxs] = useState<ParsedTransaction[]>([]);
@@ -46,6 +46,14 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
     const [importMode, setImportMode] = useState<ImportMode>('ofx');
     const [filterMode, setFilterMode] = useState<FilterMode>('all');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Always fetch fresh categories when opening the import overlay
+    const [categories, setCategories] = useState<Category[]>(propCategories || []);
+    useEffect(() => {
+        api.get<Category[]>('/categories')
+            .then(res => setCategories(res.data))
+            .catch(() => setCategories(propCategories || []));
+    }, []);
 
     const OFX_ACCEPT = '.ofx,.qfx';
     const RECEIPT_ACCEPT = '.jpg,.jpeg,.png,.webp,.pdf';
@@ -460,21 +468,56 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none"
                                             >
                                                 <option value="" disabled>Escolha uma categoria...</option>
-                                                {/* Se a IA sugeriu algo que não está no banco (raro agora com o novo prompt), mostra no topo */}
-                                                {tx.suggestedCategory && !tx.suggestedCategoryId && (
-                                                    <option value="">{tx.suggestedCategory} (IA - Não Cadastrada)</option>
-                                                )}
 
                                                 <optgroup label="Entradas (Rendas)">
                                                     {categories.filter(c => c.type === 'INCOME').map(c => (
                                                         <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                                                     ))}
                                                 </optgroup>
-                                                <optgroup label="Despesas (Gastos)">
-                                                    {categories.filter(c => c.type === 'EXPENSE').map(c => (
+
+                                                <optgroup label="Necessidades (Essencial)">
+                                                    {categories.filter(c =>
+                                                        ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
+                                                            .includes(c.name)
+                                                    ).map(c => (
                                                         <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                                                     ))}
                                                 </optgroup>
+
+                                                <optgroup label="Desejos (Estilo de Vida)">
+                                                    {categories.filter(c =>
+                                                        ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens']
+                                                            .includes(c.name)
+                                                    ).map(c => (
+                                                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                    ))}
+                                                </optgroup>
+
+                                                <optgroup label="Objetivos (Quitação e Reserva)">
+                                                    {categories.filter(c =>
+                                                        ['Aplicações / Poupança', 'Pagamento de Dívidas']
+                                                            .includes(c.name)
+                                                    ).map(c => (
+                                                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                    ))}
+                                                </optgroup>
+
+                                                {/* Fallback for other income/expense categories not in standard list */}
+                                                {categories.filter(c =>
+                                                    !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
+                                                        'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens',
+                                                        'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
+                                                ).length > 0 && (
+                                                        <optgroup label="Outras Despesas">
+                                                            {categories.filter(c =>
+                                                                !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
+                                                                    'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens',
+                                                                    'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
+                                                            ).map(c => (
+                                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                            ))}
+                                                        </optgroup>
+                                                    )}
                                             </select>
                                         </div>
                                     </div>

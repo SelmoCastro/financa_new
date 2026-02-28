@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, Modal, Pressable, TextInput, ScrollView, Platform, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -8,24 +8,19 @@ import { triggerHaptic } from '../utils/haptics';
 import { Account, CreditCard } from '../types';
 import { formatCurrency, parseCurrencyToNumber } from '../utils/currencyUtils';
 
-const CATEGORY_GROUPS = [
-    {
-        name: 'Entradas (Rendas)',
-        items: ['Salário', 'Renda Extra', 'Rendimento de Investimentos', 'Transferência Recebida', 'Empréstimo Recebido']
-    },
-    {
-        name: 'Necessidades (Essencial)',
-        items: ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
-    },
-    {
-        name: 'Desejos (Estilo de Vida)',
-        items: ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens']
-    },
-    {
-        name: 'Objetivos (Quitação e Reserva)',
-        items: ['Aplicações / Poupança', 'Pagamento de Dívidas']
-    }
-];
+const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
+    if (type === 'INCOME') return 'Entradas (Rendas)';
+
+    const needs = ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'];
+    const desires = ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens'];
+    const goals = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
+
+    if (needs.includes(name)) return 'Necessidades (Essencial)';
+    if (desires.includes(name)) return 'Desejos (Estilo de Vida)';
+    if (goals.includes(name)) return 'Objetivos (Quitação e Reserva)';
+
+    return 'Outras Despesas';
+};
 
 interface TransactionModalProps {
     visible: boolean;
@@ -51,12 +46,16 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
     const [creditCardId, setCreditCardId] = useState('');
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
+    const [categories, setCategories] = useState<any[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<any>(null);
+
     // Reset form when modal opens or type changes
     useEffect(() => {
         if (visible) {
             setDescription('');
             setAmount('');
             setCategory('');
+            setSelectedCategory(null);
             setDate(new Date());
             setIsFixed(false);
             setType(initialType);
@@ -64,11 +63,40 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
             setCreditCardId('');
             setIsCategoryOpen(false);
 
-            // Fetch accounts and credit cards
-            api.get('/accounts').then(res => setAccounts(res.data)).catch(console.error);
-            api.get('/credit-cards').then(res => setCreditCards(res.data)).catch(console.error);
+            // Fetch data
+            Promise.all([
+                api.get('/accounts'),
+                api.get('/credit-cards'),
+                api.get('/categories')
+            ]).then(([accs, ccs, cats]) => {
+                setAccounts(accs.data);
+                setCreditCards(ccs.data);
+                setCategories(cats.data);
+            }).catch(console.error);
         }
     }, [visible, initialType]);
+
+    const groupedCategories = useMemo(() => {
+        const groups: Record<string, any[]> = {
+            'Entradas (Rendas)': [],
+            'Necessidades (Essencial)': [],
+            'Desejos (Estilo de Vida)': [],
+            'Objetivos (Quitação e Reserva)': [],
+            'Outras Despesas': []
+        };
+
+        categories.forEach(cat => {
+            const groupName = getCategoryGroup(cat.name, cat.type);
+            if (groups[groupName]) {
+                groups[groupName].push(cat);
+            }
+        });
+
+        // Remove empty groups
+        return Object.entries(groups)
+            .filter(([_, items]) => items.length > 0)
+            .map(([name, items]) => ({ name, items }));
+    }, [categories]);
 
     const handleSave = async () => {
         const rawAmount = parseCurrencyToNumber(amount);
@@ -89,6 +117,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                 description,
                 amount: rawAmount,
                 type,
+                categoryId: selectedCategory?.id,
                 categoryLegacy: category,
                 date: date.toISOString(),
                 isFixed,
@@ -239,23 +268,24 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                             {isCategoryOpen && (
                                 <View style={styles.dropdownContainer}>
                                     <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
-                                        {CATEGORY_GROUPS.map(group => (
+                                        {groupedCategories.map(group => (
                                             <View key={group.name} style={styles.dropdownGroup}>
                                                 <Text style={styles.dropdownGroupLabel}>{group.name}</Text>
-                                                {group.items.map(item => (
+                                                {group.items.map(cat => (
                                                     <Pressable
-                                                        key={item}
+                                                        key={cat.id}
                                                         onPress={() => {
-                                                            setCategory(item);
+                                                            setCategory(cat.name);
+                                                            setSelectedCategory(cat);
                                                             setIsCategoryOpen(false);
                                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                                         }}
-                                                        style={[styles.dropdownItem, category === item && styles.dropdownItemActive]}
+                                                        style={[styles.dropdownItem, category === cat.name && styles.dropdownItemActive]}
                                                     >
-                                                        <Text style={[styles.dropdownItemText, category === item && styles.dropdownItemTextActive]}>
-                                                            {item}
+                                                        <Text style={[styles.dropdownItemText, category === cat.name && styles.dropdownItemTextActive]}>
+                                                            {cat.icon} {cat.name}
                                                         </Text>
-                                                        {category === item && <MaterialIcons name="check" size={18} color="#4f46e5" />}
+                                                        {category === cat.name && <MaterialIcons name="check" size={18} color="#4f46e5" />}
                                                     </Pressable>
                                                 ))}
                                             </View>
