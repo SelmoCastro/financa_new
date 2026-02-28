@@ -10,25 +10,42 @@ interface AccountFormProps {
 export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave, onClose }) => {
     const [name, setName] = useState(accountToEdit?.name || '');
     const [type, setType] = useState(accountToEdit?.type || 'CHECKING');
-    const [balance, setBalance] = useState(accountToEdit ? accountToEdit.balance.toString() : '');
+    const [balance, setBalance] = useState(() => {
+        if (accountToEdit && accountToEdit.balance !== undefined) {
+            return (accountToEdit.balance / 100).toFixed(2).replace('.', ',');
+        }
+        return '';
+    });
     const [isLoading, setIsLoading] = useState(false);
+
+    const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let val = e.target.value.replace(/\D/g, '');
+        if (val.length === 0) {
+            setBalance('');
+            return;
+        }
+        const numericValue = (parseInt(val, 10) / 100).toFixed(2);
+        setBalance(numericValue.replace('.', ','));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
         try {
+            const parsedBalance = balance ? parseFloat(balance.replace(/\./g, '').replace(',', '.')) : 0;
+
             if (accountToEdit) {
                 await api.patch(`/accounts/${accountToEdit.id}`, {
                     name,
                     type,
-                    balance: Number(balance),
+                    balance: parsedBalance,
                 });
             } else {
                 await api.post('/accounts', {
                     name,
                     type,
-                    balance: Number(balance),
+                    balance: parsedBalance,
                 });
             }
             onSave();
@@ -87,11 +104,11 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                         <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">R$</span>
                             <input
-                                type="number"
-                                step="0.01"
+                                type="text"
+                                inputMode="numeric"
                                 required
                                 value={balance}
-                                onChange={e => setBalance(e.target.value)}
+                                onChange={handleBalanceChange}
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
                                 placeholder="0,00"
                             />
