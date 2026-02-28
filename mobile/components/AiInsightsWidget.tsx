@@ -22,8 +22,8 @@ export function AiInsightsWidget() {
             const res = await api.get(`/ai/insights?year=${year}&month=${month}${refreshParam}`);
 
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-            if (res.data && res.data.content) {
-                setInsightsData(res.data);
+            if (res.data && res.data.insights) {
+                setInsightsData(res.data.insights);
                 setHasAnalyzed(true);
             } else {
                 setInsightsData(null);
@@ -70,7 +70,7 @@ export function AiInsightsWidget() {
         );
     }
 
-    if (!insightsData || !insightsData.content) {
+    if (!insightsData) {
         if (!hasAnalyzed && !loading && !error) {
             return (
                 <View style={styles.promptContainer}>
@@ -106,18 +106,16 @@ export function AiInsightsWidget() {
             </View>
 
             <View style={styles.contentContainer}>
-                <Text style={styles.summaryText}>{insightsData.content.summary}</Text>
-
-                {insightsData.content.alerts && insightsData.content.alerts.length > 0 && (
+                {typeof insightsData === 'string' ? (
                     <View style={styles.alertsContainer}>
-                        {insightsData.content.alerts.map((alert: string, idx: number) => (
+                        {insightsData.split('\n').filter(line => line.trim()).map((line: string, idx: number) => (
                             <View key={idx} style={styles.alertRow}>
                                 <Text style={styles.alertBullet}>•</Text>
-                                <Text style={styles.alertText}>{alert}</Text>
+                                <Text style={styles.alertText}>{line.replace(/^[-*\d.]\s*/, '')}</Text>
                             </View>
                         ))}
                     </View>
-                )}
+                ) : null}
             </View>
             <View style={styles.footer}>
                 <Text style={styles.footerText}>Análise baseada nos gastos de {getYearMonth(selectedDate).month}/{getYearMonth(selectedDate).year}</Text>
