@@ -162,7 +162,16 @@ const AppContent: React.FC = () => {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <a
+              href="/Finanza_new.apk"
+              download
+              className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-bold transition-all"
+              title="Baixar App Mobile (Android)"
+            >
+              <i data-lucide="smartphone" className="w-4 h-4"></i>
+              <span className="hidden sm:inline">Baixar App</span>
+            </a>
             <button
               onClick={() => setIsPrivacyEnabled(!isPrivacyEnabled)}
               className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all active:scale-95"
