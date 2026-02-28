@@ -4,7 +4,7 @@ export interface Transaction {
     amount: number | string; // Adjusted to handle potential string inputs from forms
     type: 'INCOME' | 'EXPENSE';
     date: string;
-    category: string;
+    category?: { id: string; name: string; type: string; color: string; icon: string };
     categoryLegacy?: string;
     isFixed: boolean;
     accountId?: string;
