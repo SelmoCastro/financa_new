@@ -49,7 +49,8 @@ export class CategoriesService {
 
   /**
    * Returns all categories for a user.
-   * Auto-seeds any missing standard categories so production users always have the full list.
+   * Auto-seeds missing standard categories AND removes non-standard ones.
+   * Ensures the UI is pixel-perfect as defined by the user.
    */
   async findAll(userId: string) {
     const existing = await this.prisma.category.findMany({
@@ -57,21 +58,60 @@ export class CategoriesService {
       orderBy: { name: 'asc' },
     });
 
-    const existingNames = new Set(existing.map(c => c.name.toLowerCase().trim()));
-    const missing = STANDARD_CATEGORIES.filter(s => !existingNames.has(s.name.toLowerCase().trim()));
+    const existingNamesLower = existing.map(c => c.name.toLowerCase().trim());
+    const standardNamesLower = STANDARD_CATEGORIES.map(s => s.name.toLowerCase().trim());
 
+    // 1. Seed missing standard categories
+    const missing = STANDARD_CATEGORIES.filter(s => !existingNamesLower.includes(s.name.toLowerCase().trim()));
     if (missing.length > 0) {
       await this.prisma.category.createMany({
         data: missing.map(c => ({ ...c, userId })),
         skipDuplicates: true,
       });
-      return this.prisma.category.findMany({
-        where: { userId },
-        orderBy: { name: 'asc' },
-      });
     }
 
-    return existing;
+    // 2. Identify and remove non-standard categories (cleanup)
+    const toRemove = existing.filter(c => !standardNamesLower.includes(c.name.toLowerCase().trim()));
+    if (toRemove.length > 0) {
+      const freshStandard = await this.prisma.category.findMany({
+        where: { userId, name: { in: STANDARD_CATEGORIES.map(s => s.name) } }
+      });
+
+      for (const cat of toRemove) {
+        let fallbackId: string | undefined;
+        const name = cat.name.toLowerCase();
+
+        // Smart Mapping
+        if (name.includes('aliment') || name.includes('mercado') || name.includes('padaria')) {
+          fallbackId = freshStandard.find(s => s.name === 'Mercado / Padaria')?.id;
+        } else if (name.includes('transp') || name.includes('uber') || name.includes('99')) {
+          fallbackId = freshStandard.find(s => s.name === 'Transporte App')?.id;
+        } else if (cat.type === 'INCOME') {
+          fallbackId = freshStandard.find(s => s.name === 'Renda Extra')?.id;
+        } else {
+          fallbackId = freshStandard.find(s => s.name === 'Cuidados Pessoais')?.id;
+        }
+
+        const fallbackCat = freshStandard.find(s => s.id === fallbackId);
+
+        // Migrate transactions referencing this category
+        await this.prisma.transaction.updateMany({
+          where: { categoryId: cat.id },
+          data: {
+            categoryId: fallbackId,
+            categoryLegacy: fallbackCat?.name || 'Outros'
+          }
+        });
+
+        // Finally delete the intruder
+        await this.prisma.category.delete({ where: { id: cat.id } });
+      }
+    }
+
+    return this.prisma.category.findMany({
+      where: { userId },
+      orderBy: { name: 'asc' },
+    });
   }
 
   async findOne(id: string, userId: string) {
