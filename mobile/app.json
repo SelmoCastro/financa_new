@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Finança New",
-    "slug": "financa-new",
+    "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
