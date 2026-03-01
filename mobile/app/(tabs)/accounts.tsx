@@ -8,6 +8,7 @@ import { useFocusEffect } from 'expo-router';
 import api from '../../services/api';
 import { formatCurrency, parseCurrencyToNumber } from '../../utils/currencyUtils';
 import { Account, CreditCard } from '../../types';
+import { BankIcon } from '../../components/BankIcon';
 
 const ACCOUNT_TYPES = ['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH', 'OTHER'];
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -166,9 +167,7 @@ export default function AccountsScreen() {
                         <View key={acc.id} className="bg-white p-5 rounded-2xl mb-3 border border-slate-100 shadow-sm">
                             <View className="flex-row justify-between items-center">
                                 <View className="flex-row items-center gap-4 flex-1">
-                                    <View className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 items-center justify-center">
-                                        <MaterialIcons name="account-balance" size={24} color="#4f46e5" />
-                                    </View>
+                                    <BankIcon name={acc.name} type={acc.type} size={48} />
                                     <View className="flex-1">
                                         <Text className="text-base font-bold text-slate-800">{acc.name}</Text>
                                         <Text className="text-xs font-medium text-slate-400">{ACCOUNT_TYPE_LABELS[acc.type] ?? acc.type}</Text>

@@ -4,6 +4,7 @@ import { Account, CreditCard } from '../types';
 import { useToast } from '../context/ToastContext';
 import { CreditCardForm } from '../components/CreditCardForm';
 import { AccountForm } from '../components/AccountForm';
+import { BankIcon } from '../components/BankIcon';
 
 interface AccountsViewProps {
     isPrivacyEnabled: boolean;
@@ -122,9 +123,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                     {accounts.map(acc => (
                         <div key={acc.id} className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300">
                             <div className="flex justify-between items-start mb-6">
-                                <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center border border-slate-100">
-                                    <i data-lucide={acc.type === 'CHECKING' ? 'landmark' : acc.type === 'WALLET' ? 'banknote' : 'piggy-bank'} className="w-6 h-6"></i>
-                                </div>
+                                <BankIcon name={acc.name} type={acc.type} />
                                 <div className="relative z-40">
                                     <button
                                         onClick={() => setOpenMenuId(openMenuId === acc.id ? null : acc.id)}
