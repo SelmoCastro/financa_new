@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { X, CreditCard as CreditCardIcon } from 'lucide-react';
 import { Account } from '../types';
 import api from '../services/api';
 
@@ -15,6 +16,16 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, onSave
     const [dueDay, setDueDay] = useState('');
     const [accountId, setAccountId] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -43,12 +54,12 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, onSave
                 <div className="px-6 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
                         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
-                            <i data-lucide="credit-card" className="w-5 h-5"></i>
+                            <CreditCardIcon className="w-5 h-5" />
                         </div>
                         Adicionar Cartão
                     </h3>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
-                        <i data-lucide="x" className="w-5 h-5"></i>
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
