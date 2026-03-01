@@ -153,11 +153,25 @@ export class ReportsService {
             amount: g._sum.amount || 0
         }));
 
+        // 5. Últimas 50 transações para contexto específico da IA
+        const recentTransactions = await this.prisma.transaction.findMany({
+            where: { userId },
+            select: {
+                description: true,
+                amount: true,
+                date: true,
+                type: true
+            },
+            orderBy: { date: 'desc' },
+            take: 50
+        });
+
         return {
             userSummary: monthSummary,
             activeGoals: goals,
             activeBudgets: budgets,
-            topMonthlyExpenses: formattedTopExpenses
+            topMonthlyExpenses: formattedTopExpenses,
+            recentTransactions
         };
     }
 
