@@ -19,10 +19,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         async function loadToken() {
-            console.log('[AuthContext] Carregando token do storage...');
             try {
                 const storedToken = await SecureStore.getItemAsync('token');
-                console.log('[AuthContext] Token encontrado:', !!storedToken);
                 if (storedToken) {
                     setToken(storedToken);
                 }
@@ -30,16 +28,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 console.error('[AuthContext] Erro ao carregar token:', e);
             } finally {
                 setIsLoading(false);
-                console.log('[AuthContext] Finalizou carregamento. isLoading: false');
             }
         }
         loadToken();
 
+        let isLoggingOut = false;
+
         const authSubscription = DeviceEventEmitter.addListener('auth:unauthorized', async () => {
+            if (isLoggingOut) return;
+            isLoggingOut = true;
             console.log('[AuthContext] Sessão expirada ou 401 detectado. Deslogando...');
             await SecureStore.deleteItemAsync('token');
             setToken(null);
-            router.replace('/');
+
+            // Allow state to reset before accepting new unauth events
+            setTimeout(() => {
+                isLoggingOut = false;
+            }, 1000);
         });
 
         return () => authSubscription.remove();
@@ -55,7 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('[AuthContext] Iniciando logout manual...');
         await SecureStore.deleteItemAsync('token');
         setToken(null);
-        router.replace('/');
     };
 
     return (

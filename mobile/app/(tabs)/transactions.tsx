@@ -22,6 +22,7 @@ export default function TransactionsScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const [importModalVisible, setImportModalVisible] = useState(false);
+    const [editingTransaction, setEditingTransaction] = useState<any>(null);
 
     const [accounts, setAccounts] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
@@ -74,6 +75,29 @@ export default function TransactionsScreen() {
 
 
 
+
+    const handleLongPress = (transaction: any) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        Alert.alert(
+            'Opções da Transação',
+            transaction.description,
+            [
+                {
+                    text: 'Editar',
+                    onPress: () => {
+                        setEditingTransaction(transaction);
+                        setModalVisible(true);
+                    }
+                },
+                {
+                    text: 'Excluir',
+                    style: 'destructive',
+                    onPress: () => handleDelete(transaction.id)
+                },
+                { text: 'Cancelar', style: 'cancel' }
+            ]
+        );
+    };
 
     const handleDelete = (id: string) => {
         Alert.alert(
@@ -229,7 +253,7 @@ export default function TransactionsScreen() {
                         renderItem={({ item: t }) => (
                             <View className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                                 <Pressable
-                                    onLongPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); handleDelete(t.id); }}
+                                    onLongPress={() => handleLongPress(t)}
                                     android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
                                     className="p-4 flex-row items-center justify-between"
                                     style={({ pressed }) => Platform.OS === 'ios' && pressed ? { opacity: 0.7 } : {}}
@@ -263,8 +287,12 @@ export default function TransactionsScreen() {
 
             <TransactionModal
                 visible={modalVisible}
-                onClose={() => setModalVisible(false)}
+                onClose={() => {
+                    setModalVisible(false);
+                    setEditingTransaction(null);
+                }}
                 onSuccess={onRefresh}
+                transactionToEdit={editingTransaction}
             />
 
             <ImportModal
