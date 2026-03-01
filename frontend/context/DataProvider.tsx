@@ -43,45 +43,71 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isLoading, setIsLoading] = useState(true);
 
     const { addToast } = useToast();
-    // We remove useMonth logic here if backend summary also needs to be re-fetched on month change
-    // Actually, yes! We should refetch the summary when month changes!
     const { selectedDate } = useMonth();
 
-    const refreshData = useCallback(async () => {
-        setIsLoading(true);
+    // Fetch 1: All base data — only on mount or manual refresh
+    const fetchBaseData = useCallback(async () => {
         try {
-            const year = selectedDate.getFullYear();
-            const month = selectedDate.getMonth();
-
-            // Fetch summary focusing on the selected month
-            const [txRes, bRes, accRes, ccRes, catRes, summaryRes] = await Promise.all([
+            const [txRes, bRes, accRes, ccRes, catRes] = await Promise.all([
                 api.get<Transaction[]>('/transactions'),
                 api.get<Budget[]>('/budgets'),
                 api.get<Account[]>('/accounts'),
                 api.get<CreditCard[]>('/credit-cards'),
                 api.get<Category[]>('/categories'),
-                api.get<DashboardSummary>(`/transactions/dashboard-summary?year=${year}&month=${month}&_t=${Date.now()}`)
             ]);
-
             setTransactions(txRes.data);
             setBudgets(bRes.data);
             setAccounts(accRes.data);
             setCreditCards(ccRes.data);
             setCategories(catRes.data);
-            setDashboardSummary(summaryRes.data);
         } catch (error: any) {
-            console.error('Data fetch error:', error);
+            console.error('Base data fetch error:', error);
             if (error.response?.status !== 401) {
                 addToast('Erro ao carregar dados. Verifique a conexão com o backend.', 'error');
             }
-        } finally {
-            setIsLoading(false);
         }
-    }, [selectedDate, addToast]);
+    }, [addToast]);
 
+    // Fetch 2: Dashboard summary — re-fetches on EVERY selectedDate change
+    const fetchDashboardSummary = useCallback(async (date: Date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth(); // 0-indexed
+        try {
+            const summaryRes = await api.get<DashboardSummary>(
+                `/transactions/dashboard-summary?year=${year}&month=${month}&_t=${Date.now()}`
+            );
+            setDashboardSummary(summaryRes.data);
+        } catch (error: any) {
+            console.error('Dashboard summary fetch error:', error);
+        }
+    }, []);
+
+    // Initial load on mount
     useEffect(() => {
-        refreshData();
-    }, [refreshData]);
+        const init = async () => {
+            setIsLoading(true);
+            await Promise.all([
+                fetchBaseData(),
+                fetchDashboardSummary(selectedDate),
+            ]);
+            setIsLoading(false);
+        };
+        init();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Re-fetch summary whenever the user switches months
+    useEffect(() => {
+        fetchDashboardSummary(selectedDate);
+    }, [selectedDate, fetchDashboardSummary]);
+
+    // Manual full refresh (e.g. after adding a transaction)
+    const refreshData = useCallback(async () => {
+        await Promise.all([
+            fetchBaseData(),
+            fetchDashboardSummary(selectedDate),
+        ]);
+    }, [fetchBaseData, fetchDashboardSummary, selectedDate]);
 
     const addTransaction = async (newTx: Omit<Transaction, 'id'>) => {
         try {
