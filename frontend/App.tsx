@@ -110,7 +110,7 @@ const AppContent: React.FC = () => {
       case 'goals':
         return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
       case 'timeline':
-        return <TimelineView transactions={monthFilteredTransactions} />;
+        return <TimelineView transactions={transactions} />;
       case 'fixed':
         return (
           <FixedItems
@@ -123,7 +123,7 @@ const AppContent: React.FC = () => {
       case 'history':
         return (
           <HistoryView
-            transactions={monthFilteredTransactions}
+            transactions={transactions}
             isPrivacyEnabled={isPrivacyEnabled}
             onEdit={openEditForm}
             onDelete={handleDeleteTransaction}
