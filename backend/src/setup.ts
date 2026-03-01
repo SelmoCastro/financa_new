@@ -31,7 +31,7 @@ export function configureApp(app: INestApplication) {
         contentSecurityPolicy: {
             directives: {
                 defaultSrc: ["'self'"],
-                scriptSrc: ["'self'", "'unsafe-inline'"], // Allow if needed for Swagger
+                scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://esm.sh"], // Allow if needed for Swagger or frontend
                 styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
                 imgSrc: ["'self'", "data:", "https:"],
                 connectSrc: ["'self'", ...allowedOriginsCSP],
