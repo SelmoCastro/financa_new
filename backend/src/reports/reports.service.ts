@@ -10,8 +10,8 @@ export class ReportsService {
         const targetYear = year !== undefined ? year : now.getFullYear();
         const targetMonth = month !== undefined ? month : now.getMonth(); // 0-indexed month
 
-        const startOfMonth = new Date(targetYear, targetMonth, 1);
-        const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+        const startOfMonth = new Date(Date.UTC(targetYear, targetMonth, 1));
+        const endOfMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59, 999));
 
         // 1. Calculate General Balance (All time)
         const balanceGroup = await this.prisma.transaction.groupBy({
@@ -128,8 +128,8 @@ export class ReportsService {
         });
 
         // 4. Maiores categorias de gasto no mês
-        const targetStart = new Date(y, m, 1);
-        const targetEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
+        const targetStart = new Date(Date.UTC(y, m, 1));
+        const targetEnd = new Date(Date.UTC(y, m + 1, 0, 23, 59, 59, 999));
         const topExpenses = await this.prisma.transaction.groupBy({
             by: ['categoryId', 'categoryLegacy'],
             where: {

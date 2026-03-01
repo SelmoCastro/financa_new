@@ -321,8 +321,8 @@ export class TransactionsService {
     let whereClause: any = { userId };
 
     if (year !== undefined && month !== undefined) {
-      const startOfMonth = new Date(year, month, 1);
-      const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+      const startOfMonth = new Date(Date.UTC(year, month, 1));
+      const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
       whereClause.date = {
         gte: startOfMonth,
         lte: endOfMonth
