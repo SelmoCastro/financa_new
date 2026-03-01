@@ -105,13 +105,14 @@ export class ReportsService {
     /**
      * Retorna um perfil completo para o "cérebro" da IA.
      * Inclui metas, orçamentos e principais gastos.
+     * Pode usar dados específicos de um mês se `year` e `month` forem informados.
      */
-    async getFinancialProfile(userId: string) {
+    async getFinancialProfile(userId: string, year?: number, month?: number) {
         const now = new Date();
-        const y = now.getFullYear();
-        const m = now.getMonth();
+        const y = year !== undefined ? year : now.getFullYear();
+        const m = month !== undefined ? month : now.getMonth();
 
-        // 1. Resumo do mês atual
+        // 1. Resumo do mês atual ou selecionado
         const monthSummary = await this.getDashboardSummary(userId, y, m);
 
         // 2. Metas do usuário
@@ -127,9 +128,18 @@ export class ReportsService {
         });
 
         // 4. Maiores categorias de gasto no mês
+        const targetStart = new Date(y, m, 1);
+        const targetEnd = new Date(y, m + 1, 0, 23, 59, 59, 999);
         const topExpenses = await this.prisma.transaction.groupBy({
             by: ['categoryId', 'categoryLegacy'],
-            where: { userId, type: 'EXPENSE', date: { gte: new Date(y, m, 1) } },
+            where: {
+                userId,
+                type: 'EXPENSE',
+                date: {
+                    gte: targetStart,
+                    lte: targetEnd
+                }
+            },
             _sum: { amount: true },
             orderBy: { _sum: { amount: 'desc' } },
             take: 5

@@ -26,7 +26,7 @@ export class AiController {
         const m = month ? parseInt(month) : now.getMonth();
 
         // Obtém o perfil financeiro completo para insights mais inteligentes
-        const profile = await this.reportsService.getFinancialProfile(userId);
+        const profile = await this.reportsService.getFinancialProfile(userId, y, m);
 
         // Gera os insights usando o perfil como contexto (ajustando para o mês se necessário)
         const insights = await this.aiService.getFinancialInsights(profile);

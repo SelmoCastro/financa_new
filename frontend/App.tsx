@@ -19,6 +19,7 @@ import { Transaction } from './types';
 import { TransactionForm } from './components/TransactionForm';
 import { ChatWidget } from './components/ChatWidget';
 import { getYearMonth } from './utils/dateUtils';
+import { UploadCloud, Plus, ChevronLeft, ChevronRight, EyeOff, Eye, CheckSquare, Image, FileSpreadsheet } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const {
@@ -36,14 +37,6 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { selectedDate } = useMonth();
-
-  useEffect(() => {
-    // @ts-ignore
-    if (window.lucide) {
-      // @ts-ignore
-      window.lucide.createIcons();
-    }
-  }, [activeTab, sidebarOpen, isFormOpen, transactions, editingTransaction, userName, isLoading, isImportOpen]);
 
   const totals = useMemo(() => ({
     balance: dashboardSummary?.balance || 0,
@@ -179,17 +172,17 @@ const AppContent: React.FC = () => {
               className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all active:scale-95"
               title={isPrivacyEnabled ? "Mostrar valores" : "Ocultar valores"}
             >
-              <i data-lucide={isPrivacyEnabled ? "eye-off" : "eye"} className="w-5 h-5"></i>
+              {isPrivacyEnabled ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
             <button
               className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all"
               onClick={() => setIsImportOpen(true)}
             >
-              <i data-lucide="upload-cloud" className="w-4 h-4"></i>
+              <UploadCloud className="w-4 h-4" />
               <span className="hidden sm:inline">Importar</span>
             </button>
             <button onClick={() => setIsFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center gap-2 md:gap-3 flex-shrink-0">
-              <i data-lucide="plus" className="w-4 h-4 md:w-5 md:h-5"></i>
+              <Plus className="w-4 h-4 md:w-5 md:h-5" />
               <span className="hidden sm:inline">Novo Lançamento</span>
             </button>
           </div>

@@ -1,3 +1,4 @@
+import { X, FileSpreadsheet, Camera, Info, Loader2, Sparkles, AlertTriangle, Inbox, Check, ChevronLeft, ChevronRight, EyeOff, Eye, CheckSquare, UploadCloud, Image } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import { Account, CreditCard, Category } from '../types';
@@ -260,12 +261,12 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                 <div className="px-6 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${step === 2 ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-100 text-indigo-600'}`}>
-                            <i data-lucide={step === 2 ? 'check-square' : 'upload-cloud'} className="w-5 h-5"></i>
+                            {step === 2 ? <CheckSquare className="w-5 h-5" /> : <UploadCloud className="w-5 h-5" />}
                         </div>
                         {step === 1 ? 'Importar Extrato' : 'Revisar & Importar'}
                     </h3>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
-                        <i data-lucide="x" className="w-5 h-5"></i>
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
@@ -281,7 +282,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
-                                <i data-lucide="file-spreadsheet" className="w-4 h-4"></i>
+                                <FileSpreadsheet className="w-4 h-4" />
                                 Extrato OFX / QFX
                             </button>
                             <button
@@ -291,7 +292,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
-                                <i data-lucide="camera" className="w-4 h-4"></i>
+                                <Camera className="w-4 h-4" />
                                 Foto / Comprovante
                             </button>
                         </div>
@@ -317,7 +318,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                         {/* Dica contextual */}
                         {importMode === 'receipt' && (
                             <div className="flex items-start gap-3 p-3 bg-violet-50 rounded-xl border border-violet-100">
-                                <i data-lucide="info" className="w-4 h-4 text-violet-500 mt-0.5 shrink-0"></i>
+                                <Info className="w-4 h-4 text-violet-500 mt-0.5 shrink-0" />
                                 <p className="text-xs text-violet-700 font-medium">Envie fotos de comprovantes de PIX, TED, DOC ou recibos de mercado. A IA extrairá os dados automaticamente.</p>
                             </div>
                         )}
@@ -345,7 +346,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                 </div>
                             ) : (
                                 <div className="space-y-2">
-                                    <i data-lucide={importMode === 'receipt' ? 'image' : 'file-spreadsheet'} className="w-10 h-10 text-slate-400 mx-auto"></i>
+                                    {importMode === 'receipt' ? <Image className="w-10 h-10 text-slate-400 mx-auto" /> : <FileSpreadsheet className="w-10 h-10 text-slate-400 mx-auto" />}
                                     <p className="font-bold text-slate-700">
                                         {importMode === 'ofx'
                                             ? 'Selecione ou arraste seu OFX / QFX'
@@ -369,7 +370,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                         : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
                                         }`}
                                 >
-                                    {isLoading ? <i data-lucide="loader-2" className="w-5 h-5 animate-spin"></i> : <i data-lucide="sparkles" className="w-5 h-5"></i>}
+                                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
                                     {isLoading ? 'Analisando...' : (importMode === 'receipt' ? 'Analisar com IA' : 'Lançar & Revisar com IA')}
                                 </button>
                             </div>
@@ -387,7 +388,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                 {step === 2 && (
                     <div className="flex flex-col h-[70vh] max-h-[700px]">
                         <div className="p-4 bg-amber-50 border-b border-amber-100 flex items-start gap-3">
-                            <i data-lucide="alert-triangle" className="w-5 h-5 text-amber-500 mt-0.5 shrink-0"></i>
+                            <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
                             <p className="text-sm text-amber-800 font-medium">Revisamos seu extrato e categorizamos o que foi possível. Desmarque transações indesejadas antes de salvar.</p>
                         </div>
 
@@ -414,7 +415,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                         <div className="flex-1 overflow-auto bg-slate-50 p-6">
                             {filteredTxs.length === 0 && (
                                 <div className="flex flex-col items-center justify-center h-32 text-slate-400">
-                                    <i data-lucide="inbox" className="w-8 h-8 mb-2"></i>
+                                    <Inbox className="w-8 h-8 mb-2" />
                                     <p className="text-sm font-medium">Nenhuma transação nesta categoria</p>
                                 </div>
                             )}
@@ -532,7 +533,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             <button onClick={() => setStep(1)} className="px-6 py-3 text-slate-500 font-bold hover:bg-slate-100 rounded-xl transition-colors">Voltar</button>
                             <button onClick={handleSubmit} disabled={isLoading || parsedTxs.filter(t => t.selected).length === 0} className="px-8 py-3 text-white font-black bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50">
                                 {isLoading ? 'Salvando...' : `Confirmar ${parsedTxs.filter(t => t.selected).length} Transações`}
-                                <i data-lucide="check" className="w-5 h-5"></i>
+                                <Check className="w-5 h-5" />
                             </button>
                         </div>
                     </div>

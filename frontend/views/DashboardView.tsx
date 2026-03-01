@@ -18,7 +18,7 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 import { useMonth } from '../context/MonthContext';
 import { useData } from '../context/DataProvider';
 import api from '../services/api';
-import { Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
+import { Sparkles, RefreshCw, AlertCircle, Crosshair, Banknote, TrendingUp, TrendingDown, CheckCircle, Trophy, PieChart as PieChartIcon } from 'lucide-react';
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false }) => {
     const { selectedDate } = useMonth();
@@ -143,13 +143,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                     </>
                 ) : (
                     <>
-                        <StatCard title="Saldo Projetado" value={`R$ ${forecast.projectedBalance.toLocaleString('pt-BR')}`} color="bg-indigo-600 text-indigo-50" icon={<i data-lucide="crosshair" className="text-white"></i>} isVisible={!isPrivacyEnabled} />
-                        <StatCard title="Saldo Atual" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<i data-lucide="banknote"></i>} isVisible={!isPrivacyEnabled} />
+                        <StatCard title="Saldo Projetado" value={`R$ ${forecast.projectedBalance.toLocaleString('pt-BR')}`} color="bg-indigo-600 text-indigo-50" icon={<Crosshair className="text-white" />} isVisible={!isPrivacyEnabled} />
+                        <StatCard title="Saldo Atual" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<Banknote className="" />} isVisible={!isPrivacyEnabled} />
                         <StatCard
                             title="Entradas (Mês)"
                             value={`R$ ${totals.currentIncome.toLocaleString('pt-BR')}`}
                             color="bg-emerald-50 text-emerald-600"
-                            icon={<i data-lucide="trending-up"></i>}
+                            icon={<TrendingUp className="" />}
                             trend={`${Math.abs(totals.incomeTrend).toFixed(1)}%`}
                             trendUp={totals.incomeTrend >= 0}
                             isVisible={!isPrivacyEnabled}
@@ -158,7 +158,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             title="Saídas (Mês)"
                             value={`R$ ${totals.currentExpense.toLocaleString('pt-BR')}`}
                             color="bg-rose-50 text-rose-600"
-                            icon={<i data-lucide="trending-down"></i>}
+                            icon={<TrendingDown className="" />}
                             trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`}
                             trendUp={totals.expenseTrend <= 0}
                             isVisible={!isPrivacyEnabled}
@@ -271,7 +271,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-center p-4">
                                     <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3">
-                                        <i data-lucide="check-circle" className="w-6 h-6"></i>
+                                        <CheckCircle className="w-6 h-6" />
                                     </div>
                                     <p className="text-sm font-bold text-slate-600">Tudo em dia!</p>
                                     <p className="text-[10px] text-slate-400">Nenhuma conta fixa pendente.</p>
@@ -283,7 +283,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Top Gastos</h3>
-                                    <i data-lucide="trophy" className="w-4 h-4 text-amber-500"></i>
+                                    <Trophy className="w-4 h-4 text-amber-500" />
                                 </div>
                                 <div className="space-y-4 relative z-10">
                                     {forecast.topVillains.map((item, idx) => (
@@ -341,7 +341,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 <p className="text-sm text-slate-500">Saúde Financeira</p>
                             </div>
                             <div className="p-2 bg-indigo-50 rounded-lg">
-                                <i data-lucide="pie-chart" className="w-5 h-5 text-indigo-600"></i>
+                                <PieChartIcon className="w-5 h-5 text-indigo-600" />
                             </div>
                         </div>
 
