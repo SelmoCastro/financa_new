@@ -1,6 +1,8 @@
 
 import React from 'react';
 
+import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -10,13 +12,13 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen }) => {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'layout-grid' },
-    { id: 'accounts', label: 'Contas', icon: 'wallet' },
-    { id: 'budgets', label: 'Orçamentos', icon: 'target' },
-    { id: 'goals', label: 'Metas', icon: 'trophy' },
-    { id: 'timeline', label: 'Linha do Tempo', icon: 'clock' },
-    { id: 'fixed', label: 'Controle Fixos', icon: 'anchor' },
-    { id: 'history', label: 'Extrato', icon: 'receipt' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
+    { id: 'accounts', label: 'Contas', icon: Wallet },
+    { id: 'budgets', label: 'Orçamentos', icon: Target },
+    { id: 'goals', label: 'Metas', icon: Trophy },
+    { id: 'timeline', label: 'Linha do Tempo', icon: Clock },
+    { id: 'fixed', label: 'Controle Fixos', icon: Anchor },
+    { id: 'history', label: 'Extrato', icon: Receipt },
   ];
 
   return (
@@ -38,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                 : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
                 }`}
             >
-              <i data-lucide={item.icon} className="w-5 h-5"></i>
+              <item.icon className="w-5 h-5" />
               {isOpen && <span className="font-semibold text-sm whitespace-nowrap">{item.label}</span>}
             </button>
           ))}
@@ -52,13 +54,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 font-black">
-                  <i data-lucide="user" className="w-5 h-5"></i>
+                  <User className="w-5 h-5" />
                 </div>
                 <div className="overflow-hidden">
                   <p className="text-xs font-bold text-white truncate">Usuário</p>
                   <p className="text-[10px] text-slate-500 font-medium">Configurações</p>
                 </div>
-                <i data-lucide="settings" className={`w-4 h-4 text-slate-500 ml-auto group-hover:rotate-90 transition-transform ${activeTab === 'settings' ? 'text-indigo-400 rotate-90' : ''}`}></i>
+                <Settings className={`w-4 h-4 text-slate-500 ml-auto group-hover:rotate-90 transition-transform ${activeTab === 'settings' ? 'text-indigo-400 rotate-90' : ''}`} />
               </div>
             </div>
           ) : (
@@ -66,14 +68,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
               onClick={() => setActiveTab('settings')}
               className={`w-full aspect-square bg-slate-800/50 rounded-xl mb-4 flex items-center justify-center transition-colors ${activeTab === 'settings' ? 'text-indigo-400 bg-indigo-500/10' : 'text-slate-400 hover:text-white'}`}
             >
-              <i data-lucide="settings" className="w-5 h-5"></i>
+              <Settings className="w-5 h-5" />
             </button>
           )}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="w-full p-3 text-slate-400 hover:text-white flex justify-center hover:bg-slate-800 rounded-xl transition-colors"
           >
-            <i data-lucide={isOpen ? 'chevron-left' : 'chevron-right'} className="w-6 h-6"></i>
+            {isOpen ? <ChevronLeft className="w-6 h-6" /> : <ChevronRight className="w-6 h-6" />}
           </button>
 
           {isOpen && (
@@ -86,13 +88,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
 
       {/* Mobile Nav */}
       <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg border-t border-slate-200 flex lg:hidden justify-start sm:justify-around items-center px-4 pb-6 pt-3 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] overflow-x-auto gap-2 min-h-[80px]">
-        {[...menuItems, { id: 'settings', label: 'Ajustes', icon: 'settings' }].map((item) => (
+        {[...menuItems, { id: 'settings', label: 'Ajustes', icon: Settings }].map((item: any) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
             className={`flex flex-col items-center justify-center gap-1.5 transition-colors px-2 flex-shrink-0 min-w-[64px] h-[54px] rounded-xl active:scale-95 ${activeTab === item.id ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400'}`}
           >
-            <i data-lucide={item.icon} className="w-6 h-6"></i>
+            <item.icon className="w-6 h-6" />
             <span className="text-[10px] font-bold tracking-tight uppercase whitespace-nowrap leading-none">{item.label}</span>
           </button>
         ))}
