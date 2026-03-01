@@ -58,7 +58,7 @@ const AppContent: React.FC = () => {
     });
   }, [transactions, selectedDate]);
 
-  const forecast = useFixedTransactions(transactions, totals);
+  const forecast = useFixedTransactions(transactions, totals, selectedDate);
 
   const handleAddTransaction = async (newTx: Omit<Transaction, 'id'>) => {
     await addTransaction(newTx);

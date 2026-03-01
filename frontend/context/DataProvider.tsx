@@ -60,7 +60,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 api.get<Account[]>('/accounts'),
                 api.get<CreditCard[]>('/credit-cards'),
                 api.get<Category[]>('/categories'),
-                api.get<DashboardSummary>(`/transactions/dashboard-summary?year=${year}&month=${month}`)
+                api.get<DashboardSummary>(`/transactions/dashboard-summary?year=${year}&month=${month}&_t=${Date.now()}`)
             ]);
 
             setTransactions(txRes.data);
