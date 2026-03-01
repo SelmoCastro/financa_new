@@ -51,7 +51,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
         };
     }, [dashboardSummary]);
 
-    const forecast = useFixedTransactions(transactions, totals);
+    const forecast = useFixedTransactions(transactions, totals, selectedDate);
 
     const categorySummary = useMemo(() => {
         const categories: Record<string, number> = {};

@@ -2,11 +2,14 @@ import { useMemo } from 'react';
 import { Transaction } from '../types';
 import { toMidnightDate } from '../utils/dateUtils';
 
-export const useFixedTransactions = (transactions: Transaction[], totals: { balance: number, income: number, currentIncome?: number }) => {
+export const useFixedTransactions = (transactions: Transaction[], totals: { balance: number, income: number, currentIncome?: number }, targetDate: Date) => {
     return useMemo(() => {
+        const currentMonth = targetDate.getMonth();
+        const currentYear = targetDate.getFullYear();
+
+        // Use an anchor to know what "today in the target month" means for projection
         const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
+        const isCurrentActiveMonth = now.getMonth() === currentMonth && now.getFullYear() === currentYear;
 
         // 1. Identify all UNIQUE fixed transactions from history
         const fixedDefinitions: Record<string, {
@@ -65,18 +68,22 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         let projectedBalance = totals.balance;
 
         // Add "Future" transactions available in DB for the current month (which are excluded from Current Balance)
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        // Only makes sense to project "future" balance if viewing the actual current physical month.
+        // For past months, all balance is locked historically.
+        if (isCurrentActiveMonth) {
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        transactions.forEach(t => {
-            const tDate = new Date(t.date);
-            const tDateOnly = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate());
+            transactions.forEach(t => {
+                const tDate = new Date(t.date);
+                const tDateOnly = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate());
 
-            // If it's in the future, but within current month/year
-            if (tDateOnly > todayStart && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
-                if (t.type === 'INCOME') projectedBalance += Number(t.amount);
-                else projectedBalance -= Number(t.amount);
-            }
-        });
+                // If it's in the future, but within current month/year
+                if (tDateOnly > todayStart && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
+                    if (t.type === 'INCOME') projectedBalance += Number(t.amount);
+                    else projectedBalance -= Number(t.amount);
+                }
+            });
+        }
 
         // Add "Missing Fixed" items (not in DB yet)
         missingFixed.forEach(item => {
@@ -133,5 +140,5 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
             fixedItems,
             topVillains
         };
-    }, [transactions, totals.balance, totals.income, totals.currentIncome]);
+    }, [transactions, totals.balance, totals.income, totals.currentIncome, targetDate]);
 };
