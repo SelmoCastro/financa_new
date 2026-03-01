@@ -19,10 +19,15 @@ export function configureApp(app: INestApplication) {
         allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
     });
 
-    // Security Headers (Helmet com CSP restritivo)
+    // Security Headers (Helmet com CSP restritivo e Policies adicionais)
     app.use(helmet({
         crossOriginResourcePolicy: { policy: "cross-origin" },
         crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+        frameguard: { action: 'deny' },
+        hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+        xssFilter: true,
+        noSniff: true,
+        referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
         contentSecurityPolicy: {
             directives: {
                 defaultSrc: ["'self'"],
