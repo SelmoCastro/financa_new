@@ -111,9 +111,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const addTransaction = async (newTx: Omit<Transaction, 'id'>) => {
         try {
-            await api.post('/transactions', newTx);
+            if (newTx.type === 'TRANSFER') {
+                const transferPayload = {
+                    sourceAccountId: newTx.accountId,
+                    destinationAccountId: newTx.destinationAccountId,
+                    amount: newTx.amount,
+                    date: newTx.date,
+                    description: newTx.description
+                };
+                await api.post('/transactions/transfer', transferPayload);
+            } else {
+                await api.post('/transactions', newTx);
+            }
             await refreshData();
-            addToast('Transação salva com sucesso!', 'success');
+            addToast(newTx.type === 'TRANSFER' ? 'Transferência realizada com sucesso!' : 'Transação salva com sucesso!', 'success');
         } catch (error) {
             console.error('Erro ao adicionar:', error);
             addToast('Erro ao salvar transação', 'error');

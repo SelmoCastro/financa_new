@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { TransferTransactionDto } from './dto/transfer-transaction.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 
@@ -440,6 +441,72 @@ export class TransactionsService {
       return tx.transaction.deleteMany({
         where: { id, userId },
       });
+    });
+  }
+
+  async transfer(transferDto: TransferTransactionDto, userId: string) {
+    const amount = Number(transferDto.amount);
+    const date = new Date(transferDto.date);
+    const { sourceAccountId, destinationAccountId, description } = transferDto;
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Ensure a "Transferência" category exists for the user
+      let transferCat = await tx.category.findFirst({
+        where: { userId, name: { equals: 'Transferência', mode: 'insensitive' } }
+      });
+
+      if (!transferCat) {
+        transferCat = await tx.category.create({
+          data: {
+            name: 'Transferência',
+            type: 'TRANSFER',
+            icon: '🔄',
+            color: '#6366f1',
+            userId
+          }
+        });
+      }
+
+      const txDescription = description || 'Transferência';
+
+      // 2. Create the OUT transaction (Expense)
+      const outTx = await tx.transaction.create({
+        data: {
+          description: `${txDescription} (Saída)`,
+          amount,
+          date,
+          type: 'EXPENSE',
+          categoryId: transferCat.id,
+          accountId: sourceAccountId,
+          userId,
+        }
+      });
+
+      // 3. Create the IN transaction (Income)
+      const inTx = await tx.transaction.create({
+        data: {
+          description: `${txDescription} (Entrada)`,
+          amount,
+          date,
+          type: 'INCOME',
+          categoryId: transferCat.id,
+          accountId: destinationAccountId,
+          userId,
+        }
+      });
+
+      // 4. Update balances
+      await tx.account.updateMany({
+        where: { id: sourceAccountId, userId },
+        data: { balance: { decrement: amount } }
+      });
+
+      await tx.account.updateMany({
+        where: { id: destinationAccountId, userId },
+        data: { balance: { increment: amount } }
+      });
+
+      return { outTx, inTx };
     });
   }
 }
