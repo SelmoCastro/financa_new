@@ -73,9 +73,9 @@ export const ChatWidget: React.FC = () => {
             {/* Floating Trigger */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`fixed bottom-6 right-6 z-50 p-4 rounded-2xl shadow-2xl transition-all duration-300 active:scale-90 flex items-center gap-2 group ${isOpen
-                        ? 'bg-rose-500 text-white rotate-90 scale-110'
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-110'
+                className={`fixed bottom-24 lg:bottom-6 right-6 z-50 p-4 rounded-2xl shadow-2xl transition-all duration-300 active:scale-90 flex items-center gap-2 group ${isOpen
+                    ? 'bg-rose-500 text-white rotate-90 scale-110'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-110'
                     }`}
             >
                 {isOpen ? <X className="w-6 h-6" /> : <Sparkles className="w-6 h-6" />}
@@ -87,7 +87,7 @@ export const ChatWidget: React.FC = () => {
             </button>
 
             {/* Chat Panel */}
-            <div className={`fixed bottom-24 right-6 z-50 w-[90vw] md:w-[400px] h-[70vh] max-h-[600px] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-500 ease-in-out origin-bottom-right ${isOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-20 opacity-0 scale-90 pointer-events-none'
+            <div className={`fixed bottom-40 lg:bottom-24 right-6 z-50 w-[90vw] md:w-[400px] h-[65vh] lg:h-[70vh] max-h-[600px] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-500 ease-in-out origin-bottom-right ${isOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-20 opacity-0 scale-90 pointer-events-none'
                 }`}>
                 {/* Header */}
                 <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 p-6 text-white flex items-center justify-between">
@@ -118,8 +118,8 @@ export const ChatWidget: React.FC = () => {
                                     {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                                 </div>
                                 <div className={`p-4 rounded-2xl text-sm font-medium leading-relaxed shadow-sm ${msg.sender === 'user'
-                                        ? 'bg-indigo-600 text-white rounded-tr-none'
-                                        : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
+                                    ? 'bg-indigo-600 text-white rounded-tr-none'
+                                    : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
                                     }`}>
                                     {msg.text}
                                     <div className={`text-[10px] mt-2 opacity-50 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
