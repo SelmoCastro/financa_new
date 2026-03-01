@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { X, Wallet } from 'lucide-react';
 import api from '../services/api';
 
 interface AccountFormProps {
@@ -17,6 +18,16 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
         return '';
     });
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
 
     const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let val = e.target.value.replace(/\D/g, '');
@@ -63,12 +74,12 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                 <div className="px-6 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
                         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
-                            <i data-lucide="wallet" className="w-5 h-5"></i>
+                            <Wallet className="w-5 h-5" />
                         </div>
                         {accountToEdit ? 'Editar Conta' : 'Adicionar Conta'}
                     </h3>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
-                        <i data-lucide="x" className="w-5 h-5"></i>
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 

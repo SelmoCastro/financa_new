@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { X, ChevronDown, Check } from 'lucide-react';
 import { TransactionType, Transaction, Account, CreditCard, Category } from '../types';
 import api from '../services/api';
 import { toYYYYMMDD } from '../utils/dateUtils';
@@ -45,6 +45,16 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       maximumFractionDigits: 2,
     });
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   useEffect(() => {
     const fetchEntities = async () => {
@@ -156,7 +166,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-200/50 rounded-full transition-colors text-slate-400">
-            <i data-lucide="x" className="w-5 h-5"></i>
+            <X className="w-5 h-5" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
@@ -311,7 +321,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     ))}
                   </select>
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                    <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
               </div>
@@ -355,7 +365,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     </select>
                   )}
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                    <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
               </div>
@@ -364,7 +374,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
           <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 group cursor-pointer" onClick={() => setIsFixed(!isFixed)}>
             <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all ${isFixed ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-200'}`}>
-              {isFixed && <i data-lucide="check" className="w-4 h-4 text-white"></i>}
+              {isFixed && <Check className="w-4 h-4 text-white" />}
             </div>
             <div className="flex-1">
               <span className="text-sm font-bold text-slate-700">Lançamento Fixo</span>
