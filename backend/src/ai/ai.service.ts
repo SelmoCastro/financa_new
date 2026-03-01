@@ -161,6 +161,60 @@ export class AiService {
     }
 
     /**
+     * Análise Preditiva - Com base no histórico de gastos recentes,
+     * prevê como o mês atual vai terminar e destaca riscos.
+     */
+    async getSpendingForecast(historicalData: any): Promise<string> {
+        if (!this.openai) {
+            return 'Serviço de previsão AI não disponível no momento.';
+        }
+
+        const prompt = SYSTEM_PROMPTS.FORECASTING(JSON.stringify(historicalData, null, 2));
+
+        try {
+            this.logger.log('OpenRouter: Gerando previsão de gastos (forecasting)...');
+
+            const response = await this.openai.chat.completions.create({
+                model: this.TEXT_MODEL,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.5,
+            });
+
+            return response.choices[0]?.message?.content || 'Não foi possível gerar a previsão no momento.';
+        } catch (error) {
+            this.logger.error('Erro ao gerar previsão via OpenRouter:', error);
+            return 'Erro na conexão com a inteligência artificial.';
+        }
+    }
+
+    /**
+     * Análise Preditiva - Identifica possíveis assinaturas pagas
+     * ou serviços esquecidos recorrentes nos últimos meses.
+     */
+    async findRecurringSubscriptions(recentTransactions: any): Promise<string> {
+        if (!this.openai) {
+            return 'Scanner de assinaturas não disponível no momento.';
+        }
+
+        const prompt = SYSTEM_PROMPTS.FIND_SUBSCRIPTIONS(JSON.stringify(recentTransactions, null, 2));
+
+        try {
+            this.logger.log('OpenRouter: Procurando por contas recorrentes/assinaturas...');
+
+            const response = await this.openai.chat.completions.create({
+                model: this.TEXT_MODEL,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.3,
+            });
+
+            return response.choices[0]?.message?.content || 'Não foi possível encontrar assinaturas no momento.';
+        } catch (error) {
+            this.logger.error('Erro ao procurar assinaturas via OpenRouter:', error);
+            return 'Erro na conexão com a inteligência artificial.';
+        }
+    }
+
+    /**
      * Extrai dados de transação de uma imagem de comprovante usando OpenRouter (Vision).
      */
     async extractFromReceipt(imageBase64: string, mimeType: string, categories: string[] = []): Promise<ReceiptTransaction[]> {

@@ -45,4 +45,24 @@ export class AiController {
 
         return { response };
     }
+
+    @Get('forecast')
+    async getForecast(@Request() req) {
+        const userId = req.user.userId;
+
+        const historicalData = await this.reportsService.getHistoricalSpending(userId);
+        const forecast = await this.aiService.getSpendingForecast(historicalData);
+
+        return { forecast };
+    }
+
+    @Get('subscriptions')
+    async getSubscriptions(@Request() req) {
+        const userId = req.user.userId;
+
+        const recentTxs = await this.reportsService.getRecentTransactionsForAudit(userId);
+        const auditResult = await this.aiService.findRecurringSubscriptions(recentTxs);
+
+        return { subscriptions: auditResult };
+    }
 }

@@ -160,4 +160,70 @@ export class ReportsService {
             topMonthlyExpenses: formattedTopExpenses
         };
     }
+
+    /**
+     * Retorna um resumo histórico dos últimos 3 meses focado apenas nas despesas.
+     * Ideal para contexto de Forecasting na Inteligência Artificial.
+     */
+    async getHistoricalSpending(userId: string) {
+        const now = new Date();
+        const startOfHistory = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 3, 1));
+        const endOfHistory = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999));
+
+        const transactions = await this.prisma.transaction.findMany({
+            where: {
+                userId,
+                type: 'EXPENSE',
+                date: {
+                    gte: startOfHistory,
+                    lte: endOfHistory
+                }
+            },
+            select: {
+                amount: true,
+                date: true,
+                categoryId: true,
+                categoryLegacy: true
+            }
+        });
+
+        const categories = await this.prisma.category.findMany({ where: { userId } });
+        const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+
+        return transactions.map(t => ({
+            amount: t.amount,
+            date: t.date,
+            category: (t.categoryId ? categoryMap.get(t.categoryId) : t.categoryLegacy) || 'Outros'
+        }));
+    }
+
+    /**
+     * Retorna até 100 transações de saída com descrição dos últimos 90 dias
+     * Ideal para identificar assinaturas e custos ocultos via Inteligência Artificial.
+     */
+    async getRecentTransactionsForAudit(userId: string) {
+        const now = new Date();
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(now.getDate() - 90);
+
+        return await this.prisma.transaction.findMany({
+            where: {
+                userId,
+                type: 'EXPENSE',
+                date: {
+                    gte: ninetyDaysAgo,
+                    lte: now
+                }
+            },
+            select: {
+                description: true,
+                amount: true,
+                date: true
+            },
+            orderBy: {
+                date: 'desc'
+            },
+            take: 100
+        });
+    }
 }

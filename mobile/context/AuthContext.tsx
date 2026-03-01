@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log('[AuthContext] Sessão expirada ou 401 detectado. Deslogando...');
             await SecureStore.deleteItemAsync('token');
             setToken(null);
+            router.replace('/');
 
             // Allow state to reset before accepting new unauth events
             setTimeout(() => {
@@ -60,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('[AuthContext] Iniciando logout manual...');
         await SecureStore.deleteItemAsync('token');
         setToken(null);
+        router.replace('/');
     };
 
     return (

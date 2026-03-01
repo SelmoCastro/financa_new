@@ -30,7 +30,8 @@ api.interceptors.response.use(
     async (error) => {
         const isAuthRoute = error.config?.url?.includes('/auth/');
         if (!isAuthRoute && error.response && (error.response.status === 401 || error.response.status === 403)) {
-            console.log('[API] 401 Unauthorized detectado (rota protegida). Emitindo evento de logout...');
+            console.log('[API] 401/403 detectado. Limpando token e emitindo evento...');
+            await SecureStore.deleteItemAsync('token');
             DeviceEventEmitter.emit('auth:unauthorized');
         }
         return Promise.reject(error);
