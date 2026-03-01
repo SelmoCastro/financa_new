@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
+import { Edit3, Trash2, ArrowUpRight, ArrowDownLeft, Repeat } from 'lucide-react';
 import { Transaction, TransactionType } from '../types';
 
 interface HistoryViewProps {
@@ -37,12 +38,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0">
                                 <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-lg ${tx.type === 'INCOME' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                                    <i data-lucide={tx.type === 'INCOME' ? 'arrow-up-right' : 'arrow-down-left'} className="w-5 h-5"></i>
+                                    {tx.type === 'INCOME' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownLeft className="w-5 h-5" />}
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2">
                                         <p className="font-bold text-slate-800 text-base group-hover:text-indigo-600 transition-colors truncate">{tx.description}</p>
-                                        {tx.isFixed && <i data-lucide="repeat" className="w-3.5 h-3.5 text-indigo-400"></i>}
+                                        {tx.isFixed && <Repeat className="w-3.5 h-3.5 text-indigo-400" />}
                                     </div>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="text-[8px] uppercase font-black tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg truncate">{tx.category?.name || tx.categoryLegacy || 'Outros'}</span>
@@ -55,8 +56,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                     {isPrivacyEnabled ? 'R$ •••••••' : `${tx.type === 'INCOME' ? '+' : '-'} R$ ${Number(tx.amount).toLocaleString('pt-BR')}`}
                                 </p>
                                 <div className="flex gap-1">
-                                    <button onClick={() => onEdit(tx)} className="p-2 text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"><i data-lucide="edit-3" className="w-4 h-4"></i></button>
-                                    <button onClick={() => onDelete(tx.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                    <button onClick={() => onEdit(tx)} className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"><Edit3 className="w-4 h-4" /></button>
+                                    <button onClick={() => onDelete(tx.id)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                             </div>
                         </div>
@@ -109,9 +110,9 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                         {isPrivacyEnabled ? 'R$ •••••••' : `${tx.type === 'INCOME' ? '+' : '-'} R$ ${Number(tx.amount).toLocaleString('pt-BR')}`}
                                     </td>
                                     <td className="px-8 py-6 text-right">
-                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => onEdit(tx)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"><i data-lucide="edit-3" className="w-4 h-4"></i></button>
-                                            <button onClick={() => onDelete(tx.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={() => onEdit(tx)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"><Edit3 className="w-4 h-4" /></button>
+                                            <button onClick={() => onDelete(tx.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
                                         </div>
                                     </td>
                                 </tr>
