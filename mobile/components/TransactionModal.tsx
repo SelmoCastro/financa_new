@@ -27,9 +27,10 @@ interface TransactionModalProps {
     onClose: () => void;
     onSuccess: () => void;
     initialType?: 'INCOME' | 'EXPENSE';
+    transactionToEdit?: any;
 }
 
-export default function TransactionModal({ visible, onClose, onSuccess, initialType = 'EXPENSE' }: TransactionModalProps) {
+export default function TransactionModal({ visible, onClose, onSuccess, initialType = 'EXPENSE', transactionToEdit }: TransactionModalProps) {
     const [loading, setLoading] = useState(false);
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
@@ -52,18 +53,30 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
     // Reset form when modal opens or type changes
     useEffect(() => {
         if (visible) {
-            setDescription('');
-            setAmount('');
-            setCategory('');
-            setSelectedCategory(null);
-            setDate(new Date());
-            setIsFixed(false);
-            setType(initialType);
-            setAccountId('');
-            setCreditCardId('');
+            if (transactionToEdit) {
+                setDescription(transactionToEdit.description || '');
+                setAmount(formatCurrency(String(transactionToEdit.amount || 0)));
+                setCategory(transactionToEdit.category?.name || transactionToEdit.categoryLegacy || '');
+                setSelectedCategory(transactionToEdit.category || null);
+                setDate(new Date(transactionToEdit.date));
+                setIsFixed(transactionToEdit.isFixed || false);
+                setType(transactionToEdit.type || initialType);
+                setAccountId(transactionToEdit.accountId || '');
+                setCreditCardId(transactionToEdit.creditCardId || '');
+            } else {
+                setDescription('');
+                setAmount('');
+                setCategory('');
+                setSelectedCategory(null);
+                setDate(new Date());
+                setIsFixed(false);
+                setType(initialType);
+                setAccountId('');
+                setCreditCardId('');
+            }
             setIsCategoryOpen(false);
 
-            // Fetch data
+            // Fetch data (keep as is to ensure dropdowns have latest info)
             Promise.all([
                 api.get('/accounts'),
                 api.get('/credit-cards'),
@@ -74,7 +87,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                 setCategories(cats.data);
             }).catch(console.error);
         }
-    }, [visible, initialType]);
+    }, [visible, initialType, transactionToEdit]);
 
     // Reset category if type changes
     useEffect(() => {
@@ -140,14 +153,17 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                 creditCardId: creditCardId || undefined
             };
 
-            console.log('Sending payload to backend:', JSON.stringify(payload, null, 2));
-
-            await api.post('/transactions', payload);
+            if (transactionToEdit) {
+                await api.patch(`/transactions/${transactionToEdit.id}`, payload);
+                Alert.alert('Sucesso', 'Transação atualizada com sucesso!');
+            } else {
+                await api.post('/transactions', payload);
+                Alert.alert('Sucesso', 'Transação salva com sucesso!');
+            }
 
             triggerHaptic.success();
             onSuccess();
             onClose();
-            Alert.alert('Sucesso', 'Transação salva com sucesso!');
         } catch (error: any) {
             triggerHaptic.error();
             console.error('Erro ao salvar transação:');
@@ -180,8 +196,8 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                 <View style={styles.modalContent}>
                     <View style={styles.header}>
                         <View>
-                            <Text style={styles.headerTitle}>Novo Lançamento</Text>
-                            <Text style={styles.headerSubtitle}>Registre sua movimentação</Text>
+                            <Text style={styles.headerTitle}>{transactionToEdit ? 'Editar Lançamento' : 'Novo Lançamento'}</Text>
+                            <Text style={styles.headerSubtitle}>{transactionToEdit ? 'Atualize os dados da movimentação' : 'Registre sua movimentação'}</Text>
                         </View>
                         <Pressable
                             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onClose(); }}
@@ -377,7 +393,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                                     <ActivityIndicator color="white" />
                                 ) : (
                                     <Text style={styles.saveButtonText}>
-                                        Confirmar {type === 'EXPENSE' ? 'Despesa' : 'Receita'}
+                                        {transactionToEdit ? 'Salvar Alterações' : `Confirmar ${type === 'EXPENSE' ? 'Despesa' : 'Receita'}`}
                                     </Text>
                                 )}
                             </Pressable>

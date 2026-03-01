@@ -51,19 +51,24 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inTabsGroup = segments[0] === '(tabs)';
+    // Root (index) has empty segments `[]` or no defined first segment
+    const isIndex = !segments[0];
+    const isSignup = segments[0] === 'signup';
+    const isPublicRoute = isIndex || isSignup;
 
-    // Log para depuração de rota
-    console.log(`[Router Protection] Token: ${!!token} | In Tabs: ${inTabsGroup} | Path: ${segments.join('/')}`);
+    console.log(`[Router Protection] Token: ${!!token} | isPublic: ${isPublicRoute} | Path: ${segments.join('/')}`);
 
-    if (!token && inTabsGroup) {
-      // Se não há token e está tentando acessar abas -> Login
+    if (!token && !isPublicRoute) {
       console.log('[Router Protection] Deslogado em área protegida. Redirecionando para login...');
-      router.replace('/');
-    } else if (token && !inTabsGroup) {
-      // Se há token e está na tela de login -> Dashboard
+      // Small timeout to avoid Expo Router race conditions during re-renders or background recovery
+      setTimeout(() => {
+        router.replace('/');
+      }, 0);
+    } else if (token && isPublicRoute) {
       console.log('[Router Protection] Logado em área pública. Redirecionando para dashboard...');
-      router.replace('/(tabs)');
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 0);
     }
   }, [token, isLoading, segments]);
 
@@ -75,6 +80,7 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="signup" />
         <Stack.Screen name="(tabs)" />
       </Stack>
     </ThemeProvider>

@@ -109,6 +109,18 @@ export default function LoginScreen() {
                             </Text>
                         </Pressable>
                     </View>
+
+                    <Pressable
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push('/signup');
+                        }}
+                        style={styles.signupLink}
+                    >
+                        <Text style={styles.signupLinkText}>
+                            Não tem uma conta? <Text style={styles.signupLinkHighlight}>Criar conta</Text>
+                        </Text>
+                    </Pressable>
                 </View>
             </View>
         </View>
@@ -206,5 +218,17 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 18,
+    },
+    signupLink: {
+        marginTop: 24,
+        alignItems: 'center',
+    },
+    signupLinkText: {
+        color: '#64748b',
+        fontSize: 14,
+    },
+    signupLinkHighlight: {
+        color: '#4f46e5',
+        fontWeight: 'bold',
     },
 });
