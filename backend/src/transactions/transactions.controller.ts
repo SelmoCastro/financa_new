@@ -6,10 +6,10 @@ import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { ImportValidateTransactionDto, ImportConfirmPayloadDto } from './dto/import-transaction.dto';
+import { TransferTransactionDto } from './dto/transfer-transaction.dto';
 import { AiService } from '../ai/ai.service';
 import { ReportsService } from '../reports/reports.service';
 import { memoryStorage } from 'multer';
-
 
 @Controller({
   path: 'transactions',
@@ -26,6 +26,11 @@ export class TransactionsController {
   @Post()
   create(@Body() createTransactionDto: CreateTransactionDto, @Request() req) {
     return this.transactionsService.create(createTransactionDto, req.user.userId);
+  }
+
+  @Post('transfer')
+  transfer(@Body() transferDto: TransferTransactionDto, @Request() req) {
+    return this.transactionsService.transfer(transferDto, req.user.userId);
   }
 
   @Post('import/validate')

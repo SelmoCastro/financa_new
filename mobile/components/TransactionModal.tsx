@@ -38,12 +38,13 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
     // Form State
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
-    const [type, setType] = useState<'INCOME' | 'EXPENSE'>(initialType);
+    const [type, setType] = useState<'INCOME' | 'EXPENSE' | 'TRANSFER'>(initialType as any);
     const [category, setCategory] = useState('');
     const [date, setDate] = useState(new Date());
     const [isFixed, setIsFixed] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [accountId, setAccountId] = useState('');
+    const [destinationAccountId, setDestinationAccountId] = useState('');
     const [creditCardId, setCreditCardId] = useState('');
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
@@ -70,8 +71,9 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                 setSelectedCategory(null);
                 setDate(new Date());
                 setIsFixed(false);
-                setType(initialType);
+                setType(initialType as any);
                 setAccountId('');
+                setDestinationAccountId('');
                 setCreditCardId('');
             }
             setIsCategoryOpen(false);
@@ -134,31 +136,54 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
             return;
         }
 
-        if (!category) {
-            Alert.alert('Atenção', 'Selecione uma categoria.');
-            return;
+        if (type === 'TRANSFER') {
+            if (!accountId || !destinationAccountId) {
+                Alert.alert('Atenção', 'Selecione a conta de origem e destino.');
+                return;
+            }
+            if (accountId === destinationAccountId) {
+                Alert.alert('Atenção', 'A conta de origem e destino devem ser diferentes.');
+                return;
+            }
+        } else {
+            if (!category) {
+                Alert.alert('Atenção', 'Selecione uma categoria.');
+                return;
+            }
         }
 
         setLoading(true);
         try {
-            const payload = {
-                description,
-                amount: rawAmount,
-                type,
-                categoryId: selectedCategory?.id,
-                categoryLegacy: category,
-                date: date.toISOString(),
-                isFixed,
-                accountId: accountId || undefined,
-                creditCardId: creditCardId || undefined
-            };
-
-            if (transactionToEdit) {
-                await api.patch(`/transactions/${transactionToEdit.id}`, payload);
-                Alert.alert('Sucesso', 'Transação atualizada com sucesso!');
+            if (type === 'TRANSFER') {
+                const payload = {
+                    description,
+                    amount: rawAmount,
+                    date: date.toISOString(),
+                    sourceAccountId: accountId,
+                    destinationAccountId
+                };
+                await api.post('/transactions/transfer', payload);
+                Alert.alert('Sucesso', 'Transferência realizada com sucesso!');
             } else {
-                await api.post('/transactions', payload);
-                Alert.alert('Sucesso', 'Transação salva com sucesso!');
+                const payload = {
+                    description,
+                    amount: rawAmount,
+                    type,
+                    categoryId: selectedCategory?.id,
+                    categoryLegacy: category,
+                    date: date.toISOString(),
+                    isFixed,
+                    accountId: accountId || undefined,
+                    creditCardId: creditCardId || undefined
+                };
+
+                if (transactionToEdit) {
+                    await api.patch(`/transactions/${transactionToEdit.id}`, payload);
+                    Alert.alert('Sucesso', 'Transação atualizada com sucesso!');
+                } else {
+                    await api.post('/transactions', payload);
+                    Alert.alert('Sucesso', 'Transação salva com sucesso!');
+                }
             }
 
             triggerHaptic.success();
@@ -223,6 +248,12 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                             >
                                 <Text style={[styles.toggleText, type === 'INCOME' ? styles.textIncome : styles.textInactive]}>Receita</Text>
                             </Pressable>
+                            <Pressable
+                                onPress={() => { setType('TRANSFER'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                style={[styles.toggleButton, type === 'TRANSFER' && styles.toggleButtonActive]}
+                            >
+                                <Text style={[styles.toggleText, type === 'TRANSFER' ? styles.textTransfer : styles.textInactive]}>Transf.</Text>
+                            </Pressable>
                         </View>
 
                         <View style={styles.inputSection}>
@@ -230,7 +261,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                             <TextInput
                                 value={description}
                                 onChangeText={setDescription}
-                                placeholder="Ex: Aluguel, Salário..."
+                                placeholder={type === 'TRANSFER' ? "Ex: Para a poupança..." : "Ex: Aluguel, Salário..."}
                                 style={styles.input}
                             />
                         </View>
@@ -271,64 +302,67 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                             />
                         )}
 
-                        <View style={styles.inputSection}>
-                            <Text style={styles.sectionLabel}>Categoria</Text>
-                            <Pressable
-                                onPress={() => { setIsCategoryOpen(!isCategoryOpen); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                                style={[styles.selectInput, isCategoryOpen && styles.selectInputActive]}
-                            >
-                                <View style={styles.selectInputContent}>
-                                    <View style={styles.selectInputLabelRow}>
+                        {type !== 'TRANSFER' && (
+                            <View style={styles.inputSection}>
+                                <Text style={styles.sectionLabel}>Categoria</Text>
+                                <Pressable
+                                    onPress={() => { setIsCategoryOpen(!isCategoryOpen); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    style={[styles.selectInput, isCategoryOpen && styles.selectInputActive]}
+                                >
+                                    <View style={styles.selectInputContent}>
+                                        <View style={styles.selectInputLabelRow}>
+                                            <MaterialIcons
+                                                name="category"
+                                                size={18}
+                                                color={category ? '#4f46e5' : '#94a3b8'}
+                                            />
+                                            <Text style={[styles.selectInputText, !category && styles.selectInputPlaceholder]}>
+                                                {category || 'Selecione uma categoria'}
+                                            </Text>
+                                        </View>
                                         <MaterialIcons
-                                            name="category"
-                                            size={18}
-                                            color={category ? '#4f46e5' : '#94a3b8'}
+                                            name={isCategoryOpen ? "expand-less" : "expand-more"}
+                                            size={24}
+                                            color="#64748b"
                                         />
-                                        <Text style={[styles.selectInputText, !category && styles.selectInputPlaceholder]}>
-                                            {category || 'Selecione uma categoria'}
-                                        </Text>
                                     </View>
-                                    <MaterialIcons
-                                        name={isCategoryOpen ? "expand-less" : "expand-more"}
-                                        size={24}
-                                        color="#64748b"
-                                    />
-                                </View>
-                            </Pressable>
+                                </Pressable>
 
-                            {isCategoryOpen && (
-                                <View style={styles.dropdownContainer}>
-                                    <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
-                                        {groupedCategories.map(group => (
-                                            <View key={group.name} style={styles.dropdownGroup}>
-                                                <Text style={styles.dropdownGroupLabel}>{group.name}</Text>
-                                                {group.items.map(cat => (
-                                                    <Pressable
-                                                        key={cat.id}
-                                                        onPress={() => {
-                                                            setCategory(cat.name);
-                                                            setSelectedCategory(cat);
-                                                            setIsCategoryOpen(false);
-                                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                        }}
-                                                        style={[styles.dropdownItem, category === cat.name && styles.dropdownItemActive]}
-                                                    >
-                                                        <Text style={[styles.dropdownItemText, category === cat.name && styles.dropdownItemTextActive]}>
-                                                            {cat.icon} {cat.name}
-                                                        </Text>
-                                                        {category === cat.name && <MaterialIcons name="check" size={18} color="#4f46e5" />}
-                                                    </Pressable>
-                                                ))}
-                                            </View>
-                                        ))}
-                                    </ScrollView>
-                                </View>
-                            )}
-                        </View>
+                                {isCategoryOpen && (
+                                    <View style={styles.dropdownContainer}>
+                                        <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
+                                            {groupedCategories.map(group => (
+                                                <View key={group.name} style={styles.dropdownGroup}>
+                                                    <Text style={styles.dropdownGroupLabel}>{group.name}</Text>
+                                                    {group.items.map(cat => (
+                                                        <Pressable
+                                                            key={cat.id}
+                                                            onPress={() => {
+                                                                setCategory(cat.name);
+                                                                setSelectedCategory(cat);
+                                                                setIsCategoryOpen(false);
+                                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                            }}
+                                                            style={[styles.dropdownItem, category === cat.name && styles.dropdownItemActive]}
+                                                        >
+                                                            <Text style={[styles.dropdownItemText, category === cat.name && styles.dropdownItemTextActive]}>
+                                                                {cat.icon} {cat.name}
+                                                            </Text>
+                                                            {category === cat.name && <MaterialIcons name="check" size={18} color="#4f46e5" />}
+                                                        </Pressable>
+                                                    ))}
+                                                </View>
+                                            ))}
+                                        </ScrollView>
+                                    </View>
+                                )}
+                            </View>
+                        )}
 
                         <View style={styles.row}>
                             <View style={[styles.inputSection, { flex: 1 }]}>
-                                <Text style={styles.sectionLabel}>Conta Habitual</Text>
+                                <Text style={styles.sectionLabel}>{type === 'TRANSFER' ? 'Conta de Origem' : 'Conta Habitual'}</Text>
+
                                 <View style={styles.selectWrapper}>
                                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
                                         {accounts.map(acc => (
@@ -362,6 +396,25 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                                     </View>
                                 </View>
                             )}
+
+                            {type === 'TRANSFER' && (
+                                <View style={[styles.inputSection, { flex: 1 }]}>
+                                    <Text style={styles.sectionLabel}>Conta de Destino</Text>
+                                    <View style={styles.selectWrapper}>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
+                                            {accounts.map(acc => (
+                                                <Pressable
+                                                    key={acc.id}
+                                                    onPress={() => { setDestinationAccountId(acc.id === destinationAccountId ? '' : acc.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                                    style={[styles.smallChip, destinationAccountId === acc.id && styles.smallChipActiveGreen]}
+                                                >
+                                                    <Text style={[styles.smallChipText, destinationAccountId === acc.id && styles.smallChipTextActive]}>{acc.name}</Text>
+                                                </Pressable>
+                                            ))}
+                                        </ScrollView>
+                                    </View>
+                                </View>
+                            )}
                         </View>
 
                         <View style={styles.fixedToggleWrapper}>
@@ -382,7 +435,11 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                     </ScrollView>
 
                     <View style={styles.footer}>
-                        <View style={[styles.saveButtonContainer, type === 'EXPENSE' ? styles.bgExpense : styles.bgIncome, loading && styles.loadingOpacity]}>
+                        <View style={[
+                            styles.saveButtonContainer,
+                            type === 'EXPENSE' ? styles.bgExpense : type === 'INCOME' ? styles.bgIncome : styles.bgTransfer,
+                            loading && styles.loadingOpacity
+                        ]}>
                             <Pressable
                                 onPress={handleSave}
                                 disabled={loading}
@@ -393,7 +450,9 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                                     <ActivityIndicator color="white" />
                                 ) : (
                                     <Text style={styles.saveButtonText}>
-                                        {transactionToEdit ? 'Salvar Alterações' : `Confirmar ${type === 'EXPENSE' ? 'Despesa' : 'Receita'}`}
+                                        {transactionToEdit ? 'Salvar Alterações' :
+                                            type === 'TRANSFER' ? 'Confirmar Transferência' :
+                                                `Confirmar ${type === 'EXPENSE' ? 'Despesa' : 'Receita'}`}
                                     </Text>
                                 )}
                             </Pressable>
@@ -482,6 +541,7 @@ const styles = StyleSheet.create({
     },
     textExpense: { color: '#e11d48' },
     textIncome: { color: '#059669' },
+    textTransfer: { color: '#0284c7' },
     textInactive: { color: '#64748b' },
     inputSection: {
         gap: 4,
@@ -629,6 +689,10 @@ const styles = StyleSheet.create({
     bgIncome: {
         backgroundColor: '#10b981',
         shadowColor: '#a7f3d0',
+    },
+    bgTransfer: {
+        backgroundColor: '#0ea5e9',
+        shadowColor: '#bae6fd',
     },
     saveButton: {
         width: '100%',
@@ -792,6 +856,10 @@ const styles = StyleSheet.create({
     smallChipActivePurple: {
         backgroundColor: '#9333ea',
         borderColor: '#9333ea',
+    },
+    smallChipActiveGreen: {
+        backgroundColor: '#10b981',
+        borderColor: '#10b981',
     },
     smallChipText: {
         fontSize: 12,

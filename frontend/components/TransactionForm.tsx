@@ -28,6 +28,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
   // New States
   const [accountId, setAccountId] = useState('');
+  const [destinationAccountId, setDestinationAccountId] = useState('');
   const [creditCardId, setCreditCardId] = useState('');
 
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -108,13 +109,25 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
     if (!description || isNaN(numericAmount) || numericAmount <= 0) return;
 
+    if (type === 'TRANSFER') {
+      if (!accountId || !destinationAccountId) {
+        alert('Selecione as contas de origem e destino.');
+        return;
+      }
+      if (accountId === destinationAccountId) {
+        alert('A conta de origem e destino não podem ser iguais.');
+        return;
+      }
+    }
+
     const transactionData = {
       description,
       amount: numericAmount,
       type,
-      categoryId: categoryId || undefined,
+      categoryId: type === 'TRANSFER' ? undefined : (categoryId || undefined),
       accountId: accountId || undefined,
-      creditCardId: creditCardId || undefined,
+      destinationAccountId: type === 'TRANSFER' ? (destinationAccountId || undefined) : undefined,
+      creditCardId: type === 'TRANSFER' ? undefined : (creditCardId || undefined),
       date: new Date(date).toISOString(),
       isFixed
     };
@@ -162,6 +175,13 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             >
               Receita
             </button>
+            <button
+              type="button"
+              onClick={() => setType('TRANSFER')}
+              className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'TRANSFER' ? 'bg-white text-sky-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Transf.
+            </button>
           </div>
 
           <div className="space-y-1.5">
@@ -203,79 +223,81 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
           {/* New fields: Category, Account and Card */}
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Categoria (Opcional)</label>
-              <div className="relative">
-                <select
-                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                >
-                  <option value="">Nenhuma / Outros</option>
-                  {categories.filter(c => c.type === 'INCOME').length > 0 && type === 'INCOME' && (
-                    <optgroup label="Entradas (Rendas)">
-                      {categories.filter(c => c.type === 'INCOME').map(c => (
-                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                      ))}
-                    </optgroup>
-                  )}
-
-                  {type === 'EXPENSE' && (
-                    <>
-                      <optgroup label="Necessidades (Essencial)">
-                        {categories.filter(c =>
-                          ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
-                            .includes(c.name)
-                        ).map(c => (
+            {type !== 'TRANSFER' && (
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Categoria (Opcional)</label>
+                <div className="relative">
+                  <select
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                  >
+                    <option value="">Nenhuma / Outros</option>
+                    {categories.filter(c => c.type === 'INCOME').length > 0 && type === 'INCOME' && (
+                      <optgroup label="Entradas (Rendas)">
+                        {categories.filter(c => c.type === 'INCOME').map(c => (
                           <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                         ))}
                       </optgroup>
+                    )}
 
-                      <optgroup label="Desejos (Estilo de Vida)">
+                    {type === 'EXPENSE' && (
+                      <>
+                        <optgroup label="Necessidades (Essencial)">
+                          {categories.filter(c =>
+                            ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
+                              .includes(c.name)
+                          ).map(c => (
+                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                          ))}
+                        </optgroup>
+
+                        <optgroup label="Desejos (Estilo de Vida)">
+                          {categories.filter(c =>
+                            ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens']
+                              .includes(c.name)
+                          ).map(c => (
+                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                          ))}
+                        </optgroup>
+
+                        <optgroup label="Objetivos (Quitação e Reserva)">
+                          {categories.filter(c =>
+                            ['Aplicações / Poupança', 'Pagamento de Dívidas']
+                              .includes(c.name)
+                          ).map(c => (
+                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                          ))}
+                        </optgroup>
+
                         {categories.filter(c =>
-                          ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens']
-                            .includes(c.name)
-                        ).map(c => (
-                          <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                        ))}
-                      </optgroup>
-
-                      <optgroup label="Objetivos (Quitação e Reserva)">
-                        {categories.filter(c =>
-                          ['Aplicações / Poupança', 'Pagamento de Dívidas']
-                            .includes(c.name)
-                        ).map(c => (
-                          <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                        ))}
-                      </optgroup>
-
-                      {categories.filter(c =>
-                        !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
-                          'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens',
-                          'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
-                      ).length > 0 && (
-                          <optgroup label="Outras Despesas">
-                            {categories.filter(c =>
-                              !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
-                                'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens',
-                                'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
-                            ).map(c => (
-                              <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                            ))}
-                          </optgroup>
-                        )}
-                    </>
-                  )}
-                </select>
-                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                  <i data-lucide="chevron-down" className="w-5 h-5"></i>
+                          !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
+                            'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens',
+                            'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
+                        ).length > 0 && (
+                            <optgroup label="Outras Despesas">
+                              {categories.filter(c =>
+                                !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
+                                  'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens',
+                                  'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
+                              ).map(c => (
+                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                              ))}
+                            </optgroup>
+                          )}
+                      </>
+                    )}
+                  </select>
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <i data-lucide="chevron-down" className="w-5 h-5"></i>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Conta Financeira</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{type === 'TRANSFER' ? 'Conta de Origem' : 'Conta Financeira'}</label>
                 <div className="relative">
                   <select
                     required
@@ -295,27 +317,43 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cartão de Crédito</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  {type === 'TRANSFER' ? 'Conta de Destino' : 'Cartão de Crédito'}
+                </label>
                 <div className="relative">
-                  <select
-                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
-                    value={creditCardId}
-                    onChange={(e) => {
-                      setCreditCardId(e.target.value);
-                      if (e.target.value) {
-                        // auto map account of credit card when selected
-                        const selectedCard = creditCards.find(c => c.id === e.target.value);
-                        if (selectedCard && selectedCard.accountId) {
-                          setAccountId(selectedCard.accountId);
+                  {type === 'TRANSFER' ? (
+                    <select
+                      required
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                      value={destinationAccountId}
+                      onChange={(e) => setDestinationAccountId(e.target.value)}
+                    >
+                      <option value="" disabled>Selecione...</option>
+                      {accounts.map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                      value={creditCardId}
+                      onChange={(e) => {
+                        setCreditCardId(e.target.value);
+                        if (e.target.value) {
+                          // auto map account of credit card when selected
+                          const selectedCard = creditCards.find(c => c.id === e.target.value);
+                          if (selectedCard && selectedCard.accountId) {
+                            setAccountId(selectedCard.accountId);
+                          }
                         }
-                      }
-                    }}
-                  >
-                    <option value="">Nenhum (Débito)</option>
-                    {creditCards.map(card => (
-                      <option key={card.id} value={card.id}>{card.name}</option>
-                    ))}
-                  </select>
+                      }}
+                    >
+                      <option value="">Nenhum (Débito)</option>
+                      {creditCards.map(card => (
+                        <option key={card.id} value={card.id}>{card.name}</option>
+                      ))}
+                    </select>
+                  )}
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                     <i data-lucide="chevron-down" className="w-4 h-4"></i>
                   </div>
@@ -336,9 +374,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
           <button
             type="submit"
-            className={`w-full py-4 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] mt-4 ${type === 'EXPENSE' ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20'}`}
+            className={`w-full py-4 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] mt-4 ${type === 'EXPENSE' ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20' : type === 'INCOME' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20' : 'bg-sky-500 hover:bg-sky-600 shadow-sky-500/20'}`}
           >
-            {editingTransaction ? 'Salvar Alterações' : `Confirmar ${type === 'EXPENSE' ? 'Despesa' : 'Receita'}`}
+            {editingTransaction ? 'Salvar Alterações' :
+              type === 'TRANSFER' ? 'Confirmar Transferência' :
+                `Confirmar ${type === 'EXPENSE' ? 'Despesa' : 'Receita'}`}
           </button>
         </form>
       </div>

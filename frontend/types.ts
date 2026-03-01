@@ -1,4 +1,4 @@
-export type TransactionType = 'INCOME' | 'EXPENSE';
+export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER';
 
 export interface Category {
   id: string;
@@ -37,6 +37,7 @@ export interface Transaction {
   categoryLegacy?: string;
   accountId?: string;
   account?: Account;
+  destinationAccountId?: string;
   creditCardId?: string;
   creditCard?: CreditCard;
 }
