@@ -1,72 +1,183 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Modal, SafeAreaView, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useMonth } from '../context/MonthContext';
 import * as Haptics from 'expo-haptics';
 
+const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
 export const MonthSelector = () => {
-    const { selectedDate, changeMonth } = useMonth();
+    const { selectedDate, setDate } = useMonth();
+    const [modalVisible, setModalVisible] = useState(false);
+    const [tempYear, setTempYear] = useState(selectedDate.getFullYear());
 
-    const formattedDate = selectedDate.toLocaleDateString('pt-BR', {
-        month: 'long',
-        year: 'numeric'
-    });
+    const handleOpen = () => {
+        setTempYear(selectedDate.getFullYear());
+        setModalVisible(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    };
 
-    // Capitalize first letter
-    const displayDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+    const handleSelectMonth = (monthIndex: number) => {
+        const newDate = new Date(tempYear, monthIndex, 1);
+        setDate(newDate);
+        setModalVisible(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    };
+
+    // Pega o nome do mês e ano para mostrar ao lado do ícone, só pra não ficar totalmente perdido sem contexto.
+    // Mas o botão todo é enxuto em forma de ícone ou pílula.
+    const monthName = selectedDate.toLocaleDateString('pt-BR', { month: 'short' });
+    const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
     return (
-        <View style={styles.container}>
-            <View style={styles.buttonWrapper}>
-                <Pressable
-                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); changeMonth(-1); }}
-                    android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: true, radius: 24 }}
-                    style={styles.navButton}
-                >
-                    <MaterialIcons name="chevron-left" size={24} color="#64748b" />
-                </Pressable>
-            </View>
+        <>
+            <Pressable
+                onPress={handleOpen}
+                android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: false }}
+                style={styles.iconButton}
+            >
+                <MaterialIcons name="calendar-month" size={24} color="#4f46e5" />
+                <Text style={styles.iconButtonText}>{capitalizedMonth}, {selectedDate.getFullYear()}</Text>
+            </Pressable>
 
-            <Text style={styles.dateText}>
-                {displayDate}
-            </Text>
+            <Modal
+                visible={modalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <TouchableOpacity onPress={() => setTempYear(y => y - 1)} style={styles.yearBtn}>
+                                <MaterialIcons name="chevron-left" size={28} color="#64748b" />
+                            </TouchableOpacity>
+                            <Text style={styles.yearText}>{tempYear}</Text>
+                            <TouchableOpacity onPress={() => setTempYear(y => y + 1)} style={styles.yearBtn}>
+                                <MaterialIcons name="chevron-right" size={28} color="#64748b" />
+                            </TouchableOpacity>
+                        </View>
 
-            <View style={styles.buttonWrapper}>
-                <Pressable
-                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); changeMonth(1); }}
-                    android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: true, radius: 24 }}
-                    style={styles.navButton}
-                >
-                    <MaterialIcons name="chevron-right" size={24} color="#64748b" />
-                </Pressable>
-            </View>
-        </View>
+                        <View style={styles.monthsGrid}>
+                            {MONTHS.map((m, index) => {
+                                const isSelected = selectedDate.getMonth() === index && selectedDate.getFullYear() === tempYear;
+                                return (
+                                    <TouchableOpacity
+                                        key={m}
+                                        onPress={() => handleSelectMonth(index)}
+                                        style={[
+                                            styles.monthCell,
+                                            isSelected && styles.monthCellSelected
+                                        ]}
+                                    >
+                                        <Text style={[
+                                            styles.monthCellText,
+                                            isSelected && styles.monthCellTextSelected
+                                        ]}>
+                                            {m}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+
+                        <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
+                            <Text style={styles.closeBtnText}>Cancelar</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+        </>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    iconButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f1f5f9',
-        borderRadius: 999,
-        paddingHorizontal: 16,
+        backgroundColor: '#e0e7ff', // Fundo clarinho pra destacar o roxo
+        borderRadius: 12,
+        paddingHorizontal: 12,
         paddingVertical: 8,
         alignSelf: 'flex-start',
-        marginTop: 4,
+        gap: 6
     },
-    buttonWrapper: {
-        borderRadius: 999,
-        overflow: 'hidden',
-    },
-    navButton: {
-        padding: 4,
-    },
-    dateText: {
-        marginHorizontal: 12,
+    iconButtonText: {
+        color: '#4338ca',
         fontWeight: 'bold',
-        color: '#334155',
-        textAlign: 'center',
+        fontSize: 14,
     },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(15, 23, 42, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderRadius: 24,
+        padding: 24,
+        width: '100%',
+        maxWidth: 340,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    yearBtn: {
+        padding: 8,
+        backgroundColor: '#f1f5f9',
+        borderRadius: 12,
+    },
+    yearText: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: '#1e293b',
+    },
+    monthsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    monthCell: {
+        width: '30%',
+        aspectRatio: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 16,
+        backgroundColor: '#f8fafc',
+    },
+    monthCellSelected: {
+        backgroundColor: '#4f46e5',
+    },
+    monthCellText: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#64748b',
+    },
+    monthCellTextSelected: {
+        color: 'white',
+    },
+    closeBtn: {
+        marginTop: 24,
+        padding: 14,
+        alignItems: 'center',
+        backgroundColor: '#f1f5f9',
+        borderRadius: 16,
+    },
+    closeBtnText: {
+        fontWeight: '700',
+        color: '#475569',
+        fontSize: 15,
+    }
 });

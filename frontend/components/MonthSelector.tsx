@@ -1,44 +1,89 @@
-import React, { useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useMonth } from '../context/MonthContext';
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+
+const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 export const MonthSelector: React.FC = () => {
-    const { selectedDate, changeMonth } = useMonth();
+    const { selectedDate, setDate } = useMonth();
+    const [isOpen, setIsOpen] = useState(false);
+    const [tempYear, setTempYear] = useState(selectedDate.getFullYear());
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const formattedDate = selectedDate.toLocaleDateString('pt-BR', {
-        month: 'long',
-        year: 'numeric'
-    });
-
-    const displayDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
-
-    // Refresh lucide icons when component renders to ensure chevrons appear
+    // Fechar ao clicar fora
     useEffect(() => {
-        // @ts-ignore
-        if (window.lucide) {
-            // @ts-ignore
-            window.lucide.createIcons();
-        }
-    }, [selectedDate]);
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSelectMonth = (monthIndex: number) => {
+        setDate(new Date(tempYear, monthIndex, 1));
+        setIsOpen(false);
+    };
+
+    const monthName = selectedDate.toLocaleDateString('pt-BR', { month: 'short' });
+    const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
     return (
-        <div className="flex items-center justify-center bg-slate-100 rounded-full px-3 py-1.5 md:px-4 md:py-2 w-fit">
+        <div className="relative" ref={dropdownRef}>
             <button
-                onClick={() => changeMonth(-1)}
-                className="p-1 hover:bg-slate-200 rounded-full transition-colors active:scale-95 text-slate-500 hover:text-indigo-600"
+                onClick={() => {
+                    setTempYear(selectedDate.getFullYear());
+                    setIsOpen(!isOpen);
+                }}
+                className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl px-3 py-2 md:px-4 md:py-2 w-fit transition-colors"
+                title="Escolher Mês"
             >
-                <i data-lucide="chevron-left" className="w-4 h-4 md:w-5 md:h-5"></i>
+                <CalendarDays className="w-4 h-4 md:w-5 md:h-5 text-indigo-500" />
+                <span className="font-bold text-xs md:text-sm">
+                    {capitalizedMonth}, {selectedDate.getFullYear()}
+                </span>
             </button>
 
-            <span className="mx-2 md:mx-4 font-bold text-slate-700 min-w-[110px] md:min-w-[130px] text-center text-xs md:text-sm capitalize">
-                {displayDate}
-            </span>
+            {isOpen && (
+                <div className="absolute top-12 left-0 z-50 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-4 w-72 animate-in fade-in slide-in-from-top-2">
+                    {/* Header: Troca de Ano */}
+                    <div className="flex justify-between items-center mb-4">
+                        <button
+                            onClick={() => setTempYear(y => y - 1)}
+                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <span className="font-black text-slate-800 text-lg">{tempYear}</span>
+                        <button
+                            onClick={() => setTempYear(y => y + 1)}
+                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+                        >
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
+                    </div>
 
-            <button
-                onClick={() => changeMonth(1)}
-                className="p-1 hover:bg-slate-200 rounded-full transition-colors active:scale-95 text-slate-500 hover:text-indigo-600"
-            >
-                <i data-lucide="chevron-right" className="w-4 h-4 md:w-5 md:h-5"></i>
-            </button>
+                    {/* Grade de Meses */}
+                    <div className="grid grid-cols-3 gap-2">
+                        {MONTHS.map((m, index) => {
+                            const isSelected = selectedDate.getMonth() === index && selectedDate.getFullYear() === tempYear;
+                            return (
+                                <button
+                                    key={m}
+                                    onClick={() => handleSelectMonth(index)}
+                                    className={`py-2 rounded-xl text-sm font-bold transition-all ${isSelected
+                                            ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
+                                            : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-indigo-600'
+                                        }`}
+                                >
+                                    {m}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
