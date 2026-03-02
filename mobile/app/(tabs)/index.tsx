@@ -14,7 +14,6 @@ import { MonthSelector } from '../../components/MonthSelector';
 import TransactionModal from '../../components/TransactionModal';
 import { MonthlyBarChart } from '../../components/MonthlyBarChart';
 import { AiInsightsWidget } from '../../components/AiInsightsWidget';
-import { AiChatWidget } from '../../components/AiChatWidget';
 import { ImportModal } from '../../components/ImportModal';
 
 export default function DashboardScreen() {
@@ -346,7 +345,7 @@ export default function DashboardScreen() {
                 categories={categories}
             />
 
-            <AiChatWidget />
+
         </View>
     );
 }
