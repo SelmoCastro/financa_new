@@ -52,6 +52,20 @@ export class TransactionsService {
   async validateImport(transactionsData: any[], userId: string) {
     if (!transactionsData || transactionsData.length === 0) return { valid: [], duplicateFitIds: [] };
 
+    // Filtro: Remove entradas de saldo OFX que não são transações reais
+    const BALANCE_KEYWORDS = [
+      'saldo do dia', 'saldo anterior', 'saldo atual', 'saldo devedor',
+      'saldo em conta', 'opening balance', 'closing balance', 'saldo inicial', 'saldo final'
+    ];
+    transactionsData = transactionsData.filter(t => {
+      const desc = (t.description || '').toLowerCase().trim();
+      const isBalance = BALANCE_KEYWORDS.some(kw => desc.includes(kw));
+      const isInvalidDate = t.date && new Date(t.date).getFullYear() < 2000;
+      return !isBalance && !isInvalidDate;
+    });
+
+    if (transactionsData.length === 0) return { valid: [], duplicateFitIds: [] };
+
     // 0. Busca categorias do usuário para alimentar a IA
     const userCategories = await this.getUserCategories(userId);
     const categoryNames = userCategories.map(c => c.name);

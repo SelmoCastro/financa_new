@@ -82,6 +82,22 @@ export async function parseOFX(content: string): Promise<ParsedOFXTransaction[]>
             finalFitId = await generateSha256(fallBackString);
         }
 
+        // ── Filtro: Ignora entradas que são SALDOS e não transações reais ──
+        const BALANCE_KEYWORDS = [
+            'saldo do dia', 'saldo anterior', 'saldo atual', 'saldo devedor',
+            'saldo em conta', 'balance', 'opening balance', 'closing balance',
+            'saldo inicial', 'saldo final'
+        ];
+        const descLower = rawDescription.toLowerCase().trim();
+        const isBalanceEntry = BALANCE_KEYWORDS.some(kw => descLower.includes(kw));
+
+        // Também ignora datas claramente inválidas (ex: ano 1902 que aparece em alguns OFX como placeholder)
+        const isInvalidDate = dateObj.getFullYear() < 2000;
+
+        if (isBalanceEntry || isInvalidDate) {
+            continue;
+        }
+
         transactions.push({
             fitId: finalFitId,
             date: dateObj,
