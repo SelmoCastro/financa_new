@@ -8,6 +8,7 @@ const API_URL = 'https://financa-new-api.vercel.app/v1'; // Production Vercel UR
 
 const api = axios.create({
     baseURL: API_URL,
+    timeout: 60000, // 60s timeout para processamentos de IA longos
 });
 
 api.interceptors.request.use(async (config) => {

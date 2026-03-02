@@ -121,8 +121,14 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
             // Extrair nome do arquivo da URI
             const filename = asset.uri.split('/').pop() || 'image.jpg';
 
+            // Detecta o mimetype real pela extensão para não confundir o OpenRouter API
+            const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
+            let mimeType = 'image/jpeg';
+            if (ext === 'png') mimeType = 'image/png';
+            if (ext === 'webp') mimeType = 'image/webp';
+
             setFileInfo({ name: filename, uri: asset.uri, type: 'receipt' });
-            processFile(asset.uri, filename, 'image/jpeg', 'receipt');
+            processFile(asset.uri, filename, mimeType, 'receipt');
 
         } catch (err) {
             Alert.alert('Erro', 'Falha ao selecionar imagem');
