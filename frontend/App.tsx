@@ -17,7 +17,7 @@ import { DataProvider, useData } from './context/DataProvider';
 import { MonthSelector } from './components/MonthSelector';
 import { Transaction } from './types';
 import { TransactionForm } from './components/TransactionForm';
-import { ChatWidget } from './components/ChatWidget';
+
 import { getYearMonth } from './utils/dateUtils';
 import { UploadCloud, Plus, ChevronLeft, ChevronRight, EyeOff, Eye, CheckSquare, Image, FileSpreadsheet } from 'lucide-react';
 
@@ -221,7 +221,7 @@ const AppContent: React.FC = () => {
       )}
 
       {/* AI Assistant Chat */}
-      {!isLoading && <ChatWidget />}
+
     </div>
   );
 };
