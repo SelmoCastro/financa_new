@@ -150,7 +150,7 @@ const AppContent: React.FC = () => {
               )}
             </h2>
             {activeTab === 'dashboard' && (
-              <div className="mt-3 animate-in fade-in duration-300 w-full overflow-x-auto pb-1">
+              <div className="mt-3 animate-in fade-in duration-300 z-50">
                 <MonthSelector />
               </div>
             )}
