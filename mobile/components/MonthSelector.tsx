@@ -33,11 +33,10 @@ export const MonthSelector = () => {
         <>
             <Pressable
                 onPress={handleOpen}
-                android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: false }}
+                android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: true }}
                 style={styles.iconButton}
             >
                 <MaterialIcons name="calendar-month" size={24} color="#4f46e5" />
-                <Text style={styles.iconButtonText}>{capitalizedMonth}, {selectedDate.getFullYear()}</Text>
             </Pressable>
 
             <Modal
@@ -93,15 +92,12 @@ export const MonthSelector = () => {
 
 const styles = StyleSheet.create({
     iconButton: {
-        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#e0e7ff', // Fundo clarinho pra destacar o roxo
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        backgroundColor: '#e0e7ff',
+        borderRadius: 999,
+        padding: 10,
         alignSelf: 'flex-start',
-        gap: 6
     },
     iconButtonText: {
         color: '#4338ca',

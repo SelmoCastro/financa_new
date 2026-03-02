@@ -36,13 +36,10 @@ export const MonthSelector: React.FC = () => {
                     setTempYear(selectedDate.getFullYear());
                     setIsOpen(!isOpen);
                 }}
-                className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl px-3 py-2 md:px-4 md:py-2 w-fit transition-colors"
+                className="flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl p-3 md:p-3.5 transition-colors shadow-sm"
                 title="Escolher Mês"
             >
-                <CalendarDays className="w-4 h-4 md:w-5 md:h-5 text-indigo-500" />
-                <span className="font-bold text-xs md:text-sm">
-                    {capitalizedMonth}, {selectedDate.getFullYear()}
-                </span>
+                <CalendarDays className="w-5 h-5 text-indigo-500" />
             </button>
 
             {isOpen && (
@@ -73,8 +70,8 @@ export const MonthSelector: React.FC = () => {
                                     key={m}
                                     onClick={() => handleSelectMonth(index)}
                                     className={`py-2 rounded-xl text-sm font-bold transition-all ${isSelected
-                                            ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
-                                            : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-indigo-600'
+                                        ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
+                                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-indigo-600'
                                         }`}
                                 >
                                     {m}
