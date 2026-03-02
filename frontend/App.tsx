@@ -133,7 +133,7 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       <div className={`flex-1 sidebar-transition ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pb-24 lg:pb-0`}>
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-4 md:px-8 py-4 md:py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 w-full max-w-[100vw] overflow-hidden">
+        <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-4 md:px-8 py-4 md:py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 w-full max-w-[100vw]">
           <div className="min-w-0 flex-1 w-full sm:w-auto">
             <p className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-0.5 truncate">Gestão Financeira</p>
             <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight capitalize truncate">
@@ -150,12 +150,12 @@ const AppContent: React.FC = () => {
               )}
             </h2>
             {activeTab === 'dashboard' && (
-              <div className="mt-3 animate-in fade-in duration-300 z-50">
+              <div className="mt-3 animate-in fade-in duration-300 relative z-[200]">
                 <MonthSelector />
               </div>
             )}
           </div>
-          <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-3 flex-wrap w-full sm:w-auto mt-2 sm:mt-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-3 flex-wrap w-full sm:w-auto mt-2 sm:mt-0 relative z-50">
             <a
               href="/Finanza_new.apk"
               download
