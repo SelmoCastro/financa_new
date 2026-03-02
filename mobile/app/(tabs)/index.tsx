@@ -152,32 +152,36 @@ export default function DashboardScreen() {
                         </View>
                     </View>
 
-                    {/* Main Row: Title & Add Button */}
+                    {/* Main Row: Title */}
                     <View style={styles.headerMainRow}>
                         <Text style={styles.titleText} numberOfLines={1}>Resumo Financeiro</Text>
-
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Pressable
-                                onPress={() => { setImportModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-                                android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
-                                className="bg-emerald-600 p-2 px-3 rounded-xl flex-row items-center gap-1 shadow-lg shadow-emerald-200"
-                            >
-                                <MaterialIcons name="file-upload" size={18} color="white" />
-                                <Text className="text-white font-bold text-xs uppercase"></Text>
-                            </Pressable>
-                            <Pressable
-                                onPress={() => { openModal('EXPENSE'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-                                android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
-                                style={styles.btnPrimary}
-                            >
-                                <MaterialIcons name="add" size={24} color="white" />
-                            </Pressable>
-                        </View>
                     </View>
 
                     {/* Bottom Row: Month Selector */}
                     <View style={styles.headerBottomRow}>
                         <MonthSelector />
+                    </View>
+
+                    {/* Quick Actions Row */}
+                    <View style={styles.quickActionsContainer}>
+                        <Pressable
+                            onPress={() => { openModal('EXPENSE'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                            android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                            style={[styles.quickActionBtn, styles.quickActionAdd]}
+                        >
+                            <MaterialIcons name="add-circle-outline" size={20} color="white" />
+                            <Text style={styles.quickActionTextLight}>Lançamento</Text>
+                        </Pressable>
+
+                        <Pressable
+                            onPress={() => { setImportModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                            android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
+                            style={[styles.quickActionBtn, styles.quickActionImport]}
+                        >
+                            <MaterialIcons name="document-scanner" size={20} color="white" />
+                            <Text style={styles.quickActionTextLight}>Importar (IA)</Text>
+                            <View style={styles.proBadge}><MaterialIcons name="auto-awesome" size={10} color="#059669" /></View>
+                        </Pressable>
                     </View>
 
                     {/* Cards Grid */}
@@ -417,4 +421,12 @@ const styles = StyleSheet.create({
     emptySubtitle: { fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 4 },
     rankBadge: { width: 20, height: 20, backgroundColor: '#f1f5f9', borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
     rankText: { fontSize: 11, fontWeight: '700', color: '#64748b' },
+
+    // Quick Actions
+    quickActionsContainer: { flexDirection: 'row', gap: 12, marginBottom: 20, marginTop: 4 },
+    quickActionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 16, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4, shadowOffset: { width: 0, height: 4 } },
+    quickActionAdd: { backgroundColor: '#4f46e5', shadowColor: '#4f46e5' },
+    quickActionImport: { backgroundColor: '#10b981', shadowColor: '#10b981' },
+    quickActionTextLight: { color: 'white', fontWeight: '800', fontSize: 14 },
+    proBadge: { backgroundColor: '#dcfce7', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 8, marginLeft: 2 },
 });
