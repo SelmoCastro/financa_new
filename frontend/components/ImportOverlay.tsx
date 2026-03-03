@@ -256,7 +256,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
     const rejectedCount = parsedTxs.filter(t => t.isPreviouslyRejected).length;
 
     return (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
             <div className={`bg-white rounded-[2rem] shadow-2xl w-full ${step === 2 ? 'max-w-4xl' : 'max-w-lg'} overflow-hidden animate-in zoom-in-95 duration-200 transition-all`}>
                 <div className="px-6 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
