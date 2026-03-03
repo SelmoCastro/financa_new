@@ -1,16 +1,17 @@
 
 import React from 'react';
 
-import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight, MessageSquareHeart } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  onOpenFeedback?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen, onOpenFeedback }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
     { id: 'accounts', label: 'Contas', icon: Wallet },
@@ -19,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'timeline', label: 'Linha do Tempo', icon: Clock },
     { id: 'fixed', label: 'Controle Fixos', icon: Anchor },
     { id: 'history', label: 'Extrato', icon: Receipt },
+    { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquareHeart },
   ];
 
   return (
@@ -79,7 +81,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
           </button>
 
           {isOpen && (
-            <div className="mt-4 text-center">
+            <div className="mt-4 text-center space-y-4">
+              <button
+                onClick={onOpenFeedback}
+                className="w-full py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
+              >
+                <MessageSquareHeart className="w-4 h-4" />
+                Deixar Feedback
+              </button>
               <p className="text-[10px] font-mono text-slate-600 opacity-50">v1.1.0</p>
             </div>
           )}
@@ -88,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
 
       {/* Mobile Nav */}
       <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg border-t border-slate-200 flex lg:hidden justify-start sm:justify-around items-center px-4 pb-6 pt-3 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] overflow-x-auto gap-2 min-h-[80px]">
-        {[...menuItems, { id: 'settings', label: 'Ajustes', icon: Settings }].map((item: any) => (
+        {menuItems.filter(i => i.id !== 'feedbacks').concat([{ id: 'settings', label: 'Ajustes', icon: Settings } as any]).map((item: any) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}

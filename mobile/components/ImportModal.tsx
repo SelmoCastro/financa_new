@@ -43,6 +43,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
     const [filterType, setFilterType] = useState<'ALL' | 'NEW' | 'REJECTED'>('ALL');
     const [duplicateIds, setDuplicateIds] = useState<string[]>([]);
     const [activeTxId, setActiveTxId] = useState<string | null>(null);
+    const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
 
     const getFilteredGroups = (type: 'INCOME' | 'EXPENSE') => {
         const groups: Record<string, any[]> = {
@@ -77,6 +78,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
             setFileInfo(null);
             setFilterType('ALL');
             setDuplicateIds([]);
+            setIsAccountDropdownOpen(false);
             if (accounts.length > 0 && !selectedAccountId) {
                 setSelectedAccountId(accounts[0].id);
             }
@@ -337,15 +339,48 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
                     </View>
                 ) : step === 1 ? (
                     <View style={styles.step1Container}>
-                        {/* Account Selector Dummy (For real app, use a picker) */}
-                        <Text style={styles.label}>Conta de Destino</Text>
-                        <View style={styles.accountSelector}>
-                            <Text style={styles.accountText}>
-                                {accounts.find(a => a.id === selectedAccountId)?.name || 'Selecione uma conta'}
-                            </Text>
+                        <View style={{ zIndex: isAccountDropdownOpen ? 999 : 1, position: 'relative' }}>
+                            <Text style={styles.label}>Conta de Destino</Text>
+                            <Pressable
+                                onPress={() => { setIsAccountDropdownOpen(!isAccountDropdownOpen); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                style={[styles.selectInput, isAccountDropdownOpen && styles.selectInputActive]}
+                            >
+                                <View style={styles.selectInputContent}>
+                                    <View style={styles.selectInputLabelRow}>
+                                        <MaterialIcons name="account-balance" size={18} color={selectedAccountId ? '#4f46e5' : '#94a3b8'} />
+                                        <Text style={[styles.selectInputText, !selectedAccountId && styles.selectInputPlaceholder]}>
+                                            {accounts.find(a => a.id === selectedAccountId)?.name || 'Selecione uma conta'}
+                                        </Text>
+                                    </View>
+                                    <MaterialIcons name={isAccountDropdownOpen ? "expand-less" : "expand-more"} size={20} color="#64748b" />
+                                </View>
+                            </Pressable>
+
+                            {isAccountDropdownOpen && (
+                                <View style={styles.accountDropdownContainer}>
+                                    <ScrollView style={styles.dropdownScroll} nestedScrollEnabled>
+                                        {accounts.map(acc => (
+                                            <Pressable
+                                                key={acc.id}
+                                                style={[styles.dropdownItem, selectedAccountId === acc.id && styles.dropdownItemActive]}
+                                                onPress={() => {
+                                                    setSelectedAccountId(acc.id);
+                                                    setIsAccountDropdownOpen(false);
+                                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                }}
+                                            >
+                                                <Text style={[styles.dropdownItemText, selectedAccountId === acc.id && styles.dropdownItemTextActive]}>
+                                                    {acc.name}
+                                                </Text>
+                                                {selectedAccountId === acc.id && <MaterialIcons name="check" size={16} color="#4f46e5" />}
+                                            </Pressable>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            )}
                         </View>
 
-                        <Text style={styles.subLabel}>Como você quer importar?</Text>
+                        <Text style={[styles.subLabel, { marginTop: isAccountDropdownOpen ? 180 : 16 }]}>Como você quer importar?</Text>
 
                         <Pressable style={styles.optionCard} onPress={handlePickDocument}>
                             <View style={styles.iconCircle}>
@@ -452,8 +487,6 @@ const styles = StyleSheet.create({
     step1Container: { padding: 24, gap: 16 },
     label: { fontSize: 14, fontWeight: '700', color: '#334155', marginBottom: 4 },
     subLabel: { fontSize: 14, fontWeight: '700', color: '#334155', marginTop: 16, marginBottom: 8 },
-    accountSelector: { backgroundColor: 'white', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0' },
-    accountText: { fontSize: 16, color: '#1e293b', fontWeight: '500' },
     optionCard: { flexDirection: 'row', backgroundColor: 'white', padding: 16, borderRadius: 20, alignItems: 'center', gap: 16, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
     iconCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#eef2ff', justifyContent: 'center', alignItems: 'center' },
     optionInfo: { flex: 1 },
@@ -518,6 +551,25 @@ const styles = StyleSheet.create({
         borderBottomRightRadius: 12,
         maxHeight: 200,
         zIndex: 1000,
+    },
+    accountDropdownContainer: {
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        borderTopWidth: 0,
+        borderBottomLeftRadius: 16,
+        borderBottomRightRadius: 16,
+        maxHeight: 200,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 999,
+        zIndex: 999,
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
     },
     dropdownScroll: {
         padding: 4,

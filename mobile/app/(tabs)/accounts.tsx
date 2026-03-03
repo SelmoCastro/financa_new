@@ -38,6 +38,15 @@ export default function AccountsScreen() {
     const [editType, setEditType] = useState('CHECKING');
     const [editBalance, setEditBalance] = useState('0,00');
 
+    // Cartão de Crédito
+    const [ccModal, setCcModal] = useState(false);
+    const [editCc, setEditCc] = useState<CreditCard | null>(null);
+    const [ccName, setCcName] = useState('');
+    const [ccLimit, setCcLimit] = useState('');
+    const [ccClosingDay, setCcClosingDay] = useState('');
+    const [ccDueDay, setCcDueDay] = useState('');
+    const [ccAccountId, setCcAccountId] = useState('');
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -122,6 +131,71 @@ export default function AccountsScreen() {
         );
     };
 
+    // ---- CARTÕES DE CRÉDITO ----
+    const openCreateCc = () => {
+        setEditCc(null);
+        setCcName(''); setCcLimit(''); setCcClosingDay(''); setCcDueDay(''); setCcAccountId('');
+        setCcModal(true);
+    };
+
+    const openEditCc = (card: CreditCard) => {
+        setEditCc(card);
+        setCcName(card.name);
+        setCcLimit(String(card.limit));
+        setCcClosingDay(String(card.closingDay));
+        setCcDueDay(String(card.dueDay));
+        setCcAccountId(card.accountId || '');
+        setCcModal(true);
+    };
+
+    const handleSaveCc = async () => {
+        if (!ccName.trim() || !ccLimit || !ccClosingDay || !ccDueDay) {
+            Alert.alert('Atenção', 'Preencha todos os campos do cartão.');
+            return;
+        }
+        setSaving(true);
+        try {
+            const payload = {
+                name: ccName.trim(),
+                limit: Number(ccLimit.replace(',', '.')),
+                closingDay: Number(ccClosingDay),
+                dueDay: Number(ccDueDay),
+                accountId: ccAccountId || null
+            };
+
+            if (editCc) {
+                await api.patch(`/credit-cards/${editCc.id}`, payload);
+            } else {
+                await api.post('/credit-cards', payload);
+            }
+            setCcModal(false);
+            await fetchData();
+        } catch {
+            Alert.alert('Erro', 'Não foi possível salvar o cartão.');
+        } finally { setSaving(false); }
+    };
+
+    const handleDeleteCc = (card: CreditCard) => {
+        Alert.alert(
+            'Excluir Cartão',
+            `Deseja excluir o cartão "${card.name}"? Esta ação não pode ser desfeita.`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Excluir', style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/credit-cards/${card.id}`);
+                            await fetchData();
+                        } catch {
+                            Alert.alert('Erro', 'Não foi possível excluir o cartão.');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
 
     return (
@@ -194,23 +268,50 @@ export default function AccountsScreen() {
 
                 {/* Cartões */}
                 <View className="px-6 mb-8">
-                    <Text className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Cartões de Crédito</Text>
+                    <View className="flex-row items-center justify-between mb-4">
+                        <Text className="text-sm font-black text-slate-400 uppercase tracking-widest">Cartões de Crédito</Text>
+                        <Pressable onPress={openCreateCc} hitSlop={10}>
+                            <MaterialIcons name="add-circle" size={24} color="#9333ea" />
+                        </Pressable>
+                    </View>
+
+                    {creditCards.length === 0 && !loading && (
+                        <Pressable onPress={openCreateCc} style={[styles.emptyCard, { borderColor: '#f3e8ff' }]}>
+                            <MaterialIcons name="credit-card" size={32} color="#d8b4fe" />
+                            <Text style={[styles.emptyText, { color: '#c084fc' }]}>Nenhum cartão. Toque para adicionar.</Text>
+                        </Pressable>
+                    )}
+
                     {creditCards.map(cc => (
-                        <View key={cc.id} className="bg-white p-5 rounded-2xl mb-3 border border-slate-100 flex-row justify-between items-center shadow-sm">
-                            <View className="flex-row items-center gap-4">
-                                <View className="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 items-center justify-center">
-                                    <MaterialIcons name="credit-card" size={24} color="#9333ea" />
+                        <View key={cc.id} className="bg-white p-5 rounded-2xl mb-3 border border-slate-100 shadow-sm">
+                            <View className="flex-row justify-between items-center">
+                                <View className="flex-row items-center gap-4">
+                                    <View className="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 items-center justify-center">
+                                        <MaterialIcons name="credit-card" size={24} color="#9333ea" />
+                                    </View>
+                                    <View>
+                                        <Text className="text-base font-bold text-slate-800">{cc.name}</Text>
+                                        <Text className="text-xs font-medium text-slate-400">Vence dia {cc.dueDay}</Text>
+                                    </View>
                                 </View>
-                                <View>
-                                    <Text className="text-base font-bold text-slate-800">{cc.name}</Text>
-                                    <Text className="text-xs font-medium text-slate-400">Vence dia {cc.dueDay}</Text>
+                                <View className="items-end">
+                                    <Text className="text-xs font-bold text-slate-400 uppercase">Limite</Text>
+                                    <Text className="text-base font-black text-slate-800">
+                                        R$ {cc.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </Text>
                                 </View>
                             </View>
-                            <View className="items-end">
-                                <Text className="text-xs font-bold text-slate-400 uppercase">Limite</Text>
-                                <Text className="text-base font-black text-slate-800">
-                                    R$ {cc.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </Text>
+
+                            {/* Ações Cartão */}
+                            <View style={styles.actionRow}>
+                                <Pressable onPress={() => openEditCc(cc)} style={styles.btnEdit} android_ripple={{ color: '#e0e7ff' }}>
+                                    <MaterialIcons name="edit" size={16} color="#4f46e5" />
+                                    <Text style={styles.btnEditText}>Editar</Text>
+                                </Pressable>
+                                <Pressable onPress={() => handleDeleteCc(cc)} style={styles.btnDelete} android_ripple={{ color: '#fef2f2' }}>
+                                    <MaterialIcons name="delete-outline" size={16} color="#ef4444" />
+                                    <Text style={styles.btnDeleteText}>Excluir</Text>
+                                </Pressable>
                             </View>
                         </View>
                     ))}
@@ -240,6 +341,21 @@ export default function AccountsScreen() {
                 saving={saving}
                 onCancel={() => setEditModal(false)}
                 onSave={handleEdit}
+            />
+
+            {/* ---- Modal CARTÃO ---- */}
+            <CreditCardFormModal
+                visible={ccModal}
+                title={editCc ? "Editar Cartão" : "Novo Cartão"}
+                name={ccName} setName={setCcName}
+                limit={ccLimit} setLimit={setCcLimit}
+                closingDay={ccClosingDay} setClosingDay={setCcClosingDay}
+                dueDay={ccDueDay} setDueDay={setCcDueDay}
+                accountId={ccAccountId} setAccountId={setCcAccountId}
+                accounts={accounts}
+                saving={saving}
+                onCancel={() => setCcModal(false)}
+                onSave={handleSaveCc}
             />
         </>
     );
@@ -292,6 +408,96 @@ function AccountFormModal({ visible, title, name, setName, type, setType, balanc
                             <Text style={styles.btnCancelText}>Cancelar</Text>
                         </Pressable>
                         <Pressable onPress={onSave} style={styles.btnSave} disabled={saving}>
+                            {saving ? <ActivityIndicator color="white" size="small" /> : <Text style={styles.btnSaveText}>Salvar</Text>}
+                        </Pressable>
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
+        </Modal>
+    );
+}
+
+// ---------- Sub-componente do modal de Cartão ----------
+function CreditCardFormModal({
+    visible, title, accounts,
+    name, setName,
+    limit, setLimit,
+    closingDay, setClosingDay,
+    dueDay, setDueDay,
+    accountId, setAccountId,
+    saving, onCancel, onSave
+}: {
+    visible: boolean; title: string; accounts: Account[];
+    name: string; setName: (v: string) => void;
+    limit: string; setLimit: (v: string) => void;
+    closingDay: string; setClosingDay: (v: string) => void;
+    dueDay: string; setDueDay: (v: string) => void;
+    accountId: string; setAccountId: (v: string) => void;
+    saving: boolean; onCancel: () => void; onSave: () => void;
+}) {
+    return (
+        <Modal visible={visible} animationType="slide" transparent onRequestClose={onCancel}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+                <View style={styles.sheet}>
+                    <View style={styles.handle} />
+                    <Text style={styles.sheetTitle}>{title}</Text>
+
+                    <Text style={styles.label}>Nome do Cartão</Text>
+                    <TextInput style={styles.input} placeholder="Ex: Nubank, Itaú..." placeholderTextColor="#94a3b8" value={name} onChangeText={setName} />
+
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.label}>Limite Mensal</Text>
+                            <TextInput
+                                style={styles.input} placeholder="0.00" placeholderTextColor="#94a3b8"
+                                keyboardType="numeric" value={limit} onChangeText={setLimit}
+                            />
+                        </View>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.label}>Corte</Text>
+                            <TextInput
+                                style={styles.input} placeholder="Dia" placeholderTextColor="#94a3b8"
+                                keyboardType="numeric" value={closingDay} onChangeText={setClosingDay}
+                            />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.label}>Venc.</Text>
+                            <TextInput
+                                style={styles.input} placeholder="Dia" placeholderTextColor="#94a3b8"
+                                keyboardType="numeric" value={dueDay} onChangeText={setDueDay}
+                            />
+                        </View>
+                    </View>
+
+                    <Text style={styles.label}>Conta para Débito (Opcional)</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                            <Pressable
+                                onPress={() => setAccountId('')}
+                                style={[styles.typeChip, !accountId && styles.typeChipActive]}
+                            >
+                                <Text style={[styles.typeChipText, !accountId && styles.typeChipTextActive]}>Nenhuma</Text>
+                            </Pressable>
+                            {accounts.map(acc => (
+                                <Pressable
+                                    key={acc.id}
+                                    onPress={() => setAccountId(acc.id)}
+                                    style={[styles.typeChip, accountId === acc.id && styles.typeChipActive]}
+                                >
+                                    <Text style={[styles.typeChipText, accountId === acc.id && styles.typeChipTextActive]}>{acc.name}</Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </ScrollView>
+
+                    <View style={styles.row}>
+                        <Pressable onPress={onCancel} style={styles.btnCancel}>
+                            <Text style={styles.btnCancelText}>Cancelar</Text>
+                        </Pressable>
+                        <Pressable onPress={onSave} style={[styles.btnSave, { backgroundColor: '#9333ea' }]} disabled={saving}>
                             {saving ? <ActivityIndicator color="white" size="small" /> : <Text style={styles.btnSaveText}>Salvar</Text>}
                         </Pressable>
                     </View>

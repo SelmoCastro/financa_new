@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { X, CreditCard as CreditCardIcon } from 'lucide-react';
-import { Account } from '../types';
+import { Account, CreditCard } from '../types';
 import api from '../services/api';
 
 interface CreditCardFormProps {
     accounts: Account[];
+    cardToEdit?: CreditCard | null;
     onSave: () => void;
     onClose: () => void;
 }
 
-export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, onSave, onClose }) => {
-    const [name, setName] = useState('');
-    const [limit, setLimit] = useState('');
-    const [closingDay, setClosingDay] = useState('');
-    const [dueDay, setDueDay] = useState('');
-    const [accountId, setAccountId] = useState('');
+export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardToEdit, onSave, onClose }) => {
+    const [name, setName] = useState(cardToEdit?.name || '');
+    const [limit, setLimit] = useState(cardToEdit?.limit ? String(cardToEdit.limit) : '');
+    const [closingDay, setClosingDay] = useState(cardToEdit?.closingDay ? String(cardToEdit.closingDay) : '');
+    const [dueDay, setDueDay] = useState(cardToEdit?.dueDay ? String(cardToEdit.dueDay) : '');
+    const [accountId, setAccountId] = useState(cardToEdit?.accountId || '');
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -32,13 +33,19 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, onSave
         setIsLoading(true);
 
         try {
-            await api.post('/credit-cards', {
+            const dataPayload = {
                 name,
                 limit: Number(limit),
                 closingDay: Number(closingDay),
                 dueDay: Number(dueDay),
                 accountId
-            });
+            };
+
+            if (cardToEdit) {
+                await api.patch(`/credit-cards/${cardToEdit.id}`, dataPayload);
+            } else {
+                await api.post('/credit-cards', dataPayload);
+            }
             onSave();
         } catch (error) {
             console.error('Erro ao salvar cartão', error);
@@ -56,7 +63,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, onSave
                         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
                             <CreditCardIcon className="w-5 h-5" />
                         </div>
-                        Adicionar Cartão
+                        {cardToEdit ? 'Editar Cartão' : 'Adicionar Cartão'}
                     </h3>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                         <X className="w-5 h-5" />

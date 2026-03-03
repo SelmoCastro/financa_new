@@ -13,6 +13,7 @@ import { GoalsModule } from './goals/goals.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CreditCardsModule } from './credit-cards/credit-cards.module';
+import { FeedbackModule } from './feedback/feedback.module';
 
 import { PrismaService } from './prisma/prisma.service';
 import { AiModule } from './ai/ai.module';
@@ -25,7 +26,7 @@ import { ReportsModule } from './reports/reports.module';
       ttl: 60000,
       limit: 100,
     }]),
-    UsersModule, AuthModule, PrismaModule, TransactionsModule, BudgetsModule, GoalsModule, AccountsModule, CategoriesModule, CreditCardsModule, AiModule, ReportsModule
+    UsersModule, AuthModule, PrismaModule, TransactionsModule, BudgetsModule, GoalsModule, AccountsModule, CategoriesModule, CreditCardsModule, AiModule, ReportsModule, FeedbackModule
   ],
   controllers: [AppController],
   providers: [

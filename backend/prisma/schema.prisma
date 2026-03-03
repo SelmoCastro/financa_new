@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -15,6 +15,7 @@ model User {
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isAdmin   Boolean  @default(false)
 
   transactions   Transaction[]
   budgets        Budget[]
@@ -23,6 +24,7 @@ model User {
   creditCards    CreditCard[]
   categories     Category[]
   importedFitIds ImportedFitId[]
+  feedbacks      Feedback[]
 }
 
 model Account {
@@ -112,7 +114,6 @@ model Transaction {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, fitId]) // Restrição primária de Anti-Double Entry
-
   @@index([userId])
   @@index([date])
   @@index([userId, date])
@@ -161,3 +162,15 @@ model ImportedFitId {
   @@index([userId])
 }
 
+model Feedback {
+  id        String   @id @default(uuid())
+  content   String
+  platform  String // 'WEB' ou 'MOBILE'
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+}
