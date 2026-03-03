@@ -17,7 +17,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
     const [isCardFormOpen, setIsCardFormOpen] = useState(false);
     const [isAccountFormOpen, setIsAccountFormOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const [openCardMenuId, setOpenCardMenuId] = useState<string | null>(null);
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+    const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
     const { addToast } = useToast();
 
     const fetchAccountsAndCards = async () => {
@@ -45,7 +47,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
     useEffect(() => {
         //@ts-ignore
         if (window.lucide) window.lucide.createIcons();
-    }, [accounts, creditCards, isCardFormOpen, isAccountFormOpen, openMenuId]);
+    }, [accounts, creditCards, isCardFormOpen, isAccountFormOpen, openMenuId, openCardMenuId]);
 
     const totalBalance = accounts.reduce((acc, curr) => acc + Number(curr.balance), 0);
 
@@ -55,8 +57,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
 
     const handleCardSaved = () => {
         setIsCardFormOpen(false);
+        setEditingCard(null);
         fetchAccountsAndCards();
-        addToast('Cartão de crédito salvo!', 'success');
+        addToast(editingCard ? 'Cartão atualizado!' : 'Cartão de crédito salvo!', 'success');
     };
 
     const handleAccountSaved = () => {
@@ -79,6 +82,19 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
         }
     };
 
+    const handleDeleteCard = async (id: string, name: string) => {
+        if (!confirm(`Tem certeza que deseja excluir o cartão '${name}'? Essa ação não pode ser desfeita.`)) return;
+        setOpenCardMenuId(null);
+        try {
+            await api.delete(`/credit-cards/${id}`);
+            addToast('Cartão excluído com sucesso!', 'success');
+            fetchAccountsAndCards();
+        } catch (error) {
+            console.error('Erro ao excluir cartão:', error);
+            addToast('Erro ao excluir o cartão.', 'error');
+        }
+    };
+
     if (isLoading) {
         return <div className="animate-pulse space-y-6">
             <div className="h-32 bg-slate-200 rounded-3xl" />
@@ -88,8 +104,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
 
     return (
         <div className="space-y-8 animate-in mt-4 fade-in duration-500">
-            {openMenuId && (
-                <div className="fixed inset-0 z-30" onClick={() => setOpenMenuId(null)}></div>
+            {(openMenuId || openCardMenuId) && (
+                <div className="fixed inset-0 z-30" onClick={() => { setOpenMenuId(null); setOpenCardMenuId(null); }}></div>
             )}
 
             {/* Resumo de Contas */}
@@ -208,7 +224,40 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                             Débito aut. na conta: {card.account?.name || 'Não associado'}
                                         </p>
                                     </div>
-                                    <i data-lucide="contactless-payment" className="w-8 h-8 text-white/50"></i>
+                                    <div className="flex items-center gap-2">
+                                        <i data-lucide="contactless-payment" className="w-8 h-8 text-white/50"></i>
+                                        <div className="relative z-40 ml-2">
+                                            <button
+                                                onClick={() => setOpenCardMenuId(openCardMenuId === card.id ? null : card.id)}
+                                                className="text-white/50 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+                                            >
+                                                <i data-lucide="more-vertical" className="w-5 h-5"></i>
+                                            </button>
+
+                                            {openCardMenuId === card.id && (
+                                                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl shadow-slate-900/50 border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingCard(card);
+                                                            setIsCardFormOpen(true);
+                                                            setOpenCardMenuId(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center gap-2"
+                                                    >
+                                                        <i data-lucide="edit-3" className="w-4 h-4"></i>
+                                                        Editar Cartão
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteCard(card.id, card.name)}
+                                                        className="w-full text-left px-4 py-3 text-sm font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center gap-2"
+                                                    >
+                                                        <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                        Excluir Cartão
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="flex justify-between items-end">
@@ -232,8 +281,12 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
             {isCardFormOpen && (
                 <CreditCardForm
                     accounts={accounts}
+                    cardToEdit={editingCard}
                     onSave={handleCardSaved}
-                    onClose={() => setIsCardFormOpen(false)}
+                    onClose={() => {
+                        setIsCardFormOpen(false);
+                        setEditingCard(null);
+                    }}
                 />
             )}
 

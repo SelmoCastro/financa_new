@@ -303,7 +303,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                         )}
 
                         {type !== 'TRANSFER' && (
-                            <View style={styles.inputSection}>
+                            <View style={[styles.inputSection, { zIndex: isCategoryOpen ? 999 : 1 }]}>
                                 <Text style={styles.sectionLabel}>Categoria</Text>
                                 <Pressable
                                     onPress={() => { setIsCategoryOpen(!isCategoryOpen); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
@@ -796,7 +796,12 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
-        elevation: 4,
+        elevation: 999,
+        zIndex: 999,
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
     },
     dropdownScroll: {
         padding: 8,

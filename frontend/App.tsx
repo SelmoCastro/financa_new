@@ -10,7 +10,9 @@ import { TimelineView } from './views/TimelineView';
 import { HistoryView } from './views/HistoryView';
 import { SettingsView } from './views/SettingsView';
 import { AccountsView } from './views/AccountsView';
+import { FeedbackAdminView } from './views/FeedbackAdminView';
 import { ImportOverlay } from './components/ImportOverlay';
+import { FeedbackModal } from './components/FeedbackModal';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { MonthProvider, useMonth } from './context/MonthContext';
 import { DataProvider, useData } from './context/DataProvider';
@@ -29,6 +31,7 @@ const AppContent: React.FC = () => {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -122,6 +125,8 @@ const AppContent: React.FC = () => {
             onDelete={handleDeleteTransaction}
           />
         );
+      case 'feedbacks':
+        return <FeedbackAdminView />;
       case 'settings':
         return <SettingsView userName={userName} transactions={transactions} onLogout={handleLogout} />;
       default:
@@ -131,7 +136,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} onOpenFeedback={() => setIsFeedbackOpen(true)} />
       <div className={`flex-1 sidebar-transition ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pb-24 lg:pb-0`}>
         <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-4 md:px-8 py-4 md:py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 w-full max-w-[100vw]">
           <div className="min-w-0 flex-1 w-full sm:w-auto">
@@ -143,8 +148,9 @@ const AppContent: React.FC = () => {
                     activeTab === 'goals' ? 'Metas & Sonhos' :
                       activeTab === 'budgets' ? 'Orçamentos' :
                         activeTab === 'fixed' ? 'Controle Fixos' :
-                          activeTab === 'history' ? 'Extrato' :
-                            'Configurações'}
+                          activeTab === 'feedbacks' ? 'Feedbacks (Admin)' :
+                            activeTab === 'history' ? 'Extrato' :
+                              'Configurações'}
               {userName && (
                 <span className="block text-xs text-indigo-600 font-bold mt-1">Olá, {userName}</span>
               )}
@@ -218,6 +224,22 @@ const AppContent: React.FC = () => {
           categories={categories}
           existingTransactions={transactions}
         />
+      )}
+
+      {isFeedbackOpen && (
+        <FeedbackModal onClose={() => setIsFeedbackOpen(false)} />
+      )}
+
+      {/* Floating Action Button (Mobile) */}
+      {!isFormOpen && !isImportOpen && (
+        <button
+          onClick={() => setIsFormOpen(true)}
+          className="fixed lg:hidden bottom-[100px] sm:bottom-[100px] right-4 md:right-8 z-50 bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95 group"
+          title="Novo Lançamento"
+          style={{ boxShadow: '0 10px 25px -5px rgba(99, 102, 241, 0.4)' }}
+        >
+          <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+        </button>
       )}
 
       {/* AI Assistant Chat */}

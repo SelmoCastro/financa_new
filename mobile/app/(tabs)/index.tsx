@@ -15,6 +15,7 @@ import TransactionModal from '../../components/TransactionModal';
 import { MonthlyBarChart } from '../../components/MonthlyBarChart';
 import { AiInsightsWidget } from '../../components/AiInsightsWidget';
 import { ImportModal } from '../../components/ImportModal';
+import { FeedbackModal } from '../../components/FeedbackModal';
 
 export default function DashboardScreen() {
     const insets = useSafeAreaInsets();
@@ -23,6 +24,7 @@ export default function DashboardScreen() {
 
     const [modalVisible, setModalVisible] = useState(false);
     const [importModalVisible, setImportModalVisible] = useState(false);
+    const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
     const [transactionType, setTransactionType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
 
     const [accounts, setAccounts] = useState<any[]>([]);
@@ -128,7 +130,7 @@ export default function DashboardScreen() {
     }, [dashboardSummary]);
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { position: 'relative' }]}>
             <ScrollView
                 contentContainerStyle={{ paddingBottom: 100 }}
                 refreshControl={<RefreshControl refreshing={refreshing || summaryLoading} onRefresh={handleRefresh} />}
@@ -148,6 +150,14 @@ export default function DashboardScreen() {
                                 style={styles.btnSecondarySmall}
                             >
                                 <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={20} color="#64748b" />
+                            </Pressable>
+                            <Pressable
+                                onPress={() => { setFeedbackModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                                hitSlop={15}
+                                style={styles.btnSecondarySmall}
+                            >
+                                <MaterialIcons name="rate-review" size={20} color="#64748b" />
                             </Pressable>
                         </View>
                     </View>
@@ -233,8 +243,18 @@ export default function DashboardScreen() {
                 ) : (
                     <View style={{ paddingHorizontal: 16, gap: 16 }}>
                         {/* Monthly Chart */}
-                        {monthlyChartData.length > 0 && (
+                        {monthlyChartData.length > 0 ? (
                             <MonthlyBarChart data={monthlyChartData} isPrivacyEnabled={isPrivacyEnabled} />
+                        ) : (
+                            <View style={styles.emptyStateContainer}>
+                                <View style={styles.emptyStateIconWrapper}>
+                                    <MaterialIcons name="show-chart" size={32} color="#94a3b8" />
+                                </View>
+                                <Text style={styles.emptyStateTitle}>Nenhum registro este mês</Text>
+                                <Text style={styles.emptyStateSubtitle}>
+                                    Seu fluxo de caixa aparecerá aqui. Adicione seu primeiro lançamento!
+                                </Text>
+                            </View>
                         )}
 
                         {/* Rule 50/30/20 Detailed */}
@@ -349,7 +369,21 @@ export default function DashboardScreen() {
                 categories={categories}
             />
 
+            <FeedbackModal
+                visible={feedbackModalVisible}
+                onClose={() => setFeedbackModalVisible(false)}
+            />
 
+            {/* Global FAB (Floating Action Button) */}
+            <Pressable
+                style={({ pressed }) => [
+                    styles.fabButton,
+                    pressed && styles.fabButtonPressed
+                ]}
+                onPress={() => { openModal('EXPENSE'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+            >
+                <MaterialIcons name="add" size={32} color="white" />
+            </Pressable>
         </View>
     );
 }
@@ -429,4 +463,14 @@ const styles = StyleSheet.create({
     quickActionImport: { backgroundColor: '#10b981', shadowColor: '#10b981' },
     quickActionTextLight: { color: 'white', fontWeight: '800', fontSize: 14 },
     proBadge: { backgroundColor: '#dcfce7', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 8, marginLeft: 2 },
+
+    // Empty State
+    emptyStateContainer: { backgroundColor: 'white', padding: 32, borderRadius: 32, borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 16, minHeight: 250 },
+    emptyStateIconWrapper: { width: 64, height: 64, backgroundColor: '#f8fafc', borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9' },
+    emptyStateTitle: { fontSize: 16, fontWeight: '800', color: '#334155', marginBottom: 8 },
+    emptyStateSubtitle: { fontSize: 13, color: '#64748b', textAlign: 'center', lineHeight: 20 },
+
+    // FAB
+    fabButton: { position: 'absolute', right: 24, bottom: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: '#4f46e5', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 10, zIndex: 9999 },
+    fabButtonPressed: { transform: [{ scale: 0.92 }], opacity: 0.9 },
 });

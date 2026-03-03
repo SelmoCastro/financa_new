@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, LayoutAnimation } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable, LayoutAnimation, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useMonth } from '../context/MonthContext';
@@ -12,6 +12,29 @@ export function AiInsightsWidget() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasAnalyzed, setHasAnalyzed] = useState(false);
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        if (!insightsData && !loading && !hasAnalyzed && !error) {
+            Animated.loop(
+                Animated.sequence([
+                    Animated.timing(pulseAnim, {
+                        toValue: 1.05,
+                        duration: 1000,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(pulseAnim, {
+                        toValue: 1,
+                        duration: 1000,
+                        useNativeDriver: true,
+                    })
+                ])
+            ).start();
+        } else {
+            pulseAnim.stopAnimation();
+            pulseAnim.setValue(1);
+        }
+    }, [insightsData, loading, hasAnalyzed, error]);
 
     const fetchInsights = async (forceRefresh: boolean = false) => {
         setLoading(true);
@@ -81,12 +104,14 @@ export function AiInsightsWidget() {
                     <Text style={styles.promptText}>
                         Gera um resumo inteligente dos seus gastos de {getYearMonth(selectedDate).month}/{getYearMonth(selectedDate).year} e receba alertas sobre o seu orçamento.
                     </Text>
-                    <Pressable
-                        style={({ pressed }) => [styles.analyzeBtn, pressed && { opacity: 0.8 }]}
-                        onPress={() => fetchInsights(false)}
-                    >
-                        <Text style={styles.analyzeBtnText}>Analisar Mês Lançando a Magia</Text>
-                    </Pressable>
+                    <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                        <Pressable
+                            style={({ pressed }) => [styles.analyzeBtn, pressed && { opacity: 0.8 }]}
+                            onPress={() => fetchInsights(false)}
+                        >
+                            <Text style={styles.analyzeBtnText}>Analisar Mês Lançando a Magia</Text>
+                        </Pressable>
+                    </Animated.View>
                 </View>
             );
         }

@@ -208,7 +208,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                         <button
                             onClick={fetchInsights}
                             disabled={isFetchingInsights}
-                            className="relative z-10 flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-2xl font-bold hover:bg-indigo-50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-lg"
+                            className={`relative z-10 flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-2xl font-bold hover:bg-indigo-50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-lg ${!insights && !isFetchingInsights ? 'animate-pulse hover:animate-none' : ''}`}
                         >
                             {isFetchingInsights ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                             {insights ? 'Atualizar Dicas' : 'Analisar meu Mês'}
@@ -222,10 +222,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             <h3 className="text-lg font-bold text-slate-800">Performance Mensal</h3>
                             <p className="text-sm text-slate-500">Fluxo consolidado de caixa</p>
                         </div>
-                        <div className="h-[250px] md:h-[320px] w-full min-h-[250px]">
+                        <div className="h-[250px] md:h-[320px] w-full min-h-[250px] relative">
                             {isLoading ? (
                                 <Skeleton className="w-full h-full rounded-2xl" />
-                            ) : (
+                            ) : monthlyChartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={monthlyChartData} barSize={20}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -241,6 +241,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         <Bar name="Despesas" dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
+                            ) : (
+                                <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-6 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                    <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4">
+                                        <Banknote className="w-8 h-8 text-slate-300" />
+                                    </div>
+                                    <h4 className="text-slate-700 font-bold mb-1">Nenhum lançamento neste mês</h4>
+                                    <p className="text-sm text-slate-500 max-w-xs mb-4">Que tal começar a organizar suas finanças registrando sua primeira movimentação?</p>
+                                    <p className="text-xs text-indigo-500 font-bold bg-indigo-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5">
+                                        <Sparkles className="w-3 h-3" />
+                                        Comece pelo botão "Novo Lançamento"
+                                    </p>
+                                </div>
                             )}
                         </div>
                     </div>
