@@ -26,6 +26,7 @@ export const Login: React.FC = () => {
                 const response = await api.post('/auth/login', { email, password });
                 localStorage.setItem('token', response.data.access_token);
                 localStorage.setItem('userName', response.data.user.name);
+                localStorage.setItem('isAdmin', response.data.user.isAdmin ? 'true' : 'false');
                 navigate('/dashboard');
             }
         } catch (err: any) {

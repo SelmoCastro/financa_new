@@ -36,6 +36,7 @@ const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Usuário');
+  const [isAdmin] = useState(localStorage.getItem('isAdmin') === 'true');
   const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false);
   const navigate = useNavigate();
   const { addToast } = useToast();
@@ -83,6 +84,7 @@ const AppContent: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userName');
+    localStorage.removeItem('isAdmin');
     navigate('/login');
   };
 
@@ -136,7 +138,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} onOpenFeedback={() => setIsFeedbackOpen(true)} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} onOpenFeedback={() => setIsFeedbackOpen(true)} isAdmin={isAdmin} />
       <div className={`flex-1 sidebar-transition ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pb-24 lg:pb-0`}>
         <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-4 md:px-8 py-4 md:py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 w-full max-w-[100vw]">
           <div className="min-w-0 flex-1 w-full sm:w-auto">
