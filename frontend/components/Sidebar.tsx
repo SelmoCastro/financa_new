@@ -9,10 +9,11 @@ interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   onOpenFeedback?: () => void;
+  isAdmin?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen, onOpenFeedback }) => {
-  const menuItems = [
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen, onOpenFeedback, isAdmin }) => {
+  const allMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
     { id: 'accounts', label: 'Contas', icon: Wallet },
     { id: 'budgets', label: 'Orçamentos', icon: Target },
@@ -22,6 +23,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'history', label: 'Extrato', icon: Receipt },
     { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquareHeart },
   ];
+
+  const menuItems = allMenuItems.filter(item => {
+    if (item.id === 'feedbacks') return isAdmin;
+    return true;
+  });
 
   return (
     <>
