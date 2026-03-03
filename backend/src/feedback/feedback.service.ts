@@ -43,4 +43,19 @@ export class FeedbackService {
             }
         });
     }
+
+    async deleteFeedback(id: string, adminId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: adminId },
+            select: { isAdmin: true },
+        });
+
+        if (!user || !user.isAdmin) {
+            throw new ForbiddenException('Only administrators can delete feedback');
+        }
+
+        return this.prisma.feedback.delete({
+            where: { id }
+        });
+    }
 }
