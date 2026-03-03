@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
-import { MessageSquare, LayoutGrid, Smartphone, Clock } from 'lucide-react';
+import { MessageSquare, LayoutGrid, Smartphone, Clock, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface FeedbackItem {
     id: string;
@@ -17,6 +17,7 @@ interface FeedbackItem {
 export const FeedbackAdminView: React.FC = () => {
     const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
     const { addToast } = useToast();
 
     useEffect(() => {
@@ -37,6 +38,19 @@ export const FeedbackAdminView: React.FC = () => {
         };
         loadFeedbacks();
     }, []);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Deseja realmente excluir este feedback?')) return;
+
+        try {
+            await api.delete(`/feedback/${id}`);
+            setFeedbacks(prev => prev.filter(f => f.id !== id));
+            addToast('Feedback excluído com sucesso.', 'success');
+        } catch (error) {
+            console.error(error);
+            addToast('Erro ao excluir feedback.', 'error');
+        }
+    };
 
     if (isLoading) {
         return (
@@ -86,11 +100,32 @@ export const FeedbackAdminView: React.FC = () => {
                                             <Clock className="w-3 h-3" />
                                             {new Date(item.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                         </div>
+                                        <button
+                                            onClick={() => handleDelete(item.id)}
+                                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors ml-2"
+                                            title="Excluir Feedback"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="p-4 bg-slate-50 rounded-2xl text-slate-700 text-sm font-medium border border-slate-100">
+                                <div
+                                    className={`p-4 bg-slate-50 rounded-2xl text-slate-700 text-sm font-medium border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors ${expandedId === item.id ? '' : 'line-clamp-2'}`}
+                                    onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                                    title="Clique para expandir/recolher"
+                                >
                                     {item.content}
                                 </div>
+                                {item.content.length > 150 && (
+                                    <div className="flex justify-center mt-2">
+                                        <button
+                                            onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                                            className="text-xs font-bold text-indigo-500 flex items-center gap-1"
+                                        >
+                                            {expandedId === item.id ? <><ChevronUp className="w-3 h-3" /> Menos</> : <><ChevronDown className="w-3 h-3" /> Ler mais</>}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
