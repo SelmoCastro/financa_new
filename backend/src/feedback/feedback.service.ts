@@ -19,10 +19,13 @@ export class FeedbackService {
     }
 
     async findAllFeedbacks(userId: string) {
+        console.log(`[Feedback] Searching for user ID: ${userId}`);
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { isAdmin: true },
         });
+
+        console.log(`[Feedback] User Found. isAdmin? ${user?.isAdmin}`);
 
         if (!user || !user.isAdmin) {
             throw new ForbiddenException('Only administrators can access the feedback list');

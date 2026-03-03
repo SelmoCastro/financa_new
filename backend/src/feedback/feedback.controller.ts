@@ -1,9 +1,12 @@
 import { Controller, Post, Get, Body, Request, UseGuards, ForbiddenException } from '@nestjs/common';
 import { FeedbackService } from './feedback.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 
-@Controller('feedback')
-@UseGuards(JwtAuthGuard)
+@Controller({
+    path: 'feedback',
+    version: '1',
+})
+@UseGuards(AuthGuard('jwt'))
 export class FeedbackController {
     constructor(private readonly feedbackService: FeedbackService) { }
 
