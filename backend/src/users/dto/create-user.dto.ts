@@ -1,7 +1,8 @@
-import { IsNotEmpty, IsOptional, IsString, MinLength, Matches } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsValidEmail } from '../validators/is-valid-email.validator';
 
 export class CreateUserDto {
-    @Matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, { message: 'Formato de e-mail inválido.' })
+    @IsValidEmail()
     @IsNotEmpty()
     email: string;
 
