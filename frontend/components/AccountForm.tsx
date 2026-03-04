@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Wallet } from 'lucide-react';
 import api from '../services/api';
+import { BANKS } from '../constants';
 
 interface AccountFormProps {
     accountToEdit?: any;
@@ -9,7 +10,7 @@ interface AccountFormProps {
 }
 
 export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave, onClose }) => {
-    const [name, setName] = useState(accountToEdit?.name || '');
+    const [name, setName] = useState(accountToEdit?.name || BANKS[0]);
     const [type, setType] = useState(accountToEdit?.type || 'CHECKING');
     const [balance, setBalance] = useState(() => {
         if (accountToEdit && accountToEdit.balance !== undefined) {
@@ -85,15 +86,17 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nome da Instituição ou Local</label>
-                        <input
-                            type="text"
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Instituição ou Local</label>
+                        <select
                             required
                             value={name}
                             onChange={e => setName(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
-                            placeholder="Ex: Banco Itaú, Carteira..."
-                        />
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none appearance-none cursor-pointer"
+                        >
+                            {BANKS.map(bank => (
+                                <option key={bank} value={bank}>{bank}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div>

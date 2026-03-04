@@ -10,6 +10,12 @@ import { formatCurrency, parseCurrencyToNumber } from '../../utils/currencyUtils
 import { Account, CreditCard } from '../../types';
 import { BankIcon } from '../../components/BankIcon';
 
+const BANKS = [
+    'Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander',
+    'Caixa Econômica', 'Inter', 'C6 Bank', 'Sicredi', 'BTG Pactual',
+    'XP Investimentos', 'PicPay', 'Mercado Pago', 'Carteira (Físico)', 'Outros'
+];
+
 const ACCOUNT_TYPES = ['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH', 'OTHER'];
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
     CHECKING: 'Conta Corrente',
@@ -27,7 +33,7 @@ export default function AccountsScreen() {
     // Criação
     const [createModal, setCreateModal] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [name, setName] = useState('');
+    const [name, setName] = useState(BANKS[0]);
     const [type, setType] = useState('CHECKING');
     const [balance, setBalance] = useState('0,00');
 
@@ -68,7 +74,7 @@ export default function AccountsScreen() {
 
     // ---- CRIAR ----
     const openCreate = () => {
-        setName(''); setType('CHECKING'); setBalance('0,00');
+        setName(BANKS[0]); setType('CHECKING'); setBalance('0,00');
         setCreateModal(true);
     };
 
@@ -382,8 +388,16 @@ function AccountFormModal({ visible, title, name, setName, type, setType, balanc
                     <View style={styles.handle} />
                     <Text style={styles.sheetTitle}>{title}</Text>
 
-                    <Text style={styles.label}>Nome da Conta</Text>
-                    <TextInput style={styles.input} placeholder="Ex: Nubank, Bradesco..." placeholderTextColor="#94a3b8" value={name} onChangeText={setName} />
+                    <Text style={styles.label}>Instituição ou Local</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                            {BANKS.map(b => (
+                                <Pressable key={b} onPress={() => setName(b)} style={[styles.typeChip, name === b && styles.typeChipActive]}>
+                                    <Text style={[styles.typeChipText, name === b && styles.typeChipTextActive]}>{b}</Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </ScrollView>
 
                     <Text style={styles.label}>Tipo</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
