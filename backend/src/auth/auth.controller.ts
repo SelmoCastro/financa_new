@@ -3,11 +3,13 @@ import { Controller, Post, Body, UseGuards, Request, Get, UnauthorizedException 
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller({
   path: 'auth',
   version: '1',
 })
+@Throttle({ default: { limit: 10, ttl: 60000 } })
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
