@@ -46,24 +46,10 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    // Generate Verification Token
-    const token = crypto.randomBytes(32).toString('hex');
-    await this.prisma.verificationToken.create({
-      data: {
-        token,
-        type: 'EMAIL_VERIFY',
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      }
-    });
-
-    // Send Email
-    await this.emailService.sendVerificationEmail(user.email, user.name || 'Usuário', token);
-
     const loginData = await this.login(user);
 
     return {
-      message: 'User registered. Please check your email to verify your account.',
+      message: 'Cadastro realizado com sucesso!',
       userId: user.id,
       ...loginData
     };

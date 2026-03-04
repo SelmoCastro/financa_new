@@ -36,7 +36,7 @@ export const Login: React.FC = () => {
                     localStorage.setItem('isEmailVerified', response.data.user.isEmailVerified ? 'true' : 'false');
                     navigate('/dashboard');
                 } else {
-                    setSuccessMsg(response.data.message || 'Cadastro realizado com sucesso! Verifique seu e-mail.');
+                    setSuccessMsg(response.data.message || 'Cadastro realizado com sucesso!');
                     setIsRegister(false);
                 }
             } else {
@@ -115,6 +115,8 @@ export const Login: React.FC = () => {
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-bold text-slate-700 transition-all"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                            title="Por favor, digite um e-mail com formato válido (ex: seu.nome@dominio.com.br)"
                             required
                         />
                     </div>
