@@ -8,9 +8,17 @@ export class UsersService {
   constructor(private prisma: PrismaService) { }
 
   async create(createUserDto: CreateUserDto) {
-    const user = await this.prisma.user.create({
-      data: createUserDto,
-    });
+    let user;
+    try {
+      user = await this.prisma.user.create({
+        data: createUserDto,
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new ForbiddenException('Este e-mail já está cadastrado em nossa base.');
+      }
+      throw error;
+    }
 
     // Criar categorias padrão para o novo usuário
     await this.prisma.category.createMany({
