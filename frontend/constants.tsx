@@ -12,6 +12,12 @@ export const CATEGORIES = [
   'Investimentos (Aporte)', 'Dívidas/Financiamentos'
 ];
 
+export const BANKS = [
+  'Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander',
+  'Caixa Econômica', 'Inter', 'C6 Bank', 'Sicredi', 'BTG Pactual',
+  'XP Investimentos', 'PicPay', 'Mercado Pago', 'Carteira (Físico)', 'Outros'
+];
+
 export const MOCK_TRANSACTIONS: Transaction[] = [
   { id: '1', description: 'Salário Mensal', amount: 5000, date: '2024-05-01', category: { id: 'c1', name: 'Salário', type: 'INCOME' }, type: 'INCOME' },
   { id: '2', description: 'Aluguel', amount: 1500, date: '2024-05-02', category: { id: 'c2', name: 'Moradia', type: 'EXPENSE' }, type: 'EXPENSE' },
