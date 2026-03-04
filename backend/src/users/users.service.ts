@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -50,8 +50,23 @@ export class UsersService {
     return user;
   }
 
-  findAll() {
-    return this.prisma.user.findMany();
+  async findAll(adminId: string) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminId },
+      select: { isAdmin: true }
+    });
+    if (!admin?.isAdmin) {
+      throw new ForbiddenException('Only administrators can list all users');
+    }
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isAdmin: true,
+        createdAt: true,
+      }
+    });
   }
 
   findOne(id: string) {
@@ -73,9 +88,18 @@ export class UsersService {
     });
   }
 
-  remove(id: string) {
-    return this.prisma.user.delete({
-      where: { id },
-    });
+  async remove(id: string) {
+    // Delete all dependent records in a transaction to avoid FK constraint errors
+    return this.prisma.$transaction([
+      this.prisma.feedback.deleteMany({ where: { userId: id } }),
+      this.prisma.importedFitId.deleteMany({ where: { userId: id } }),
+      this.prisma.transaction.deleteMany({ where: { userId: id } }),
+      this.prisma.category.deleteMany({ where: { userId: id } }),
+      this.prisma.creditCard.deleteMany({ where: { userId: id } }),
+      this.prisma.account.deleteMany({ where: { userId: id } }),
+      this.prisma.budget.deleteMany({ where: { userId: id } }),
+      this.prisma.goal.deleteMany({ where: { userId: id } }),
+      this.prisma.user.delete({ where: { id } }),
+    ]);
   }
 }
