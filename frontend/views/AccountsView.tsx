@@ -136,53 +136,67 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                     </div>
 
                     {/* Lista de Contas (Cards) */}
-                    {accounts.map(acc => (
-                        <div key={acc.id} className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300">
-                            <div className="flex justify-between items-start mb-6">
-                                <BankIcon name={acc.name} type={acc.type} />
-                                <div className="relative z-40">
-                                    <button
-                                        onClick={() => setOpenMenuId(openMenuId === acc.id ? null : acc.id)}
-                                        className="text-slate-300 hover:text-indigo-500 transition-colors p-2"
-                                    >
-                                        <i data-lucide="more-vertical" className="w-5 h-5"></i>
-                                    </button>
+                    {accounts.length === 0 ? (
+                        <div className="md:col-span-1 lg:col-span-2 flex flex-col items-center justify-center p-8 border-2 border-dashed border-indigo-200 bg-indigo-50/50 rounded-[2rem] text-center">
+                            <h4 className="text-lg font-black text-indigo-900 mb-2">Sua primeira Conta!</h4>
+                            <p className="text-sm text-indigo-700/70 max-w-xs mb-6 font-medium">Você precisa adicionar pelo menos uma conta bancária ou carteira para conseguir registrar seus primeiros lançamentos.</p>
+                            <button
+                                onClick={() => setIsAccountFormOpen(true)}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95 flex items-center gap-2"
+                            >
+                                <i data-lucide="plus" className="w-4 h-4"></i>
+                                Criar Conta Agora
+                            </button>
+                        </div>
+                    ) : (
+                        accounts.map(acc => (
+                            <div key={acc.id} className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300">
+                                <div className="flex justify-between items-start mb-6">
+                                    <BankIcon name={acc.name} type={acc.type} />
+                                    <div className="relative z-40">
+                                        <button
+                                            onClick={() => setOpenMenuId(openMenuId === acc.id ? null : acc.id)}
+                                            className="text-slate-300 hover:text-indigo-500 transition-colors p-2"
+                                        >
+                                            <i data-lucide="more-vertical" className="w-5 h-5"></i>
+                                        </button>
 
-                                    {openMenuId === acc.id && (
-                                        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
-                                            <button
-                                                onClick={() => {
-                                                    setEditingAccount(acc);
-                                                    setIsAccountFormOpen(true);
-                                                    setOpenMenuId(null);
-                                                }}
-                                                className="w-full text-left px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center gap-2"
-                                            >
-                                                <i data-lucide="edit-3" className="w-4 h-4"></i>
-                                                Editar Conta
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteAccount(acc.id, acc.name)}
-                                                className="w-full text-left px-4 py-3 text-sm font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center gap-2"
-                                            >
-                                                <i data-lucide="trash-2" className="w-4 h-4"></i>
-                                                Excluir Conta
-                                            </button>
-                                        </div>
-                                    )}
+                                        {openMenuId === acc.id && (
+                                            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingAccount(acc);
+                                                        setIsAccountFormOpen(true);
+                                                        setOpenMenuId(null);
+                                                    }}
+                                                    className="w-full text-left px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center gap-2"
+                                                >
+                                                    <i data-lucide="edit-3" className="w-4 h-4"></i>
+                                                    Editar Conta
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteAccount(acc.id, acc.name)}
+                                                    className="w-full text-left px-4 py-3 text-sm font-bold text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-colors flex items-center gap-2"
+                                                >
+                                                    <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                    Excluir Conta
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <h5 className="text-lg font-bold text-slate-800 mb-1">{acc.name}</h5>
+                                <p className="text-sm text-slate-400 font-medium mb-4">{
+                                    acc.type === 'CHECKING' ? 'Conta Corrente' :
+                                        acc.type === 'SAVINGS' ? 'Conta Poupança' :
+                                            acc.type === 'WALLET' ? 'Carteira (Dinheiro)' : 'Corretora'
+                                }</p>
+                                <div className="text-2xl font-black text-slate-900 tracking-tight">
+                                    {isPrivacyEnabled ? 'R$ •••••' : formatCurrency(Number(acc.balance))}
                                 </div>
                             </div>
-                            <h5 className="text-lg font-bold text-slate-800 mb-1">{acc.name}</h5>
-                            <p className="text-sm text-slate-400 font-medium mb-4">{
-                                acc.type === 'CHECKING' ? 'Conta Corrente' :
-                                    acc.type === 'SAVINGS' ? 'Conta Poupança' :
-                                        acc.type === 'WALLET' ? 'Carteira (Dinheiro)' : 'Corretora'
-                            }</p>
-                            <div className="text-2xl font-black text-slate-900 tracking-tight">
-                                {isPrivacyEnabled ? 'R$ •••••' : formatCurrency(Number(acc.balance))}
-                            </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </section>
 
