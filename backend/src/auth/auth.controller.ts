@@ -23,14 +23,28 @@ export class AuthController {
     console.log('--- REQUISIÇÃO RECEBIDA DO MOBILE ---');
     console.log('Email:', req.email);
     console.log('Senha contém caracteres:', req.password ? req.password.length : 0);
-    // In a real app we'd use a LocalGuard, but for simplicity we'll validate here or rely on service
-    // Ideally: @UseGuards(LocalAuthGuard) -> req.user
-    // For now, let's assume body has email/password and we validate manually if not using LocalStrategy
-    // But better to use the service validation:
     const user = await this.authService.validateUser(req.email, req.password);
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
     return this.authService.login(user); // Returns { access_token: ... }
+  }
+
+  @Post('verify-email')
+  verifyEmail(@Body() body: { token: string }) {
+    if (!body.token) throw new UnauthorizedException('Token is required');
+    return this.authService.verifyEmail(body.token);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() body: { email: string }) {
+    if (!body.email) throw new UnauthorizedException('Email is required');
+    return this.authService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() body: { token: string; password: string }) {
+    if (!body.token || !body.password) throw new UnauthorizedException('Token and new password are required');
+    return this.authService.resetPassword(body.token, body.password);
   }
 }
