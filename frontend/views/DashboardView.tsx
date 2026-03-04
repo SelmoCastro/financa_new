@@ -25,7 +25,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
     const [insights, setInsights] = React.useState<string | null>(null);
     const [isFetchingInsights, setIsFetchingInsights] = React.useState(false);
 
-    const { dashboardSummary } = useData();
+    const { dashboardSummary, accounts } = useData();
 
     const totals = useMemo(() => ({
         income: dashboardSummary?.currentMonth?.income || 0,
@@ -246,12 +246,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4">
                                         <Banknote className="w-8 h-8 text-slate-300" />
                                     </div>
-                                    <h4 className="text-slate-700 font-bold mb-1">Nenhum lançamento neste mês</h4>
-                                    <p className="text-sm text-slate-500 max-w-xs mb-4">Que tal começar a organizar suas finanças registrando sua primeira movimentação?</p>
-                                    <p className="text-xs text-indigo-500 font-bold bg-indigo-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5">
-                                        <Sparkles className="w-3 h-3" />
-                                        Comece pelo botão "Novo Lançamento"
-                                    </p>
+                                    {accounts && accounts.length === 0 ? (
+                                        <>
+                                            <h4 className="text-slate-700 font-bold mb-1">Bem-vindo(a) ao Finanza!</h4>
+                                            <p className="text-sm text-slate-500 max-w-xs mb-4">Para começar a organizar suas finanças, primeiro registre onde seu dinheiro fica guardado.</p>
+                                            <p className="text-xs text-rose-500 font-bold bg-rose-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5">
+                                                <Banknote className="w-3 h-3" />
+                                                Acesse "Contas & Cartões" no menu ao lado
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <h4 className="text-slate-700 font-bold mb-1">Nenhum lançamento neste mês</h4>
+                                            <p className="text-sm text-slate-500 max-w-xs mb-4">Que tal começar a organizar suas finanças registrando sua primeira movimentação?</p>
+                                            <p className="text-xs text-indigo-500 font-bold bg-indigo-50 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5">
+                                                <Sparkles className="w-3 h-3" />
+                                                Comece pelo botão "Novo Lançamento"
+                                            </p>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>

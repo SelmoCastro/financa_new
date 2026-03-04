@@ -93,6 +93,15 @@ const AppContent: React.FC = () => {
     setIsFormOpen(true);
   };
 
+  const handleOpenTransactionForm = () => {
+    if (accounts.length === 0) {
+      addToast('Crie primeiro uma Conta para poder realizar lançamentos financeiros!', 'error');
+      setActiveTab('accounts');
+    } else {
+      setIsFormOpen(true);
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -189,7 +198,7 @@ const AppContent: React.FC = () => {
               <UploadCloud className="w-4 h-4" />
               <span className="hidden sm:inline">Importar</span>
             </button>
-            <button onClick={() => setIsFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center gap-2 md:gap-3 flex-shrink-0">
+            <button onClick={handleOpenTransactionForm} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center gap-2 md:gap-3 flex-shrink-0">
               <Plus className="w-4 h-4 md:w-5 md:h-5" />
               <span className="hidden sm:inline">Novo Lançamento</span>
             </button>
@@ -235,7 +244,7 @@ const AppContent: React.FC = () => {
       {/* Floating Action Button (Mobile) */}
       {!isFormOpen && !isImportOpen && (
         <button
-          onClick={() => setIsFormOpen(true)}
+          onClick={handleOpenTransactionForm}
           className="fixed lg:hidden bottom-[100px] sm:bottom-[100px] right-4 md:right-8 z-50 bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95 group"
           title="Novo Lançamento"
           style={{ boxShadow: '0 10px 25px -5px rgba(99, 102, 241, 0.4)' }}
