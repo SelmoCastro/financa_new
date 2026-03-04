@@ -1,27 +1,33 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-    private resend: Resend;
-    private readonly logger = new Logger(EmailService.name);
-    private fromEmail = 'Finanza <onboarding@resend.dev>'; // Using resend.dev for testing, user can change later
+  private transporter: nodemailer.Transporter;
+  private readonly logger = new Logger(EmailService.name);
+  private fromEmail = 'Finanza <noreply@finanza.com>';
 
-    constructor() {
-        this.resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
-    }
+  constructor() {
+    this.transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+  }
 
-    async sendVerificationEmail(email: string, name: string, token: string) {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        const frontendAppUrl = frontendUrl.includes('localhost') ? frontendUrl : 'https://financa-new.vercel.app';
-        const verificationUrl = `${frontendAppUrl}/verify-email?token=${token}`;
+  async sendVerificationEmail(email: string, name: string, token: string) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendAppUrl = frontendUrl.includes('localhost') ? frontendUrl : 'https://financa-new-sigma.vercel.app';
+    const verificationUrl = `${frontendAppUrl}/verify-email?token=${token}`;
 
-        try {
-            await this.resend.emails.send({
-                from: this.fromEmail,
-                to: email, // If using resend.dev, the "to" email MUST be the verified identity in Resend unless the domain is fully verified
-                subject: 'Confirme seu e-mail no Finanza',
-                html: `
+    try {
+      await this.transporter.sendMail({
+        from: process.env.GMAIL_USER ? `"Finanza" <${process.env.GMAIL_USER}>` : this.fromEmail,
+        to: email,
+        subject: 'Confirme seu e-mail no Finanza',
+        html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
             <h2>Olá, ${name || 'Usuário'}!</h2>
             <p>Falta pouco para você começar a controlar suas finanças com o Finanza.</p>
@@ -33,24 +39,24 @@ export class EmailService {
             <p style="font-size: 12px; color: #666; word-break: break-all;">${verificationUrl}</p>
           </div>
         `,
-            });
-            this.logger.log(`Verification email dispatched to ${email}`);
-        } catch (error) {
-            this.logger.error(`Error sending verification email to ${email}`, error);
-        }
+      });
+      this.logger.log(`Verification email dispatched to ${email}`);
+    } catch (error) {
+      this.logger.error(`Error sending verification email to ${email}`, error);
     }
+  }
 
-    async sendPasswordResetEmail(email: string, name: string, token: string) {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        const frontendAppUrl = frontendUrl.includes('localhost') ? frontendUrl : 'https://financa-new.vercel.app';
-        const resetUrl = `${frontendAppUrl}/reset-password?token=${token}`;
+  async sendPasswordResetEmail(email: string, name: string, token: string) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendAppUrl = frontendUrl.includes('localhost') ? frontendUrl : 'https://financa-new-sigma.vercel.app';
+    const resetUrl = `${frontendAppUrl}/reset-password?token=${token}`;
 
-        try {
-            await this.resend.emails.send({
-                from: this.fromEmail,
-                to: email,
-                subject: 'Redefinição de Senha - Finanza',
-                html: `
+    try {
+      await this.transporter.sendMail({
+        from: process.env.GMAIL_USER ? `"Finanza" <${process.env.GMAIL_USER}>` : this.fromEmail,
+        to: email,
+        subject: 'Redefinição de Senha - Finanza',
+        html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
             <h2>Recuperação de Senha</h2>
             <p>Olá, ${name || 'Usuário'}, recebemos um pedido para redefinir a senha da sua conta no Finanza.</p>
@@ -61,10 +67,10 @@ export class EmailService {
             <p style="font-size: 14px; color: #666;">Se você não solicitou essa mudança, pode ignorar este e-mail. O link expira em 1 hora.</p>
           </div>
         `,
-            });
-            this.logger.log(`Password reset email dispatched to ${email}`);
-        } catch (error) {
-            this.logger.error(`Error sending password reset email to ${email}`, error);
-        }
+      });
+      this.logger.log(`Password reset email dispatched to ${email}`);
+    } catch (error) {
+      this.logger.error(`Error sending password reset email to ${email}`, error);
     }
+  }
 }
