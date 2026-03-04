@@ -18,6 +18,7 @@ import { FeedbackModule } from './feedback/feedback.module';
 import { PrismaService } from './prisma/prisma.service';
 import { AiModule } from './ai/ai.module';
 import { ReportsModule } from './reports/reports.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { ReportsModule } from './reports/reports.module';
       ttl: 60000,
       limit: 100,
     }]),
-    UsersModule, AuthModule, PrismaModule, TransactionsModule, BudgetsModule, GoalsModule, AccountsModule, CategoriesModule, CreditCardsModule, AiModule, ReportsModule, FeedbackModule
+    UsersModule, AuthModule, PrismaModule, TransactionsModule, BudgetsModule, GoalsModule, AccountsModule, CategoriesModule, CreditCardsModule, AiModule, ReportsModule, FeedbackModule, EmailModule
   ],
   controllers: [AppController],
   providers: [

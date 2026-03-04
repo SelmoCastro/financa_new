@@ -15,16 +15,18 @@ model User {
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  isAdmin   Boolean  @default(false)
+  isAdmin         Boolean  @default(false)
+  isEmailVerified Boolean  @default(false)
 
-  transactions   Transaction[]
-  budgets        Budget[]
-  goals          Goal[]
-  accounts       Account[]
-  creditCards    CreditCard[]
-  categories     Category[]
-  importedFitIds ImportedFitId[]
-  feedbacks      Feedback[]
+  transactions      Transaction[]
+  budgets           Budget[]
+  goals             Goal[]
+  accounts          Account[]
+  creditCards       CreditCard[]
+  categories        Category[]
+  importedFitIds    ImportedFitId[]
+  feedbacks         Feedback[]
+  verificationTokens VerificationToken[]
 }
 
 model Account {
@@ -174,3 +176,17 @@ model Feedback {
   @@index([userId])
   @@index([createdAt])
 }
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  type      String   // 'EMAIL_VERIFY' or 'PASSWORD_RESET'
+  expiresAt DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+

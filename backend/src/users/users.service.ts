@@ -91,6 +91,7 @@ export class UsersService {
   async remove(id: string) {
     // Delete all dependent records in a transaction to avoid FK constraint errors
     return this.prisma.$transaction([
+      this.prisma.verificationToken.deleteMany({ where: { userId: id } }),
       this.prisma.feedback.deleteMany({ where: { userId: id } }),
       this.prisma.importedFitId.deleteMany({ where: { userId: id } }),
       this.prisma.transaction.deleteMany({ where: { userId: id } }),
