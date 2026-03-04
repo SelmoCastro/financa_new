@@ -60,7 +60,13 @@ export class AuthService {
     // Send Email
     await this.emailService.sendVerificationEmail(user.email, user.name || 'Usuário', token);
 
-    return { message: 'User registered. Please check your email to verify your account.', userId: user.id };
+    const loginData = await this.login(user);
+
+    return {
+      message: 'User registered. Please check your email to verify your account.',
+      userId: user.id,
+      ...loginData
+    };
   }
 
   async verifyEmail(token: string) {

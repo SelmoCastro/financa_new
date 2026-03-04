@@ -27,8 +27,18 @@ export const Login: React.FC = () => {
                 setIsForgotPassword(false);
             } else if (isRegister) {
                 const response = await api.post('/auth/register', { email, password, name });
-                setSuccessMsg(response.data.message || 'Cadastro realizado com sucesso! Verifique seu e-mail.');
-                setIsRegister(false);
+
+                // Salvar credenciais no Local Storage para auto-login
+                if (response.data.access_token) {
+                    localStorage.setItem('token', response.data.access_token);
+                    localStorage.setItem('userName', response.data.user.name);
+                    localStorage.setItem('isAdmin', response.data.user.isAdmin ? 'true' : 'false');
+                    localStorage.setItem('isEmailVerified', response.data.user.isEmailVerified ? 'true' : 'false');
+                    navigate('/dashboard');
+                } else {
+                    setSuccessMsg(response.data.message || 'Cadastro realizado com sucesso! Verifique seu e-mail.');
+                    setIsRegister(false);
+                }
             } else {
                 const response = await api.post('/auth/login', { email, password });
                 localStorage.setItem('token', response.data.access_token);
