@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -41,6 +42,9 @@ export function configureApp(app: INestApplication) {
             },
         },
     }));
+
+    // Cookie Parser
+    app.use(cookieParser());
 
     // API Versioning
     app.enableVersioning({
