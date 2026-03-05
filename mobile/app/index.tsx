@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import * as Haptics from 'expo-haptics';
+import * as WebBrowser from 'expo-web-browser';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
@@ -109,6 +110,18 @@ export default function LoginScreen() {
                             </Text>
                         </Pressable>
                     </View>
+
+                    <Pressable
+                        onPress={async () => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            await WebBrowser.openBrowserAsync('https://financa-new.vercel.app/login?mode=recovery');
+                        }}
+                        style={styles.forgotPasswordLink}
+                    >
+                        <Text style={styles.forgotPasswordText}>
+                            Esqueceu a senha?
+                        </Text>
+                    </Pressable>
 
                     <Pressable
                         onPress={() => {
@@ -220,7 +233,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
     },
     signupLink: {
-        marginTop: 24,
+        marginTop: 16,
         alignItems: 'center',
     },
     signupLinkText: {
@@ -230,5 +243,14 @@ const styles = StyleSheet.create({
     signupLinkHighlight: {
         color: '#4f46e5',
         fontWeight: 'bold',
+    },
+    forgotPasswordLink: {
+        marginTop: 16,
+        alignItems: 'center',
+    },
+    forgotPasswordText: {
+        color: '#4f46e5',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });
