@@ -35,17 +35,19 @@ export default function LoginScreen() {
             console.log('[Login] Resposta recebida:', JSON.stringify(response.data, null, 2));
 
             const data = response.data;
-            const access_token = data.access_token;
+            const access_token = data.access_token || data.data?.access_token;
+            const refreshToken = data.refreshToken || data.data?.refreshToken;
+            const user = data.user || data.data?.user;
 
-            if (!access_token) {
-                console.error('[Login] access_token não encontrado na resposta!');
-                throw new Error('access_token missing');
+            if (!access_token || !refreshToken || !user?.id) {
+                console.error('[Login] access_token, refreshToken ou user.id não encontrados na resposta!');
+                throw new Error('tokens or user info missing');
             }
 
             // Desmarcar loading ANTES do redirect para evitar conflito de estado
             setLoading(false);
             console.log('[Login] Chamando login() no contexto...');
-            await login(access_token);
+            await login(access_token, refreshToken, user.id);
         } catch (error: any) {
             console.error('[Login] Erro detectado:', error.message || error);
             if (error.response) {

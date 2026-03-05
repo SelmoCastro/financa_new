@@ -50,9 +50,11 @@ export default function SignupScreen() {
                 password: sanitizedPassword
             });
 
-            const { access_token } = loginResponse.data;
-            if (access_token) {
-                await login(access_token);
+            const data = loginResponse.data?.data || loginResponse.data;
+            const { access_token, refreshToken, user } = data;
+
+            if (access_token && refreshToken && user?.id) {
+                await login(access_token, refreshToken, user.id);
                 // AuthContext will handle the redirect to /(tabs)
             } else {
                 Alert.alert('Sucesso', 'Conta criada! Por favor, faça login.');

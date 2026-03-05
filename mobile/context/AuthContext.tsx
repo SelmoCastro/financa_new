@@ -2,12 +2,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { DeviceEventEmitter } from 'react-native';
 import { router } from 'expo-router';
-
+import api from '../services/api';
 
 interface AuthContextType {
     token: string | null;
     isLoading: boolean;
-    login: (token: string) => Promise<void>;
+    login: (token: string, refreshToken: string, userId: string) => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -51,15 +51,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => authSubscription.remove();
     }, []);
 
-    const login = async (newToken: string) => {
-        console.log('[AuthContext] Fazendo login...');
+    const login = async (newToken: string, newRefreshToken: string, newUserId: string) => {
+        console.log('[AuthContext] Fazendo login guardando múltiplos tokens...');
         await SecureStore.setItemAsync('token', newToken);
+        await SecureStore.setItemAsync('refreshToken', newRefreshToken);
+        await SecureStore.setItemAsync('userId', newUserId);
         setToken(newToken);
     };
 
     const logout = async () => {
         console.log('[AuthContext] Iniciando logout manual...');
+        try {
+            await api.post('/auth/logout');
+        } catch (e) {
+            console.warn('[AuthContext] Backend erro ao logar nativo, limpando store mesmo assim:', e);
+        }
         await SecureStore.deleteItemAsync('token');
+        await SecureStore.deleteItemAsync('refreshToken');
+        await SecureStore.deleteItemAsync('userId');
         setToken(null);
         router.replace('/');
     };

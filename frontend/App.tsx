@@ -22,6 +22,7 @@ import { TransactionForm } from './components/TransactionForm';
 
 import { getYearMonth } from './utils/dateUtils';
 import { UploadCloud, Plus, ChevronLeft, ChevronRight, EyeOff, Eye, CheckSquare, Image, FileSpreadsheet } from 'lucide-react';
+import api from './services/api';
 
 const AppContent: React.FC = () => {
   const {
@@ -81,8 +82,14 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (e) {
+      console.warn('Backend logout falhou, forçando fechamento local', e);
+    }
     localStorage.removeItem('token');
+    localStorage.removeItem('userId');
     localStorage.removeItem('userName');
     localStorage.removeItem('isAdmin');
     navigate('/login');
