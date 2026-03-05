@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Transaction } from '../types';
+import { Transaction, TransactionType } from '../types';
 import { toMidnightDate } from '../utils/dateUtils';
 
 export const useFixedTransactions = (transactions: Transaction[], totals: { balance: number, income: number, currentIncome?: number }, targetDate: Date) => {
@@ -14,7 +14,7 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         // 1. Identify all UNIQUE fixed transactions from history
         const fixedDefinitions: Record<string, {
             amount: number,
-            type: 'INCOME' | 'EXPENSE',
+            type: TransactionType,
             day: number,
             lastSeen: string,
             lastTransactionId: string, // Added to allow editing
@@ -24,7 +24,7 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         // Sort by date desc to process latest first
         const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-        sorted.filter(t => t.isFixed).forEach(t => {
+        sorted.filter(t => t.isFixed && t.category?.type !== 'TRANSFER' && t.categoryLegacy !== 'Transferência').forEach(t => {
             const key = t.description.toLowerCase().trim();
 
             // If we haven't seen this description yet (since we sort desc, this is the latest)
@@ -42,7 +42,7 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         });
 
         // 2. Check which ones are MISSING in the current month
-        const missingFixed: { description: string, amount: number, type: 'INCOME' | 'EXPENSE', day: number, category: string }[] = [];
+        const missingFixed: { description: string, amount: number, type: TransactionType, day: number, category: string }[] = [];
 
         Object.entries(fixedDefinitions).forEach(([desc, def]) => {
             const existsInCurrent = transactions.some(t => {
@@ -96,8 +96,9 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         transactions.forEach(t => {
             // Parse date using generalized utility
             const date = toMidnightDate(t.date);
+            const isTransfer = t.category?.type === 'TRANSFER' || t.categoryLegacy === 'Transferência';
 
-            if (t.isFixed && t.type === 'EXPENSE' && date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+            if (t.isFixed && t.type === 'EXPENSE' && !isTransfer && date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
                 totalFixedExpense += Number(t.amount);
             }
         });
@@ -113,8 +114,9 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         transactions.filter(t => {
             // Parse date using generalized utility
             const date = toMidnightDate(t.date);
+            const isTransfer = t.category?.type === 'TRANSFER' || t.categoryLegacy === 'Transferência';
 
-            return t.type === 'EXPENSE' && date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+            return t.type === 'EXPENSE' && !isTransfer && date.getMonth() === currentMonth && date.getFullYear() === currentYear;
         }).forEach(t => {
             const key = t.description.trim();
             const normKey = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();

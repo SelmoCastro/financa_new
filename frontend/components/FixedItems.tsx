@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Transaction } from '../types';
+import { Transaction, TransactionType } from '../types';
 
 interface FixedItemData {
     name: string;
     amount: number;
-    type: 'INCOME' | 'EXPENSE';
+    type: TransactionType;
     day: number;
     lastSeen: string;
     lastTransactionId: string;

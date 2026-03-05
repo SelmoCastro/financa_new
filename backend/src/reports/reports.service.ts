@@ -13,10 +13,25 @@ export class ReportsService {
         const startOfMonth = new Date(Date.UTC(targetYear, targetMonth, 1));
         const endOfMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59, 999));
 
+        // Get transfer categories to exclude them
+        const transferCategories = await this.prisma.category.findMany({
+            where: { userId, type: 'TRANSFER' },
+            select: { id: true }
+        });
+        const transferCatIds = transferCategories.map(c => c.id);
+
+        const filterOutTransfers = {
+            categoryId: { notIn: transferCatIds },
+            categoryLegacy: { not: 'Transferência' } // Ignore old legacy names too
+        };
+
         // 1. Calculate General Balance (All time)
         const balanceGroup = await this.prisma.transaction.groupBy({
             by: ['type'],
-            where: { userId },
+            where: {
+                userId,
+                ...filterOutTransfers
+            },
             _sum: { amount: true },
         });
 
@@ -35,6 +50,7 @@ export class ReportsService {
             by: ['type'],
             where: {
                 userId,
+                ...filterOutTransfers,
                 date: {
                     gte: startOfMonth,
                     lte: endOfMonth
