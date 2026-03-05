@@ -9,7 +9,7 @@ import { Throttle } from '@nestjs/throttler';
   path: 'auth',
   version: '1',
 })
-@Throttle({ default: { limit: 10, ttl: 60000 } })
+@Throttle({ default: { limit: 5, ttl: 60000 } })
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
