@@ -67,7 +67,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
             const currentMonth = selectedDate.getMonth();
             const currentYear = selectedDate.getFullYear();
 
-            return t.type === 'EXPENSE' && tMonth === currentMonth && tYear === currentYear;
+            const isTransfer = t.category?.type === 'TRANSFER' || t.categoryLegacy === 'Transferência';
+            return t.type === 'EXPENSE' && !isTransfer && tMonth === currentMonth && tYear === currentYear;
         }).forEach(t => {
             const categoryName = t.category?.name || t.categoryLegacy || 'Outros';
             categories[categoryName] = (categories[categoryName] || 0) + Number(t.amount);
@@ -87,9 +88,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                 groupedByMonth[monthKey] = { income: 0, expenses: 0 };
             }
 
-            if (t.type === 'INCOME') {
+            const isTransfer = t.category?.type === 'TRANSFER' || t.categoryLegacy === 'Transferência';
+
+            if (t.type === 'INCOME' && !isTransfer) {
                 groupedByMonth[monthKey].income += Number(t.amount);
-            } else {
+            } else if (t.type === 'EXPENSE' && !isTransfer) {
                 groupedByMonth[monthKey].expenses += Number(t.amount);
             }
         });
