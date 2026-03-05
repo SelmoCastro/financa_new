@@ -25,10 +25,32 @@ export class AuthService {
     return null;
   }
 
-  async login(user: any) {
-    const payload = { email: user.email, sub: user.id };
+  async generateTokens(userId: string, email: string) {
+    const payload = { sub: userId, email };
+
+    // Build separate tokens
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+    // Store a hashed version of the refresh token in the database to allow remote invalidation
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { hashedRefreshToken },
+    });
+
     return {
-      access_token: this.jwtService.sign(payload),
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async login(user: any) {
+    const tokens = await this.generateTokens(user.id, user.email);
+
+    return {
+      access_token: tokens.accessToken, // Keeping for backward compatibility with mobile initially
+      refreshToken: tokens.refreshToken,
       user: {
         id: user.id,
         name: user.name,
@@ -36,6 +58,39 @@ export class AuthService {
         isAdmin: user.isAdmin,
         isEmailVerified: user.isEmailVerified,
       }
+    };
+  }
+
+  async logout(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { hashedRefreshToken: null },
+    });
+    return { message: 'Desconectado com sucesso' };
+  }
+
+  async refreshTokens(userId: string, refreshToken: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.hashedRefreshToken) {
+      throw new UnauthorizedException('Access Denied');
+    }
+
+    const refreshTokenMatches = await bcrypt.compare(
+      refreshToken,
+      user.hashedRefreshToken,
+    );
+
+    if (!refreshTokenMatches) {
+      throw new UnauthorizedException('Access Denied: Invalid Refresh Token');
+    }
+
+    const tokens = await this.generateTokens(user.id, user.email);
+    return {
+      access_token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
     };
   }
 

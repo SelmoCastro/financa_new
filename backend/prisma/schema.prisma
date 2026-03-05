@@ -17,6 +17,7 @@ model User {
   updatedAt DateTime @updatedAt
   isAdmin         Boolean  @default(false)
   isEmailVerified Boolean  @default(false)
+  hashedRefreshToken String?
 
   transactions      Transaction[]
   budgets           Budget[]
