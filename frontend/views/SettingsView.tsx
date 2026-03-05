@@ -37,6 +37,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, transactio
         alert('Esta funcionalidade não está disponível na versão com Banco de Dados para sua segurança.');
     };
 
+    React.useEffect(() => {
+        // @ts-ignore
+        if (window.lucide) window.lucide.createIcons();
+    }, []);
+
     return (
         <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-right duration-500">
             <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
