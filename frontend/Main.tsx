@@ -7,9 +7,12 @@ import { ResetPassword } from './components/ResetPassword';
 import { VerifyEmail } from './components/VerifyEmail';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-    const token = localStorage.getItem('token');
+    // Agora que o Token é gerido via Cookie HttpOnly,
+    // Baseamos nosso controle de UI primariamente da existência local do ID/Nome do usuário.
+    // O fallback de segurança absoluto de navegação agora opera pelos Interceptors do Axios e 401s do Backend.
+    const userId = localStorage.getItem('userId');
 
-    if (!token) {
+    if (!userId && !localStorage.getItem('token')) { // Fallback temporário p/ Token p/ retrocompatibilidade
         return <Navigate to="/login" />;
     }
 

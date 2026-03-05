@@ -28,9 +28,9 @@ export const Login: React.FC = () => {
             } else if (isRegister) {
                 const response = await api.post('/auth/register', { email, password, name });
 
-                // Salvar credenciais no Local Storage para auto-login
-                if (response.data.access_token) {
-                    localStorage.setItem('token', response.data.access_token);
+                // Salvar credenciais no Local Storage para auto-login e UI state (excluindo os tokens q agora são cookies HttpOnly)
+                if (response.data.user) {
+                    localStorage.setItem('userId', response.data.user.id);
                     localStorage.setItem('userName', response.data.user.name);
                     localStorage.setItem('isAdmin', response.data.user.isAdmin ? 'true' : 'false');
                     localStorage.setItem('isEmailVerified', response.data.user.isEmailVerified ? 'true' : 'false');
@@ -41,7 +41,7 @@ export const Login: React.FC = () => {
                 }
             } else {
                 const response = await api.post('/auth/login', { email, password });
-                localStorage.setItem('token', response.data.access_token);
+                localStorage.setItem('userId', response.data.user.id);
                 localStorage.setItem('userName', response.data.user.name);
                 localStorage.setItem('isAdmin', response.data.user.isAdmin ? 'true' : 'false');
                 localStorage.setItem('isEmailVerified', response.data.user.isEmailVerified ? 'true' : 'false');
