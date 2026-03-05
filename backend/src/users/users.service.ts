@@ -3,6 +3,16 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
+const excludePassword = {
+  id: true,
+  name: true,
+  email: true,
+  isAdmin: true,
+  isEmailVerified: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) { }
@@ -12,6 +22,7 @@ export class UsersService {
     try {
       user = await this.prisma.user.create({
         data: createUserDto,
+        select: excludePassword,
       });
     } catch (error: any) {
       if (error.code === 'P2002') {
@@ -80,6 +91,7 @@ export class UsersService {
   findOne(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
+      select: excludePassword,
     });
   }
 
@@ -93,6 +105,7 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: updateUserDto,
+      select: excludePassword,
     });
   }
 
