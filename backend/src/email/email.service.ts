@@ -19,7 +19,7 @@ export class EmailService {
 
   async sendVerificationEmail(email: string, name: string, token: string) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const frontendAppUrl = frontendUrl.includes('localhost') ? frontendUrl : 'https://financa-new-sigma.vercel.app';
+    const frontendAppUrl = frontendUrl.includes('localhost') ? frontendUrl : 'https://financa-new.vercel.app';
     const verificationUrl = `${frontendAppUrl}/verify-email?token=${token}`;
 
     try {
@@ -48,7 +48,7 @@ export class EmailService {
 
   async sendPasswordResetEmail(email: string, name: string, token: string) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const frontendAppUrl = frontendUrl.includes('localhost') ? frontendUrl : 'https://financa-new-sigma.vercel.app';
+    const frontendAppUrl = frontendUrl.includes('localhost') ? frontendUrl : 'https://financa-new.vercel.app';
     const resetUrl = `${frontendAppUrl}/reset-password?token=${token}`;
 
     try {
