@@ -77,13 +77,15 @@ export class UsersService {
     if (!admin?.isAdmin) {
       throw new ForbiddenException('Only administrators can list all users');
     }
+    return this.findAllInternal();
+  }
+
+  async findAllInternal() {
     return this.prisma.user.findMany({
       select: {
         id: true,
         name: true,
-        email: true,
-        isAdmin: true,
-        createdAt: true,
+        email: true
       }
     });
   }
