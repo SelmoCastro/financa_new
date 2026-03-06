@@ -9,6 +9,8 @@ interface DashboardSummary {
     currentMonth: {
         income: number;
         expense: number;
+        incomeTrend: number;
+        expenseTrend: number;
     };
     rule503020: {
         needs: { value: number; percent: number };

@@ -70,6 +70,36 @@ export class ReportsService {
             else if (g.type === 'EXPENSE') currentExpense += (g._sum.amount || 0);
         });
 
+        // 2.5 Calculate Previous Month for Trends
+        const prevMonth = targetMonth === 0 ? 11 : targetMonth - 1;
+        const prevYear = targetMonth === 0 ? targetYear - 1 : targetYear;
+        const startOfPrevMonth = new Date(Date.UTC(prevYear, prevMonth, 1));
+        const endOfPrevMonth = new Date(Date.UTC(prevYear, prevMonth + 1, 0, 23, 59, 59, 999));
+
+        const prevMonthGroup = await this.prisma.transaction.groupBy({
+            by: ['type'],
+            where: {
+                userId,
+                ...filterOutTransfers,
+                date: {
+                    gte: startOfPrevMonth,
+                    lte: endOfPrevMonth
+                }
+            },
+            _sum: { amount: true },
+        });
+
+        let prevIncome = 0;
+        let prevExpense = 0;
+
+        prevMonthGroup.forEach(g => {
+            if (g.type === 'INCOME') prevIncome += Number(g._sum.amount || 0);
+            else if (g.type === 'EXPENSE') prevExpense += Number(g._sum.amount || 0);
+        });
+
+        const incomeTrend = prevIncome === 0 && currentIncome > 0 ? 100 : prevIncome === 0 ? 0 : ((currentIncome - prevIncome) / prevIncome) * 100;
+        const expenseTrend = prevExpense === 0 && currentExpense > 0 ? 100 : prevExpense === 0 ? 0 : ((currentExpense - prevExpense) / prevExpense) * 100;
+
         // 3. Rule 50/30/20 (Expenses only, current month)
         const categoryGroup = await this.prisma.transaction.groupBy({
             by: ['categoryId', 'categoryLegacy'],
@@ -160,7 +190,9 @@ export class ReportsService {
             balance,
             currentMonth: {
                 income: currentIncome,
-                expense: currentExpense
+                expense: currentExpense,
+                incomeTrend,
+                expenseTrend
             },
             rule503020: {
                 needs: { value: needs, percent: (needs / incomeBase) * 100 },
