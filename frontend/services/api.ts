@@ -3,13 +3,18 @@ import axios from 'axios';
 
 const getBaseUrl = () => {
     // @ts-ignore
-    const url = import.meta.env.VITE_API_URL || 'https://financa-new-api.vercel.app';
+    const url = import.meta.env.VITE_API_URL || 'https://financa-new.onrender.com';
     return url.replace(/\/$/, '') + '/v1';
 };
 
 const api = axios.create({
     baseURL: getBaseUrl(),
     withCredentials: true, // Garante envio dos HttpOnly Cookies
+    headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+    }
 });
 
 api.interceptors.request.use((config) => {
@@ -51,8 +56,9 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Se for 401 (sem autorização) e não for a rota de refresh (evita loop)
-        if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh') {
+        // Se for 401 (sem autorização) e não for rota de auth (evita loops e atrasos no logout)
+        const isAuthRoute = ['/auth/refresh', '/auth/logout', '/auth/login'].some(r => originalRequest.url?.includes(r));
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
 
             if (isRefreshing) {
                 // Aguarda a fila do request atual em refresh para continuar dps
