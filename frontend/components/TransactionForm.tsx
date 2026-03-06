@@ -35,6 +35,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingEntities, setIsLoadingEntities] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formatCurrency = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -113,7 +114,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     setDisplayAmount(formatCurrency(rawValue));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const numericAmount = parseFloat(displayAmount.replace(/\./g, '').replace(',', '.'));
 
@@ -142,10 +143,15 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       isFixed
     };
 
-    if (editingTransaction && onUpdate) {
-      onUpdate({ ...transactionData, id: editingTransaction.id } as unknown as Transaction);
-    } else {
-      onAdd(transactionData as unknown as Omit<Transaction, 'id'>);
+    setIsSubmitting(true);
+    try {
+      if (editingTransaction && onUpdate) {
+        await (onUpdate as any)({ ...transactionData, id: editingTransaction.id } as unknown as Transaction);
+      } else {
+        await (onAdd as any)(transactionData as unknown as Omit<Transaction, 'id'>);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -384,9 +390,10 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
           <button
             type="submit"
-            className={`w-full py-4 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] mt-4 ${type === 'EXPENSE' ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20' : type === 'INCOME' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20' : 'bg-sky-500 hover:bg-sky-600 shadow-sky-500/20'}`}
+            disabled={isSubmitting}
+            className={`w-full py-4 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] mt-4 disabled:opacity-60 disabled:cursor-not-allowed ${type === 'EXPENSE' ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20' : type === 'INCOME' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20' : 'bg-sky-500 hover:bg-sky-600 shadow-sky-500/20'}`}
           >
-            {editingTransaction ? 'Salvar Alterações' :
+            {isSubmitting ? 'Salvando...' : editingTransaction ? 'Salvar Alterações' :
               type === 'TRANSFER' ? 'Confirmar Transferência' :
                 `Confirmar ${type === 'EXPENSE' ? 'Despesa' : 'Receita'}`}
           </button>
