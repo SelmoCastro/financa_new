@@ -150,7 +150,9 @@ export class AuthService {
       }
     });
 
-    await this.emailService.sendPasswordResetEmail(user.email, user.name || 'Usuário', token);
+    // Dispara o email em background (fire-and-forget) para não travar a requisição HTTP caso o SMTP falhe/demore
+    this.emailService.sendPasswordResetEmail(user.email, user.name || 'Usuário', token).catch(e => console.error(e));
+
     return { message: 'If that email is registered, a reset link will be sent.' };
   }
 
