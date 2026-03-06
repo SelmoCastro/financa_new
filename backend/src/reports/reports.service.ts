@@ -22,7 +22,10 @@ export class ReportsService {
 
         const filterOutTransfers = {
             categoryId: { notIn: transferCatIds },
-            categoryLegacy: { not: 'Transferência' } // Ignore old legacy names too
+            OR: [
+                { categoryLegacy: { not: 'Transferência' } },
+                { categoryLegacy: null }
+            ]
         };
 
         // 1. Calculate General Balance (All time)
