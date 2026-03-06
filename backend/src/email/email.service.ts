@@ -17,9 +17,10 @@ export class EmailService {
 
     this.transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // SSL
+      port: 587,
+      secure: false, // STARTTLS (Render bloqueia 465/SSL)
       auth: { user, pass },
+      tls: { rejectUnauthorized: false },
     });
 
     // Verifica conexão SMTP na inicialização e loga o resultado
