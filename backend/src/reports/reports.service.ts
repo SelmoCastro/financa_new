@@ -105,7 +105,56 @@ export class ReportsService {
             else wants += val;
         });
 
-        const incomeBase = currentIncome || 1;
+        // Fix 50/30/20 mathematics: If income is lower than expenses, switch base to total expenses 
+        // to show proportion of expenses rather than blowing up % to > 100%
+        let incomeBase = currentIncome;
+        if (currentIncome < currentExpense || currentIncome === 0) {
+            incomeBase = currentExpense > 0 ? currentExpense : 1;
+        }
+
+        // 4. Category Summary (Pie Chart Data)
+        const categorySummary: { name: string, value: number }[] = [];
+        categoryGroup.forEach(g => {
+            const catName = (g.categoryId ? categoryMap.get(g.categoryId) : g.categoryLegacy) || 'Outros';
+            const val = g._sum.amount ? Number(g._sum.amount) : 0;
+
+            if (val > 0) {
+                const existing = categorySummary.find(c => c.name === catName);
+                if (existing) {
+                    existing.value += val;
+                } else {
+                    categorySummary.push({ name: catName, value: val });
+                }
+            }
+        });
+        categorySummary.sort((a, b) => b.value - a.value);
+
+        // 5. Monthly History (Bar Chart Data)
+        const allTxs = await this.prisma.transaction.findMany({
+            where: {
+                userId,
+                ...filterOutTransfers,
+            },
+            select: { date: true, amount: true, type: true },
+            orderBy: { date: 'asc' }
+        });
+
+        const monthlyMap = new Map<string, { income: number; expenses: number; month: string }>();
+        allTxs.forEach(t => {
+            const d = new Date(t.date);
+            const monthKey = `${d.getFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; // Avoid timezone drift
+            if (!monthlyMap.has(monthKey)) {
+                // Use UTC month name extraction to be robust
+                const formatter = new Intl.DateTimeFormat('pt-BR', { month: 'short', timeZone: 'UTC' });
+                const monthName = formatter.format(d);
+                const formattedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                monthlyMap.set(monthKey, { income: 0, expenses: 0, month: formattedMonth });
+            }
+            const stats = monthlyMap.get(monthKey);
+            if (t.type === 'INCOME') stats!.income += Number(t.amount);
+            else if (t.type === 'EXPENSE') stats!.expenses += Number(t.amount);
+        });
+        const monthlyHistory = Array.from(monthlyMap.values());
 
         return {
             balance,
@@ -117,7 +166,9 @@ export class ReportsService {
                 needs: { value: needs, percent: (needs / incomeBase) * 100 },
                 wants: { value: wants, percent: (wants / incomeBase) * 100 },
                 savings: { value: savings, percent: (savings / incomeBase) * 100 }
-            }
+            },
+            categorySummary,
+            monthlyHistory
         };
     }
 

@@ -15,6 +15,8 @@ interface DashboardSummary {
         wants: { value: number; percent: number };
         savings: { value: number; percent: number };
     };
+    categorySummary: Array<{ name: string, value: number }>;
+    monthlyHistory: Array<{ month: string, income: number, expenses: number }>;
 }
 
 interface DataContextType {
