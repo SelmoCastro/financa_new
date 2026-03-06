@@ -17,7 +17,7 @@ export function configureApp(app: INestApplication) {
         origin: allowedOriginsCORS,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
-        allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
+        allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Cache-Control, Pragma, Expires',
     });
 
     // Security Headers (Helmet com CSP restritivo e Policies adicionais)
