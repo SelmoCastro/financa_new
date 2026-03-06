@@ -54,66 +54,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
     const forecast = useFixedTransactions(transactions, totals, selectedDate);
 
     const categorySummary = useMemo(() => {
-        const categories: Record<string, number> = {};
-        transactions.filter(t => {
-            // Fix: Parse date as "Calendar Date" (YYYY-MM-DD)
-            const datePart = new Date(t.date).toISOString().split('T')[0];
-            const [y, m, d] = datePart.split('-').map(Number);
-            const date = new Date(y, m - 1, d); // Local Midnight
-
-            const tMonth = date.getMonth();
-            const tYear = date.getFullYear();
-
-            const currentMonth = selectedDate.getMonth();
-            const currentYear = selectedDate.getFullYear();
-
-            const isTransfer = t.category?.type === 'TRANSFER' || t.categoryLegacy === 'Transferência';
-            return t.type === 'EXPENSE' && !isTransfer && tMonth === currentMonth && tYear === currentYear;
-        }).forEach(t => {
-            const categoryName = t.category?.name || t.categoryLegacy || 'Outros';
-            categories[categoryName] = (categories[categoryName] || 0) + Number(t.amount);
-        });
-        return Object.entries(categories)
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => b.value - a.value);
-    }, [transactions, selectedDate]);
+        return dashboardSummary?.categorySummary || [];
+    }, [dashboardSummary]);
 
     const monthlyChartData = useMemo(() => {
-        const groupedByMonth: Record<string, { income: number; expenses: number }> = {};
-
-        transactions.forEach(t => {
-            const monthKey = t.date.toString().substring(0, 7);
-
-            if (!groupedByMonth[monthKey]) {
-                groupedByMonth[monthKey] = { income: 0, expenses: 0 };
-            }
-
-            const isTransfer = t.category?.type === 'TRANSFER' || t.categoryLegacy === 'Transferência';
-
-            if (t.type === 'INCOME' && !isTransfer) {
-                groupedByMonth[monthKey].income += Number(t.amount);
-            } else if (t.type === 'EXPENSE' && !isTransfer) {
-                groupedByMonth[monthKey].expenses += Number(t.amount);
-            }
-        });
-
-        const sortedDirectKeys = Object.keys(groupedByMonth).sort();
-
-        if (sortedDirectKeys.length === 0) return [];
-
-        return sortedDirectKeys.map(key => {
-            const [year, month] = key.split('-');
-            const dateObj = new Date(parseInt(year), parseInt(month) - 1, 1);
-            const monthName = dateObj.toLocaleDateString('pt-BR', { month: 'short' });
-            const formattedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-
-            return {
-                month: formattedMonth,
-                income: groupedByMonth[key].income,
-                expenses: groupedByMonth[key].expenses
-            };
-        });
-    }, [transactions]);
+        return dashboardSummary?.monthlyHistory || [];
+    }, [dashboardSummary]);
 
     const fetchInsights = async () => {
         setIsFetchingInsights(true);
