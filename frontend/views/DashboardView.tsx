@@ -33,8 +33,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
         balance: dashboardSummary?.balance || 0,
         currentIncome: dashboardSummary?.currentMonth?.income || 0,
         currentExpense: dashboardSummary?.currentMonth?.expense || 0,
-        incomeTrend: 0,
-        expenseTrend: 0
+        incomeTrend: dashboardSummary?.currentMonth?.incomeTrend || 0,
+        expenseTrend: dashboardSummary?.currentMonth?.expenseTrend || 0
     }), [dashboardSummary]);
 
     const rule503020 = useMemo(() => {
