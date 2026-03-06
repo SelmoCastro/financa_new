@@ -8,12 +8,27 @@ export class EmailService {
   private fromEmail = 'Finanza <noreply@finanza.com>';
 
   constructor() {
+    const user = process.env.GMAIL_USER;
+    const pass = process.env.GMAIL_APP_PASSWORD;
+
+    if (!user || !pass) {
+      this.logger.warn('⚠️  GMAIL_USER ou GMAIL_APP_PASSWORD não configurados - emails não serão enviados.');
+    }
+
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // SSL
+      auth: { user, pass },
+    });
+
+    // Verifica conexão SMTP na inicialização e loga o resultado
+    this.transporter.verify((error) => {
+      if (error) {
+        this.logger.error(`❌ Falha na verificação do SMTP Gmail: ${error.message}`, error.stack);
+      } else {
+        this.logger.log('✅ Conexão SMTP Gmail validada com sucesso!');
+      }
     });
   }
 
