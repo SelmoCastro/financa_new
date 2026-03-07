@@ -120,13 +120,14 @@ const AppContent: React.FC = () => {
       case 'budgets':
         return (
           <BudgetsView
+            transactions={monthFilteredTransactions}
             isPrivacyEnabled={isPrivacyEnabled}
           />
         );
       case 'goals':
         return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
       case 'timeline':
-        return <TimelineView transactions={transactions} />;
+        return <TimelineView transactions={monthFilteredTransactions} />;
       case 'fixed':
         return (
           <FixedItems
@@ -139,7 +140,7 @@ const AppContent: React.FC = () => {
       case 'history':
         return (
           <HistoryView
-            transactions={transactions}
+            transactions={monthFilteredTransactions}
             isPrivacyEnabled={isPrivacyEnabled}
             onEdit={openEditForm}
             onDelete={handleDeleteTransaction}
@@ -175,11 +176,16 @@ const AppContent: React.FC = () => {
                 <span className="block text-xs text-indigo-600 font-bold mt-1">Olá, {userName}</span>
               )}
             </h2>
-            {activeTab === 'dashboard' && (
+            {['dashboard', 'history', 'timeline', 'budgets'].includes(activeTab) && (
               <div className="mt-3 animate-in fade-in duration-300 relative z-[200]">
                 <MonthSelector />
               </div>
             )}
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-full">
+                {Array.isArray(transactions) ? transactions.length : 0} transações totais
+              </span>
+            </div>
           </div>
           <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-3 flex-wrap w-full sm:w-auto mt-2 sm:mt-0 relative z-50">
             <a
