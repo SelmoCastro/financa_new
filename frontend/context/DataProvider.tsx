@@ -88,15 +88,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Initial load on mount
     useEffect(() => {
+        let isMounted = true;
         const init = async () => {
             setIsLoading(true);
-            await Promise.all([
-                fetchBaseData(),
-                fetchDashboardSummary(selectedDate),
-            ]);
-            setIsLoading(false);
+            try {
+                // Fetch sequentially to prevent token-refresh race conditions 
+                // when waking up a sleeping backend / expired token session
+                await fetchBaseData();
+                if (isMounted) await fetchDashboardSummary(selectedDate);
+            } catch (err) {
+                console.error('Error during initial fetch:', err);
+            } finally {
+                if (isMounted) setIsLoading(false);
+            }
         };
         init();
+        return () => { isMounted = false; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -107,10 +114,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Manual full refresh (e.g. after adding a transaction)
     const refreshData = useCallback(async () => {
-        await Promise.all([
-            fetchBaseData(),
-            fetchDashboardSummary(selectedDate),
-        ]);
+        try {
+            await fetchBaseData();
+            await fetchDashboardSummary(selectedDate);
+        } catch (err) {
+            console.error('Error during refresh:', err);
+        }
     }, [fetchBaseData, fetchDashboardSummary, selectedDate]);
 
     const addTransaction = async (newTx: Omit<Transaction, 'id'>) => {
