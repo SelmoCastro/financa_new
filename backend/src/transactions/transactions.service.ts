@@ -4,12 +4,14 @@ import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { TransferTransactionDto } from './dto/transfer-transaction.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
+import { SocialService } from '../social/social.service';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     private prisma: PrismaService,
-    private aiService: AiService
+    private aiService: AiService,
+    private socialService: SocialService,
   ) { }
 
   async create(createTransactionDto: CreateTransactionDto, userId: string) {
@@ -36,6 +38,18 @@ export class TransactionsService {
             data: { balance: { increment: adjustment } },
           });
         }
+      }
+
+      // 4. Social Feature: Create invite if sharedWithEmail is present
+      if (createTransactionDto.sharedWithEmail) {
+        await this.socialService.sendInvite(userId, {
+          amount,
+          description: createTransactionDto.description,
+          date: createTransactionDto.date,
+          type: createTransactionDto.type,
+          recipientEmail: createTransactionDto.sharedWithEmail,
+          originalTransactionId: transaction.id,
+        });
       }
 
       return transaction;

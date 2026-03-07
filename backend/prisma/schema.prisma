@@ -28,6 +28,10 @@ model User {
   importedFitIds    ImportedFitId[]
   feedbacks         Feedback[]
   verificationTokens VerificationToken[]
+  
+  sentInvites       TransactionInvite[] @relation("SentInvites")
+  receivedInvites   TransactionInvite[] @relation("ReceivedInvites")
+  notifications     Notification[]
 }
 
 model Account {
@@ -116,6 +120,9 @@ model Transaction {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  sharedWithEmail String?
+
+
   @@unique([userId, fitId]) // Restrição primária de Anti-Double Entry
   @@index([userId])
   @@index([date])
@@ -191,3 +198,49 @@ model VerificationToken {
   @@index([token])
 }
 
+model TransactionInvite {
+  id          String   @id @default(uuid())
+  amount      Float
+  description String
+  date        DateTime
+  type        String   // 'INCOME' or 'EXPENSE' (from sender perspective)
+  
+  status      String   @default("PENDING") // 'PENDING', 'ACCEPTED', 'REJECTED'
+  
+  senderId    String
+  sender      User     @relation("SentInvites", fields: [senderId], references: [id])
+  
+  recipientEmail String
+  recipientId    String?
+  recipient      User?    @relation("ReceivedInvites", fields: [recipientId], references: [id])
+  
+  // Link to the original transaction if needed
+  originalTransactionId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([senderId])
+  @@index([recipientEmail])
+  @@index([recipientId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String   // 'INVITE_RECEIVED', 'INVITE_ACCEPTED', 'SYSTEM'
+  isRead    Boolean  @default(false)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  // Optional reference to related data
+  metadata  Json?    // e.g. { "inviteId": "..." }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isRead])
+}

@@ -16,6 +16,7 @@ import { MonthlyBarChart } from '../../components/MonthlyBarChart';
 import { AiInsightsWidget } from '../../components/AiInsightsWidget';
 import { ImportModal } from '../../components/ImportModal';
 import { FeedbackModal } from '../../components/FeedbackModal';
+import { InviteNotification } from '../../components/InviteNotification';
 
 export default function DashboardScreen() {
     const insets = useSafeAreaInsets();
@@ -77,9 +78,10 @@ export default function DashboardScreen() {
     };
 
     const totals = useMemo(() => {
-        if (!dashboardSummary) return { balance: 0, currentIncome: 0, currentExpense: 0, incomeTrend: 0, expenseTrend: 0 };
+        if (!dashboardSummary) return { balance: 0, income: 0, currentIncome: 0, currentExpense: 0, incomeTrend: 0, expenseTrend: 0 };
         return {
             balance: dashboardSummary.balance || 0,
+            income: dashboardSummary.currentMonth?.income || 0,
             currentIncome: dashboardSummary.currentMonth?.income || 0,
             currentExpense: dashboardSummary.currentMonth?.expense || 0,
             incomeTrend: dashboardSummary.currentMonth?.incomeTrend || 0,
@@ -151,6 +153,7 @@ export default function DashboardScreen() {
 
                     {/* Bottom Row: Month Selector */}
                     <View style={styles.headerBottomRow}>
+                        <InviteNotification />
                         <MonthSelector />
                     </View>
 

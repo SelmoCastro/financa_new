@@ -47,6 +47,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
     const [destinationAccountId, setDestinationAccountId] = useState('');
     const [creditCardId, setCreditCardId] = useState('');
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+    const [sharedWithEmail, setSharedWithEmail] = useState('');
 
     const [categories, setCategories] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<any>(null);
@@ -64,6 +65,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                 setType(transactionToEdit.type || initialType);
                 setAccountId(transactionToEdit.accountId || '');
                 setCreditCardId(transactionToEdit.creditCardId || '');
+                setSharedWithEmail(transactionToEdit.sharedWithEmail || '');
             } else {
                 setDescription('');
                 setAmount('');
@@ -75,6 +77,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                 setAccountId('');
                 setDestinationAccountId('');
                 setCreditCardId('');
+                setSharedWithEmail('');
             }
             setIsCategoryOpen(false);
 
@@ -174,7 +177,8 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                     date: date.toISOString(),
                     isFixed,
                     accountId: accountId || undefined,
-                    creditCardId: creditCardId || undefined
+                    creditCardId: creditCardId || undefined,
+                    sharedWithEmail: sharedWithEmail.trim() || undefined
                 };
 
                 if (transactionToEdit) {
@@ -432,6 +436,24 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                                 </View>
                             </Pressable>
                         </View>
+
+                        <View style={styles.inputSection}>
+                            <Text style={styles.sectionLabel}>Vincular com amigo (E-mail)</Text>
+                            <TextInput
+                                value={sharedWithEmail}
+                                onChangeText={setSharedWithEmail}
+                                keyboardType="email-address"
+                                placeholder="Ex: amigo@email.com"
+                                style={styles.input}
+                                autoCapitalize="none"
+                            />
+                            <View style={styles.shareHint}>
+                                <MaterialIcons name="auto-awesome" size={12} color="#6366f1" />
+                                <Text style={styles.shareHintText}>
+                                    Seu amigo receberá um convite para aceitar este lançamento como {type === 'EXPENSE' ? 'Receita' : 'Despesa'}.
+                                </Text>
+                            </View>
+                        </View>
                     </ScrollView>
 
                     <View style={styles.footer}>
@@ -659,6 +681,18 @@ const styles = StyleSheet.create({
     fixedSubtitle: {
         fontSize: 12,
         color: '#94a3b8',
+        fontWeight: '500',
+    },
+    shareHint: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 6,
+        paddingHorizontal: 4,
+    },
+    shareHintText: {
+        fontSize: 11,
+        color: '#64748b',
         fontWeight: '500',
     },
     footer: {
