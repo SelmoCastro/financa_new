@@ -77,12 +77,13 @@ export default function DashboardScreen() {
     };
 
     const totals = useMemo(() => {
-        if (!dashboardSummary) return { balance: 0, currentIncome: 0, currentExpense: 0, income: 0 };
+        if (!dashboardSummary) return { balance: 0, currentIncome: 0, currentExpense: 0, incomeTrend: 0, expenseTrend: 0 };
         return {
             balance: dashboardSummary.balance || 0,
             currentIncome: dashboardSummary.currentMonth?.income || 0,
             currentExpense: dashboardSummary.currentMonth?.expense || 0,
-            income: 0
+            incomeTrend: dashboardSummary.currentMonth?.incomeTrend || 0,
+            expenseTrend: dashboardSummary.currentMonth?.expenseTrend || 0
         };
     }, [dashboardSummary]);
 
@@ -100,29 +101,10 @@ export default function DashboardScreen() {
     };
 
     const monthlyChartData = useMemo(() => {
-        if (!transactions || transactions.length === 0) return [];
-        const groupedByMonth: Record<string, { income: number; expenses: number }> = {};
-
-        // Pegar últimos 4 meses para o gráfico mobile não ficar poluído
-        transactions.forEach(t => {
-            const date = new Date(t.date);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            if (!groupedByMonth[monthKey]) groupedByMonth[monthKey] = { income: 0, expenses: 0 };
-            if (t.type === 'INCOME') groupedByMonth[monthKey].income += Number(t.amount);
-            else groupedByMonth[monthKey].expenses += Number(t.amount);
-        });
-
-        return Object.keys(groupedByMonth).sort().slice(-4).map(key => {
-            const [year, month] = key.split('-');
-            const dateObj = new Date(parseInt(year), parseInt(month) - 1, 1);
-            const monthName = dateObj.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-            return {
-                month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-                income: groupedByMonth[key].income,
-                expenses: groupedByMonth[key].expenses
-            };
-        });
-    }, [transactions]);
+        if (!dashboardSummary?.monthlyHistory) return [];
+        // The mobile chart typically shows the last 4 months to avoid horizontal cramps
+        return dashboardSummary.monthlyHistory.slice(-4);
+    }, [dashboardSummary]);
 
     const rule503020 = useMemo(() => {
         if (!dashboardSummary || !dashboardSummary.rule503020) return null;
@@ -213,12 +195,24 @@ export default function DashboardScreen() {
                         </View>
 
                         <View style={[styles.card, styles.cardGreen, styles.glassEffectGreen]}>
-                            <Text style={styles.cardLabelGreen}>Entradas (Mês)</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                <Text style={[styles.cardLabelGreen, { marginBottom: 0 }]}>Entradas (Mês)</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#dcfce7', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 }}>
+                                    <MaterialIcons name={totals.incomeTrend >= 0 ? "trending-up" : "trending-down"} size={10} color="#059669" />
+                                    <Text style={{ fontSize: 9, fontWeight: '700', color: '#059669', marginLeft: 2 }}>{Math.abs(totals.incomeTrend).toFixed(1)}%</Text>
+                                </View>
+                            </View>
                             <Text style={styles.cardValueGreen}>{formatValue(totals.currentIncome)}</Text>
                         </View>
 
                         <View style={[styles.card, styles.cardRed, styles.glassEffectRed]}>
-                            <Text style={styles.cardLabelRed}>Saídas (Mês)</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                <Text style={[styles.cardLabelRed, { marginBottom: 0 }]}>Saídas (Mês)</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffe4e6', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 }}>
+                                    <MaterialIcons name={totals.expenseTrend <= 0 ? "trending-down" : "trending-up"} size={10} color="#e11d48" />
+                                    <Text style={{ fontSize: 9, fontWeight: '700', color: '#e11d48', marginLeft: 2 }}>{Math.abs(totals.expenseTrend).toFixed(1)}%</Text>
+                                </View>
+                            </View>
                             <Text style={styles.cardValueRed}>{formatValue(totals.currentExpense)}</Text>
                         </View>
                     </View>
