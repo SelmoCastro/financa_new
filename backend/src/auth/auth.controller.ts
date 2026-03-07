@@ -124,4 +124,11 @@ export class AuthController {
     if (!body.token || !body.password) throw new UnauthorizedException('Token and new password are required');
     return this.authService.resetPassword(body.token, body.password);
   }
+
+  @Get('me')
+  @UseGuards(AuthGuard('jwt'))
+  async getProfile(@Request() req) {
+    const user = await this.authService.getFullProfile(req.user.userId);
+    return { user };
+  }
 }
