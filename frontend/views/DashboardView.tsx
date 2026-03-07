@@ -19,6 +19,7 @@ import { useMonth } from '../context/MonthContext';
 import { useData } from '../context/DataProvider';
 import api from '../services/api';
 import { Sparkles, RefreshCw, AlertCircle, Crosshair, Banknote, TrendingUp, TrendingDown, CheckCircle, Trophy, PieChart as PieChartIcon } from 'lucide-react';
+import { OnboardingWidget } from '../components/OnboardingWidget';
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false }) => {
     const { selectedDate } = useMonth();
@@ -230,12 +231,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </div>
                             ) : forecast.missingFixed.length > 0 ? (
                                 <>
-                                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Fixos Pendentes</h3>
+                                    <h3 className="text-[13px] font-bold text-slate-600 uppercase tracking-wider mb-4">Fixos Pendentes</h3>
                                     <div className="space-y-3">
                                         {forecast.missingFixed.map((item, idx) => (
                                             <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                                <span className="text-xs font-bold text-slate-700">{item.description}</span>
-                                                <span className={`text-xs font-black ${isPrivacyEnabled ? 'blur-sm select-none' : (item.type === 'INCOME' ? 'text-emerald-500' : 'text-rose-500')}`}>
+                                                <span className="text-sm font-bold text-slate-700">{item.description}</span>
+                                                <span className={`text-sm font-black ${isPrivacyEnabled ? 'blur-sm select-none' : (item.type === 'INCOME' ? 'text-emerald-500' : 'text-rose-500')}`}>
                                                     {isPrivacyEnabled ? 'R$ •••' : `${item.type === 'INCOME' ? '+' : '-'} R$ ${item.amount.toLocaleString('pt-BR')}`}
                                                 </span>
                                             </div>
@@ -256,14 +257,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             {/* Top Vilões */}
                             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
                                 <div className="flex justify-between items-center mb-6">
-                                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Top Gastos</h3>
+                                    <h3 className="text-[13px] font-bold text-slate-500 uppercase tracking-wider">Top Gastos</h3>
                                     <Trophy className="w-4 h-4 text-amber-500" />
                                 </div>
                                 <div className="space-y-4 relative z-10">
                                     {forecast.topVillains.map((item, idx) => (
                                         <div key={idx} className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <span className={`text-xs font-black w-5 h-5 flex items-center justify-center rounded-full ${idx === 0 ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
+                                                <span className={`text-[13px] font-black w-5 h-5 flex items-center justify-center rounded-full ${idx === 0 ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
                                                     {idx + 1}
                                                 </span>
                                                 <span className={`text-sm font-bold ${isPrivacyEnabled ? 'blur-sm' : 'text-slate-700'}`}>{item.name}</span>
@@ -320,55 +321,58 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                         </div>
 
                         <div className="space-y-6">
-                            {/* Needs */}
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-bold text-slate-600">Necessidades (50%)</span>
-                                    <span className="font-black text-slate-800">{rule503020.needs.percent.toFixed(1)}%</span>
+                            {/* Necessidades */}
+                            <div className="space-y-2 group cursor-help" title="Gastos essenciais como Aluguel, Alimentação, Luz, Água e Saúde. Limite sugerido: 50%.">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                                        Necessidades (50%)
+                                        <AlertCircle className="w-3.5 h-3.5 text-slate-300 group-hover:text-amber-500 transition-colors" />
+                                    </span>
+                                    <span className="font-black text-slate-900">{rule503020.needs.percent.toFixed(1)}%</span>
                                 </div>
-                                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div
-                                        className={`h-full rounded-full ${rule503020.needs.percent > 50 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                                        className={`h-full rounded-full transition-all duration-1000 ${rule503020.needs.percent > 50 ? 'bg-rose-500' : 'bg-indigo-500'}`}
                                         style={{ width: `${Math.min(rule503020.needs.percent, 100)}%` }}
-                                    ></div>
+                                    />
                                 </div>
-                                <p className={`text-xs text-slate-400 font-medium ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                    {isPrivacyEnabled ? 'R$ ••• gastos' : `R$ ${rule503020.needs.value.toLocaleString('pt-BR')} gastos`}
-                                </p>
+                                <p className="text-[12px] text-slate-400 font-medium">Sugestão: R$ {(totals.currentIncome * 0.5).toLocaleString('pt-BR')}</p>
                             </div>
 
-                            {/* Wants */}
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-bold text-slate-600">Desejos (30%)</span>
-                                    <span className="font-black text-slate-800">{rule503020.wants.percent.toFixed(1)}%</span>
+                            {/* Desejos */}
+                            <div className="space-y-2 group cursor-help" title="Lazer, Hobbies, Assinaturas, Restaurantes e Compras não-essenciais. Limite sugerido: 30%.">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                                        Desejos (30%)
+                                        <AlertCircle className="w-3.5 h-3.5 text-slate-300 group-hover:text-amber-500 transition-colors" />
+                                    </span>
+                                    <span className="font-black text-slate-900">{rule503020.wants.percent.toFixed(1)}%</span>
                                 </div>
-                                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div
-                                        className={`h-full rounded-full ${rule503020.wants.percent > 30 ? 'bg-amber-500' : 'bg-indigo-500'}`}
+                                        className={`h-full rounded-full transition-all duration-1000 ${rule503020.wants.percent > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                                         style={{ width: `${Math.min(rule503020.wants.percent, 100)}%` }}
-                                    ></div>
+                                    />
                                 </div>
-                                <p className={`text-xs text-slate-400 font-medium ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                    {isPrivacyEnabled ? 'R$ ••• gastos' : `R$ ${rule503020.wants.value.toLocaleString('pt-BR')} gastos`}
-                                </p>
+                                <p className="text-[12px] text-slate-400 font-medium">Sugestão: R$ {(totals.currentIncome * 0.3).toLocaleString('pt-BR')}</p>
                             </div>
 
-                            {/* Savings */}
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-bold text-slate-600">Objetivos (20%)</span>
-                                    <span className="font-black text-slate-800">{rule503020.savings.percent.toFixed(1)}%</span>
+                            {/* Objetivos */}
+                            <div className="space-y-2 group cursor-help" title="Investimentos, Reserva de Emergência, Aposentadoria e Quitação de Dívidas. Mínimo sugerido: 20%.">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                                        Objetivos (20%)
+                                        <AlertCircle className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                                    </span>
+                                    <span className="font-black text-slate-900">{rule503020.savings.percent.toFixed(1)}%</span>
                                 </div>
-                                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div
-                                        className="h-full rounded-full bg-blue-500"
+                                        className="h-full bg-blue-500 rounded-full transition-all duration-1000"
                                         style={{ width: `${Math.min(rule503020.savings.percent, 100)}%` }}
-                                    ></div>
+                                    />
                                 </div>
-                                <p className={`text-xs text-slate-400 font-medium ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                    {isPrivacyEnabled ? 'R$ ••• reservados' : `R$ ${rule503020.savings.value.toLocaleString('pt-BR')} reservados`}
-                                </p>
+                                <p className="text-[12px] text-slate-400 font-medium">Sugestão: R$ {(totals.currentIncome * 0.2).toLocaleString('pt-BR')}</p>
                             </div>
                         </div>
                     </div>

@@ -8,11 +8,48 @@ export class AccountsService {
   constructor(private prisma: PrismaService) { }
 
   async create(createAccountDto: CreateAccountDto, userId: string) {
-    return this.prisma.account.create({
-      data: {
-        ...createAccountDto,
-        userId,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Create the account
+      const account = await tx.account.create({
+        data: {
+          ...createAccountDto,
+          userId,
+        },
+      });
+
+      // 2. If initial balance is not zero, create a matching transaction record
+      if (createAccountDto.balance !== 0) {
+        // Find or create 'Saldo Inicial' category
+        let category = await tx.category.findFirst({
+          where: { userId, name: 'Saldo Inicial' },
+        });
+
+        if (!category) {
+          category = await tx.category.create({
+            data: {
+              name: 'Saldo Inicial',
+              userId,
+              type: createAccountDto.balance > 0 ? 'INCOME' : 'EXPENSE',
+              icon: '💰',
+              rule: 20, // Objectives/Savings by default
+            },
+          });
+        }
+
+        await tx.transaction.create({
+          data: {
+            userId,
+            accountId: account.id,
+            categoryId: category.id,
+            description: 'Saldo Inicial',
+            amount: Math.abs(createAccountDto.balance),
+            type: createAccountDto.balance > 0 ? 'INCOME' : 'EXPENSE',
+            date: new Date(), // Current date as starting point
+          },
+        });
+      }
+
+      return account;
     });
   }
 

@@ -91,7 +91,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                     {items.length === 0 ? (
                         <div className="text-center py-12 text-slate-400">
                             <p>Nenhum item fixo identificado ainda.</p>
-                            <p className="text-xs mt-2">Marque trasnações como "Fixo" ao criar para vê-las aqui.</p>
+                            <p className="text-xs text-slate-500 font-medium">Marque transações como "Fixo" para acompanhar previsões automáticas baseadas no seu histórico real.</p>
                         </div>
                     ) : (
                         <div className="grid gap-4">
