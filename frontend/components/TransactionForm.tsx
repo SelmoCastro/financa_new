@@ -25,6 +25,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [categoryId, setCategoryId] = useState('');
   const [date, setDate] = useState(toYYYYMMDD(new Date()));
   const [isFixed, setIsFixed] = useState(false);
+  const [sharedWithEmail, setSharedWithEmail] = useState('');
 
   // New States
   const [accountId, setAccountId] = useState('');
@@ -104,8 +105,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       setAccountId(editingTransaction.accountId || '');
       setCreditCardId(editingTransaction.creditCardId || '');
 
-      setDate(toYYYYMMDD(editingTransaction.date));
-      setIsFixed(!!editingTransaction.isFixed);
+      setDate(toYYYYMMDD(new Date(editingTransaction.date)));
+      setIsFixed(editingTransaction.isFixed || false);
+      setSharedWithEmail(editingTransaction.sharedWithEmail || '');
     }
   }, [editingTransaction, isLoadingEntities]);
 
@@ -140,7 +142,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       destinationAccountId: type === 'TRANSFER' ? (destinationAccountId || undefined) : undefined,
       creditCardId: type === 'TRANSFER' ? undefined : (creditCardId || undefined),
       date: new Date(date).toISOString(),
-      isFixed
+      isFixed,
+      sharedWithEmail: sharedWithEmail.trim() || undefined
     };
 
     setIsSubmitting(true);

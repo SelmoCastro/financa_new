@@ -19,6 +19,7 @@ import { DataProvider, useData } from './context/DataProvider';
 import { MonthSelector } from './components/MonthSelector';
 import { Transaction } from './types';
 import { TransactionForm } from './components/TransactionForm';
+import { NotificationCenter } from './components/NotificationCenter';
 
 import { getYearMonth } from './utils/dateUtils';
 import { UploadCloud, Plus, ChevronLeft, ChevronRight, EyeOff, Eye, CheckSquare, Image, FileSpreadsheet } from 'lucide-react';
@@ -191,6 +192,7 @@ const AppContent: React.FC = () => {
               </svg>
               <span className="hidden sm:inline">Baixar APK Android</span>
             </a>
+            <NotificationCenter />
             <button
               onClick={() => setIsPrivacyEnabled(!isPrivacyEnabled)}
               className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all active:scale-95"

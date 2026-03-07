@@ -34,4 +34,8 @@ export class CreateTransactionDto {
     @IsBoolean()
     @IsOptional()
     isFixed?: boolean;
+
+    @IsString()
+    @IsOptional()
+    sharedWithEmail?: string;
 }
