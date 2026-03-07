@@ -183,4 +183,23 @@ export class AuthService {
 
     return { message: 'Password has been successfully updated' };
   }
+
+  async getFullProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isAdmin: true,
+        isEmailVerified: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    return user;
+  }
 }

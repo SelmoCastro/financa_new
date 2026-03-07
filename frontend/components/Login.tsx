@@ -32,6 +32,7 @@ export const Login: React.FC = () => {
                 if (response.data.user) {
                     localStorage.setItem('userId', response.data.user.id);
                     localStorage.setItem('userName', response.data.user.name);
+                    localStorage.setItem('userEmail', response.data.user.email);
                     localStorage.setItem('isAdmin', response.data.user.isAdmin ? 'true' : 'false');
                     localStorage.setItem('isEmailVerified', response.data.user.isEmailVerified ? 'true' : 'false');
                     navigate('/dashboard');
@@ -43,6 +44,7 @@ export const Login: React.FC = () => {
                 const response = await api.post('/auth/login', { email, password });
                 localStorage.setItem('userId', response.data.user.id);
                 localStorage.setItem('userName', response.data.user.name);
+                localStorage.setItem('userEmail', response.data.user.email);
                 localStorage.setItem('isAdmin', response.data.user.isAdmin ? 'true' : 'false');
                 localStorage.setItem('isEmailVerified', response.data.user.isEmailVerified ? 'true' : 'false');
                 navigate('/dashboard');

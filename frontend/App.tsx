@@ -38,11 +38,29 @@ const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Usuário');
+  const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   const [isAdmin] = useState(localStorage.getItem('isAdmin') === 'true');
   const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false);
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { selectedDate } = useMonth();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/auth/me');
+        if (res.data.user) {
+          setUserName(res.data.user.name);
+          setUserEmail(res.data.user.email);
+          localStorage.setItem('userName', res.data.user.name);
+          localStorage.setItem('userEmail', res.data.user.email);
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar perfil:', err);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const totals = useMemo(() => ({
     balance: dashboardSummary?.balance || 0,
@@ -120,7 +138,6 @@ const AppContent: React.FC = () => {
       case 'budgets':
         return (
           <BudgetsView
-            transactions={monthFilteredTransactions}
             isPrivacyEnabled={isPrivacyEnabled}
           />
         );
@@ -173,7 +190,10 @@ const AppContent: React.FC = () => {
                             activeTab === 'history' ? 'Extrato' :
                               'Configurações'}
               {userName && (
-                <span className="block text-xs text-indigo-600 font-bold mt-1">Olá, {userName}</span>
+                <div className="flex flex-col mt-1">
+                  <span className="text-xs text-indigo-600 font-bold">Olá, {userName}</span>
+                  {userEmail && <span className="text-[10px] text-slate-400 font-medium lowercase leading-tight">{userEmail}</span>}
+                </div>
               )}
             </h2>
             {['dashboard', 'history', 'timeline', 'budgets'].includes(activeTab) && (
