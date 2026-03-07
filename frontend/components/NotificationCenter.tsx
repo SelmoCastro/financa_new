@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, Check, X, ArrowUpRight, ArrowDownLeft, Wallet, Tag } from 'lucide-react';
 import api from '../services/api';
 import { useData } from '../context/DataProvider';
@@ -100,7 +101,7 @@ export const NotificationCenter: React.FC = () => {
                 )}
             </button>
 
-            {isOpen && (
+            {isOpen && createPortal(
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-white max-w-md w-full rounded-3xl shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]">
                         <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-20">
@@ -210,7 +211,8 @@ export const NotificationCenter: React.FC = () => {
                             )}
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
