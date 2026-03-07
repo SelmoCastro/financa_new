@@ -25,15 +25,18 @@ export class BudgetsService {
     });
   }
 
-  async findAll(userId: string) {
+  async findAll(userId: string, year?: number, month?: number) {
     const budgets = await this.prisma.budget.findMany({
       where: { userId },
       orderBy: { amount: 'desc' }
     });
 
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const targetYear = year !== undefined ? year : now.getFullYear();
+    const targetMonth = month !== undefined ? month : now.getMonth();
+
+    const startOfMonth = new Date(Date.UTC(targetYear, targetMonth, 1));
+    const endOfMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59, 999));
 
     // Calculate usage for each budget
     const budgetsWithUsage = await Promise.all(budgets.map(async (budget) => {

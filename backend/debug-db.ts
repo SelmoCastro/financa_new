@@ -9,26 +9,27 @@ async function debug() {
     console.log('Users found:', users.length);
     users.forEach(u => console.log(`- ${u.name} (${u.email}): ${u.id}`));
 
-    if (users.length > 0) {
-        const userId = users[0].id;
-        console.log(`\nChecking data for first user (${users[0].name}):`);
+    for (const user of users) {
+        console.log(`\nChecking data for user: ${user.name} (${user.email}) [${user.id}]`);
 
-        const accounts = await prisma.account.count({ where: { userId } });
+        const accounts = await prisma.account.count({ where: { userId: user.id } });
         console.log('Accounts:', accounts);
 
-        const transactions = await prisma.transaction.count({ where: { userId } });
+        const transactions = await prisma.transaction.count({ where: { userId: user.id } });
         console.log('Transactions:', transactions);
 
-        const categories = await prisma.category.count({ where: { userId } });
+        const categories = await prisma.category.count({ where: { userId: user.id } });
         console.log('Categories:', categories);
 
-        const lastTxs = await prisma.transaction.findMany({
-            where: { userId },
-            take: 2,
-            orderBy: { createdAt: 'desc' },
-            include: { category: true }
-        });
-        console.log('Last 2 transactions:', JSON.stringify(lastTxs, null, 2));
+        if (transactions > 0) {
+            const lastTxs = await prisma.transaction.findMany({
+                where: { userId: user.id },
+                take: 1,
+                orderBy: { createdAt: 'desc' },
+                include: { category: true }
+            });
+            console.log('Last transaction:', JSON.stringify(lastTxs, null, 2));
+        }
     }
 }
 

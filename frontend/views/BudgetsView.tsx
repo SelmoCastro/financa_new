@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useData } from '../context/DataProvider';
+import { useMonth } from '../context/MonthContext';
 import { Category } from '../types';
 
 interface Budget {
@@ -19,6 +20,7 @@ interface BudgetsViewProps {
 
 export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) => {
     const { categories } = useData();
+    const { selectedDate } = useMonth();
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,7 +30,12 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
 
     const fetchBudgets = async () => {
         try {
-            const response = await api.get('/budgets');
+            const response = await api.get('/budgets', {
+                params: {
+                    year: selectedDate.getFullYear(),
+                    month: selectedDate.getMonth()
+                }
+            });
             setBudgets(response.data);
         } catch (error) {
             console.error('Erro ao buscar orçamentos:', error);
@@ -41,7 +48,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
 
     useEffect(() => {
         fetchBudgets();
-    }, []);
+    }, [selectedDate]);
 
     useEffect(() => {
         // @ts-ignore
@@ -51,7 +58,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.category || !form.amount) {
-            addToast('Preencha todos os campos', 'warning');
+            addToast('Preencha todos os campos', 'info');
             return;
         }
 
@@ -60,7 +67,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
             const rawAmount = parseFloat(form.amount.replace(/\./g, '').replace(',', '.'));
 
             if (isNaN(rawAmount) || rawAmount <= 0) {
-                addToast('Valor inválido', 'warning');
+                addToast('Valor inválido', 'info');
                 return;
             }
 
