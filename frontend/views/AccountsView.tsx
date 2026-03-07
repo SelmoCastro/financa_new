@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import { Account, CreditCard } from '../types';
 import { useToast } from '../context/ToastContext';
 import { CreditCardForm } from '../components/CreditCardForm';
 import { AccountForm } from '../components/AccountForm';
 import { BankIcon } from '../components/BankIcon';
+import { useData } from '../context/DataProvider';
 
 interface AccountsViewProps {
     isPrivacyEnabled: boolean;
 }
 
 export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) => {
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isCardFormOpen, setIsCardFormOpen] = useState(false);
     const [isAccountFormOpen, setIsAccountFormOpen] = useState(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -21,27 +19,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
     const { addToast } = useToast();
-
-    const fetchAccountsAndCards = async () => {
-        setIsLoading(true);
-        try {
-            const [accountsRes, cardsRes] = await Promise.all([
-                api.get('/accounts'),
-                api.get('/credit-cards')
-            ]);
-            setAccounts(accountsRes.data);
-            setCreditCards(cardsRes.data);
-        } catch (error) {
-            addToast('Erro ao carregar contas e cartões.', 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchAccountsAndCards();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    const { accounts, creditCards, isLoading, refreshData } = useData();
 
     // Reload icons when data changes
     useEffect(() => {
@@ -49,23 +27,24 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
         if (window.lucide) window.lucide.createIcons();
     }, [accounts, creditCards, isCardFormOpen, isAccountFormOpen, openMenuId, openCardMenuId]);
 
-    const totalBalance = accounts.reduce((acc, curr) => acc + Number(curr.balance), 0);
+    const totalBalance = useMemo(() => accounts.reduce((acc, curr) => acc + Number(curr.balance), 0), [accounts]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     };
 
+    // Removed local fetch favor of global DataProvider refreshData
     const handleCardSaved = () => {
         setIsCardFormOpen(false);
         setEditingCard(null);
-        fetchAccountsAndCards();
+        refreshData();
         addToast(editingCard ? 'Cartão atualizado!' : 'Cartão de crédito salvo!', 'success');
     };
 
     const handleAccountSaved = () => {
         setIsAccountFormOpen(false);
         setEditingAccount(null);
-        fetchAccountsAndCards();
+        refreshData();
         addToast(editingAccount ? 'Conta atualizada!' : 'Conta criada!', 'success');
     };
 
@@ -75,7 +54,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
         try {
             await api.delete(`/accounts/${id}`);
             addToast('Conta excluída com sucesso!', 'success');
-            fetchAccountsAndCards();
+            refreshData();
         } catch (error) {
             console.error('Erro ao excluir conta:', error);
             addToast('Erro ao excluir a conta.', 'error');
@@ -88,7 +67,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
         try {
             await api.delete(`/credit-cards/${id}`);
             addToast('Cartão excluído com sucesso!', 'success');
-            fetchAccountsAndCards();
+            refreshData();
         } catch (error) {
             console.error('Erro ao excluir cartão:', error);
             addToast('Erro ao excluir o cartão.', 'error');
