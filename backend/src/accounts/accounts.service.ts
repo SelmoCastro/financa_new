@@ -18,7 +18,8 @@ export class AccountsService {
       });
 
       // 2. If initial balance is not zero, create a matching transaction record
-      if (createAccountDto.balance !== 0) {
+      const initialBalance = createAccountDto.balance || 0;
+      if (initialBalance !== 0) {
         // Find or create 'Saldo Inicial' category
         let category = await tx.category.findFirst({
           where: { userId, name: 'Saldo Inicial' },
@@ -29,9 +30,8 @@ export class AccountsService {
             data: {
               name: 'Saldo Inicial',
               userId,
-              type: createAccountDto.balance > 0 ? 'INCOME' : 'EXPENSE',
+              type: initialBalance > 0 ? 'INCOME' : 'EXPENSE',
               icon: '💰',
-              rule: 20, // Objectives/Savings by default
             },
           });
         }
@@ -42,9 +42,10 @@ export class AccountsService {
             accountId: account.id,
             categoryId: category.id,
             description: 'Saldo Inicial',
-            amount: Math.abs(createAccountDto.balance),
-            type: createAccountDto.balance > 0 ? 'INCOME' : 'EXPENSE',
+            amount: Math.abs(initialBalance),
+            type: initialBalance > 0 ? 'INCOME' : 'EXPENSE',
             date: new Date(), // Current date as starting point
+            classificationRule: 20, // Objectives/Savings by default
           },
         });
       }
