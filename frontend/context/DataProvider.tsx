@@ -49,26 +49,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { addToast } = useToast();
     const { selectedDate } = useMonth();
 
-    // Fetch 1: All base data — only on mount or manual refresh
+    // Fetch 1: All base data — now with independent error handling
     const fetchBaseData = useCallback(async () => {
-        try {
-            const [txRes, bRes, accRes, ccRes, catRes] = await Promise.all([
-                api.get<Transaction[]>('/transactions'),
-                api.get<Budget[]>('/budgets'),
-                api.get<Account[]>('/accounts'),
-                api.get<CreditCard[]>('/credit-cards'),
-                api.get<Category[]>('/categories'),
-            ]);
-            setTransactions(txRes.data);
-            setBudgets(bRes.data);
-            setAccounts(accRes.data);
-            setCreditCards(ccRes.data);
-            setCategories(catRes.data);
-        } catch (error: any) {
-            console.error('Base data fetch error:', error);
-            if (error.response?.status !== 401) {
-                addToast('Erro ao carregar dados. Verifique a conexão com o backend.', 'error');
+        const fetchResource = async (url: string, setter: (data: any) => void) => {
+            try {
+                const res = await api.get(url);
+                setter(res.data);
+            } catch (error: any) {
+                console.error(`Error fetching ${url}:`, error);
+                // 401 is handled by interceptors or App.tsx redirect logic
+                if (error.response?.status !== 401) {
+                    addToast(`Erro ao sincronizar ${url.replace('/', '')}.`, 'error');
+                }
             }
+        };
+
+        try {
+            await Promise.all([
+                fetchResource('/transactions', setTransactions),
+                fetchResource('/budgets', setBudgets),
+                fetchResource('/accounts', setAccounts),
+                fetchResource('/credit-cards', setCreditCards),
+                fetchResource('/categories', setCategories),
+            ]);
+        } catch (error) {
+            console.error('Base data fetch error:', error);
         }
     }, [addToast]);
 

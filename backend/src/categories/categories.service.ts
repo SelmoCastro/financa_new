@@ -32,6 +32,9 @@ const STANDARD_CATEGORIES = [
   // Objetivos (Quitação e Reserva)
   { name: 'Aplicações / Poupança', type: 'EXPENSE', color: '#3b82f6', icon: '🐷' },
   { name: 'Pagamento de Dívidas', type: 'EXPENSE', color: '#2563eb', icon: '💳' },
+
+  // Sistema
+  { name: 'Saldo Inicial', type: 'INCOME', color: '#6366f1', icon: '💰' },
 ];
 
 @Injectable()
