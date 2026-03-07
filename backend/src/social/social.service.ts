@@ -66,8 +66,7 @@ export class SocialService {
 
         return this.prisma.$transaction(async (tx) => {
             // 1. Create the mirrored transaction
-            // INVERT TYPE: Sender Expense -> Recipient Income | Sender Income -> Recipient Expense
-            const mirroredType = invite.type === 'EXPENSE' ? 'INCOME' : 'EXPENSE';
+            // Mantemos o mesmo tipo original: uma Despesa de Pizza compartilhada é Despesa para ambos.
 
             await tx.transaction.create({
                 data: {
@@ -77,8 +76,15 @@ export class SocialService {
                     amount: invite.amount,
                     description: invite.description,
                     date: invite.date,
-                    type: mirroredType,
+                    type: invite.type,
                 },
+            });
+            
+            // Atualizar Saldo da Conta
+            const adjustment = invite.type === 'INCOME' ? invite.amount : -invite.amount;
+            await tx.account.updateMany({
+                where: { id: accountId, userId },
+                data: { balance: { increment: adjustment } }
             });
 
             // 2. Update invite status
