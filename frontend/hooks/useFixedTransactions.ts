@@ -4,6 +4,16 @@ import { toMidnightDate } from '../utils/dateUtils';
 
 export const useFixedTransactions = (transactions: Transaction[], totals: { balance: number, income: number, currentIncome?: number }, targetDate: Date) => {
     return useMemo(() => {
+        if (!Array.isArray(transactions)) {
+            return {
+                projectedBalance: totals.balance,
+                missingFixed: [],
+                fixedRatio: 0,
+                totalFixedExpense: 0,
+                fixedItems: [],
+                topVillains: []
+            };
+        }
         const currentMonth = targetDate.getMonth();
         const currentYear = targetDate.getFullYear();
 

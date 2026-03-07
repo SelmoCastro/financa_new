@@ -381,6 +381,21 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             </div>
           </div>
 
+          <div className="space-y-1.5 pt-2">
+            <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse"></span>
+              Compartilhar com Amigo (Opcional)
+            </label>
+            <input
+              type="email"
+              className="w-full px-5 py-3.5 bg-indigo-50/30 border border-indigo-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 outline-none transition-all font-medium text-slate-700 placeholder:text-slate-300"
+              placeholder="email@amigo.com"
+              value={sharedWithEmail}
+              onChange={(e) => setSharedWithEmail(e.target.value)}
+            />
+            <p className="text-[9px] text-slate-400 ml-1 font-medium">Seu amigo receberá um convite para aceitar este lançamento.</p>
+          </div>
+
           <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 group cursor-pointer" onClick={() => setIsFixed(!isFixed)}>
             <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all ${isFixed ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-200'}`}>
               {isFixed && <Check className="w-4 h-4 text-white" />}

@@ -54,9 +54,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const fetchResource = async (url: string, setter: (data: any) => void) => {
             try {
                 const res = await api.get(url);
-                setter(res.data);
+                setter(Array.isArray(res.data) ? res.data : []);
             } catch (error: any) {
                 console.error(`Error fetching ${url}:`, error);
+                setter([]); // Ensure state is reset to empty array on error
                 // 401 is handled by interceptors or App.tsx redirect logic
                 if (error.response?.status !== 401) {
                     addToast(`Erro ao sincronizar ${url.replace('/', '')}.`, 'error');
