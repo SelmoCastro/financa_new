@@ -57,6 +57,7 @@ const AppContent: React.FC = () => {
   // Timeline, History e Budgets utilizam transações filtradas localmente.
   // O array `transactions` base tem todo o histórico para a Dashboard projetar Saldo e Gráficos corretamente.
   const monthFilteredTransactions = useMemo(() => {
+    if (!Array.isArray(transactions)) return [];
     const { year: currentYear, month: currentMonth } = getYearMonth(selectedDate);
     return transactions.filter(t => {
       const { year: tYear, month: tMonth } = getYearMonth(t.date);
@@ -226,7 +227,7 @@ const AppContent: React.FC = () => {
             setIsFormOpen(false);
             setEditingTransaction(null);
           }}
-          existingCategories={Array.from(new Set(transactions.map(t => typeof t.category === 'object' && t.category !== null ? t.category.name : t.categoryLegacy || 'Outros'))).filter(Boolean)}
+          existingCategories={Array.isArray(transactions) ? Array.from(new Set(transactions.map(t => typeof t.category === 'object' && t.category !== null ? t.category.name : t.categoryLegacy || 'Outros'))).filter(Boolean) : []}
           editingTransaction={editingTransaction}
         />
       )}

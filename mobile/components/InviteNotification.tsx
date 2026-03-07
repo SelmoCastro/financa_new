@@ -59,6 +59,33 @@ export function InviteNotification() {
         }
     };
 
+    const handleReject = async (inviteId: string) => {
+        Alert.alert(
+            'Rejeitar Lançamento',
+            'Tem certeza que deseja rejeitar este lançamento compartilhado?',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Rejeitar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setLoading(true);
+                        try {
+                            await api.post(`/social/invites/${inviteId}/reject`);
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                            setInvites(invites.filter(i => i.id !== inviteId));
+                            Alert.alert('Sucesso', 'Lançamento rejeitado.');
+                        } catch (error) {
+                            Alert.alert('Erro', 'Não foi possível rejeitar o lançamento.');
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     if (invites.length === 0) return null;
 
     return (
@@ -148,6 +175,12 @@ export function InviteNotification() {
                                                 style={[styles.btn, styles.btnAction]}
                                             >
                                                 <Text style={styles.btnActionText}>ACEITAR</Text>
+                                            </Pressable>
+                                            <Pressable
+                                                onPress={() => { handleReject(invite.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                                style={[styles.btn, styles.btnGhost]}
+                                            >
+                                                <Text style={styles.btnGhostText}>REJEITAR</Text>
                                             </Pressable>
                                         </View>
                                     )}

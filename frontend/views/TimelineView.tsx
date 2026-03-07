@@ -9,6 +9,7 @@ interface TimelineViewProps {
 
 export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
     const transactionsGroupedByDate = useMemo(() => {
+        if (!Array.isArray(transactions)) return [];
         const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         const groups: Record<string, Transaction[]> = {};
 
