@@ -54,6 +54,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
 
     const forecast = useFixedTransactions(transactions, totals, selectedDate);
 
+    // Métrica Sênior: Disponível Real (Renda Total - Gastos Fixos Totais - Gastos Variáveis já feitos)
+    const availableReal = useMemo(() => {
+        const missingIncome = forecast.missingFixed.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0);
+        const missingExpense = forecast.missingFixed.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
+        
+        const totalExpectedIncome = totals.currentIncome + missingIncome;
+        const totalExpectedExpense = totals.currentExpense + missingExpense;
+        
+        return totalExpectedIncome - totalExpectedExpense;
+    }, [totals.currentIncome, totals.currentExpense, forecast.missingFixed]);
+
     const categorySummary = useMemo(() => {
         return dashboardSummary?.categorySummary || [];
     }, [dashboardSummary]);
@@ -83,9 +94,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
                 {isLoading ? (
                     <>
+                        <Skeleton className="h-[120px] rounded-3xl" />
                         <Skeleton className="h-[120px] rounded-3xl" />
                         <Skeleton className="h-[120px] rounded-3xl" />
                         <Skeleton className="h-[120px] rounded-3xl" />
@@ -93,26 +105,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                     </>
                 ) : (
                     <>
-                        <StatCard title="Saldo Projetado" value={`R$ ${forecast.projectedBalance.toLocaleString('pt-BR')}`} color="bg-indigo-600 text-indigo-50" icon={<Crosshair className="text-white" />} isVisible={!isPrivacyEnabled} />
-                        <StatCard title="Saldo Atual" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<Banknote className="" />} isVisible={!isPrivacyEnabled} />
-                        <StatCard
-                            title="Entradas (Mês)"
-                            value={`R$ ${totals.currentIncome.toLocaleString('pt-BR')}`}
-                            color="bg-emerald-50 text-emerald-600"
-                            icon={<TrendingUp className="" />}
-                            trend={`${Math.abs(totals.incomeTrend).toFixed(1)}%`}
-                            trendUp={totals.incomeTrend >= 0}
-                            isVisible={!isPrivacyEnabled}
+                        <StatCard 
+                            title="Disponível (Mês)" 
+                            value={`R$ ${availableReal.toLocaleString('pt-BR')}`} 
+                            color={availableReal < 0 ? "bg-rose-600 text-white" : "bg-indigo-600 text-indigo-50"} 
+                            icon={availableReal < 0 ? <AlertCircle className="text-white animate-pulse" /> : <Banknote className="text-white" />} 
+                            isVisible={!isPrivacyEnabled} 
                         />
-                        <StatCard
-                            title="Saídas (Mês)"
-                            value={`R$ ${totals.currentExpense.toLocaleString('pt-BR')}`}
-                            color="bg-rose-50 text-rose-600"
-                            icon={<TrendingDown className="" />}
-                            trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`}
-                            trendUp={totals.expenseTrend <= 0}
-                            isVisible={!isPrivacyEnabled}
+                        <StatCard title="Saldo Projetado" value={`R$ ${forecast.projectedBalance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<Crosshair className="" />} isVisible={!isPrivacyEnabled} />
+                        <StatCard 
+                            title="Entradas (Mês)" 
+                            value={`R$ ${totals.currentIncome.toLocaleString('pt-BR')}`} 
+                            color="bg-emerald-50 text-emerald-600" 
+                            icon={<TrendingUp className="" />} 
+                            trend={`${Math.abs(totals.incomeTrend).toFixed(1)}%`} 
+                            trendUp={totals.incomeTrend >= 0} 
+                            isVisible={!isPrivacyEnabled} 
                         />
+                        <StatCard 
+                            title="Saídas (Mês)" 
+                            value={`R$ ${totals.currentExpense.toLocaleString('pt-BR')}`} 
+                            color="bg-rose-50 text-rose-600" 
+                            icon={<TrendingDown className="" />} 
+                            trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`} 
+                            trendUp={totals.expenseTrend <= 0} 
+                            isVisible={!isPrivacyEnabled} 
+                        />
+                        <StatCard title="Saldo Atual" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-slate-50 text-slate-600" icon={<Banknote className="" />} isVisible={!isPrivacyEnabled} />
                     </>
                 )}
             </div>
@@ -326,13 +345,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="font-bold text-slate-700 flex items-center gap-1.5">
                                         Necessidades (50%)
-                                        <AlertCircle className="w-3.5 h-3.5 text-slate-300 group-hover:text-amber-500 transition-colors" />
+                                        <AlertCircle className={`w-3.5 h-3.5 transition-colors ${rule503020.needs.percent > 50 ? 'text-rose-500' : 'text-slate-300'}`} />
                                     </span>
-                                    <span className="font-black text-slate-900">{rule503020.needs.percent.toFixed(1)}%</span>
+                                    <span className={`font-black ${rule503020.needs.percent > 50 ? 'text-rose-600' : 'text-slate-900'}`}>{rule503020.needs.percent.toFixed(1)}%</span>
                                 </div>
                                 <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-1000 ${rule503020.needs.percent > 50 ? 'bg-rose-500' : 'bg-indigo-500'}`}
+                                        className={`h-full rounded-full transition-all duration-1000 ${rule503020.needs.percent > 55 ? 'bg-rose-600 animate-pulse' : rule503020.needs.percent > 50 ? 'bg-rose-500' : 'bg-indigo-500'}`}
                                         style={{ width: `${Math.min(rule503020.needs.percent, 100)}%` }}
                                     />
                                 </div>
@@ -344,13 +363,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="font-bold text-slate-700 flex items-center gap-1.5">
                                         Desejos (30%)
-                                        <AlertCircle className="w-3.5 h-3.5 text-slate-300 group-hover:text-amber-500 transition-colors" />
+                                        <AlertCircle className={`w-3.5 h-3.5 transition-colors ${rule503020.wants.percent > 30 ? 'text-amber-500' : 'text-slate-300'}`} />
                                     </span>
-                                    <span className="font-black text-slate-900">{rule503020.wants.percent.toFixed(1)}%</span>
+                                    <span className={`font-black ${rule503020.wants.percent > 30 ? 'text-amber-600' : 'text-slate-900'}`}>{rule503020.wants.percent.toFixed(1)}%</span>
                                 </div>
                                 <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-1000 ${rule503020.wants.percent > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                        className={`h-full rounded-full transition-all duration-1000 ${rule503020.wants.percent > 35 ? 'bg-amber-600 animate-pulse' : rule503020.wants.percent > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                                         style={{ width: `${Math.min(rule503020.wants.percent, 100)}%` }}
                                     />
                                 </div>
