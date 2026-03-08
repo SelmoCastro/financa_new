@@ -135,12 +135,10 @@ export class ReportsService {
             else wants += val;
         });
 
-        // Fix 50/30/20 mathematics: If income is lower than expenses, switch base to total expenses 
-        // to show proportion of expenses rather than blowing up % to > 100%
-        let incomeBase = currentIncome;
-        if (currentIncome < currentExpense || currentIncome === 0) {
-            incomeBase = currentExpense > 0 ? currentExpense : 1;
-        }
+        // 3. Rule 50/30/20 (Expenses only, current month)
+        // Note: We use strictly currentIncome as base to show real financial health/excess.
+        // If income is 0, we use 1 to avoid division by zero errors while showing 0% savings.
+        const incomeBase = currentIncome > 0 ? currentIncome : 1;
 
         // 4. Category Summary (Pie Chart Data)
         const categorySummary: { name: string, value: number }[] = [];
