@@ -88,6 +88,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
 
           {isOpen && (
             <div className="mt-4 text-center space-y-4">
+              <a
+                href="/Finanza_new.apk"
+                download
+                className="w-full py-2.5 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded-xl text-[10px] font-bold transition-colors flex items-center justify-center gap-2 border border-indigo-500/20"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0004.5511-.4482.9997-.9993.9997zm-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997zm11.4045-6.02l1.9973-3.4592c.1158-.201.0467-.4582-.1546-.574-.2013-.1158-.4586-.0467-.5743.1546l-2.0362 3.527c-1.4816-.6802-3.1611-1.0592-4.9458-1.077v-.004s-.0448-.0004-.0456-.0004c-.0011 0-.0456.0004-.0456.0004v.004c-1.7847.0178-3.4642.3968-4.9461 1.077L5.0945 5.4431c-.115-.2017-.3734-.2711-.574-.1553-.2013.1158-.2707.373-.1549.5744l1.9969 3.4588C2.6865 11.3855.2343 15.3524.0321 20.0006h23.9351c-.2018-4.6482-2.6541-8.6151-6.3297-10.6792z" />
+                </svg>
+                Baixar Versão Mobile
+              </a>
               <button
                 onClick={onOpenFeedback}
                 className="w-full py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
