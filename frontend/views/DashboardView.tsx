@@ -94,10 +94,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {isLoading ? (
                     <>
-                        <Skeleton className="h-[120px] rounded-3xl" />
                         <Skeleton className="h-[120px] rounded-3xl" />
                         <Skeleton className="h-[120px] rounded-3xl" />
                         <Skeleton className="h-[120px] rounded-3xl" />
@@ -112,7 +111,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             icon={availableReal < 0 ? <AlertCircle className="text-white animate-pulse" /> : <Banknote className="text-white" />} 
                             isVisible={!isPrivacyEnabled} 
                         />
-                        <StatCard title="Saldo Projetado" value={`R$ ${forecast.projectedBalance.toLocaleString('pt-BR')}`} color="bg-indigo-50 text-indigo-600" icon={<Crosshair className="" />} isVisible={!isPrivacyEnabled} />
+                        <StatCard title="Saldo Atual" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-slate-50 text-slate-600" icon={<Banknote className="" />} isVisible={!isPrivacyEnabled} />
                         <StatCard 
                             title="Entradas (Mês)" 
                             value={`R$ ${totals.currentIncome.toLocaleString('pt-BR')}`} 
@@ -122,16 +121,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             trendUp={totals.incomeTrend >= 0} 
                             isVisible={!isPrivacyEnabled} 
                         />
-                        <StatCard 
-                            title="Saídas (Mês)" 
-                            value={`R$ ${totals.currentExpense.toLocaleString('pt-BR')}`} 
-                            color="bg-rose-50 text-rose-600" 
-                            icon={<TrendingDown className="" />} 
-                            trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`} 
-                            trendUp={totals.expenseTrend <= 0} 
-                            isVisible={!isPrivacyEnabled} 
-                        />
-                        <StatCard title="Saldo Atual" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-slate-50 text-slate-600" icon={<Banknote className="" />} isVisible={!isPrivacyEnabled} />
+                        <StatCard title="Saídas (Mês)" value={`R$ ${totals.currentExpense.toLocaleString('pt-BR')}`} color="bg-rose-50 text-rose-600" icon={<TrendingDown className="" />} trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`} trendUp={totals.expenseTrend <= 0} isVisible={!isPrivacyEnabled} />
                     </>
                 )}
             </div>

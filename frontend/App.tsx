@@ -208,35 +208,24 @@ const AppContent: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-3 flex-wrap w-full sm:w-auto mt-2 sm:mt-0 relative z-50">
-            <a
-              href="/Finanza_new.apk"
-              download
-              className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-bold transition-all"
-              title="Baixar App Mobile (Android)"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0004.5511-.4482.9997-.9993.9997zm-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997zm11.4045-6.02l1.9973-3.4592c.1158-.201.0467-.4582-.1546-.574-.2013-.1158-.4586-.0467-.5743.1546l-2.0362 3.527c-1.4816-.6802-3.1611-1.0592-4.9458-1.077v-.004s-.0448-.0004-.0456-.0004c-.0011 0-.0456.0004-.0456.0004v.004c-1.7847.0178-3.4642.3968-4.9461 1.077L5.0945 5.4431c-.115-.2017-.3734-.2711-.574-.1553-.2013.1158-.2707.373-.1549.5744l1.9969 3.4588C2.6865 11.3855.2343 15.3524.0321 20.0006h23.9351c-.2018-4.6482-2.6541-8.6151-6.3297-10.6792z" />
-              </svg>
-              <span className="hidden sm:inline">Baixar APK Android</span>
-            </a>
             <NotificationCenter />
             <button
               onClick={() => setIsPrivacyEnabled(!isPrivacyEnabled)}
-              className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all active:scale-95"
+              className="p-3 md:p-3.5 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all active:scale-95"
               title={isPrivacyEnabled ? "Mostrar valores" : "Ocultar valores"}
             >
               {isPrivacyEnabled ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
             <button
-              className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all"
+              className="p-3 md:p-3.5 rounded-xl bg-slate-50 border border-transparent text-slate-500 hover:bg-slate-100 transition-all active:scale-95"
               onClick={() => setIsImportOpen(true)}
+              title="Importar Extrato"
             >
-              <UploadCloud className="w-4 h-4" />
-              <span className="hidden sm:inline">Importar</span>
+              <UploadCloud className="w-5 h-5" />
             </button>
-            <button onClick={handleOpenTransactionForm} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center gap-2 md:gap-3 flex-shrink-0">
+            <button onClick={handleOpenTransactionForm} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 md:px-6 py-3 md:py-3.5 rounded-xl font-bold text-[10px] md:text-sm uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center gap-2 flex-shrink-0">
               <Plus className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="hidden sm:inline">Novo Lançamento</span>
+              <span className="hidden sm:inline">Gravar</span>
             </button>
           </div>
         </header>
