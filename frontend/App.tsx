@@ -176,10 +176,10 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} onOpenFeedback={() => setIsFeedbackOpen(true)} isAdmin={isAdmin} />
       <div className={`flex-1 sidebar-transition ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pb-24 lg:pb-0`}>
-        <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-4 md:px-8 py-4 md:py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 w-full max-w-[100vw]">
+        <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-4 md:px-8 py-2 md:py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-2 w-full max-w-[100vw]">
           <div className="min-w-0 flex-1 w-full sm:w-auto">
             <p className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-0.5 truncate">Gestão Financeira</p>
-            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight capitalize truncate">
+            <h2 className="text-lg md:text-xl font-black text-slate-900 tracking-tight capitalize truncate flex items-center gap-3">
               {activeTab === 'dashboard' ? 'Dashboard' :
                 activeTab === 'accounts' ? 'Contas & Cartões' :
                   activeTab === 'timeline' ? 'Linha do Tempo' :
@@ -190,41 +190,41 @@ const AppContent: React.FC = () => {
                             activeTab === 'history' ? 'Extrato' :
                               'Configurações'}
               {userName && (
-                <div className="flex flex-col mt-1">
-                  <span className="text-xs text-indigo-600 font-bold">Olá, {userName}</span>
-                  {userEmail && <span className="text-[10px] text-slate-400 font-medium lowercase leading-tight">{userEmail}</span>}
+                <div className="flex flex-col border-l border-slate-200 pl-3">
+                  <span className="text-[10px] text-indigo-600 font-bold leading-tight">Olá, {userName}</span>
+                  {userEmail && <span className="text-[9px] text-slate-400 font-medium lowercase leading-tight">{userEmail}</span>}
                 </div>
               )}
             </h2>
             {['dashboard', 'history', 'timeline', 'budgets'].includes(activeTab) && (
-              <div className="mt-3 animate-in fade-in duration-300 relative z-[200]">
-                <MonthSelector />
+              <div className="mt-1.5 animate-in fade-in duration-300 relative z-[200]">
+                <div className="flex items-center gap-3">
+                  <MonthSelector />
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+                    {Array.isArray(transactions) ? transactions.length : 0} transações
+                  </span>
+                </div>
               </div>
             )}
-            <div className="mt-1 flex items-center gap-2">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-full">
-                {Array.isArray(transactions) ? transactions.length : 0} transações totais
-              </span>
-            </div>
           </div>
-          <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-3 flex-wrap w-full sm:w-auto mt-2 sm:mt-0 relative z-50">
+          <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-2 flex-wrap w-full sm:w-auto mt-1 sm:mt-0 relative z-50">
             <NotificationCenter />
             <button
               onClick={() => setIsPrivacyEnabled(!isPrivacyEnabled)}
-              className="p-3 md:p-3.5 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all active:scale-95"
+              className="p-2 md:p-2.5 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all active:scale-95"
               title={isPrivacyEnabled ? "Mostrar valores" : "Ocultar valores"}
             >
-              {isPrivacyEnabled ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              {isPrivacyEnabled ? <EyeOff className="w-4 h-4 md:w-5 h-5" /> : <Eye className="w-4 h-4 md:w-5 h-5" />}
             </button>
             <button
-              className="p-3 md:p-3.5 rounded-xl bg-slate-50 border border-transparent text-slate-500 hover:bg-slate-100 transition-all active:scale-95"
+              className="p-2 md:p-2.5 rounded-xl bg-slate-50 border border-transparent text-slate-500 hover:bg-slate-100 transition-all active:scale-95"
               onClick={() => setIsImportOpen(true)}
               title="Importar Extrato"
             >
-              <UploadCloud className="w-5 h-5" />
+              <UploadCloud className="w-4 h-4 md:w-5 h-5" />
             </button>
-            <button onClick={handleOpenTransactionForm} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 md:px-6 py-3 md:py-3.5 rounded-xl font-bold text-[10px] md:text-sm uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center gap-2 flex-shrink-0">
-              <Plus className="w-4 h-4 md:w-5 md:h-5" />
+            <button onClick={handleOpenTransactionForm} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl font-bold text-[9px] md:text-xs uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center gap-2 flex-shrink-0">
+              <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
               <span className="hidden sm:inline">Gravar</span>
             </button>
           </div>
