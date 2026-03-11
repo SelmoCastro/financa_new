@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { MessageSquare, LayoutGrid, Smartphone, Clock, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface FeedbackItem {
     id: string;
@@ -19,6 +20,7 @@ export const FeedbackAdminView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const { addToast } = useToast();
+    const { locale } = useCurrency();
 
     useEffect(() => {
         const loadFeedbacks = async () => {
@@ -98,7 +100,7 @@ export const FeedbackAdminView: React.FC = () => {
                                         <span className="text-slate-300">•</span>
                                         <div className="flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
-                                            {new Date(item.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            {new Date(item.createdAt).toLocaleDateString(locale, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                         <button
                                             onClick={() => handleDelete(item.id)}

@@ -16,6 +16,7 @@ import { FeedbackModal } from './components/FeedbackModal';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { MonthProvider, useMonth } from './context/MonthContext';
 import { DataProvider, useData } from './context/DataProvider';
+import { CurrencyProvider } from './context/CurrencyContext';
 import { MonthSelector } from './components/MonthSelector';
 import { Transaction } from './types';
 import { TransactionForm } from './components/TransactionForm';
@@ -288,9 +289,11 @@ const App: React.FC = () => {
   return (
     <ToastProvider>
       <MonthProvider>
-        <DataProvider>
-          <AppContent />
-        </DataProvider>
+        <CurrencyProvider>
+          <DataProvider>
+            <AppContent />
+          </DataProvider>
+        </CurrencyProvider>
       </MonthProvider>
     </ToastProvider>
   );

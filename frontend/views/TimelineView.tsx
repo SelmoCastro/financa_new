@@ -2,12 +2,14 @@
 import React, { useMemo } from 'react';
 import { Transaction } from '../types';
 import { toYYYYMMDD } from '../utils/dateUtils';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface TimelineViewProps {
     transactions: Transaction[];
 }
 
 export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
+    const { formatCurrency, locale } = useCurrency();
     const transactionsGroupedByDate = useMemo(() => {
         if (!Array.isArray(transactions)) return [];
         const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -41,7 +43,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
                             <div key={group.date} className="relative">
                                 <div className="sticky top-24 z-10 flex md:justify-center mb-6 md:mb-8">
                                     <div className="bg-slate-900 text-white px-5 py-2 rounded-full font-black text-[10px] md:text-xs uppercase tracking-[0.2em] shadow-xl ring-4 ring-white">
-                                        {dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                        {dateObj.toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' })}
                                     </div>
                                 </div>
                                 <div className="space-y-4">
@@ -59,7 +61,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
                                                             <h4 className="font-bold text-slate-800 text-base md:text-lg group-hover:text-indigo-600 transition-colors truncate">{tx.description}</h4>
                                                         </div>
                                                         <p className={`font-black text-base md:text-lg whitespace-nowrap ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'}`}>
-                                                            {tx.type === 'INCOME' ? '+' : '-'} R$ {Number(tx.amount).toLocaleString('pt-BR')}
+                                                            {tx.type === 'INCOME' ? '+' : '-'} {formatCurrency(Number(tx.amount))}
                                                         </p>
                                                     </div>
                                                 </div>

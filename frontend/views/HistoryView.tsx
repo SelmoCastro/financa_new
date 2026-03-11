@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Edit3, Trash2, ArrowUpRight, ArrowDownLeft, Repeat } from 'lucide-react';
 import { Transaction, TransactionType } from '../types';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface HistoryViewProps {
     transactions: Transaction[];
@@ -11,6 +12,7 @@ interface HistoryViewProps {
 }
 
 export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivacyEnabled, onEdit, onDelete }) => {
+    const { formatCurrency, locale } = useCurrency();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState<'ALL' | TransactionType>('ALL');
 
@@ -48,13 +50,13 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                     </div>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="text-[8px] uppercase font-black tracking-widest text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg truncate">{tx.category?.name || tx.categoryLegacy || 'Outros'}</span>
-                                        <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{new Date(tx.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</span>
+                                        <span className="text-[10px] text-slate-400 font-bold whitespace-nowrap">{new Date(tx.date).toLocaleDateString(locale, { timeZone: 'UTC' })}</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end gap-2 flex-shrink-0">
                                 <p className={`font-black text-base ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'} ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
-                                    {isPrivacyEnabled ? 'R$ •••••••' : `${tx.type === 'INCOME' ? '+' : '-'} R$ ${Number(tx.amount).toLocaleString('pt-BR')}`}
+                                    {isPrivacyEnabled ? '•••••••' : `${tx.type === 'INCOME' ? '+' : '-'} ${formatCurrency(Number(tx.amount))}`}
                                 </p>
                                 <div className="flex gap-1">
                                     <button onClick={() => onEdit(tx)} className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"><Edit3 className="w-4 h-4" /></button>
@@ -106,9 +108,9 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                             {tx.category?.name || tx.categoryLegacy || 'Outros'}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-6 text-sm font-bold text-slate-400">{new Date(tx.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
+                                    <td className="px-8 py-6 text-sm font-bold text-slate-400">{new Date(tx.date).toLocaleDateString(locale, { timeZone: 'UTC' })}</td>
                                     <td className={`px-8 py-6 text-right font-black ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800'} ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
-                                        {isPrivacyEnabled ? 'R$ •••••••' : `${tx.type === 'INCOME' ? '+' : '-'} R$ ${Number(tx.amount).toLocaleString('pt-BR')}`}
+                                        {isPrivacyEnabled ? '•••••••' : `${tx.type === 'INCOME' ? '+' : '-'} ${formatCurrency(Number(tx.amount))}`}
                                     </td>
                                     <td className="px-8 py-6 text-right">
                                         <div className="flex justify-end gap-2">

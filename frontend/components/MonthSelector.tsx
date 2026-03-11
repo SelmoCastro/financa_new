@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useMonth } from '../context/MonthContext';
+import { useCurrency } from '../context/CurrencyContext'; // Added this import
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 
 const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 export const MonthSelector: React.FC = () => {
     const { selectedDate, setDate } = useMonth();
+    const { locale } = useCurrency(); // Added this line to get locale
     const [isOpen, setIsOpen] = useState(false);
     const [tempYear, setTempYear] = useState(selectedDate.getFullYear());
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -53,7 +55,7 @@ export const MonthSelector: React.FC = () => {
         setIsOpen(false);
     };
 
-    const monthName = selectedDate.toLocaleDateString('pt-BR', { month: 'short' });
+    const monthName = selectedDate.toLocaleDateString(locale, { month: 'short' }); // Changed 'pt-BR' to locale
     const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
     const toggleOpen = () => {
@@ -72,6 +74,9 @@ export const MonthSelector: React.FC = () => {
                 title="Escolher Mês"
             >
                 <CalendarDays className="w-4 h-4 text-indigo-500" />
+                <span className="ml-2 text-sm font-semibold hidden md:block">
+                    {capitalizedMonth} {selectedDate.getFullYear()}
+                </span>
             </button>
 
             {isOpen && createPortal(

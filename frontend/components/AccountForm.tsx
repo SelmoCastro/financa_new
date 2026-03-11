@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Wallet } from 'lucide-react';
 import api from '../services/api';
 import { BANKS } from '../constants';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface AccountFormProps {
     accountToEdit?: any;
@@ -19,6 +20,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
         return '';
     });
     const [isLoading, setIsLoading] = useState(false);
+    const { currencySymbol } = useCurrency();
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -116,7 +118,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                     <div>
                         <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Saldo Inicial Atual</label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">R$</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">{currencySymbol}</span>
                             <input
                                 type="text"
                                 inputMode="numeric"

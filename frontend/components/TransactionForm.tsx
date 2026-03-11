@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown, Check } from 'lucide-react';
 import { TransactionType, Transaction, Account, CreditCard, Category } from '../types';
+import { useCurrency } from '../context/CurrencyContext';
 import api from '../services/api';
 import { toYYYYMMDD } from '../utils/dateUtils';
 
@@ -35,6 +36,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const { currencySymbol, locale } = useCurrency();
   const [isLoadingEntities, setIsLoadingEntities] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,7 +44,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     const digits = value.replace(/\D/g, '');
     if (!digits) return '';
     const amount = parseInt(digits) / 100;
-    return amount.toLocaleString('pt-BR', {
+    return amount.toLocaleString(locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
@@ -216,9 +218,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Valor (R$)</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Valor ({currencySymbol})</label>
               <div className="relative">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">R$</span>
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">{currencySymbol}</span>
                 <input
                   type="text"
                   inputMode="numeric"
