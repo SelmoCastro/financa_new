@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { toYYYYMMDD } from '../utils/dateUtils';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface Goal {
     id: string;
@@ -22,6 +23,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { addToast } = useToast();
+    const { formatCurrency, currencySymbol, locale } = useCurrency();
 
     // Form State
     const [form, setForm] = useState({
@@ -69,7 +71,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
         const current = form.currentAmount ? parseFloat(form.currentAmount.replace(/\./g, '').replace(',', '.')) : 0;
 
         if (!form.title || isNaN(target) || target <= 0) {
-            addToast('Preencha os campos obrigatórios.', 'warning');
+            addToast('A data de conclusão não pode estar no passado', 'error');
             return;
         }
 
@@ -110,14 +112,14 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
         const amount = parseFloat(amountStr.replace(',', '.'));
         if (isNaN(amount) || amount <= 0) {
-            addToast('Valor inválido.', 'warning');
+            addToast('Valor inválido.', 'error');
             return;
         }
 
         try {
             const newAmount = goal.currentAmount + amount;
             await api.patch(`/goals/${goal.id}`, { currentAmount: newAmount });
-            addToast(`R$ ${amount} guardados!`, 'success');
+            addToast(`${formatCurrency(amount)} guardados!`, 'success');
             fetchGoals();
         } catch (error) {
             console.error(error);
@@ -138,24 +140,19 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
         }
     };
 
-    const formatCurrency = (val: number | string) => {
-        if (typeof val === 'string') return val;
-        return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    };
-
     const formatInputCurrency = (value: string) => {
         const digits = value.replace(/\D/g, '');
         if (!digits) return '';
         const amount = parseInt(digits) / 100;
-        return amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
     const openEditModal = (goal: Goal) => {
         setEditingGoal(goal);
         setForm({
             title: goal.title,
-            targetAmount: goal.targetAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            currentAmount: goal.currentAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            targetAmount: goal.targetAmount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            currentAmount: goal.currentAmount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
             deadline: goal.deadline ? toYYYYMMDD(goal.deadline) : ''
         });
         setIsModalOpen(true);
@@ -174,14 +171,14 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
         const amount = parseFloat(depositAmount.replace(/\./g, '').replace(',', '.'));
 
         if (isNaN(amount) || amount <= 0) {
-            addToast('Valor inválido.', 'warning');
+            addToast('Valor inválido.', 'error');
             return;
         }
 
         try {
             const newAmount = selectedGoal.currentAmount + amount;
             await api.patch(`/goals/${selectedGoal.id}`, { currentAmount: newAmount });
-            addToast(`R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} guardados!`, 'success');
+            addToast(`${formatCurrency(amount)} guardados!`, 'success');
             setDepositModalOpen(false);
             fetchGoals();
         } catch (error) {
@@ -264,13 +261,13 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
                                 <h3 className="text-lg font-bold text-slate-800 mb-1">{goal.title}</h3>
                                 <p className={`text-xs text-slate-400 font-bold uppercase mb-4 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                    Meta: {isPrivacyEnabled ? 'R$ •••' : formatCurrency(goal.targetAmount)}
+                                    Meta: {isPrivacyEnabled ? '•••' : formatCurrency(goal.targetAmount)}
                                 </p>
 
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-end">
                                         <span className={`text-2xl font-black text-slate-800 ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
-                                            {isPrivacyEnabled ? 'R$ •••' : formatCurrency(goal.currentAmount)}
+                                            {isPrivacyEnabled ? '•••' : formatCurrency(goal.currentAmount)}
                                         </span>
                                         <span className={`text-xs font-black px-2 py-1 rounded-lg ${isComplete ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
                                             {progress.toFixed(0)}%
@@ -320,9 +317,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Valor Alvo (R$)</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Valor Alvo</label>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">R$</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">{currencySymbol}</span>
                                         <input
                                             className="w-full pl-10 pr-4 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
                                             placeholder="0,00"
@@ -332,9 +329,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Já tenho (R$)</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Já tenho</label>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">R$</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">{currencySymbol}</span>
                                         <input
                                             className="w-full pl-10 pr-4 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
                                             placeholder="0,00"
@@ -386,7 +383,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Quanto quer guardar?</label>
                                 <div className="relative">
-                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl pointer-events-none">R$</span>
+                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl pointer-events-none">{currencySymbol}</span>
                                     <input
                                         autoFocus
                                         className="w-full pl-14 pr-6 py-6 bg-slate-50 border-none rounded-3xl font-black text-3xl text-slate-800 focus:ring-4 focus:ring-indigo-100 outline-none transition-all placeholder:text-slate-300"

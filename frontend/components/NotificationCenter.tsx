@@ -4,6 +4,7 @@ import { Bell, Check, X, ArrowUpRight, ArrowDownLeft, Wallet, Tag } from 'lucide
 import api from '../services/api';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 export const NotificationCenter: React.FC = () => {
     const [invites, setInvites] = useState<any[]>([]);
@@ -11,6 +12,7 @@ export const NotificationCenter: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const { refreshData, accounts, categories } = useData();
     const { addToast } = useToast();
+    const { formatCurrency } = useCurrency();
 
     // Acceptance state
     const [acceptingId, setAcceptingId] = useState<string | null>(null);
@@ -137,7 +139,7 @@ export const NotificationCenter: React.FC = () => {
                                                     {invite.description}
                                                 </p>
                                                 <p className="font-black text-slate-800 mt-1 text-base">
-                                                    R$ {invite.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                    {formatCurrency(invite.amount)}
                                                 </p>
                                             </div>
                                         </div>

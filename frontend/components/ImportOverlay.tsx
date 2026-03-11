@@ -2,6 +2,7 @@ import { X, FileSpreadsheet, Camera, Info, Loader2, Sparkles, AlertTriangle, Inb
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import { Account, CreditCard, Category } from '../types';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface ImportOverlayProps {
     onImportSuccess: () => void;
@@ -47,6 +48,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
     const [importMode, setImportMode] = useState<ImportMode>('ofx');
     const [filterMode, setFilterMode] = useState<FilterMode>('all');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { formatCurrency } = useCurrency();
 
     // Always fetch fresh categories when opening the import overlay
     const [categories, setCategories] = useState<Category[]>(propCategories || []);
@@ -435,7 +437,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                         />
                                         <div className="w-28 shrink-0">
                                             <span className="text-xs font-bold text-slate-400 block">{tx.date.split('-').reverse().join('/')}</span>
-                                            <span className={`text-sm font-black ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-700'}`}>R$ {tx.amount.toLocaleString('pt-BR')}</span>
+                                            <span className={`text-sm font-black ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-700'}`}>{formatCurrency(tx.amount)}</span>
                                             {tx.isPreviouslyRejected && (
                                                 <span className="text-[10px] font-bold text-red-500 block mt-0.5">⛔ Rejeitada antes</span>
                                             )}

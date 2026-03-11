@@ -2,6 +2,7 @@
 import React from 'react';
 import { LogOut } from 'lucide-react';
 import { Transaction } from '../types';
+import { useCurrency, CurrencyCode } from '../context/CurrencyContext';
 
 interface SettingsViewProps {
     userName: string;
@@ -10,6 +11,8 @@ interface SettingsViewProps {
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ userName, transactions, onLogout }) => {
+    const { currency, setCurrency } = useCurrency();
+
     const handleExportData = async () => {
         try {
             // Using require/import based on how you access api
@@ -67,8 +70,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, transactio
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Moeda Padrão</label>
                             <div className="relative">
                                 <i data-lucide="banknote" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                                <select className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none appearance-none font-bold text-slate-700">
-                                    <option>Real Brasileiro (BRL)</option>
+                                <select
+                                    value={currency}
+                                    onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none appearance-none font-bold text-slate-700"
+                                >
+                                    <option value="BRL">Real Brasileiro (BRL)</option>
+                                    <option value="USD">Dólar Americano (USD)</option>
+                                    <option value="EUR">Euro (EUR)</option>
                                 </select>
                             </div>
                         </div>

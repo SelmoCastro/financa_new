@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Transaction, TransactionType } from '../types';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface FixedItemData {
     name: string;
@@ -21,6 +22,7 @@ interface FixedItemsProps {
 export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransaction, onDeleteTransaction, transactions }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState({ name: '', day: '', amount: '' });
+    const { formatCurrency } = useCurrency();
 
     const handleEditClick = (item: FixedItemData) => {
         setEditingId(item.lastTransactionId);
@@ -154,7 +156,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
 
                                             <div className="flex items-center gap-6">
                                                 <span className={`font-black text-lg ${item.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-700'}`}>
-                                                    <span className="mr-2">R$</span>{item.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                    {formatCurrency(item.amount)}
                                                 </span>
                                                 <div className="flex gap-2">
                                                     <button

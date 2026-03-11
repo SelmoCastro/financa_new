@@ -29,7 +29,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, t
         <div>
           <h3 className="text-slate-500 text-sm font-semibold tracking-wide uppercase">{title}</h3>
           <p className={`text-2xl lg:text-3xl font-bold text-slate-900 mt-1 tracking-tight transition-all duration-500 ${!isVisible ? 'blur-md select-none opacity-50' : ''}`}>
-            {isVisible ? value : 'R$ ••••••'}
+            {isVisible ? value : '••••••'}
           </p>
         </div>
       </div>

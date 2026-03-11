@@ -6,6 +6,7 @@ import { CreditCardForm } from '../components/CreditCardForm';
 import { AccountForm } from '../components/AccountForm';
 import { BankIcon } from '../components/BankIcon';
 import { useData } from '../context/DataProvider';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface AccountsViewProps {
     isPrivacyEnabled: boolean;
@@ -20,6 +21,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
     const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
     const { addToast } = useToast();
     const { accounts, creditCards, isLoading, refreshData } = useData();
+    const { formatCurrency } = useCurrency();
 
     // Reload icons when data changes
     useEffect(() => {
@@ -29,9 +31,6 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
 
     const totalBalance = useMemo(() => accounts.reduce((acc, curr) => acc + Number(curr.balance), 0), [accounts]);
 
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-    };
 
     // Removed local fetch favor of global DataProvider refreshData
     const handleCardSaved = () => {
@@ -110,7 +109,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mt-20 -mr-20 blur-3xl group-hover:opacity-10 transition-opacity duration-700"></div>
                         <p className="text-indigo-200 font-bold mb-2">Saldo Consolidado</p>
                         <h4 className="text-4xl font-black tracking-tighter">
-                            {isPrivacyEnabled ? 'R$ •••••' : formatCurrency(totalBalance)}
+                            {isPrivacyEnabled ? '•••••' : formatCurrency(totalBalance)}
                         </h4>
                     </div>
 
@@ -171,7 +170,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                             acc.type === 'WALLET' ? 'Carteira (Dinheiro)' : 'Corretora'
                                 }</p>
                                 <div className="text-2xl font-black text-slate-900 tracking-tight">
-                                    {isPrivacyEnabled ? 'R$ •••••' : formatCurrency(Number(acc.balance))}
+                                    {isPrivacyEnabled ? '•••••' : formatCurrency(Number(acc.balance))}
                                 </div>
                             </div>
                         ))

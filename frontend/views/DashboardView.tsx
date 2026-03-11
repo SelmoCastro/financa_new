@@ -20,8 +20,10 @@ import { useData } from '../context/DataProvider';
 import api from '../services/api';
 import { Sparkles, RefreshCw, AlertCircle, Crosshair, Banknote, TrendingUp, TrendingDown, CheckCircle, Trophy, PieChart as PieChartIcon } from 'lucide-react';
 import { OnboardingWidget } from '../components/OnboardingWidget';
+import { useCurrency } from '../context/CurrencyContext';
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false }) => {
+    const { formatCurrency } = useCurrency();
     const { selectedDate } = useMonth();
     const [insights, setInsights] = React.useState<string | null>(null);
     const [isFetchingInsights, setIsFetchingInsights] = React.useState(false);
@@ -106,22 +108,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                     <>
                         <StatCard 
                             title="Disponível (Mês)" 
-                            value={`R$ ${availableReal.toLocaleString('pt-BR')}`} 
+                            value={formatCurrency(availableReal)} 
                             color={availableReal < 0 ? "bg-rose-600 text-white" : "bg-indigo-600 text-indigo-50"} 
                             icon={availableReal < 0 ? <AlertCircle className="text-white animate-pulse" /> : <Banknote className="text-white" />} 
                             isVisible={!isPrivacyEnabled} 
                         />
-                        <StatCard title="Saldo Atual" value={`R$ ${totals.balance.toLocaleString('pt-BR')}`} color="bg-slate-50 text-slate-600" icon={<Banknote className="" />} isVisible={!isPrivacyEnabled} />
+                        <StatCard title="Saldo Atual" value={formatCurrency(totals.balance)} color="bg-slate-50 text-slate-600" icon={<Banknote className="" />} isVisible={!isPrivacyEnabled} />
                         <StatCard 
                             title="Entradas (Mês)" 
-                            value={`R$ ${totals.currentIncome.toLocaleString('pt-BR')}`} 
+                            value={formatCurrency(totals.currentIncome)} 
                             color="bg-emerald-50 text-emerald-600" 
                             icon={<TrendingUp className="" />} 
                             trend={`${Math.abs(totals.incomeTrend).toFixed(1)}%`} 
                             trendUp={totals.incomeTrend >= 0} 
                             isVisible={!isPrivacyEnabled} 
                         />
-                        <StatCard title="Saídas (Mês)" value={`R$ ${totals.currentExpense.toLocaleString('pt-BR')}`} color="bg-rose-50 text-rose-600" icon={<TrendingDown className="" />} trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`} trendUp={totals.expenseTrend <= 0} isVisible={!isPrivacyEnabled} />
+                        <StatCard title="Saídas (Mês)" value={formatCurrency(totals.currentExpense)} color="bg-rose-50 text-rose-600" icon={<TrendingDown className="" />} trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`} trendUp={totals.expenseTrend <= 0} isVisible={!isPrivacyEnabled} />
                     </>
                 )}
             </div>
@@ -193,7 +195,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         <Tooltip
                                             cursor={{ fill: '#f8fafc' }}
                                             contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
-                                            formatter={(value: number) => isPrivacyEnabled ? '••••' : `R$ ${value.toLocaleString('pt-BR')}`}
+                                            formatter={(value: number) => isPrivacyEnabled ? '••••' : formatCurrency(value)}
                                         />
                                         <Legend verticalAlign="top" height={36} iconType="circle" />
                                         <Bar name="Receitas" dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} />
@@ -246,7 +248,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                             <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
                                                 <span className="text-sm font-bold text-slate-700">{item.description}</span>
                                                 <span className={`text-sm font-black ${isPrivacyEnabled ? 'blur-sm select-none' : (item.type === 'INCOME' ? 'text-emerald-500' : 'text-rose-500')}`}>
-                                                    {isPrivacyEnabled ? 'R$ •••' : `${item.type === 'INCOME' ? '+' : '-'} R$ ${item.amount.toLocaleString('pt-BR')}`}
+                                                    {isPrivacyEnabled ? '••••' : `${item.type === 'INCOME' ? '+' : '-'} ${formatCurrency(item.amount)}`}
                                                 </span>
                                             </div>
                                         ))}
@@ -279,7 +281,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                                 <span className={`text-sm font-bold ${isPrivacyEnabled ? 'blur-sm' : 'text-slate-700'}`}>{item.name}</span>
                                             </div>
                                             <span className={`text-sm font-black text-slate-800 ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
-                                                {isPrivacyEnabled ? 'R$ •••' : `R$ ${item.value.toLocaleString('pt-BR')}`}
+                                                {isPrivacyEnabled ? '••••' : formatCurrency(item.value)}
                                             </span>
                                         </div>
                                     ))}
@@ -307,7 +309,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </div>
                                 <div className="flex justify-between mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                                     <span className={isPrivacyEnabled ? 'blur-sm select-none' : ''}>
-                                        {isPrivacyEnabled ? 'Fixo: R$ •••' : `Fixo: R$ ${forecast.totalFixedExpense.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
+                                        {isPrivacyEnabled ? 'Fixo: ••••' : `Fixo: ${formatCurrency(forecast.totalFixedExpense, { maximumFractionDigits: 0 })}`}
                                     </span>
                                     <span>Livre</span>
                                 </div>
@@ -345,7 +347,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.min(rule503020.needs.percent, 100)}%` }}
                                     />
                                 </div>
-                                <p className="text-[12px] text-slate-400 font-medium">Sugestão: R$ {(totals.currentIncome * 0.5).toLocaleString('pt-BR')}</p>
+                                <p className="text-[12px] text-slate-400 font-medium">Sugestão: {formatCurrency(totals.currentIncome * 0.5)}</p>
                             </div>
 
                             {/* Desejos */}
@@ -363,7 +365,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.min(rule503020.wants.percent, 100)}%` }}
                                     />
                                 </div>
-                                <p className="text-[12px] text-slate-400 font-medium">Sugestão: R$ {(totals.currentIncome * 0.3).toLocaleString('pt-BR')}</p>
+                                <p className="text-[12px] text-slate-400 font-medium">Sugestão: {formatCurrency(totals.currentIncome * 0.3)}</p>
                             </div>
 
                             {/* Objetivos */}
@@ -381,7 +383,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.min(rule503020.savings.percent, 100)}%` }}
                                     />
                                 </div>
-                                <p className="text-[12px] text-slate-400 font-medium">Sugestão: R$ {(totals.currentIncome * 0.2).toLocaleString('pt-BR')}</p>
+                                <p className="text-[12px] text-slate-400 font-medium">Sugestão: {formatCurrency(totals.currentIncome * 0.2)}</p>
                             </div>
                         </div>
                     </div>
@@ -393,7 +395,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     <Pie data={categorySummary} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value">
                                         {categorySummary.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                                     </Pie>
-                                    <Tooltip formatter={(value: number) => isPrivacyEnabled ? '••••' : `R$ ${value.toLocaleString('pt-BR')}`} />
+                                    <Tooltip formatter={(value: number) => isPrivacyEnabled ? '••••' : formatCurrency(value)} />
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -409,7 +411,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         <span className="text-sm font-bold text-slate-600 truncate max-w-[120px]">{item.name}</span>
                                     </div>
                                     <span className={`text-sm font-black text-slate-800 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                        {isPrivacyEnabled ? 'R$ •••' : `R$ ${item.value.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}
+                                        {isPrivacyEnabled ? '••••' : formatCurrency(item.value, { maximumFractionDigits: 0 })}
                                     </span>
                                 </div>
                             ))}

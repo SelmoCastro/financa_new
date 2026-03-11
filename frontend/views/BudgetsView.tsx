@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useData } from '../context/DataProvider';
 import { useMonth } from '../context/MonthContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { Category } from '../types';
 
 interface Budget {
@@ -21,13 +22,14 @@ interface BudgetsViewProps {
 export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) => {
     const { categories } = useData();
     const { selectedDate } = useMonth();
+    const { addToast } = useToast();
+    const { formatCurrency, currencySymbol, locale } = useCurrency(); // Component State
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [form, setForm] = useState({ category: '', amount: '' });
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
-    const { addToast } = useToast();
-
+    
     const fetchBudgets = async () => {
         try {
             const response = await api.get('/budgets', {
@@ -118,7 +120,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
         setEditingBudget(budget);
         setForm({
             category: budget.category,
-            amount: budget.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            amount: budget.amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         });
         setIsModalOpen(true);
     };
@@ -165,7 +167,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                     <h3 className="font-bold text-slate-700 text-lg">{budget.category}</h3>
                                     <p className="text-xs text-slate-400 font-medium mt-1">
                                         Gasto: <span className={`text-slate-600 font-bold ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                            {isPrivacyEnabled ? 'R$ •••' : `R$ ${budget.spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                            {isPrivacyEnabled ? '•••' : formatCurrency(budget.spent)}
                                         </span>
                                     </p>
                                 </div>
@@ -187,7 +189,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                     <div>
                                         <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Teto</p>
                                         <p className={`text-lg font-black text-indigo-600 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                            {isPrivacyEnabled ? 'R$ •••' : `R$ ${budget.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                            {isPrivacyEnabled ? '•••' : formatCurrency(budget.amount)}
                                         </p>
                                     </div>
                                 </div>
@@ -267,9 +269,9 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Teto Mensal (R$)</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Teto Mensal</label>
                                 <div className="relative">
-                                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">R$</span>
+                                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">{currencySymbol}</span>
                                     <input
                                         type="text"
                                         inputMode="numeric"
@@ -281,7 +283,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                                 return;
                                             }
                                             const amount = parseInt(digits) / 100;
-                                            const formatted = amount.toLocaleString('pt-BR', {
+                                            const formatted = amount.toLocaleString(locale, {
                                                 minimumFractionDigits: 2,
                                                 maximumFractionDigits: 2,
                                             });

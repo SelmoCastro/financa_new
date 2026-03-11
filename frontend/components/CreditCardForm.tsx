@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, CreditCard as CreditCardIcon } from 'lucide-react';
 import { Account, CreditCard } from '../types';
 import api from '../services/api';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface CreditCardFormProps {
     accounts: Account[];
@@ -17,6 +18,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
     const [dueDay, setDueDay] = useState(cardToEdit?.dueDay ? String(cardToEdit.dueDay) : '');
     const [accountId, setAccountId] = useState(cardToEdit?.accountId || '');
     const [isLoading, setIsLoading] = useState(false);
+    const { currencySymbol } = useCurrency();
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -86,7 +88,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                     <div>
                         <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Limite Mensal</label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">R$</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">{currencySymbol}</span>
                             <input
                                 type="number"
                                 step="0.01"
