@@ -68,10 +68,10 @@ export const MonthSelector: React.FC = () => {
             <button
                 ref={buttonRef}
                 onClick={toggleOpen}
-                className="flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl p-3 md:p-3.5 transition-colors shadow-sm relative z-50"
+                className="flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl p-2 md:p-2.5 transition-colors shadow-sm relative z-50"
                 title="Escolher Mês"
             >
-                <CalendarDays className="w-5 h-5 text-indigo-500" />
+                <CalendarDays className="w-4 h-4 text-indigo-500" />
             </button>
 
             {isOpen && createPortal(
