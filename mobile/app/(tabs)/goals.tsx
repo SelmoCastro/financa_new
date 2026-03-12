@@ -4,6 +4,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
+import { useCurrency } from '../../context/CurrencyContext';
+import { parseCurrencyToNumber } from '../../utils/currencyUtils';
 import * as Haptics from 'expo-haptics';
 
 interface Goal {
@@ -19,6 +21,7 @@ interface Goal {
 export default function GoalsScreen() {
     const insets = useSafeAreaInsets();
     const { isPrivacyEnabled, togglePrivacy } = useTransactions();
+    const { formatCurrency, currencySymbol } = useCurrency();
     const [goals, setGoals] = useState<Goal[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -59,7 +62,7 @@ export default function GoalsScreen() {
             return;
         }
 
-        const rawAmount = parseFloat(targetAmount.replace(/\./g, '').replace(',', '.'));
+        const rawAmount = parseCurrencyToNumber(targetAmount);
         if (isNaN(rawAmount) || rawAmount <= 0) {
             Alert.alert('Atenção', 'Valor inválido.');
             return;
@@ -81,7 +84,7 @@ export default function GoalsScreen() {
     const handleDeposit = async () => {
         if (!selectedGoal || !depositAmount) return;
 
-        const rawAmount = parseFloat(depositAmount.replace(/\./g, '').replace(',', '.'));
+        const rawAmount = parseCurrencyToNumber(depositAmount);
         if (isNaN(rawAmount) || rawAmount <= 0) {
             Alert.alert('Atenção', 'Valor inválido.');
             return;
@@ -102,8 +105,7 @@ export default function GoalsScreen() {
 
     const formatValue = (value: number | undefined | null) => {
         if (isPrivacyEnabled) return '••••';
-        const safeValue = Number(value) || 0;
-        return `R$ ${safeValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        return formatCurrency(Number(value) || 0);
     };
 
     return (
@@ -222,7 +224,7 @@ export default function GoalsScreen() {
                                 />
                             </View>
                             <View>
-                                <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Valor Alvo (R$)</Text>
+                                <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Valor Alvo ({currencySymbol})</Text>
                                 <TextInput
                                     value={targetAmount}
                                     onChangeText={setTargetAmount}
@@ -272,7 +274,7 @@ export default function GoalsScreen() {
                         </View>
 
                         <View className="mb-6">
-                            <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Valor do Depósito (R$)</Text>
+                            <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Valor do Depósito ({currencySymbol})</Text>
                             <TextInput
                                 value={depositAmount}
                                 onChangeText={setDepositAmount}

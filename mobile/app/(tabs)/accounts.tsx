@@ -6,9 +6,10 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import api from '../../services/api';
-import { formatCurrency, parseCurrencyToNumber } from '../../utils/currencyUtils';
+import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Account, CreditCard } from '../../types';
 import { BankIcon } from '../../components/BankIcon';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const BANKS = [
     'Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander',
@@ -29,6 +30,7 @@ export default function AccountsScreen() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
     const [loading, setLoading] = useState(true);
+    const { formatCurrency, currency } = useCurrency();
 
     // Criação
     const [createModal, setCreateModal] = useState(false);
@@ -95,7 +97,7 @@ export default function AccountsScreen() {
         setEditAccount(acc);
         setEditName(acc.name);
         setEditType(acc.type);
-        setEditBalance(formatCurrency(String(Math.round(acc.balance * 100))));
+        setEditBalance(formatCurrencyInput(String(Math.round(Number(acc.balance) * 100)), currency));
         setEditModal(true);
     };
 
@@ -229,7 +231,7 @@ export default function AccountsScreen() {
                             <Text className="text-indigo-100 font-medium text-sm">Saldo Consolidado</Text>
                         </View>
                         <Text className="text-white text-4xl font-black">
-                            R$ {totalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            {formatCurrency(totalBalance)}
                         </Text>
                     </View>
                 </View>
@@ -254,7 +256,7 @@ export default function AccountsScreen() {
                                     </View>
                                 </View>
                                 <Text className="text-base font-black text-slate-800 mr-4">
-                                    R$ {acc.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {formatCurrency(acc.balance)}
                                 </Text>
                             </View>
                             {/* Ações */}
@@ -303,7 +305,7 @@ export default function AccountsScreen() {
                                 <View className="items-end">
                                     <Text className="text-xs font-bold text-slate-400 uppercase">Limite</Text>
                                     <Text className="text-base font-black text-slate-800">
-                                        R$ {cc.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                        {formatCurrency(cc.limit)}
                                     </Text>
                                 </View>
                             </View>
@@ -335,6 +337,7 @@ export default function AccountsScreen() {
                 saving={saving}
                 onCancel={() => setCreateModal(false)}
                 onSave={handleCreate}
+                formatCurrencyInput={(v: string) => formatCurrencyInput(v, currency)}
             />
 
             {/* ---- Modal EDITAR ---- */}
@@ -347,6 +350,7 @@ export default function AccountsScreen() {
                 saving={saving}
                 onCancel={() => setEditModal(false)}
                 onSave={handleEdit}
+                formatCurrencyInput={(v: string) => formatCurrencyInput(v, currency)}
             />
 
             {/* ---- Modal CARTÃO ---- */}
@@ -368,12 +372,13 @@ export default function AccountsScreen() {
 }
 
 // ---------- Sub-componente do modal de formulário ----------
-function AccountFormModal({ visible, title, name, setName, type, setType, balance, setBalance, saving, onCancel, onSave }: {
+function AccountFormModal({ visible, title, name, setName, type, setType, balance, setBalance, saving, onCancel, onSave, formatCurrencyInput }: {
     visible: boolean; title: string;
     name: string; setName: (v: string) => void;
     type: string; setType: (v: string) => void;
     balance: string; setBalance: (v: string) => void;
     saving: boolean; onCancel: () => void; onSave: () => void;
+    formatCurrencyInput: (v: string) => string;
 }) {
     const ACCOUNT_TYPES = ['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH', 'OTHER'];
     const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -414,7 +419,7 @@ function AccountFormModal({ visible, title, name, setName, type, setType, balanc
                     <TextInput
                         style={styles.input} placeholder="0,00" placeholderTextColor="#94a3b8"
                         keyboardType="numeric" value={balance}
-                        onChangeText={(v) => setBalance(formatCurrency(v))}
+                        onChangeText={(v) => setBalance(formatCurrencyInput(v))}
                     />
 
                     <View style={styles.row}>

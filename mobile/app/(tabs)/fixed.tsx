@@ -4,12 +4,14 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useFixedTransactions } from '../../hooks/useFixedTransactions';
+import { useCurrency } from '../../context/CurrencyContext';
 import api from '../../services/api';
 import * as Haptics from 'expo-haptics';
 
 export default function FixedScreen() {
     const insets = useSafeAreaInsets();
     const { transactions, loading, refreshing, onRefresh, setTransactions, isPrivacyEnabled, togglePrivacy } = useTransactions();
+    const { formatCurrency } = useCurrency();
 
     // Dummy totals for the hook
     const totals = useMemo(() => ({ income: 0, expense: 0, balance: 0, currentIncome: 0, currentExpense: 0 }), []);
@@ -41,8 +43,7 @@ export default function FixedScreen() {
 
     const formatValue = (value: number | undefined | null) => {
         if (isPrivacyEnabled) return '••••';
-        const safeValue = Number(value) || 0;
-        return `R$ ${safeValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        return formatCurrency(Number(value) || 0);
     };
 
     return (
