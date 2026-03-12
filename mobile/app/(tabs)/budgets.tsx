@@ -4,6 +4,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
+import { useCurrency } from '../../context/CurrencyContext';
+import { parseCurrencyToNumber } from '../../utils/currencyUtils';
 import * as Haptics from 'expo-haptics';
 
 interface Budget {
@@ -32,6 +34,7 @@ const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
 export default function BudgetsScreen() {
     const insets = useSafeAreaInsets();
     const { isPrivacyEnabled, togglePrivacy } = useTransactions();
+    const { formatCurrency, currencySymbol } = useCurrency();
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -97,7 +100,7 @@ export default function BudgetsScreen() {
             return;
         }
 
-        const rawAmount = parseFloat(amount.replace(/\./g, '').replace(',', '.'));
+        const rawAmount = parseCurrencyToNumber(amount);
         if (isNaN(rawAmount) || rawAmount <= 0) {
             Alert.alert('Atenção', 'Valor inválido.');
             return;
@@ -124,8 +127,7 @@ export default function BudgetsScreen() {
 
     const formatValue = (value: number | undefined | null) => {
         if (isPrivacyEnabled) return '••••';
-        const safeValue = Number(value) || 0;
-        return `R$ ${safeValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        return formatCurrency(Number(value) || 0);
     };
 
     return (
@@ -236,7 +238,7 @@ export default function BudgetsScreen() {
                                 </Pressable>
                             </View>
                             <View>
-                                <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Teto Mensal (R$)</Text>
+                                <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Teto Mensal ({currencySymbol})</Text>
                                 <TextInput
                                     value={amount}
                                     onChangeText={setAmount}
