@@ -1,5 +1,5 @@
-import React from 'react';
 import { View, Text, Dimensions } from 'react-native';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface BarData {
     month: string;
@@ -13,6 +13,7 @@ interface MonthlyBarChartProps {
 }
 
 export const MonthlyBarChart: React.FC<MonthlyBarChartProps> = ({ data, isPrivacyEnabled }) => {
+    const { formatCurrency } = useCurrency();
     const maxVal = Math.max(...data.flatMap(d => [d.income, d.expenses]), 1000);
     const chartHeight = 150;
 
