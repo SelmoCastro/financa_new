@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { CurrencyProvider } from '../context/CurrencyContext';
 import '../global.css';
 
 export {
@@ -37,7 +38,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <RootLayoutNav />
+        <CurrencyProvider>
+          <RootLayoutNav />
+        </CurrencyProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

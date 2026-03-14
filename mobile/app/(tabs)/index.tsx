@@ -16,16 +16,21 @@ import { MonthlyBarChart } from '../../components/MonthlyBarChart';
 import { AiInsightsWidget } from '../../components/AiInsightsWidget';
 import { ImportModal } from '../../components/ImportModal';
 import { FeedbackModal } from '../../components/FeedbackModal';
+import SettingsModal from '../../components/SettingsModal';
 import { InviteNotification } from '../../components/InviteNotification';
+import { useCurrency } from '../../context/CurrencyContext';
+
 
 export default function DashboardScreen() {
     const insets = useSafeAreaInsets();
     const { selectedDate } = useMonth();
     const { transactions, loading, refreshing, onRefresh, isPrivacyEnabled, togglePrivacy } = useTransactions();
+    const { formatCurrency } = useCurrency();
 
     const [modalVisible, setModalVisible] = useState(false);
     const [importModalVisible, setImportModalVisible] = useState(false);
     const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+    const [settingsModalVisible, setSettingsModalVisible] = useState(false);
     const [transactionType, setTransactionType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
 
     const [accounts, setAccounts] = useState<any[]>([]);
@@ -98,8 +103,7 @@ export default function DashboardScreen() {
 
     const formatValue = (value: number | undefined | null) => {
         if (isPrivacyEnabled) return '••••';
-        const safeValue = Number(value) || 0;
-        return `R$ ${safeValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        return formatCurrency(value || 0);
     };
 
     const monthlyChartData = useMemo(() => {
@@ -142,6 +146,14 @@ export default function DashboardScreen() {
                                 style={styles.btnSecondarySmall}
                             >
                                 <MaterialIcons name="rate-review" size={20} color="#64748b" />
+                            </Pressable>
+                            <Pressable
+                                onPress={() => { setSettingsModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                                hitSlop={15}
+                                style={styles.btnSecondarySmall}
+                            >
+                                <MaterialIcons name="settings" size={20} color="#64748b" />
                             </Pressable>
                         </View>
                     </View>
@@ -369,6 +381,11 @@ export default function DashboardScreen() {
             <FeedbackModal
                 visible={feedbackModalVisible}
                 onClose={() => setFeedbackModalVisible(false)}
+            />
+
+            <SettingsModal
+                visible={settingsModalVisible}
+                onClose={() => setSettingsModalVisible(false)}
             />
 
             {/* Global FAB (Floating Action Button) */}

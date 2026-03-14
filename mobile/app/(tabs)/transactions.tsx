@@ -12,11 +12,13 @@ import api from '../../services/api';
 import TransactionModal from '../../components/TransactionModal';
 import { ImportModal } from '../../components/ImportModal';
 import { useEffect } from 'react';
+import { useCurrency } from '../../context/CurrencyContext';
 
 export default function TransactionsScreen() {
     const insets = useSafeAreaInsets();
     const { selectedDate } = useMonth();
     const { transactions, loading, refreshing, onRefresh, setTransactions, isPrivacyEnabled, togglePrivacy } = useTransactions();
+    const { formatCurrency } = useCurrency();
 
     const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
@@ -123,8 +125,7 @@ export default function TransactionsScreen() {
 
     const formatValue = (value: number | undefined | null) => {
         if (isPrivacyEnabled) return '••••';
-        const safeValue = Number(value) || 0;
-        return `R$ ${safeValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        return formatCurrency(value || 0);
     };
 
     return (
