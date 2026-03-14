@@ -145,7 +145,7 @@ const AppContent: React.FC = () => {
       case 'goals':
         return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
       case 'timeline':
-        return <TimelineView transactions={monthFilteredTransactions} />;
+        return <TimelineView transactions={transactions} />;
       case 'fixed':
         return (
           <FixedItems
