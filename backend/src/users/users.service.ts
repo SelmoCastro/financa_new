@@ -48,6 +48,9 @@ export class UsersService {
         { name: 'Transporte Fixo', type: 'EXPENSE', color: '#b91c1c', icon: '🚌', userId: user.id },
         { name: 'Saúde e Farmácia', type: 'EXPENSE', color: '#fca5a5', icon: '⚕️', userId: user.id },
         { name: 'Educação', type: 'EXPENSE', color: '#991b1b', icon: '📚', userId: user.id },
+        { name: 'Cuidados com Pets', type: 'EXPENSE', color: '#8b5cf6', icon: '🐾', userId: user.id },
+        { name: 'Combustível / Gasolina', type: 'EXPENSE', color: '#064e3b', icon: '⛽', userId: user.id },
+        { name: 'Manutenção Veicular', type: 'EXPENSE', color: '#111827', icon: '🔧', userId: user.id },
         { name: 'Impostos Anuais e Seguros', type: 'EXPENSE', color: '#7f1d1d', icon: '🛡️', userId: user.id },
         { name: 'Impostos Mensais', type: 'EXPENSE', color: '#fecaca', icon: '📄', userId: user.id },
 

@@ -136,9 +136,12 @@ export const SYSTEM_PROMPTS = {
         3. iFood, Uber Eats, Zé Delivery → 'Restaurante / Delivery'.
         4. Uber, 99 → 'Transporte App'.
         5. ENERGIA, ÁGUA, TELEFONE, PAGTO CONTA → 'Contas Residenciais'.
-        6. COMPRA DEBITO/CREDITO em lojas → categorize pelo setor da loja.
-        7. SALÁRIO, VENCIMENTO → 'Salário'.
-        8. Escolha sempre a categoria MAIS PRÓXIMA logicamente da lista disponível.
+        6. SHELL, IPIRANGA, PETROBRAS, POSTO → 'Combustível / Gasolina'.
+        7. PETZ, COBASI, VETERINARIO, RAÇÃO → 'Cuidados com Pets'.
+        8. OFICINA, MECANICO, AUTO PECAS → 'Manutenção Veicular'.
+        9. COMPRA DEBITO/CREDITO em lojas → categorize pelo setor da loja.
+        10. SALÁRIO, VENCIMENTO → 'Salário'.
+        11. Escolha sempre a categoria MAIS PRÓXIMA logicamente da lista disponível.
 
         RESPONDA APENAS JSON PURO:
         {
