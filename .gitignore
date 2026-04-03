@@ -10,5 +10,4 @@ coverage
 *.log
 .vercel
 .env*.local
-.agent
-
+.agent/

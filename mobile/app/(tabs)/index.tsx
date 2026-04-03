@@ -13,6 +13,7 @@ import { useMonth } from '../../context/MonthContext';
 import { MonthSelector } from '../../components/MonthSelector';
 import TransactionModal from '../../components/TransactionModal';
 import { MonthlyBarChart } from '../../components/MonthlyBarChart';
+import { CategoryChart } from '../../components/CategoryChart';
 import { AiInsightsWidget } from '../../components/AiInsightsWidget';
 import { ImportModal } from '../../components/ImportModal';
 import { FeedbackModal } from '../../components/FeedbackModal';
@@ -264,6 +265,14 @@ export default function DashboardScreen() {
                                     Seu fluxo de caixa aparecerá aqui. Adicione seu primeiro lançamento!
                                 </Text>
                             </View>
+                        )}
+
+                        {/* Category Chart */}
+                        {dashboardSummary?.categorySummary && dashboardSummary.categorySummary.length > 0 && (
+                            <CategoryChart 
+                                data={dashboardSummary.categorySummary} 
+                                isPrivacyEnabled={isPrivacyEnabled} 
+                            />
                         )}
 
                         {/* Rule 50/30/20 Detailed */}
