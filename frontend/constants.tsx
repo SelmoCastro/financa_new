@@ -5,9 +5,9 @@ export const CATEGORIES = [
   // Receitas
   'Salário', 'Freelance', 'Investimentos (Receita)', 'Presentes', 'Outras Receitas',
   // Despesas Fixas (Necessidades)
-  'Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Contas e Serviços',
+  'Moradia', 'Alimentação', 'Transporte', 'Combustível / Gasolina', 'Saúde', 'Educação', 'Contas e Serviços',
   // Despesas Variáveis (Desejos)
-  'Lazer', 'Compras', 'Restaurantes', 'Assinaturas', 'Viagem', 'Cuidados Pessoais',
+  'Lazer', 'Compras', 'Restaurantes', 'Assinaturas', 'Viagem', 'Cuidados Pessoais', 'Cuidados com Pets',
   // Investimentos/Dívidas
   'Investimentos (Aporte)', 'Dívidas/Financiamentos'
 ];

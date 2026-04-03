@@ -242,7 +242,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
 
                                     <optgroup label="Necessidades (Essencial)">
                                         {categories.filter(c =>
-                                            ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
+                                            ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
                                                 .includes(c.name)
                                         ).map(c => (
                                             <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
@@ -251,7 +251,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
 
                                     <optgroup label="Desejos (Estilo de Vida)">
                                         {categories.filter(c =>
-                                            ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens']
+                                            ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
                                                 .includes(c.name)
                                         ).map(c => (
                                             <option key={c.id} value={c.name}>{c.icon} {c.name}</option>

@@ -482,7 +482,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                     <>
                                                         <optgroup label="Necessidades (Essencial)">
                                                             {categories.filter(c =>
-                                                                ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
+                                                                ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
                                                                     .includes(c.name)
                                                             ).map(c => (
                                                                 <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
@@ -491,7 +491,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
 
                                                         <optgroup label="Desejos (Estilo de Vida)">
                                                             {categories.filter(c =>
-                                                                ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens']
+                                                                ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
                                                                     .includes(c.name)
                                                             ).map(c => (
                                                                 <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
@@ -508,14 +508,14 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                         </optgroup>
 
                                                         {categories.filter(c =>
-                                                            !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
-                                                                'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens',
+                                                            !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
+                                                                'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens',
                                                                 'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
                                                         ).length > 0 && (
                                                                 <optgroup label="Outras Despesas">
                                                                     {categories.filter(c =>
-                                                                        !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
-                                                                            'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens',
+                                                                        !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
+                                                                            'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens',
                                                                             'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
                                                                     ).map(c => (
                                                                         <option key={c.id} value={c.id}>{c.icon} {c.name}</option>

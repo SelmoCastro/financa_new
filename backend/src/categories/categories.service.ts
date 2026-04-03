@@ -16,6 +16,7 @@ const STANDARD_CATEGORIES = [
   { name: 'Contas Residenciais', type: 'EXPENSE', color: '#dc2626', icon: '💡' },
   { name: 'Mercado / Padaria', type: 'EXPENSE', color: '#f87171', icon: '🛒' },
   { name: 'Transporte Fixo', type: 'EXPENSE', color: '#b91c1c', icon: '🚌' },
+  { name: 'Combustível / Gasolina', type: 'EXPENSE', color: '#ea580c', icon: '⛽' },
   { name: 'Saúde e Farmácia', type: 'EXPENSE', color: '#fca5a5', icon: '⚕️' },
   { name: 'Educação', type: 'EXPENSE', color: '#991b1b', icon: '📚' },
   { name: 'Impostos Anuais e Seguros', type: 'EXPENSE', color: '#7f1d1d', icon: '🛡️' },
@@ -27,6 +28,7 @@ const STANDARD_CATEGORIES = [
   { name: 'Lazer / Assinaturas', type: 'EXPENSE', color: '#fbbf24', icon: '🎬' },
   { name: 'Compras / Vestuário', type: 'EXPENSE', color: '#b45309', icon: '🛍️' },
   { name: 'Cuidados Pessoais', type: 'EXPENSE', color: '#fcd34d', icon: '💅' },
+  { name: 'Cuidados com Pets', type: 'EXPENSE', color: '#fb923c', icon: '🐾' },
   { name: 'Viagens', type: 'EXPENSE', color: '#78350f', icon: '✈️' },
 
   // Objetivos (Quitação e Reserva)
