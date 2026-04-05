@@ -30,16 +30,16 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
         loadStoredCurrency();
     }, []);
 
-    const setCurrency = async (newCurrency: CurrencyCode) => {
+    const setCurrency = React.useCallback(async (newCurrency: CurrencyCode) => {
         try {
             setCurrencyState(newCurrency);
             await SecureStore.setItemAsync('app_currency', newCurrency);
         } catch (e) {
             console.error('[CurrencyContext] Erro ao salvar moeda:', e);
         }
-    };
+    }, []);
 
-    const formatCurrency = (value: number | string, options?: Intl.NumberFormatOptions) => {
+    const formatCurrency = React.useCallback((value: number | string, options?: Intl.NumberFormatOptions) => {
         const numValue = typeof value === 'string' ? Number(value) : value;
         const safeValue = isNaN(numValue) ? 0 : numValue;
 
@@ -52,7 +52,7 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
             currency: currency,
             ...options
         });
-    };
+    }, [currency]);
 
     const currencySymbol = useMemo(() => {
         if (currency === 'USD') return '$';
@@ -66,8 +66,12 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
         return 'pt-BR';
     }, [currency]);
 
+    const value = React.useMemo(() => ({
+        currency, setCurrency, formatCurrency, currencySymbol, locale
+    }), [currency, setCurrency, formatCurrency, currencySymbol, locale]);
+
     return (
-        <CurrencyContext.Provider value={{ currency, setCurrency, formatCurrency, currencySymbol, locale }}>
+        <CurrencyContext.Provider value={value}>
             {children}
         </CurrencyContext.Provider>
     );

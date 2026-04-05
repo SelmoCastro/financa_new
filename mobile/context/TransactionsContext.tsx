@@ -55,20 +55,20 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [token]);
 
+    const value = React.useMemo(() => ({
+        transactions,
+        loading,
+        refreshing,
+        error,
+        isPrivacyEnabled,
+        fetchTransactions,
+        onRefresh,
+        setTransactions,
+        togglePrivacy
+    }), [transactions, loading, refreshing, error, isPrivacyEnabled, fetchTransactions, onRefresh, togglePrivacy]);
+
     return (
-        <TransactionsContext.Provider
-            value={{
-                transactions,
-                loading,
-                refreshing,
-                error,
-                isPrivacyEnabled,
-                fetchTransactions,
-                onRefresh,
-                setTransactions,
-                togglePrivacy
-            }}
-        >
+        <TransactionsContext.Provider value={value}>
             {children}
         </TransactionsContext.Provider>
     );

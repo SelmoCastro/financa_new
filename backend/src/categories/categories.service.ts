@@ -8,7 +8,7 @@ const STANDARD_CATEGORIES = [
   { name: 'Salário', type: 'INCOME', color: '#10b981', icon: '💰' },
   { name: 'Renda Extra', type: 'INCOME', color: '#059669', icon: '📈' },
   { name: 'Rendimento de Investimentos', type: 'INCOME', color: '#34d399', icon: '🏦' },
-  { name: 'Transferência Recebida', type: 'INCOME', color: '#6ee7b7', icon: '🔄' },
+  { name: 'Transferência Recebida', type: 'TRANSFER', color: '#6ee7b7', icon: '🔄' },
   { name: 'Empréstimo Recebido', type: 'INCOME', color: '#a7f3d0', icon: '🤝' },
 
   // Necessidades (Essencial)

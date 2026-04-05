@@ -38,7 +38,7 @@ export class UsersService {
         { name: 'Salário', type: 'INCOME', color: '#10b981', icon: '💰', userId: user.id },
         { name: 'Renda Extra', type: 'INCOME', color: '#059669', icon: '📈', userId: user.id },
         { name: 'Rendimento de Investimentos', type: 'INCOME', color: '#34d399', icon: '🏦', userId: user.id },
-        { name: 'Transferência Recebida', type: 'INCOME', color: '#6ee7b7', icon: '🔄', userId: user.id },
+        { name: 'Transferência Recebida', type: 'TRANSFER', color: '#6ee7b7', icon: '🔄', userId: user.id },
         { name: 'Empréstimo Recebido', type: 'INCOME', color: '#a7f3d0', icon: '🤝', userId: user.id },
 
         // Necessidades (Essencial)

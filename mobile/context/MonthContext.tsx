@@ -11,20 +11,26 @@ const MonthContext = createContext<MonthContextData>({} as MonthContextData);
 export const MonthProvider = ({ children }: { children: ReactNode }) => {
     const [selectedDate, setSelectedDate] = useState(new Date());
 
-    const changeMonth = (increment: number) => {
+    const setDate = React.useCallback((date: Date) => {
+        setSelectedDate(date);
+    }, []);
+
+    const changeMonth = React.useCallback((increment: number) => {
         setSelectedDate(prev => {
             const newDate = new Date(prev);
             newDate.setMonth(prev.getMonth() + increment);
             return newDate;
         });
-    };
+    }, []);
 
-    const setDate = (date: Date) => {
-        setSelectedDate(date);
-    }
+    const value = React.useMemo(() => ({
+        selectedDate,
+        changeMonth,
+        setDate
+    }), [selectedDate, changeMonth, setDate]);
 
     return (
-        <MonthContext.Provider value={{ selectedDate, changeMonth, setDate }}>
+        <MonthContext.Provider value={value}>
             {children}
         </MonthContext.Provider>
     );

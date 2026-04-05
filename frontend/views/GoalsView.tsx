@@ -193,12 +193,13 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
     }, [goals, depositModalOpen]); // Refresh icons when deposit modal opens too
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header Action */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 px-2">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">Cofres & Metas</h2>
-                    <p className="text-slate-500 font-medium">Visualize e conquiste seus sonhos.</p>
+                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.3em] mb-1">Realizações</p>
+                    <h2 className="text-3xl md:text-4xl font-black text-slate-800 dark:text-white tracking-tight">Cofres & Metas</h2>
+                    <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium mt-1">Transforme seus sonhos em conquistas reais.</p>
                 </div>
                 <button
                     onClick={() => {
@@ -206,7 +207,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                         setForm({ title: '', targetAmount: '', currentAmount: '', deadline: '' });
                         setIsModalOpen(true);
                     }}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-200 transition-all active:scale-95 flex items-center gap-2"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-600/20 transition-all active:scale-95 flex items-center gap-3"
                 >
                     <i data-lucide="plus-circle" className="w-5 h-5"></i>
                     Nova Meta
@@ -215,76 +216,88 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
             {/* Grid */}
             {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="h-64 bg-slate-100 rounded-3xl animate-pulse"></div>
+                        <div key={i} className="h-72 bg-slate-100 dark:bg-slate-900 rounded-[2.5rem] animate-pulse"></div>
                     ))}
                 </div>
             ) : goals.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
-                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="target" className="w-8 h-8 text-slate-300"></i>
+                <div className="text-center py-24 glass-card rounded-[3rem] border-dashed border-slate-200 dark:border-slate-800">
+                    <div className="w-24 h-24 bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
+                        <i data-lucide="target" className="w-12 h-12 text-slate-300 dark:text-slate-600"></i>
                     </div>
-                    <h3 className="text-lg font-bold text-slate-700 mb-2">Nenhuma meta ainda</h3>
-                    <p className="text-slate-500 max-w-xs mx-auto">Crie seu primeiro cofrinho para começar a juntar dinheiro para seus sonhos!</p>
+                    <h3 className="text-xl font-black text-slate-800 dark:text-white mb-3 tracking-tight">Nenhuma meta ainda</h3>
+                    <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto font-medium leading-relaxed">Crie seu primeiro cofrinho para começar a juntar dinheiro para seus sonhos e visualize seu progresso!</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
                     {goals.map(goal => {
                         const progress = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
                         const isComplete = progress >= 100;
 
                         return (
-                            <div key={goal.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+                            <div key={goal.id} className="glass-card p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] relative overflow-hidden group hover:translate-y-[-6px] transition-all duration-300">
                                 {isComplete && (
-                                    <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-xl">
+                                    <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-black uppercase px-6 py-2 rounded-bl-[1.5rem] shadow-lg shadow-emerald-500/20 tracking-widest z-10 animate-pulse">
                                         Concluído
                                     </div>
                                 )}
 
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
-                                        <i data-lucide="target" className="w-6 h-6"></i>
+                                <div className="flex justify-between items-start mb-10">
+                                    <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-[1.5rem] flex items-center justify-center shadow-sm">
+                                        <i data-lucide="target" className="w-8 h-8"></i>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => openEditModal(goal)} className="p-3 bg-slate-50 hover:bg-slate-100 text-indigo-600 rounded-xl transition-colors active:scale-90" title="Editar Meta">
-                                            <i data-lucide="edit-3" className="w-5 h-5"></i>
-                                        </button>
-                                        <button onClick={() => handleDelete(goal)} className="p-3 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-colors active:scale-90" title="Excluir Meta">
-                                            <i data-lucide="trash-2" className="w-5 h-5"></i>
-                                        </button>
-                                        <button onClick={() => openDepositModal(goal)} className="p-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl transition-colors active:scale-90" title="Adicionar dinheiro">
-                                            <i data-lucide="plus" className="w-5 h-5"></i>
+                                        <div className="flex gap-2 bg-slate-50 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                            <button onClick={() => openEditModal(goal)} className="p-2.5 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm" title="Editar Meta">
+                                                <i data-lucide="edit-3" className="w-5 h-5"></i>
+                                            </button>
+                                            <button onClick={() => handleDelete(goal)} className="p-2.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm" title="Excluir Meta">
+                                                <i data-lucide="trash-2" className="w-5 h-5"></i>
+                                            </button>
+                                        </div>
+                                        <button onClick={() => openDepositModal(goal)} className="p-4 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-all active:scale-90 shadow-sm border border-emerald-100 dark:border-emerald-500/20" title="Adicionar dinheiro">
+                                            <i data-lucide="plus" className="w-6 h-6"></i>
                                         </button>
                                     </div>
                                 </div>
 
-                                <h3 className="text-lg font-bold text-slate-800 mb-1">{goal.title}</h3>
-                                <p className={`text-xs text-slate-400 font-bold uppercase mb-4 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                    Meta: {isPrivacyEnabled ? '•••' : formatCurrency(goal.targetAmount)}
-                                </p>
+                                <div className="space-y-1 mb-8">
+                                    <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{goal.title}</h3>
+                                    <p className={`text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-[0.2em] ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                        Meta: {isPrivacyEnabled ? '•••' : formatCurrency(goal.targetAmount)}
+                                    </p>
+                                </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-6">
                                     <div className="flex justify-between items-end">
-                                        <span className={`text-2xl font-black text-slate-800 ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
-                                            {isPrivacyEnabled ? '•••' : formatCurrency(goal.currentAmount)}
-                                        </span>
-                                        <span className={`text-xs font-black px-2 py-1 rounded-lg ${isComplete ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
-                                            {progress.toFixed(0)}%
-                                        </span>
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">Acumulado</p>
+                                            <span className={`text-3xl font-black text-slate-800 dark:text-white tracking-tighter ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
+                                                {isPrivacyEnabled ? '•••' : formatCurrency(goal.currentAmount)}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest ${isComplete ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'}`}>
+                                                {progress.toFixed(0)}%
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-4 w-full bg-slate-100 dark:bg-slate-900/50 rounded-full overflow-hidden p-1 shadow-inner">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-1000 ${isComplete ? 'bg-emerald-500' : 'bg-indigo-600'}`}
+                                            className={`h-full rounded-full transition-all duration-1000 ease-out shadow-sm ${isComplete ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-600 to-indigo-400'}`}
                                             style={{ width: `${progress}%` }}
                                         ></div>
                                     </div>
 
                                     {goal.deadline && (
-                                        <p className="text-[10px] text-slate-400 text-center font-medium">
-                                            Prazo: {new Date(goal.deadline).toLocaleDateString()}
-                                        </p>
+                                        <div className="flex items-center justify-center gap-2 pt-2">
+                                            <i data-lucide="calendar" className="w-3.5 h-3.5 text-slate-300"></i>
+                                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">
+                                                Prazo: {new Date(goal.deadline).toLocaleDateString()}
+                                            </p>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -295,33 +308,41 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
             {/* Create Goal Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8 animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-black text-slate-800">{editingGoal ? 'Editar Objetivo' : 'Novo Objetivo'}</h2>
-                            <button type="button" onClick={() => { setIsModalOpen(false); setEditingGoal(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
-                                <i data-lucide="x" className="w-5 h-5 text-slate-500"></i>
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 rounded-[3rem] w-full max-w-md shadow-2xl p-10 animate-in zoom-in-95 duration-300 border border-slate-200 dark:border-slate-800">
+                        <div className="flex justify-between items-center mb-10">
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{editingGoal ? 'Editar Objetivo' : 'Novo Objetivo'}</h2>
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Planejamento de Sonhos</p>
+                            </div>
+                            <button type="button" onClick={() => { setIsModalOpen(false); setEditingGoal(null); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm">
+                                <i data-lucide="x" className="w-6 h-6 text-slate-500 dark:text-slate-400"></i>
                             </button>
                         </div>
-                        <form onSubmit={handleSave} className="space-y-4">
+                        <form onSubmit={handleSave} className="space-y-8">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Nome da Meta</label>
-                                <input
-                                    autoFocus
-                                    className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                    placeholder="Ex: Viagem Disney, Carro Novo..."
-                                    value={form.title}
-                                    onChange={e => setForm({ ...form, title: e.target.value })}
-                                />
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">O que você quer conquistar?</label>
+                                <div className="relative group">
+                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                                        <i data-lucide="tag" className="w-5 h-5"></i>
+                                    </div>
+                                    <input
+                                        autoFocus
+                                        className="w-full pl-16 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                                        placeholder="Ex: Viagem Disney, Carro Novo..."
+                                        value={form.title}
+                                        onChange={e => setForm({ ...form, title: e.target.value })}
+                                    />
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Valor Alvo</label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">{currencySymbol}</span>
+                                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Valor Alvo</label>
+                                    <div className="relative group">
+                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
                                         <input
-                                            className="w-full pl-10 pr-4 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                            className="w-full pl-12 pr-4 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
                                             placeholder="0,00"
                                             value={form.targetAmount}
                                             onChange={e => setForm({ ...form, targetAmount: formatInputCurrency(e.target.value) })}
@@ -329,11 +350,11 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Já tenho</label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">{currencySymbol}</span>
+                                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Já acumulado</label>
+                                    <div className="relative group">
+                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
                                         <input
-                                            className="w-full pl-10 pr-4 py-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                            className="w-full pl-12 pr-4 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
                                             placeholder="0,00"
                                             value={form.currentAmount}
                                             onChange={e => setForm({ ...form, currentAmount: formatInputCurrency(e.target.value) })}
@@ -343,19 +364,24 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Prazo (Opcional)</label>
-                                <input
-                                    type="date"
-                                    className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                    value={form.deadline}
-                                    onChange={e => setForm({ ...form, deadline: e.target.value })}
-                                />
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Prazo Final (Opcional)</label>
+                                <div className="relative group">
+                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                                        <i data-lucide="calendar" className="w-5 h-5"></i>
+                                    </div>
+                                    <input
+                                        type="date"
+                                        className="w-full pl-16 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                                        value={form.deadline}
+                                        onChange={e => setForm({ ...form, deadline: e.target.value })}
+                                    />
+                                </div>
                             </div>
 
                             <div className="pt-4">
                                 <button
                                     type="submit"
-                                    className="w-full py-4 rounded-2xl font-black text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+                                    className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 active:scale-95"
                                 >
                                     {editingGoal ? 'Atualizar Meta' : 'Criar Meta'}
                                 </button>
@@ -367,26 +393,26 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
             {/* Deposit Modal */}
             {depositModalOpen && selectedGoal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl p-8 animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center mb-6">
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-[200] p-4 animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 rounded-[3rem] w-full max-w-md shadow-2xl p-10 animate-in zoom-in-95 duration-300 border border-slate-200 dark:border-slate-800">
+                        <div className="flex justify-between items-center mb-10">
                             <div>
-                                <h2 className="text-xl font-black text-slate-800">Novo Aporte</h2>
-                                <p className="text-xs text-slate-500 font-medium mt-1">{selectedGoal.title}</p>
+                                <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Novo Aporte</h2>
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest mt-1">Meta: {selectedGoal.title}</p>
                             </div>
-                            <button onClick={() => setDepositModalOpen(false)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
-                                <i data-lucide="x" className="w-5 h-5 text-slate-500"></i>
+                            <button onClick={() => setDepositModalOpen(false)} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+                                <i data-lucide="x" className="w-6 h-6 text-slate-500 dark:text-slate-400"></i>
                             </button>
                         </div>
 
-                        <form onSubmit={confirmDeposit} className="space-y-6">
+                        <form onSubmit={confirmDeposit} className="space-y-8">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Quanto quer guardar?</label>
-                                <div className="relative">
-                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl pointer-events-none">{currencySymbol}</span>
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4 ml-1">Quanto você quer guardar hoje?</label>
+                                <div className="relative group">
+                                    <span className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 font-black text-2xl pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
                                     <input
                                         autoFocus
-                                        className="w-full pl-14 pr-6 py-6 bg-slate-50 border-none rounded-3xl font-black text-3xl text-slate-800 focus:ring-4 focus:ring-indigo-100 outline-none transition-all placeholder:text-slate-300"
+                                        className="w-full pl-18 pr-8 py-8 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2rem] font-black text-4xl text-slate-800 dark:text-white focus:ring-8 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tighter"
                                         placeholder="0,00"
                                         value={depositAmount}
                                         onChange={e => setDepositAmount(formatInputCurrency(e.target.value))}
@@ -396,10 +422,10 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
                             <button
                                 type="submit"
-                                className="w-full py-4 rounded-2xl font-black text-white bg-emerald-500 hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200 active:scale-95 flex items-center justify-center gap-2"
+                                className="w-full py-6 rounded-[1.5rem] font-black text-xs uppercase tracking-widest text-white bg-emerald-500 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-3"
                             >
-                                <i data-lucide="piggy-bank" className="w-5 h-5"></i>
-                                Guardar Dinheiro
+                                <i data-lucide="piggy-bank" className="w-6 h-6"></i>
+                                Confirmar Depósito
                             </button>
                         </form>
                     </div>

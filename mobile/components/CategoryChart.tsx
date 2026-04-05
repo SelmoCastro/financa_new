@@ -18,11 +18,18 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 export const CategoryChart: React.FC<CategoryChartProps> = ({ data, isPrivacyEnabled }) => {
     const { formatCurrency } = useCurrency();
 
-    const chartData = data.map((item, index) => ({
+    const chartData = React.useMemo(() => data.map((item, index) => ({
         value: item.value,
         color: COLORS[index % COLORS.length],
         text: item.name
-    }));
+    })), [data]);
+
+    const renderCenterLabel = React.useCallback(() => (
+        <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ fontSize: 10, color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Despesas</Text>
+            <Text style={{ fontSize: 18, color: '#1e293b', fontWeight: '900' }}>100%</Text>
+        </View>
+    ), []);
 
     if (!data || data.length === 0) return null;
 
@@ -41,14 +48,7 @@ export const CategoryChart: React.FC<CategoryChartProps> = ({ data, isPrivacyEna
                     radius={80}
                     innerRadius={60}
                     innerCircleColor={'#ffffff'}
-                    centerLabelComponent={() => {
-                        return (
-                            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                                <Text style={{ fontSize: 10, color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Despesas</Text>
-                                <Text style={{ fontSize: 18, color: '#1e293b', fontWeight: '900' }}>100%</Text>
-                            </View>
-                        );
-                    }}
+                    centerLabelComponent={renderCenterLabel}
                 />
             </View>
 

@@ -236,7 +236,8 @@ export class TransactionsService {
       suggestedCategory: suggestion?.category || suggestion?.c || 'Outros',
       suggestedCategoryId: matchedCategoryId,
       suggestedRule: suggestion?.rule || suggestion?.r || 30,
-      suggestedIcon: suggestion?.icon || suggestion?.i || '🏷️'
+      suggestedIcon: suggestion?.icon || suggestion?.i || '🏷️',
+      confidence: suggestion?.confidence || 100
     };
   }
 
@@ -479,8 +480,10 @@ export class TransactionsService {
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Ensure a "Transferência" category exists for the user
+      // Search by type: 'TRANSFER' to handle both 'Transferência' and 'Transferência Recebida'
       let transferCat = await tx.category.findFirst({
-        where: { userId, name: { equals: 'Transferência', mode: 'insensitive' } }
+        where: { userId, type: 'TRANSFER' },
+        orderBy: { createdAt: 'asc' }
       });
 
       if (!transferCat) {

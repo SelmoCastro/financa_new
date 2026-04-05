@@ -18,9 +18,9 @@ const icons = {
 };
 
 const styles = {
-    success: 'bg-white border-emerald-100',
-    error: 'bg-white border-rose-100',
-    info: 'bg-white border-indigo-100'
+    success: 'bg-white dark:bg-slate-900 border-emerald-100 dark:border-emerald-500/20 shadow-emerald-500/5',
+    error: 'bg-white dark:bg-slate-900 border-rose-100 dark:border-rose-500/20 shadow-rose-500/5',
+    info: 'bg-white dark:bg-slate-900 border-indigo-100 dark:border-indigo-500/20 shadow-indigo-500/5'
 };
 
 export const Toast: React.FC<ToastProps> = ({ id, message, type, onClose }) => {
@@ -33,14 +33,14 @@ export const Toast: React.FC<ToastProps> = ({ id, message, type, onClose }) => {
     }, [id, onClose]);
 
     return (
-        <div className={`flex items-center gap-3 p-4 rounded-2xl shadow-lg border ${styles[type]} animate-in slide-in-from-right fade-in duration-300 max-w-sm w-full pointer-events-auto`}>
-            <div className="flex-shrink-0">
+        <div className={`flex items-center gap-4 p-5 rounded-[1.5rem] shadow-2xl border ${styles[type]} animate-in slide-in-from-right-4 fade-in duration-500 max-w-sm w-full pointer-events-auto backdrop-blur-xl`}>
+            <div className="flex-shrink-0 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl shadow-sm">
                 {icons[type]}
             </div>
-            <p className="flex-1 text-sm font-bold text-slate-700">{message}</p>
+            <p className="flex-1 text-sm font-black text-slate-700 dark:text-slate-200 tracking-tight leading-tight">{message}</p>
             <button
                 onClick={() => onClose(id)}
-                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-all active:scale-90"
             >
                 <X className="w-4 h-4" />
             </button>

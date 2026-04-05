@@ -126,14 +126,11 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-end">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">Orçamentos</h2>
-                    <p className="text-sm text-slate-500 flex items-center gap-2">
-                        <i data-lucide="target" className="w-4 h-4 text-indigo-500"></i>
-                        Defina limites e controle seus gastos mensais
-                    </p>
+                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">Planejamento</p>
+                    <h2 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight">Orçamentos</h2>
                 </div>
                 <button
                     onClick={() => {
@@ -141,7 +138,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                         setForm({ category: '', amount: '' });
                         setIsModalOpen(true);
                     }}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95 flex items-center gap-2"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center gap-2"
                 >
                     <i data-lucide="plus" className="w-4 h-4"></i>
                     Definir Teto
@@ -149,65 +146,71 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
             </div>
 
             {isLoading ? (
-                <div className="text-center py-12 text-slate-400">Carregando orçamentos...</div>
+                <div className="text-center py-12 text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-xs">Carregando orçamentos...</div>
             ) : budgets.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200">
-                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="piggy-bank" className="w-8 h-8 text-slate-300"></i>
+                <div className="text-center py-20 glass-card rounded-[2.5rem] border-dashed border-slate-200 dark:border-slate-800">
+                    <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-sm">
+                        <i data-lucide="piggy-bank" className="w-10 h-10 text-slate-300 dark:text-slate-600"></i>
                     </div>
-                    <h3 className="text-slate-900 font-bold mb-1">Nenhum orçamento definido</h3>
-                    <p className="text-slate-500 text-sm">Crie um teto de gastos para começar a economizar.</p>
+                    <h3 className="text-slate-900 dark:text-white font-black text-xl mb-2">Nenhum orçamento definido</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-xs mx-auto">Crie um teto de gastos para cada categoria e comece a economizar de verdade.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {budgets.map((budget) => (
-                        <div key={budget.category} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="font-bold text-slate-700 text-lg">{budget.category}</h3>
-                                    <p className="text-xs text-slate-400 font-medium mt-1">
-                                        Gasto: <span className={`text-slate-600 font-bold ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                            {isPrivacyEnabled ? '•••' : formatCurrency(budget.spent)}
+                        <div key={budget.category} className="glass-card p-8 rounded-[2.5rem] relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="space-y-1">
+                                    <h3 className="font-black text-slate-800 dark:text-white text-xl tracking-tight">{budget.category}</h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Gasto Atual</span>
+                                        <span className={`text-sm font-black ${budget.isOverBudget ? 'text-rose-500' : 'text-slate-600 dark:text-slate-300'} ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                            {isPrivacyEnabled ? '••••' : formatCurrency(budget.spent)}
                                         </span>
-                                    </p>
+                                    </div>
                                 </div>
-                                <div className="flex gap-2 text-right">
-                                    <button
-                                        onClick={() => openEditModal(budget)}
-                                        className="p-1.5 text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors h-fit self-start"
-                                        title="Editar Orçamento"
-                                    >
-                                        <i data-lucide="edit-3" className="w-4 h-4"></i>
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(budget.id, budget.category)}
-                                        className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors h-fit self-start"
-                                        title="Excluir Orçamento"
-                                    >
-                                        <i data-lucide="trash-2" className="w-4 h-4"></i>
-                                    </button>
-                                    <div>
-                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Teto</p>
-                                        <p className={`text-lg font-black text-indigo-600 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-                                            {isPrivacyEnabled ? '•••' : formatCurrency(budget.amount)}
+                                <div className="flex flex-col items-end gap-3">
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => openEditModal(budget)}
+                                            className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all"
+                                            title="Editar Orçamento"
+                                        >
+                                            <i data-lucide="edit-3" className="w-4 h-4"></i>
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(budget.id, budget.category)}
+                                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
+                                            title="Excluir Orçamento"
+                                        >
+                                            <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest mb-0.5">Teto Mensal</p>
+                                        <p className={`text-xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                            {isPrivacyEnabled ? '••••' : formatCurrency(budget.amount)}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="relative h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div className="relative h-4 w-full bg-slate-100 dark:bg-slate-900/50 rounded-full overflow-hidden p-1">
                                 <div
-                                    className={`absolute top-0 left-0 h-full ${getProgressColor(budget.percentage)} transition-all duration-1000 ease-out`}
+                                    className={`h-full rounded-full ${getProgressColor(budget.percentage)} transition-all duration-1000 ease-out shadow-sm`}
                                     style={{ width: `${Math.min(budget.percentage, 100)}%` }}
                                 ></div>
                             </div>
 
-                            <div className="flex justify-between mt-2">
-                                <span className={`text-[10px] font-bold ${budget.isOverBudget ? 'text-rose-500' : 'text-emerald-500'}`}>
-                                    {budget.isOverBudget ? 'Orçamento Estourado!' : 'Dentro do limite'}
-                                </span>
-                                <span className="text-[10px] font-bold text-slate-400">
-                                    {budget.percentage.toFixed(1)}% usado
+                            <div className="flex justify-between mt-4">
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${budget.isOverBudget ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest ${budget.isOverBudget ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                        {budget.isOverBudget ? 'Orçamento Estourado!' : 'Dentro do limite'}
+                                    </span>
+                                </div>
+                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                    {budget.percentage.toFixed(1)}% utilizado
                                 </span>
                             </div>
                         </div>
@@ -216,62 +219,70 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
             )}
 
             {isModalOpen && (
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold text-slate-800">{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</h3>
-                            <button onClick={() => { setIsModalOpen(false); setEditingBudget(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
-                                <i data-lucide="x" className="w-4 h-4 text-slate-500"></i>
+                <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-200 dark:border-slate-800">
+                        <div className="flex justify-between items-center mb-8">
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{editingBudget ? 'Editar Teto' : 'Novo Teto'}</h3>
+                                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Planeje seus gastos</p>
+                            </div>
+                            <button onClick={() => { setIsModalOpen(false); setEditingBudget(null); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
+                                <i data-lucide="x" className="w-5 h-5 text-slate-500 dark:text-slate-400"></i>
                             </button>
                         </div>
-                        <form onSubmit={handleSave} className="space-y-4">
+                        <form onSubmit={handleSave} className="space-y-6">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Categoria</label>
-                                <select
-                                    value={form.category}
-                                    onChange={e => setForm({ ...form, category: e.target.value })}
-                                    className="w-full p-4 bg-slate-50 border-none rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none cursor-pointer"
-                                >
-                                    <option value="">Selecione...</option>
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Categoria do Gasto</label>
+                                <div className="relative">
+                                    <select
+                                        value={form.category}
+                                        onChange={e => setForm({ ...form, category: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none appearance-none cursor-pointer transition-all"
+                                    >
+                                        <option value="">Selecione uma categoria...</option>
 
-                                    <optgroup label="Entradas (Rendas)">
-                                        {categories.filter(c => c.type === 'INCOME').map(c => (
-                                            <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
-                                        ))}
-                                    </optgroup>
+                                        <optgroup label="Entradas (Rendas)">
+                                            {categories.filter(c => c.type === 'INCOME').map(c => (
+                                                <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                            ))}
+                                        </optgroup>
 
-                                    <optgroup label="Necessidades (Essencial)">
-                                        {categories.filter(c =>
-                                            ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
-                                                .includes(c.name)
-                                        ).map(c => (
-                                            <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
-                                        ))}
-                                    </optgroup>
+                                        <optgroup label="Necessidades (Essencial)">
+                                            {categories.filter(c =>
+                                                ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
+                                                    .includes(c.name)
+                                            ).map(c => (
+                                                <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                            ))}
+                                        </optgroup>
 
-                                    <optgroup label="Desejos (Estilo de Vida)">
-                                        {categories.filter(c =>
-                                            ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
-                                                .includes(c.name)
-                                        ).map(c => (
-                                            <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
-                                        ))}
-                                    </optgroup>
+                                        <optgroup label="Desejos (Estilo de Vida)">
+                                            {categories.filter(c =>
+                                                ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
+                                                    .includes(c.name)
+                                            ).map(c => (
+                                                <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                            ))}
+                                        </optgroup>
 
-                                    <optgroup label="Objetivos (Quitação e Reserva)">
-                                        {categories.filter(c =>
-                                            ['Aplicações / Poupança', 'Pagamento de Dívidas']
-                                                .includes(c.name)
-                                        ).map(c => (
-                                            <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
-                                        ))}
-                                    </optgroup>
-                                </select>
+                                        <optgroup label="Objetivos (Quitação e Reserva)">
+                                            {categories.filter(c =>
+                                                ['Aplicações / Poupança', 'Pagamento de Dívidas']
+                                                    .includes(c.name)
+                                            ).map(c => (
+                                                <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                            ))}
+                                        </optgroup>
+                                    </select>
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                        <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                                    </div>
+                                </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Teto Mensal</label>
-                                <div className="relative">
-                                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">{currencySymbol}</span>
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Limite Mensal Desejado</label>
+                                <div className="relative group">
+                                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-black text-lg pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
                                     <input
                                         type="text"
                                         inputMode="numeric"
@@ -289,12 +300,12 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                             });
                                             setForm({ ...form, amount: formatted });
                                         }}
-                                        className="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 text-lg"
+                                        className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 dark:text-white text-2xl tracking-tight"
                                         placeholder="0,00"
                                     />
                                 </div>
                             </div>
-                            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl mt-4 transition-all active:scale-95 shadow-xl shadow-indigo-200">
+                            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs py-5 rounded-2xl mt-4 transition-all active:scale-95 shadow-xl shadow-indigo-600/20">
                                 {editingBudget ? 'Atualizar Orçamento' : 'Salvar Orçamento'}
                             </button>
                         </form>

@@ -20,8 +20,8 @@ interface Budget {
 const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
     if (type === 'INCOME') return 'Entradas (Rendas)';
 
-    const needs = ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'];
-    const desires = ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens'];
+    const needs = ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'];
+    const desires = ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens'];
     const goals = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
 
     if (needs.includes(name)) return 'Necessidades (Essencial)';

@@ -12,8 +12,8 @@ import * as Haptics from 'expo-haptics';
 const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
     if (type === 'INCOME') return 'Entradas (Rendas)';
 
-    const needs = ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'];
-    const desires = ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens'];
+    const needs = ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'];
+    const desires = ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens'];
     const goals = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
 
     if (needs.includes(name)) return 'Necessidades (Essencial)';
@@ -290,31 +290,50 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
                 </Pressable>
 
                 {isOpen && (
-                    <View style={styles.dropdownContainer}>
-                        <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
-                            {getFilteredGroups(tx.type).map(group => (
-                                <View key={group.name} style={styles.dropdownGroup}>
-                                    <Text style={styles.dropdownGroupLabel}>{group.name}</Text>
-                                    {group.items.map(c => (
-                                        <Pressable
-                                            key={c.id}
-                                            onPress={() => {
-                                                updateTransactionCategory(tx.id, c.id);
-                                                setActiveTxId(null);
-                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                            }}
-                                            style={[styles.dropdownItem, tx.categoryId === c.id && styles.dropdownItemActive]}
-                                        >
-                                            <Text style={[styles.dropdownItemText, tx.categoryId === c.id && styles.dropdownItemTextActive]}>
-                                                {c.icon} {c.name}
-                                            </Text>
-                                            {tx.categoryId === c.id && <MaterialIcons name="check" size={16} color="#4f46e5" />}
-                                        </Pressable>
-                                    ))}
+                    <Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setActiveTxId(null)}>
+                        <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 24 }}>
+                            <View style={{ backgroundColor: 'white', borderRadius: 32, padding: 16, maxHeight: '80%' }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingHorizontal: 8 }}>
+                                    <Text style={{ fontSize: 18, fontWeight: '900', color: '#1e293b' }}>Escolher Categoria</Text>
+                                    <Pressable onPress={() => setActiveTxId(null)} style={{ padding: 4 }}>
+                                        <MaterialIcons name="close" size={24} color="#94a3b8" />
+                                    </Pressable>
                                 </View>
-                            ))}
-                        </ScrollView>
-                    </View>
+                                <ScrollView showsVerticalScrollIndicator={false}>
+                                    {getFilteredGroups(tx.type).map(group => (
+                                        <View key={group.name} style={{ marginBottom: 20 }}>
+                                            <Text style={{ fontSize: 10, fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, paddingHorizontal: 8 }}>{group.name}</Text>
+                                            <View style={{ gap: 8 }}>
+                                                {group.items.map(c => (
+                                                    <Pressable
+                                                        key={c.id}
+                                                        onPress={() => {
+                                                            updateTransactionCategory(tx.id, c.id);
+                                                            setActiveTxId(null);
+                                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                        }}
+                                                        style={{
+                                                            flexDirection: 'row',
+                                                            alignItems: 'center',
+                                                            padding: 16,
+                                                            backgroundColor: tx.categoryId === c.id ? '#f1f5f9' : 'transparent',
+                                                            borderRadius: 16,
+                                                            borderWidth: 1,
+                                                            borderColor: tx.categoryId === c.id ? '#e2e8f0' : 'transparent'
+                                                        }}
+                                                    >
+                                                        <Text style={{ fontSize: 18, marginRight: 12 }}>{c.icon}</Text>
+                                                        <Text style={{ fontSize: 16, fontWeight: '700', color: tx.categoryId === c.id ? '#4f46e5' : '#475569', flex: 1 }}>{c.name}</Text>
+                                                        {tx.categoryId === c.id && <MaterialIcons name="check" size={20} color="#4f46e5" />}
+                                                    </Pressable>
+                                                ))}
+                                            </View>
+                                        </View>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        </View>
+                    </Modal>
                 )}
             </View>
         );

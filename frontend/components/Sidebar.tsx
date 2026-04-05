@@ -1,6 +1,4 @@
-
 import React from 'react';
-
 import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight, MessageSquareHeart } from 'lucide-react';
 
 interface SidebarProps {
@@ -32,7 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full bg-slate-900/95 backdrop-blur-xl border-r border-slate-800/50 text-white z-50 sidebar-transition hidden lg:flex flex-col ${isOpen ? 'w-64' : 'w-20'}`}>
+      <aside className={`fixed left-0 top-0 h-full bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-xl border-r border-slate-800/50 text-white z-50 sidebar-transition hidden lg:flex flex-col ${isOpen ? 'w-64' : 'w-20'}`}>
         <div className="p-6 flex items-center gap-3 overflow-hidden border-b border-slate-800/50">
           <div className="min-w-[40px] h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/20">F</div>
           {isOpen && <span className="font-bold text-xl tracking-tight whitespace-nowrap">Finanza Lite</span>}
@@ -43,9 +41,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
+              title={!isOpen ? item.label : ''}
               className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 ${activeTab === item.id
                 ? 'bg-indigo-600/90 text-white shadow-lg shadow-indigo-600/20 translate-x-1 ring-1 ring-white/20'
-                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                : 'text-slate-400 hover:bg-slate-800/50 dark:hover:bg-slate-900/50 hover:text-slate-200'
                 }`}
             >
               <item.icon className="w-5 h-5" />
@@ -58,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
           {isOpen ? (
             <div
               onClick={() => setActiveTab('settings')}
-              className={`bg-slate-800/50 rounded-2xl p-4 mb-4 border border-slate-700/50 group cursor-pointer hover:bg-slate-800 transition-all ${activeTab === 'settings' ? 'ring-2 ring-indigo-500 border-indigo-500/50' : ''}`}
+              className={`bg-slate-800/50 dark:bg-slate-900/50 rounded-2xl p-4 mb-4 border border-slate-700/50 dark:border-slate-800/50 group cursor-pointer hover:bg-slate-800 dark:hover:bg-slate-900 transition-all ${activeTab === 'settings' ? 'ring-2 ring-indigo-500 border-indigo-500/50' : ''}`}
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 font-black">
@@ -74,14 +73,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
           ) : (
             <button
               onClick={() => setActiveTab('settings')}
-              className={`w-full aspect-square bg-slate-800/50 rounded-xl mb-4 flex items-center justify-center transition-colors ${activeTab === 'settings' ? 'text-indigo-400 bg-indigo-500/10' : 'text-slate-400 hover:text-white'}`}
+              title="Configurações"
+              className={`w-full aspect-square bg-slate-800/50 dark:bg-slate-900/50 rounded-xl mb-4 flex items-center justify-center transition-colors ${activeTab === 'settings' ? 'text-indigo-400 bg-indigo-500/10' : 'text-slate-400 hover:text-white'}`}
             >
               <Settings className="w-5 h-5" />
             </button>
           )}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="w-full p-3 text-slate-400 hover:text-white flex justify-center hover:bg-slate-800 rounded-xl transition-colors"
+            className="w-full p-3 text-slate-400 hover:text-white flex justify-center hover:bg-slate-800 dark:hover:bg-slate-900 rounded-xl transition-colors"
           >
             {isOpen ? <ChevronLeft className="w-6 h-6" /> : <ChevronRight className="w-6 h-6" />}
           </button>
@@ -112,17 +112,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
       </aside>
 
       {/* Mobile Nav */}
-      <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg border-t border-slate-200 flex lg:hidden justify-start sm:justify-around items-center px-4 pb-6 pt-3 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] overflow-x-auto gap-2 min-h-[80px]">
-        {menuItems.filter(i => i.id !== 'feedbacks').concat([{ id: 'settings', label: 'Ajustes', icon: Settings } as any]).map((item: any) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`flex flex-col items-center justify-center gap-1.5 transition-colors px-2 flex-shrink-0 min-w-[64px] h-[54px] rounded-xl active:scale-95 ${activeTab === item.id ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400'}`}
-          >
-            <item.icon className="w-6 h-6" />
-            <span className="text-[10px] font-bold tracking-tight uppercase whitespace-nowrap leading-none">{item.label}</span>
-          </button>
-        ))}
+      <nav className="lg:hidden fixed bottom-6 left-4 right-4 z-[90]">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-slate-200/50 dark:border-slate-800/50 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-2 flex items-center justify-around">
+          {menuItems.filter(i => i.id !== 'feedbacks').concat([{ id: 'settings', label: 'Ajustes', icon: Settings } as any]).map((item: any) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`flex flex-col items-center justify-center gap-1 transition-all px-2 flex-shrink-0 min-w-[64px] h-[56px] rounded-2xl active:scale-90 ${activeTab === item.id ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10' : 'text-slate-400'}`}
+            >
+              <item.icon className={`w-6 h-6 ${activeTab === item.id ? 'scale-110' : ''} transition-transform`} />
+              <span className="text-[9px] font-black tracking-tight uppercase whitespace-nowrap leading-none">{item.label}</span>
+            </button>
+          ))}
+        </div>
       </nav>
     </>
   );

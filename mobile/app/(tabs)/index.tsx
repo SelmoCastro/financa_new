@@ -93,14 +93,14 @@ export default function DashboardScreen() {
             incomeTrend: dashboardSummary.currentMonth?.incomeTrend || 0,
             expenseTrend: dashboardSummary.currentMonth?.expenseTrend || 0
         };
-    }, [dashboardSummary]);
+    }, [dashboardSummary?.balance, dashboardSummary?.currentMonth]);
 
     const forecast = useFixedTransactions(transactions, totals);
 
     const topVillains = useMemo(() => {
-        if (!forecast || !forecast.topVillains) return [];
+        if (!forecast?.topVillains) return [];
         return forecast.topVillains.slice(0, 3);
-    }, [forecast]);
+    }, [forecast.topVillains]);
 
     const formatValue = (value: number | undefined | null) => {
         if (isPrivacyEnabled) return '••••';

@@ -13,6 +13,7 @@ import { AccountsView } from './views/AccountsView';
 import { FeedbackAdminView } from './views/FeedbackAdminView';
 import { ImportOverlay } from './components/ImportOverlay';
 import { FeedbackModal } from './components/FeedbackModal';
+import { ActionMenu } from './components/ActionMenu';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { MonthProvider, useMonth } from './context/MonthContext';
 import { DataProvider, useData } from './context/DataProvider';
@@ -21,9 +22,10 @@ import { MonthSelector } from './components/MonthSelector';
 import { Transaction } from './types';
 import { TransactionForm } from './components/TransactionForm';
 import { NotificationCenter } from './components/NotificationCenter';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { getYearMonth } from './utils/dateUtils';
-import { UploadCloud, Plus, ChevronLeft, ChevronRight, EyeOff, Eye, CheckSquare, Image, FileSpreadsheet } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import api from './services/api';
 
 const AppContent: React.FC = () => {
@@ -42,9 +44,21 @@ const AppContent: React.FC = () => {
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   const [isAdmin] = useState(localStorage.getItem('isAdmin') === 'true');
   const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { selectedDate } = useMonth();
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -73,8 +87,6 @@ const AppContent: React.FC = () => {
     expenseTrend: dashboardSummary?.currentMonth?.expenseTrend || 0
   }), [dashboardSummary]);
 
-  // Timeline, History e Budgets utilizam transações filtradas localmente.
-  // O array `transactions` base tem todo o histórico para a Dashboard projetar Saldo e Gráficos corretamente.
   const monthFilteredTransactions = useMemo(() => {
     if (!Array.isArray(transactions)) return [];
     const { year: currentYear, month: currentMonth } = getYearMonth(selectedDate);
@@ -137,11 +149,7 @@ const AppContent: React.FC = () => {
       case 'accounts':
         return <AccountsView isPrivacyEnabled={isPrivacyEnabled} />;
       case 'budgets':
-        return (
-          <BudgetsView
-            isPrivacyEnabled={isPrivacyEnabled}
-          />
-        );
+        return <BudgetsView isPrivacyEnabled={isPrivacyEnabled} />;
       case 'goals':
         return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
       case 'timeline':
@@ -174,13 +182,13 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex text-slate-900 dark:text-slate-100 selection:bg-indigo-100 dark:selection:bg-indigo-900 selection:text-indigo-900 dark:selection:text-indigo-100 transition-colors duration-300">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} onOpenFeedback={() => setIsFeedbackOpen(true)} isAdmin={isAdmin} />
       <div className={`flex-1 sidebar-transition ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pb-24 lg:pb-0`}>
-        <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-4 md:px-8 py-2 md:py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-2 w-full max-w-[100vw]">
-          <div className="min-w-0 flex-1 w-full sm:w-auto">
-            <p className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-0.5 truncate">Gestão Financeira</p>
-            <h2 className="text-lg md:text-xl font-black text-slate-900 tracking-tight capitalize truncate flex items-center gap-3">
+        <header className="sticky top-0 z-[100] bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 px-4 md:px-8 py-2 md:py-3 flex flex-row justify-between items-center gap-2 w-full max-w-[100vw] transition-colors duration-300">
+          <div className="min-w-0 flex-1">
+            <p className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-0.5 truncate">Gestão Financeira</p>
+            <h2 className="text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight capitalize truncate flex items-center gap-3">
               {activeTab === 'dashboard' ? 'Dashboard' :
                 activeTab === 'accounts' ? 'Contas & Cartões' :
                   activeTab === 'timeline' ? 'Linha do Tempo' :
@@ -191,47 +199,56 @@ const AppContent: React.FC = () => {
                             activeTab === 'history' ? 'Extrato' :
                               'Configurações'}
               {userName && (
-                <div className="flex flex-col border-l border-slate-200 pl-3">
-                  <span className="text-[10px] text-indigo-600 font-bold leading-tight">Olá, {userName}</span>
-                  {userEmail && <span className="text-[9px] text-slate-400 font-medium lowercase leading-tight">{userEmail}</span>}
+                <div className="flex flex-col border-l border-slate-200 dark:border-slate-800 pl-3">
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold leading-tight">Olá, {userName}</span>
+                  {userEmail && <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium lowercase leading-tight">{userEmail}</span>}
                 </div>
               )}
             </h2>
             {['dashboard', 'history', 'timeline', 'budgets'].includes(activeTab) && (
-              <div className="mt-1.5 animate-in fade-in duration-300 relative z-[200]">
+              <div className="mt-1.5 animate-in fade-in duration-300 relative z-[50]">
                 <div className="flex items-center gap-3">
                   <MonthSelector />
-                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded-full whitespace-nowrap hidden sm:inline-block">
                     {Array.isArray(transactions) ? transactions.length : 0} transações
                   </span>
                 </div>
               </div>
             )}
           </div>
-          <div className="flex items-center justify-between sm:justify-end gap-2 md:gap-2 flex-wrap w-full sm:w-auto mt-1 sm:mt-0 relative z-50">
+
+          <div className="flex items-center gap-2 sm:gap-3">
             <NotificationCenter />
+            <ActionMenu 
+              isDarkMode={isDarkMode} 
+              setIsDarkMode={setIsDarkMode} 
+              isPrivacyEnabled={isPrivacyEnabled} 
+              setIsPrivacyEnabled={setIsPrivacyEnabled} 
+              onOpenImport={() => setIsImportOpen(true)} 
+            />
             <button
-              onClick={() => setIsPrivacyEnabled(!isPrivacyEnabled)}
-              className="p-2 md:p-2.5 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all active:scale-95"
-              title={isPrivacyEnabled ? "Mostrar valores" : "Ocultar valores"}
+              onClick={handleOpenTransactionForm}
+              className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95 whitespace-nowrap group"
             >
-              {isPrivacyEnabled ? <EyeOff className="w-4 h-4 md:w-5 h-5" /> : <Eye className="w-4 h-4 md:w-5 h-5" />}
-            </button>
-            <button
-              className="p-2 md:p-2.5 rounded-xl bg-slate-50 border border-transparent text-slate-500 hover:bg-slate-100 transition-all active:scale-95"
-              onClick={() => setIsImportOpen(true)}
-              title="Importar Extrato"
-            >
-              <UploadCloud className="w-4 h-4 md:w-5 h-5" />
-            </button>
-            <button onClick={handleOpenTransactionForm} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl font-bold text-[9px] md:text-xs uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center gap-2 flex-shrink-0">
-              <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <Plus className="w-4 h-4 sm:w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
               <span className="hidden sm:inline">Gravar</span>
+              <span className="sm:hidden">Novo</span>
             </button>
           </div>
         </header>
-        <main className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 md:py-10">
-          {renderContent()}
+
+        <main className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 md:py-10 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 
@@ -267,7 +284,6 @@ const AppContent: React.FC = () => {
         <FeedbackModal onClose={() => setIsFeedbackOpen(false)} />
       )}
 
-      {/* Floating Action Button (Mobile) */}
       {!isFormOpen && !isImportOpen && (
         <button
           onClick={handleOpenTransactionForm}
@@ -278,9 +294,6 @@ const AppContent: React.FC = () => {
           <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
         </button>
       )}
-
-      {/* AI Assistant Chat */}
-
     </div>
   );
 };

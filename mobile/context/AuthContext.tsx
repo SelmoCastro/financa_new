@@ -51,15 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => authSubscription.remove();
     }, []);
 
-    const login = async (newToken: string, newRefreshToken: string, newUserId: string) => {
+    const login = React.useCallback(async (newToken: string, newRefreshToken: string, newUserId: string) => {
         console.log('[AuthContext] Fazendo login guardando múltiplos tokens...');
         await SecureStore.setItemAsync('token', newToken);
         await SecureStore.setItemAsync('refreshToken', newRefreshToken);
         await SecureStore.setItemAsync('userId', newUserId);
         setToken(newToken);
-    };
+    }, []);
 
-    const logout = async () => {
+    const logout = React.useCallback(async () => {
         console.log('[AuthContext] Iniciando logout manual...');
         try {
             await api.post('/auth/logout');
@@ -71,10 +71,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await SecureStore.deleteItemAsync('userId');
         setToken(null);
         router.replace('/');
-    };
+    }, []);
+
+    const value = React.useMemo(() => ({
+        token, isLoading, login, logout
+    }), [token, isLoading, login, logout]);
 
     return (
-        <AuthContext.Provider value={{ token, isLoading, login, logout }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

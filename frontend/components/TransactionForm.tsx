@@ -165,97 +165,98 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[999] p-4 animate-in fade-in duration-200">
-      <div className="bg-white/95 backdrop-blur-2xl rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20">
-        <div className="px-8 py-6 border-b border-slate-100/50 flex justify-between items-center bg-white/50">
+    <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-[999] p-4 animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200 dark:border-slate-800">
+        <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
           <div>
-            <h2 className="font-black text-xl text-slate-900 tracking-tight">
+            <h2 className="font-black text-xl text-slate-900 dark:text-white tracking-tight">
               {editingTransaction ? 'Editar Lançamento' : 'Novo Lançamento'}
             </h2>
-            <p className="text-xs text-slate-500 font-medium">
-              {editingTransaction ? 'Atualize as informações do registro' : 'Registre sua movimentação'}
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest mt-0.5">
+              {editingTransaction ? 'Atualize as informações' : 'Registre sua movimentação'}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200/50 rounded-full transition-colors text-slate-400">
+          <button onClick={onClose} className="p-3 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-95 text-slate-400 dark:text-slate-500 shadow-sm bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-8 space-y-5">
-          <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl">
+        <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
+          <div className="flex gap-2 p-1.5 bg-slate-100 dark:bg-slate-950 rounded-[1.5rem] border border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setType('EXPENSE')}
-              className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'EXPENSE' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${type === 'EXPENSE' ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-lg shadow-rose-600/10 border border-rose-100 dark:border-rose-900/30' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
             >
               Despesa
             </button>
             <button
               type="button"
               onClick={() => setType('INCOME')}
-              className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'INCOME' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${type === 'INCOME' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-600/10 border border-emerald-100 dark:border-emerald-900/30' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
             >
               Receita
             </button>
             <button
               type="button"
               onClick={() => setType('TRANSFER')}
-              className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'TRANSFER' ? 'bg-white text-sky-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${type === 'TRANSFER' ? 'bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-lg shadow-sky-600/10 border border-sky-100 dark:border-sky-900/30' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
             >
               Transf.
             </button>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descrição</label>
-            <input
-              autoFocus
-              className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700"
-              placeholder="Ex: Aluguel, Academia, Salário..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
+          <div className="space-y-2">
+            <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Descrição do Lançamento</label>
+            <div className="relative group">
+              <input
+                autoFocus
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                placeholder="Ex: Aluguel, Academia, Salário..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Valor ({currencySymbol})</label>
-              <div className="relative">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm pointer-events-none">{currencySymbol}</span>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Valor</label>
+              <div className="relative group">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 font-black text-sm pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
                 <input
                   type="text"
                   inputMode="numeric"
-                  className="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800"
+                  className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 dark:text-white"
                   value={displayAmount}
                   placeholder="0,00"
                   onChange={handleAmountChange}
                 />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data</label>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Data</label>
               <input
                 type="date"
-                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700"
+                className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-700 dark:text-white"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
           </div>
 
-          {/* New fields: Category, Account and Card */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             {type !== 'TRANSFER' && (
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Categoria (Opcional)</label>
-                <div className="relative">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 ml-1">Categoria</label>
+                <div className="relative group">
                   <select
-                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
                   >
                     <option value="">Nenhuma / Outros</option>
                     {categories.filter(c => c.type === 'INCOME').length > 0 && type === 'INCOME' && (
-                      <optgroup label="Entradas (Rendas)">
+                      <optgroup label="Entradas (Rendas)" className="dark:bg-slate-900">
                         {categories.filter(c => c.type === 'INCOME').map(c => (
                           <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                         ))}
@@ -264,7 +265,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
                     {type === 'EXPENSE' && (
                       <>
-                        <optgroup label="Necessidades (Essencial)">
+                        <optgroup label="Necessidades (Essencial)" className="dark:bg-slate-900">
                           {categories.filter(c =>
                             ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
                               .includes(c.name)
@@ -273,7 +274,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                           ))}
                         </optgroup>
 
-                        <optgroup label="Desejos (Estilo de Vida)">
+                        <optgroup label="Desejos (Estilo de Vida)" className="dark:bg-slate-900">
                           {categories.filter(c =>
                             ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
                               .includes(c.name)
@@ -282,7 +283,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                           ))}
                         </optgroup>
 
-                        <optgroup label="Objetivos (Quitação e Reserva)">
+                        <optgroup label="Objetivos (Quitação e Reserva)" className="dark:bg-slate-900">
                           {categories.filter(c =>
                             ['Aplicações / Poupança', 'Pagamento de Dívidas']
                               .includes(c.name)
@@ -290,39 +291,23 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                             <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                           ))}
                         </optgroup>
-
-                        {categories.filter(c =>
-                          !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
-                            'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens',
-                            'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && (c.type === 'EXPENSE' || c.type === 'TRANSFER')
-                        ).length > 0 && (
-                            <optgroup label="Outras Despesas e Transferências">
-                              {categories.filter(c =>
-                                !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
-                                  'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens',
-                                  'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && (c.type === 'EXPENSE' || c.type === 'TRANSFER')
-                              ).map(c => (
-                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                              ))}
-                            </optgroup>
-                          )}
                       </>
                     )}
                   </select>
-                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                     <ChevronDown className="w-5 h-5" />
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{type === 'TRANSFER' ? 'Conta de Origem' : 'Conta Financeira'}</label>
-                <div className="relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">{type === 'TRANSFER' ? 'Origem' : 'Conta'}</label>
+                <div className="relative group">
                   <select
                     required
-                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
                   >
@@ -331,21 +316,21 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       <option key={acc.id} value={acc.id}>{acc.name}</option>
                     ))}
                   </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                     <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                  {type === 'TRANSFER' ? 'Conta de Destino' : 'Cartão de Crédito'}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">
+                  {type === 'TRANSFER' ? 'Destino' : 'Cartão (Opcional)'}
                 </label>
-                <div className="relative">
+                <div className="relative group">
                   {type === 'TRANSFER' ? (
                     <select
                       required
-                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                      className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
                       value={destinationAccountId}
                       onChange={(e) => setDestinationAccountId(e.target.value)}
                     >
@@ -356,12 +341,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     </select>
                   ) : (
                     <select
-                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-slate-700 appearance-none cursor-pointer"
+                      className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
                       value={creditCardId}
                       onChange={(e) => {
                         setCreditCardId(e.target.value);
                         if (e.target.value) {
-                          // auto map account of credit card when selected
                           const selectedCard = creditCards.find(c => c.id === e.target.value);
                           if (selectedCard && selectedCard.accountId) {
                             setAccountId(selectedCard.accountId);
@@ -375,7 +359,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       ))}
                     </select>
                   )}
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                     <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
@@ -383,35 +367,34 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             </div>
           </div>
 
-          <div className="space-y-1.5 pt-2">
-            <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse"></span>
-              Compartilhar com Amigo (Opcional)
+          <div className="space-y-2 pt-2">
+            <label className="block text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+              <span className="w-2 h-2 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-pulse shadow-lg shadow-indigo-500/50"></span>
+              Compartilhar (Email Amigo)
             </label>
             <input
               type="email"
-              className="w-full px-5 py-3.5 bg-indigo-50/30 border border-indigo-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 outline-none transition-all font-medium text-slate-700 placeholder:text-slate-300"
+              className="w-full px-6 py-4 bg-indigo-50/20 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-950 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-300 dark:placeholder:text-indigo-900/30"
               placeholder="email@amigo.com"
               value={sharedWithEmail}
               onChange={(e) => setSharedWithEmail(e.target.value)}
             />
-            <p className="text-[9px] text-slate-400 ml-1 font-medium">Seu amigo receberá um convite para aceitar este lançamento.</p>
           </div>
 
-          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 group cursor-pointer" onClick={() => setIsFixed(!isFixed)}>
-            <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all ${isFixed ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-200'}`}>
-              {isFixed && <Check className="w-4 h-4 text-white" />}
+          <div className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-950 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 group cursor-pointer transition-all hover:bg-slate-100 dark:hover:bg-slate-900" onClick={() => setIsFixed(!isFixed)}>
+            <div className={`w-7 h-7 rounded-xl flex items-center justify-center border-2 transition-all shadow-sm ${isFixed ? 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'}`}>
+              {isFixed && <Check className="w-5 h-5 text-white" />}
             </div>
             <div className="flex-1">
-              <span className="text-sm font-bold text-slate-700">Lançamento Fixo</span>
-              <p className="text-[10px] text-slate-400 font-medium">Repetir automaticamente todos os meses</p>
+              <span className="text-sm font-black text-slate-700 dark:text-slate-200 tracking-tight">Lançamento Recorrente</span>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-0.5">Repetir todos os meses</p>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`w-full py-4 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] mt-4 disabled:opacity-60 disabled:cursor-not-allowed ${type === 'EXPENSE' ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20' : type === 'INCOME' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20' : 'bg-sky-500 hover:bg-sky-600 shadow-sky-500/20'}`}
+            className={`w-full py-5 rounded-[1.5rem] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-[0.98] mt-6 disabled:opacity-60 disabled:cursor-not-allowed ${type === 'EXPENSE' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20' : type === 'INCOME' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 'bg-sky-600 hover:bg-sky-700 shadow-sky-600/20'}`}
           >
             {isSubmitting ? 'Salvando...' : editingTransaction ? 'Salvar Alterações' :
               type === 'TRANSFER' ? 'Confirmar Transferência' :

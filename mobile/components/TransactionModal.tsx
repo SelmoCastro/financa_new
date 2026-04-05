@@ -6,13 +6,13 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../services/api';
 import { triggerHaptic } from '../utils/haptics';
 import { Account, CreditCard } from '../types';
-import { formatCurrency, parseCurrencyToNumber } from '../utils/currencyUtils';
+import { formatCurrencyInput, parseCurrencyToNumber } from '../utils/currencyUtils';
 
 const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
     if (type === 'INCOME') return 'Entradas (Rendas)';
 
-    const needs = ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'];
-    const desires = ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Viagens'];
+    const needs = ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'];
+    const desires = ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens'];
     const goals = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
 
     if (needs.includes(name)) return 'Necessidades (Essencial)';
@@ -57,7 +57,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
         if (visible) {
             if (transactionToEdit) {
                 setDescription(transactionToEdit.description || '');
-                setAmount(formatCurrency(String(transactionToEdit.amount || 0)));
+                setAmount(formatCurrencyInput(String(transactionToEdit.amount || 0)));
                 setCategory(transactionToEdit.category?.name || transactionToEdit.categoryLegacy || '');
                 setSelectedCategory(transactionToEdit.category || null);
                 setDate(new Date(transactionToEdit.date));
@@ -275,7 +275,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                                 <Text style={styles.sectionLabel}>Valor (R$)</Text>
                                 <TextInput
                                     value={amount}
-                                    onChangeText={(text) => setAmount(formatCurrency(text))}
+                                    onChangeText={(text) => setAmount(formatCurrencyInput(text))}
                                     keyboardType="numeric"
                                     placeholder="0,00"
                                     style={[styles.input, styles.amountInput]}
@@ -329,36 +329,54 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                                             size={24}
                                             color="#64748b"
                                         />
-                                    </View>
-                                </Pressable>
-
-                                {isCategoryOpen && (
-                                    <View style={styles.dropdownContainer}>
-                                        <ScrollView nestedScrollEnabled style={styles.dropdownScroll}>
-                                            {groupedCategories.map(group => (
-                                                <View key={group.name} style={styles.dropdownGroup}>
-                                                    <Text style={styles.dropdownGroupLabel}>{group.name}</Text>
-                                                    {group.items.map(cat => (
-                                                        <Pressable
-                                                            key={cat.id}
-                                                            onPress={() => {
-                                                                setCategory(cat.name);
-                                                                setSelectedCategory(cat);
-                                                                setIsCategoryOpen(false);
-                                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                            }}
-                                                            style={[styles.dropdownItem, category === cat.name && styles.dropdownItemActive]}
-                                                        >
-                                                            <Text style={[styles.dropdownItemText, category === cat.name && styles.dropdownItemTextActive]}>
-                                                                {cat.icon} {cat.name}
-                                                            </Text>
-                                                            {category === cat.name && <MaterialIcons name="check" size={18} color="#4f46e5" />}
-                                                        </Pressable>
-                                                    ))}
+                                        </View>
+                                    </Pressable>
+                                 {isCategoryOpen && (
+                                    <Modal visible={isCategoryOpen} transparent animationType="fade" onRequestClose={() => setIsCategoryOpen(false)}>
+                                        <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 24 }}>
+                                            <View style={{ backgroundColor: 'white', borderRadius: 32, padding: 16, maxHeight: '80%' }}>
+                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingHorizontal: 8 }}>
+                                                    <Text style={{ fontSize: 18, fontWeight: '900', color: '#1e293b' }}>Escolher Categoria</Text>
+                                                    <Pressable onPress={() => setIsCategoryOpen(false)} style={{ padding: 4 }}>
+                                                        <MaterialIcons name="close" size={24} color="#94a3b8" />
+                                                    </Pressable>
                                                 </View>
-                                            ))}
-                                        </ScrollView>
-                                    </View>
+                                                <ScrollView showsVerticalScrollIndicator={false}>
+                                                    {groupedCategories.map(group => (
+                                                        <View key={group.name} style={{ marginBottom: 20 }}>
+                                                            <Text style={{ fontSize: 10, fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, paddingHorizontal: 8 }}>{group.name}</Text>
+                                                            <View style={{ gap: 8 }}>
+                                                                {group.items.map(cat => (
+                                                                    <Pressable
+                                                                        key={cat.id}
+                                                                        onPress={() => {
+                                                                            setCategory(cat.name);
+                                                                            setSelectedCategory(cat);
+                                                                            setIsCategoryOpen(false);
+                                                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                                        }}
+                                                                        style={{
+                                                                            flexDirection: 'row',
+                                                                            alignItems: 'center',
+                                                                            padding: 16,
+                                                                            backgroundColor: category === cat.name ? '#f1f5f9' : 'transparent',
+                                                                            borderRadius: 16,
+                                                                            borderWidth: 1,
+                                                                            borderColor: category === cat.name ? '#e2e8f0' : 'transparent'
+                                                                        }}
+                                                                    >
+                                                                        <Text style={{ fontSize: 18, marginRight: 12 }}>{cat.icon}</Text>
+                                                                        <Text style={{ fontSize: 16, fontWeight: '700', color: category === cat.name ? '#4f46e5' : '#475569', flex: 1 }}>{cat.name}</Text>
+                                                                        {category === cat.name && <MaterialIcons name="check" size={20} color="#4f46e5" />}
+                                                                    </Pressable>
+                                                                ))}
+                                                            </View>
+                                                        </View>
+                                                    ))}
+                                                </ScrollView>
+                                            </View>
+                                        </View>
+                                    </Modal>
                                 )}
                             </View>
                         )}

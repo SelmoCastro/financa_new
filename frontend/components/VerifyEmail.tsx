@@ -40,28 +40,44 @@ export const VerifyEmail: React.FC = () => {
     }, [status]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-            <div className="bg-white p-8 rounded-[2rem] shadow-xl w-full max-w-md border border-slate-100 text-center">
-                <div className={`w-20 h-20 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-lg shadow-${status === 'success' ? 'emerald' : status === 'error' ? 'rose' : 'indigo'}-600/30 bg-${status === 'success' ? 'emerald' : status === 'error' ? 'rose' : 'indigo'}-600`}>
-                    {status === 'loading' && <i data-lucide="loader-2" className="text-white w-10 h-10 animate-spin"></i>}
-                    {status === 'success' && <i data-lucide="check-circle" className="text-white w-10 h-10"></i>}
-                    {status === 'error' && <i data-lucide="x-circle" className="text-white w-10 h-10"></i>}
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors duration-500">
+            <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-100 dark:border-slate-800 text-center animate-in fade-in zoom-in-95 duration-500">
+                <div className={`w-24 h-24 rounded-[2rem] mx-auto flex items-center justify-center mb-8 shadow-2xl transition-all duration-500 ${
+                    status === 'success' 
+                        ? 'bg-emerald-600 shadow-emerald-600/40 text-white' 
+                        : status === 'error' 
+                            ? 'bg-rose-600 shadow-rose-600/40 text-white' 
+                            : 'bg-indigo-600 shadow-indigo-600/40 text-white'
+                }`}>
+                    {status === 'loading' && <i data-lucide="loader-2" className="w-12 h-12 animate-spin"></i>}
+                    {status === 'success' && <i data-lucide="check-circle" className="w-12 h-12"></i>}
+                    {status === 'error' && <i data-lucide="x-circle" className="w-12 h-12"></i>}
                 </div>
 
-                <h2 className="text-2xl font-black text-slate-800 mb-2">
-                    {status === 'loading' ? 'Verificando E-mail' : status === 'success' ? 'E-mail Confirmado!' : 'Falha na Verificação'}
-                </h2>
-
-                <p className={`text-sm font-medium ${status === 'error' ? 'text-rose-600' : 'text-slate-500'}`}>
-                    {message}
-                </p>
+                <div className="space-y-2 mb-8">
+                    <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${
+                        status === 'success' ? 'text-emerald-600 dark:text-emerald-400' : status === 'error' ? 'text-rose-600 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'
+                    }`}>
+                        Autenticação
+                    </p>
+                    <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">
+                        {status === 'loading' ? 'Verificando...' : status === 'success' ? 'Sucesso!' : 'Ops! Algo deu errado'}
+                    </h2>
+                    <p className={`text-sm font-medium leading-relaxed px-4 ${status === 'error' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                        {message}
+                    </p>
+                </div>
 
                 {status !== 'loading' && (
                     <button
                         onClick={() => navigate('/login')}
-                        className={`mt-8 w-full bg-${status === 'success' ? 'emerald' : 'indigo'}-600 hover:bg-${status === 'success' ? 'emerald' : 'indigo'}-700 text-white font-bold py-4 rounded-xl uppercase text-xs tracking-widest transition-all shadow-xl shadow-${status === 'success' ? 'emerald' : 'indigo'}-600/20 active:scale-95`}
+                        className={`w-full py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 shadow-2xl ${
+                            status === 'success' 
+                                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30 text-white' 
+                                : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30 text-white'
+                        }`}
                     >
-                        Ir para o Login
+                        Acessar Minha Conta
                     </button>
                 )}
             </div>

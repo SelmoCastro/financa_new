@@ -40,6 +40,7 @@ export interface Transaction {
   destinationAccountId?: string;
   creditCardId?: string;
   creditCard?: CreditCard;
+  sharedWithEmail?: string;
 }
 
 export interface Budget {

@@ -46,80 +46,84 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, transactio
     }, []);
 
     return (
-        <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-right duration-500">
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-                <div className="p-8 border-b border-slate-100 bg-slate-50/50">
-                    <h3 className="text-xl font-black text-slate-800">Configurações do Perfil</h3>
-                    <p className="text-sm text-slate-500 font-medium">Gerencie seus dados e preferências do sistema</p>
+        <div className="max-w-3xl mx-auto space-y-12 animate-in fade-in slide-in-from-right duration-700">
+            <div className="glass-card rounded-[2.5rem] md:rounded-[3rem] overflow-hidden">
+                <div className="p-8 md:p-12 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.3em] mb-2">Preferências</p>
+                    <h3 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight">Configurações do Sistema</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Personalize sua experiência e gerencie seus dados.</p>
                 </div>
-                <div className="p-8 space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nome de Exibição</label>
+                <div className="p-8 md:p-12 space-y-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Nome de Exibição</label>
                             <div className="relative">
-                                <i data-lucide="user" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                                <i data-lucide="user" className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 dark:text-slate-600"></i>
                                 <input
                                     type="text"
                                     value={userName}
                                     readOnly
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-bold text-slate-700 cursor-not-allowed opacity-70"
+                                    className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-slate-300 cursor-not-allowed opacity-70 tracking-tight"
                                 />
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Moeda Padrão</label>
-                            <div className="relative">
-                                <i data-lucide="banknote" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Moeda de Trabalho</label>
+                            <div className="relative group">
+                                <i data-lucide="banknote" className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 dark:text-slate-600 group-focus-within:text-indigo-500 transition-colors"></i>
                                 <select
                                     value={currency}
                                     onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-                                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none appearance-none font-bold text-slate-700"
+                                    className="w-full pl-14 pr-12 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none appearance-none font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all cursor-pointer"
                                 >
                                     <option value="BRL">Real Brasileiro (BRL)</option>
                                     <option value="USD">Dólar Americano (USD)</option>
                                     <option value="EUR">Euro (EUR)</option>
                                 </select>
+                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="pt-8 border-t border-slate-100">
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6">Gestão de Dados</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="pt-10 border-t border-slate-100 dark:border-slate-800">
+                        <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-8 ml-1">Manutenção & Dados</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <button
                                 onClick={handleExportData}
-                                className="flex items-center gap-4 p-5 bg-white border border-slate-200 rounded-[1.5rem] hover:bg-slate-50 transition-all group"
+                                className="flex items-center gap-6 p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group shadow-sm active:scale-95"
                             >
-                                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i data-lucide="download"></i>
+                                <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                                    <i data-lucide="download" className="w-6 h-6"></i>
                                 </div>
                                 <div className="text-left">
-                                    <p className="font-bold text-slate-800 text-sm">Exportar Relatório</p>
-                                    <p className="text-[10px] text-slate-500 font-medium">Baixar CSV para Excel</p>
+                                    <p className="font-black text-slate-800 dark:text-white text-sm tracking-tight">Exportar Tudo</p>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-1">Backup em CSV</p>
                                 </div>
                             </button>
                             <button
                                 onClick={handleResetApp}
-                                className="flex items-center gap-4 p-5 bg-rose-50/30 border border-rose-100 rounded-[1.5rem] hover:bg-rose-50 transition-all group opacity-50 cursor-not-allowed"
+                                className="flex items-center gap-6 p-6 bg-rose-50/20 dark:bg-rose-500/5 border border-rose-100 dark:border-rose-900/30 rounded-[2rem] transition-all group opacity-40 cursor-not-allowed"
                             >
-                                <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <i data-lucide="refresh-cw"></i>
+                                <div className="w-14 h-14 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <i data-lucide="refresh-cw" className="w-6 h-6"></i>
                                 </div>
                                 <div className="text-left">
-                                    <p className="font-bold text-rose-700 text-sm">Resetar Sistema</p>
-                                    <p className="text-[10px] text-rose-500 font-medium">Desativado (Web)</p>
+                                    <p className="font-black text-rose-700 dark:text-rose-400 text-sm tracking-tight">Limpar Dados</p>
+                                    <p className="text-[10px] text-rose-400 dark:text-rose-600 font-bold uppercase tracking-widest mt-1">Ação Irreversível</p>
                                 </div>
                             </button>
                         </div>
                     </div>
 
-                    <div className="pt-8 border-t border-slate-100">
+                    <div className="pt-10 border-t border-slate-100 dark:border-slate-800">
                         <button
                             onClick={onLogout}
-                            className="w-full flex items-center justify-center gap-2 p-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-all"
+                            className="w-full flex items-center justify-center gap-3 p-6 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-slate-900/20"
                         >
-                            <LogOut className="w-4 h-4" />
-                            Sair da Conta
+                            <LogOut className="w-5 h-5" />
+                            Encerrar Sessão
                         </button>
                     </div>
                 </div>
