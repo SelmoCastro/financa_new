@@ -56,30 +56,48 @@ export class TransactionsController {
       throw new BadRequestException('Nenhum arquivo enviado.');
     }
 
-    const imageBase64 = file.buffer.toString('base64');
+    const fileBase64 = file.buffer.toString('base64');
 
     // Busca categorias do usuário para a IA saber o que sugerir
     const userCategories = await this.transactionsService.getUserCategories(req.user.userId);
     const categoryNames = userCategories.map(c => c.name);
 
-    const transactions = await this.aiService.extractFromReceipt(imageBase64, file.mimetype, categoryNames);
+    const result = await this.aiService.extractFromReceipt(fileBase64, file.mimetype, categoryNames);
 
-    if (transactions.length === 0) {
+    if (result.error) {
+      const errorMessages: Record<string, string> = {
+        service_unavailable: 'Serviço de IA indisponível no momento. Tente novamente mais tarde.',
+        no_data_found: 'Não foi possível identificar transações neste documento. Verifique se é um comprovante financeiro válido e tente novamente.',
+        unsupported_format: 'Formato de arquivo não suportado pelo modelo de IA. Use JPG, PNG, WEBP ou PDF.',
+        rate_limit: 'Muitas solicitações em sequência. Aguarde um momento e tente novamente.',
+        api_error: 'Erro temporário no serviço de IA. Tente novamente em alguns instantes.',
+        unknown_error: 'Erro inesperado ao processar o documento. Tente novamente.',
+      };
       return {
         preview: [],
-        message: 'Não foi possível extrair transações deste arquivo. Tente com uma imagem mais nítida.'
+        message: errorMessages[result.error] || 'Não foi possível processar este documento.',
+        errorCode: result.error,
+      };
+    }
+
+    if (result.transactions.length === 0) {
+      return {
+        preview: [],
+        message: 'Nenhuma transação encontrada neste documento. Tente com um comprovante mais nítido.',
+        errorCode: 'no_data_found',
       };
     }
 
     // Mapeia os nomes sugeridos pela IA para os IDs reais do banco usando o novo helper
     const categoryNameToId = new Map(userCategories.map(c => [c.name.toLowerCase().trim(), c.id]));
-    const enrichedPreview = transactions.map(t => {
+    const enrichedPreview = result.transactions.map(t => {
       const suggestion = {
         category: t.suggestedCategory,
         rule: t.suggestedRule,
-        icon: t.suggestedIcon
+        icon: t.suggestedIcon,
+        confidence: t.confidence
       };
-      return this.transactionsService.enrichTransactionWithAi(t, suggestion, t.description, categoryNameToId);
+      return this.transactionsService.enrichTransactionWithAi({ ...t, cnpj: t.cnpj }, suggestion, t.description, categoryNameToId);
     });
 
     return { preview: enrichedPreview };

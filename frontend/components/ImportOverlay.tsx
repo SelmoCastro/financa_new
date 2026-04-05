@@ -31,11 +31,22 @@ interface ParsedTransaction {
     suggestedIcon?: string;
     selected: boolean;
     isPotentialDuplicate?: boolean;
-    isPreviouslyRejected?: boolean; // novo: foi rejeitado em importação anterior
+    isPreviouslyRejected?: boolean;
+    confidence?: number;
+    cnpj?: string;
 }
 
 type ImportMode = 'ofx' | 'receipt';
 type FilterMode = 'all' | 'new' | 'rejected';
+
+const ERROR_MESSAGES: Record<string, string> = {
+    no_data_found: 'Não foi possível identificar transações neste documento. Verifique se é um comprovante financeiro válido e tente com uma imagem mais nítida.',
+    unsupported_format: 'Formato não suportado pelo modelo de IA. Use JPG, PNG, WEBP ou PDF.',
+    rate_limit: 'Muitas solicitações em sequência. Aguarde um momento e tente novamente.',
+    api_error: 'Erro temporário no serviço de IA. Tente novamente em alguns instantes.',
+    service_unavailable: 'Serviço de IA indisponível no momento. Tente novamente mais tarde.',
+    unknown_error: 'Erro inesperado ao processar o documento. Tente novamente.',
+};
 
 export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, onClose, accounts, creditCards, categories: propCategories }) => {
     const [step, setStep] = useState<1 | 2>(1);
@@ -47,6 +58,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
     const [aiStatus, setAiStatus] = useState('');
     const [importMode, setImportMode] = useState<ImportMode>('ofx');
     const [filterMode, setFilterMode] = useState<FilterMode>('all');
+    const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { formatCurrency } = useCurrency();
 
@@ -69,7 +81,13 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
         }
     };
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+            if (receiptPreviewUrl) {
+                URL.revokeObjectURL(receiptPreviewUrl);
+                setReceiptPreviewUrl(null);
+            }
+        }
     };
 
     const switchMode = (mode: ImportMode) => {
@@ -134,6 +152,12 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
         setIsLoading(true);
         setAiStatus('📷 Enviando comprovante para análise...');
 
+        // Cria preview da imagem/receipt
+        if (file.type.startsWith('image/')) {
+            const url = URL.createObjectURL(file);
+            setReceiptPreviewUrl(url);
+        }
+
         try {
             const formData = new FormData();
             formData.append('file', file);
@@ -145,10 +169,11 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            const { preview } = response.data;
+            const { preview, message, errorCode } = response.data;
 
             if (!preview || preview.length === 0) {
-                alert('Não foi possível extrair transações deste comprovante. Tente com uma imagem mais nítida.');
+                const userMsg = ERROR_MESSAGES[errorCode] || message || 'Não foi possível extrair transações deste comprovante. Tente com uma imagem mais nítida.';
+                alert(userMsg);
                 setIsLoading(false);
                 setAiStatus('');
                 return;
@@ -157,8 +182,9 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
             buildReviewScreen(preview);
         } catch (error: any) {
             console.error('Erro ao processar comprovante:', error);
-            const msg = error?.response?.data?.message || 'Falha ao processar o comprovante. Verifique se a imagem está legível.';
-            alert(msg);
+            const errorCode = error?.response?.data?.errorCode;
+            const userMsg = ERROR_MESSAGES[errorCode] || error?.response?.data?.message || 'Falha ao processar o comprovante. Verifique se a imagem está legível.';
+            alert(userMsg);
         } finally {
             setIsLoading(false);
             setAiStatus('');
@@ -179,6 +205,8 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
             description: t.description,
             amount: t.amount,
             type: t.type,
+            cnpj: t.cnpj,
+            confidence: t.confidence,
             categoryLegacy: t.suggestedCategory || 'Outros',
             categoryId: t.suggestedCategoryId,
             classificationRule: t.suggestedRule || 30,
@@ -207,12 +235,30 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
         setParsedTxs(prev => prev.map(t => t.id === id ? { ...t, categoryId: newCatId, categoryLegacy: cat?.name || 'Outros' } : t));
     };
 
+    const updateAmount = (id: string, rawValue: string) => {
+        const cleaned = rawValue.replace(/[^0-9.,]/g, '').replace(',', '.');
+        const amount = parseFloat(cleaned);
+        if (!isNaN(amount) && amount >= 0) {
+            setParsedTxs(prev => prev.map(t => t.id === id ? { ...t, amount } : t));
+        }
+    };
+
     // ─── Filtro de visualização ──────────────────────────────────────────────────
     const filteredTxs = parsedTxs.filter(tx => {
         if (filterMode === 'new') return !tx.isPreviouslyRejected && !tx.isPotentialDuplicate;
         if (filterMode === 'rejected') return tx.isPreviouslyRejected;
         return true;
     });
+
+    const handleSelectAll = () => {
+        const allSelected = filteredTxs.every(t => t.selected);
+        setParsedTxs(prev => prev.map(t => {
+            if (filteredTxs.some(ft => ft.id === t.id)) {
+                return { ...t, selected: !allSelected };
+            }
+            return t;
+        }));
+    };
 
     // ─── Confirmar importação ────────────────────────────────────────────────────
     const handleSubmit = async () => {
@@ -258,78 +304,93 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
     const rejectedCount = parsedTxs.filter(t => t.isPreviouslyRejected).length;
 
     return (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-            <div className={`bg-white rounded-[2rem] shadow-2xl w-full ${step === 2 ? 'max-w-4xl' : 'max-w-lg'} overflow-hidden animate-in zoom-in-95 duration-200 transition-all`}>
-                <div className="px-6 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${step === 2 ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-100 text-indigo-600'}`}>
-                            {step === 2 ? <CheckSquare className="w-5 h-5" /> : <UploadCloud className="w-5 h-5" />}
-                        </div>
-                        {step === 1 ? 'Importar Extrato' : 'Revisar & Importar'}
-                    </h3>
-                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[200] flex items-center justify-center p-4 transition-all duration-300">
+            <div className={`bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full ${step === 2 ? 'max-w-5xl' : 'max-w-lg'} overflow-hidden animate-in zoom-in-95 duration-300 transition-all border border-slate-200 dark:border-slate-800`}>
+                <div className="px-8 py-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/50">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">Processamento</p>
+                        <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${step === 2 ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'}`}>
+                                {step === 2 ? <CheckSquare className="w-6 h-6" /> : <UploadCloud className="w-6 h-6" />}
+                            </div>
+                            {step === 1 ? 'Importar Extrato' : 'Revisar & Confirmar'}
+                        </h3>
+                    </div>
+                    <button onClick={onClose} className="p-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 rounded-2xl transition-all active:scale-95">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* ─── Step 1: Seleção de arquivo ─────────────────────────────────────── */}
                 {step === 1 && (
-                    <div className="p-6 space-y-5">
+                    <div className="p-8 space-y-8">
                         {/* Seletor de modo de importação */}
-                        <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl">
+                        <div className="flex gap-2 p-1.5 bg-slate-100 dark:bg-slate-950 rounded-[1.5rem] border border-slate-200/50 dark:border-slate-800/50">
                             <button
                                 onClick={() => switchMode('ofx')}
-                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${importMode === 'ofx'
-                                    ? 'bg-white text-indigo-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
+                                className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${importMode === 'ofx'
+                                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xl shadow-indigo-600/10'
+                                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                                     }`}
                             >
                                 <FileSpreadsheet className="w-4 h-4" />
-                                Extrato OFX / QFX
+                                <span className="hidden sm:inline">Extrato</span> OFX / QFX
                             </button>
                             <button
                                 onClick={() => switchMode('receipt')}
-                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${importMode === 'receipt'
-                                    ? 'bg-white text-violet-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
+                                className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${importMode === 'receipt'
+                                    ? 'bg-white dark:bg-slate-900 text-violet-600 dark:text-violet-400 shadow-xl shadow-violet-600/10'
+                                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                                     }`}
                             >
                                 <Camera className="w-4 h-4" />
-                                Foto / Comprovante
+                                <span className="hidden sm:inline">Foto /</span> Comprovante
                             </button>
                         </div>
 
                         {/* Conta e cartão */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Conta de Destino</label>
-                                <select required value={accountId} onChange={e => setAccountId(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-indigo-500 outline-none appearance-none">
-                                    <option value="" disabled>Selecione a Conta...</option>
-                                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-                                </select>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="space-y-3">
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Conta de Destino</label>
+                                <div className="relative group">
+                                    <select required value={accountId} onChange={e => setAccountId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none appearance-none cursor-pointer">
+                                        <option value="" disabled>Selecione a Conta...</option>
+                                        {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                                    </select>
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                        <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Cartão (Opcional)</label>
-                                <select value={creditCardId} onChange={e => setCreditCardId(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-indigo-500 outline-none appearance-none">
-                                    <option value="">Nenhum Cartão</option>
-                                    {creditCards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                </select>
+                            <div className="space-y-3">
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Cartão (Opcional)</label>
+                                <div className="relative group">
+                                    <select value={creditCardId} onChange={e => setCreditCardId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none appearance-none cursor-pointer">
+                                        <option value="">Nenhum Cartão</option>
+                                        {creditCards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                        <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         {/* Dica contextual */}
                         {importMode === 'receipt' && (
-                            <div className="flex items-start gap-3 p-3 bg-violet-50 rounded-xl border border-violet-100">
-                                <Info className="w-4 h-4 text-violet-500 mt-0.5 shrink-0" />
-                                <p className="text-xs text-violet-700 font-medium">Envie fotos de comprovantes de PIX, TED, DOC ou recibos de mercado. A IA extrairá os dados automaticamente.</p>
+                            <div className="flex items-start gap-4 p-5 bg-violet-50 dark:bg-violet-500/10 rounded-2xl border border-violet-100 dark:border-violet-500/20">
+                                <Sparkles className="w-5 h-5 text-violet-500 mt-0.5 shrink-0 animate-pulse" />
+                                <p className="text-xs text-violet-700 dark:text-violet-300 font-bold leading-relaxed">
+                                    Envie fotos de comprovantes de PIX, TED, DOC ou recibos de mercado. Nossa IA extrairá os dados e sugerirá a melhor categoria automaticamente.
+                                </p>
                             </div>
                         )}
 
                         {/* Área de upload */}
                         <div
-                            className={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors cursor-pointer ${file
-                                ? (importMode === 'receipt' ? 'border-violet-500 bg-violet-50/50' : 'border-indigo-500 bg-indigo-50/50')
-                                : 'border-slate-200 hover:bg-slate-50'
+                            className={`border-4 border-dashed rounded-[2rem] p-10 text-center transition-all cursor-pointer group hover:scale-[1.01] active:scale-[0.99] ${file
+                                ? (importMode === 'receipt' ? 'border-violet-500 bg-violet-50/50 dark:bg-violet-500/5' : 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-500/5')
+                                : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950/50'
                                 }`}
                             onClick={() => fileInputRef.current?.click()} onDragOver={handleDragOver} onDrop={handleDrop}
                         >
@@ -341,45 +402,51 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                 onChange={handleFileChange}
                             />
                             {file ? (
-                                <div className="space-y-2">
-                                    <i data-lucide="file-check-2" className={`w-10 h-10 mx-auto ${importMode === 'receipt' ? 'text-violet-500' : 'text-indigo-500'}`}></i>
-                                    <p className="font-bold text-slate-700">{file.name}</p>
-                                    <p className="text-xs text-slate-400">{(file.size / 1024).toFixed(1)} KB</p>
+                                <div className="space-y-3">
+                                    <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center shadow-lg ${importMode === 'receipt' ? 'bg-violet-600 text-white' : 'bg-indigo-600 text-white'}`}>
+                                        <Check className="w-8 h-8" />
+                                    </div>
+                                    <p className="font-black text-slate-800 dark:text-white text-lg tracking-tight truncate max-w-xs mx-auto">{file.name}</p>
+                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{(file.size / 1024).toFixed(1)} KB pronto para análise</p>
                                 </div>
                             ) : (
-                                <div className="space-y-2">
-                                    {importMode === 'receipt' ? <Image className="w-10 h-10 text-slate-400 mx-auto" /> : <FileSpreadsheet className="w-10 h-10 text-slate-400 mx-auto" />}
-                                    <p className="font-bold text-slate-700">
-                                        {importMode === 'ofx'
-                                            ? 'Selecione ou arraste seu OFX / QFX'
-                                            : 'Selecione ou arraste a foto / comprovante'}
-                                    </p>
-                                    <p className="text-xs text-slate-400">
-                                        {importMode === 'ofx' ? 'Formato: .ofx, .qfx' : 'Formato: JPG, PNG, WEBP, PDF • Máx. 10MB'}
-                                    </p>
+                                <div className="space-y-4">
+                                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto transition-colors group-hover:bg-indigo-50 dark:group-hover:bg-indigo-500/10">
+                                        {importMode === 'receipt' ? <Image className="w-8 h-8 text-slate-400 group-hover:text-violet-500 transition-colors" /> : <FileSpreadsheet className="w-8 h-8 text-slate-400 group-hover:text-indigo-500 transition-colors" />}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="font-black text-slate-800 dark:text-white text-lg tracking-tight">
+                                            {importMode === 'ofx'
+                                                ? 'Arraste seu arquivo OFX'
+                                                : 'Arraste a foto ou PDF'}
+                                        </p>
+                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
+                                            {importMode === 'ofx' ? 'Formatos: .ofx, .qfx' : 'Formatos: JPG, PNG, WEBP, PDF • Máx. 10MB'}
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </div>
 
-                        <div className="pt-2 flex flex-col gap-3">
-                            <div className="flex gap-3">
-                                <button onClick={onClose} disabled={isLoading} className="flex-[0.5] px-4 py-3 text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors disabled:opacity-50">Cancelar</button>
+                        <div className="pt-4 space-y-4">
+                            <div className="flex gap-4">
+                                <button onClick={onClose} disabled={isLoading} className="flex-[0.4] px-6 py-5 text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest text-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all active:scale-95 disabled:opacity-50">Cancelar</button>
                                 <button
                                     onClick={processFile}
                                     disabled={!file || !accountId || isLoading}
-                                    className={`flex-1 flex gap-2 justify-center px-4 py-3 text-white font-bold rounded-xl shadow-lg disabled:opacity-50 transition-all ${importMode === 'receipt'
+                                    className={`flex-1 flex gap-3 items-center justify-center px-6 py-5 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl disabled:opacity-50 transition-all active:scale-95 ${importMode === 'receipt'
                                         ? 'bg-violet-600 hover:bg-violet-700 shadow-violet-600/20'
                                         : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
                                         }`}
                                 >
                                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                                    {isLoading ? 'Analisando...' : (importMode === 'receipt' ? 'Analisar com IA' : 'Lançar & Revisar com IA')}
+                                    {isLoading ? 'IA Processando...' : (importMode === 'receipt' ? 'Extrair com IA' : 'Processar & Categorizar')}
                                 </button>
                             </div>
 
                             {aiStatus && (
-                                <div className="text-center p-2 rounded-lg bg-indigo-50">
-                                    <p className="text-xs font-semibold text-indigo-600 animate-pulse">{aiStatus}</p>
+                                <div className="text-center p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100/50 dark:border-indigo-500/20">
+                                    <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] animate-pulse">{aiStatus}</p>
                                 </div>
                             )}
                         </div>
@@ -388,154 +455,206 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
 
                 {/* ─── Step 2: Revisão ─────────────────────────────────────────────────── */}
                 {step === 2 && (
-                    <div className="flex flex-col h-[70vh] max-h-[700px]">
-                        <div className="p-4 bg-amber-50 border-b border-amber-100 flex items-start gap-3">
-                            <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-                            <p className="text-sm text-amber-800 font-medium">Revisamos seu extrato e categorizamos o que foi possível. Desmarque transações indesejadas antes de salvar.</p>
+                    <div className="flex flex-col h-[75vh] max-h-[800px]">
+                        <div className="px-8 py-5 bg-amber-50 dark:bg-amber-500/10 border-b border-amber-100 dark:border-amber-500/20 flex items-start gap-4">
+                            <AlertTriangle className="w-5 h-5 text-amber-500 mt-1 shrink-0" />
+                            <p className="text-sm text-amber-800 dark:text-amber-300 font-bold leading-relaxed">
+                                Revisamos seu extrato e categorizamos o que foi possível. <span className="font-black">Verifique os valores e desmarque o que não deseja importar.</span>
+                            </p>
                         </div>
+
+                        {/* Receipt preview thumbnail */}
+                        {receiptPreviewUrl && (
+                            <div className="px-8 py-3 bg-slate-50 dark:bg-slate-950/50 border-b border-slate-100 dark:border-slate-800 flex items-center gap-4">
+                                <Image className="w-4 h-4 text-slate-400 shrink-0" />
+                                <img
+                                    src={receiptPreviewUrl}
+                                    alt="Preview do comprovante"
+                                    className="h-16 w-auto rounded-xl border border-slate-200 dark:border-slate-700 object-contain bg-white dark:bg-slate-900 cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => window.open(receiptPreviewUrl, '_blank')}
+                                />
+                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Clique para ampliar</span>
+                            </div>
+                        )}
 
                         {/* Filtros rápidos */}
-                        <div className="px-6 pt-4 pb-2 flex gap-2 border-b border-slate-100">
-                            {(['all', 'new', 'rejected'] as FilterMode[]).map(f => {
-                                const labels = { all: `Todas (${parsedTxs.length})`, new: 'Novas', rejected: `Rejeitadas antes (${rejectedCount})` };
-                                const isActive = filterMode === f;
-                                return (
-                                    <button
-                                        key={f}
-                                        onClick={() => setFilterMode(f)}
-                                        className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${isActive
-                                            ? (f === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-indigo-100 text-indigo-700')
-                                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                            }`}
-                                    >
-                                        {labels[f]}
-                                    </button>
-                                );
-                            })}
+                        <div className="px-8 py-6 flex flex-wrap justify-between items-center gap-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30">
+                            <div className="flex gap-3">
+                                {(['all', 'new', 'rejected'] as FilterMode[]).map(f => {
+                                    const labels = { all: `Tudo (${parsedTxs.length})`, new: 'Novos Lançamentos', rejected: `Rejeitados (${rejectedCount})` };
+                                    const isActive = filterMode === f;
+                                    return (
+                                        <button
+                                            key={f}
+                                            onClick={() => setFilterMode(f)}
+                                            className={`text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-xl transition-all active:scale-95 border ${isActive
+                                                ? (f === 'rejected' ? 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20' : 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/20')
+                                                : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-indigo-500'
+                                                }`}
+                                        >
+                                            {labels[f]}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {filteredTxs.length > 0 && (
+                                <button
+                                    onClick={handleSelectAll}
+                                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                                >
+                                    {filteredTxs.every(t => t.selected) ? (
+                                        <>
+                                            <X className="w-4 h-4" /> Desmarcar Todos
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckSquare className="w-4 h-4" /> Selecionar Todos
+                                        </>
+                                    )}
+                                </button>
+                            )}
                         </div>
 
-                        <div className="flex-1 overflow-auto bg-slate-50 p-6">
+                        <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950/50 p-8">
                             {filteredTxs.length === 0 && (
-                                <div className="flex flex-col items-center justify-center h-32 text-slate-400">
-                                    <Inbox className="w-8 h-8 mb-2" />
-                                    <p className="text-sm font-medium">Nenhuma transação nesta categoria</p>
+                                <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-600">
+                                    <Inbox className="w-16 h-16 mb-4 opacity-20" />
+                                    <p className="text-sm font-black uppercase tracking-widest opacity-60">Nada por aqui</p>
                                 </div>
                             )}
-                            <div className="space-y-3">
+                            <div className="grid grid-cols-1 gap-4">
                                 {filteredTxs.map(tx => (
-                                    <div key={tx.id} className={`flex items-center gap-4 bg-white p-4 rounded-2xl border transition-colors ${tx.isPreviouslyRejected
-                                        ? 'border-red-200 bg-red-50/20'
+                                    <div key={tx.id} className={`flex flex-col sm:flex-row items-center gap-6 p-6 rounded-[2rem] border transition-all duration-300 ${tx.isPreviouslyRejected
+                                        ? 'border-red-200 dark:border-red-500/30 bg-red-50/20 dark:bg-red-500/5'
                                         : tx.isPotentialDuplicate
-                                            ? 'border-orange-300 bg-orange-50/40'
-                                            : tx.selected ? 'border-indigo-200 shadow-sm' : 'border-slate-200 opacity-50'
+                                            ? 'border-orange-200 dark:border-orange-500/30 bg-orange-50/40 dark:bg-orange-500/5'
+                                            : tx.selected ? 'bg-white dark:bg-slate-900 border-indigo-200 dark:border-indigo-500/30 shadow-xl shadow-indigo-500/5' : 'bg-slate-100/50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 opacity-60'
                                         }`}>
-                                        <input
-                                            type="checkbox"
-                                            checked={tx.selected}
-                                            onChange={() => toggleSelect(tx.id)}
-                                            className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                        />
-                                        <div className="w-28 shrink-0">
-                                            <span className="text-xs font-bold text-slate-400 block">{tx.date.split('-').reverse().join('/')}</span>
-                                            <span className={`text-sm font-black ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-700'}`}>{formatCurrency(tx.amount)}</span>
-                                            {tx.isPreviouslyRejected && (
-                                                <span className="text-[10px] font-bold text-red-500 block mt-0.5">⛔ Rejeitada antes</span>
-                                            )}
-                                            {!tx.isPreviouslyRejected && tx.isPotentialDuplicate && (
-                                                <span className="text-[10px] font-bold text-orange-500 block mt-0.5">⚠️ Possível duplicata</span>
-                                            )}
+                                        <div className="flex items-center gap-6 w-full sm:w-auto">
+                                            <div className="relative">
+                                                <input
+                                                    type="checkbox"
+                                                    id={`tx-${tx.id}`}
+                                                    checked={tx.selected}
+                                                    onChange={() => toggleSelect(tx.id)}
+                                                    className="w-6 h-6 rounded-lg border-2 border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-4 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                                                />
+                                            </div>
+                                        <div className="w-36 shrink-0">
+                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{tx.date.split('-').reverse().join('/')}</p>
+                                            <div className="relative group/amount">
+                                                <input
+                                                    type="text"
+                                                    value={tx.amount.toFixed(2)}
+                                                    onChange={e => updateAmount(tx.id, e.target.value)}
+                                                    className={`w-full bg-transparent text-xl font-black tracking-tighter focus:outline-none border-b-2 border-transparent focus:border-indigo-500 transition-all ${
+                                                        tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'
+                                                    }`}
+                                                />
+                                            </div>
+                                            {tx.isPreviouslyRejected && <span className="text-[8px] font-black text-red-500 uppercase tracking-[0.2em] mt-2 block">⛔ Já Importado</span>}
+                                            {!tx.isPreviouslyRejected && tx.isPotentialDuplicate && <span className="text-[8px] font-black text-orange-500 uppercase tracking-[0.2em] mt-2 block">⚠️ Duplicata?</span>}
                                         </div>
-                                        <div className="flex-1 flex flex-col gap-2">
-                                            <input
-                                                type="text"
-                                                value={tx.description}
-                                                onChange={e => setParsedTxs(prev => prev.map(t => t.id === tx.id ? { ...t, description: e.target.value } : t))}
-                                                className="w-full bg-transparent text-sm font-bold text-slate-800 focus:outline-none focus:border-b border-indigo-200"
-                                            />
-                                            {tx.suggestedCategory && (
-                                                <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <span className="text-xs px-2 py-0.5 rounded outline outline-1 outline-indigo-200 bg-indigo-50 text-indigo-700 flex items-center gap-1 font-semibold">
+                                        </div>
+
+                                        <div className="flex-1 w-full space-y-3">
+                                            <div className="relative group">
+                                                <input
+                                                    type="text"
+                                                    value={tx.description}
+                                                    onChange={e => setParsedTxs(prev => prev.map(t => t.id === tx.id ? { ...t, description: e.target.value } : t))}
+                                                    className="w-full bg-transparent text-lg font-black text-slate-800 dark:text-white focus:outline-none border-b-2 border-transparent focus:border-indigo-500 transition-all tracking-tight"
+                                                />
+                                            </div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                {tx.suggestedCategory && (
+                                                    <span className="text-[9px] px-3 py-1 rounded-lg border-2 border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 flex items-center gap-2 font-black uppercase tracking-widest">
                                                         <span>{tx.suggestedIcon}</span>
                                                         {tx.suggestedCategory}
                                                     </span>
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">
-                                                        Regra {tx.classificationRule}%
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="w-48 shrink-0">
-                                            <select
-                                                value={tx.categoryId || ''}
-                                                onChange={(e) => updateCategory(tx.id, e.target.value)}
-                                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                            >
-                                                <option value="" disabled>Escolha uma categoria...</option>
-
-                                                <optgroup label="Entradas (Rendas)">
-                                                    {categories.filter(c => c.type === 'INCOME').map(c => (
-                                                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                                                    ))}
-                                                </optgroup>
-
-                                                {tx.type === 'EXPENSE' && (
-                                                    <>
-                                                        <optgroup label="Necessidades (Essencial)">
-                                                            {categories.filter(c =>
-                                                                ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
-                                                                    .includes(c.name)
-                                                            ).map(c => (
-                                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                                                            ))}
-                                                        </optgroup>
-
-                                                        <optgroup label="Desejos (Estilo de Vida)">
-                                                            {categories.filter(c =>
-                                                                ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
-                                                                    .includes(c.name)
-                                                            ).map(c => (
-                                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                                                            ))}
-                                                        </optgroup>
-
-                                                        <optgroup label="Objetivos (Quitação e Reserva)">
-                                                            {categories.filter(c =>
-                                                                ['Aplicações / Poupança', 'Pagamento de Dívidas']
-                                                                    .includes(c.name)
-                                                            ).map(c => (
-                                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                                                            ))}
-                                                        </optgroup>
-
-                                                        {categories.filter(c =>
-                                                            !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
-                                                                'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens',
-                                                                'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
-                                                        ).length > 0 && (
-                                                                <optgroup label="Outras Despesas">
-                                                                    {categories.filter(c =>
-                                                                        !['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
-                                                                            'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens',
-                                                                            'Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name) && c.type === 'EXPENSE'
-                                                                    ).map(c => (
-                                                                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                                                                    ))}
-                                                                </optgroup>
-                                                            )}
-                                                    </>
                                                 )}
-                                            </select>
+                                                {tx.cnpj && (
+                                                    <span className="text-[8px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700">
+                                                        CNPJ: {tx.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}
+                                                    </span>
+                                                )}
+                                                {tx.confidence !== undefined && (
+                                                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border font-black uppercase tracking-widest text-[8px] ${
+                                                        tx.confidence >= 80 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border-emerald-100 dark:border-emerald-500/20' :
+                                                        tx.confidence >= 50 ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 border-amber-100 dark:border-amber-500/20' :
+                                                        'bg-rose-50 dark:bg-rose-500/10 text-rose-600 border-rose-100 dark:border-rose-500/20'
+                                                    }`}>
+                                                        <Sparkles className="w-3 h-3" />
+                                                        IA: {tx.confidence}%
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="w-full sm:w-64 shrink-0">
+                                            <div className="relative group">
+                                                <select
+                                                    value={tx.categoryId || ''}
+                                                    onChange={(e) => updateCategory(tx.id, e.target.value)}
+                                                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-xs font-black text-slate-600 dark:text-slate-300 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all appearance-none cursor-pointer"
+                                                >
+                                                    <option value="" disabled>Selecione a categoria...</option>
+
+                                                    <optgroup label="Entradas (Rendas)">
+                                                        {categories.filter(c => c.type === 'INCOME').map(c => (
+                                                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                        ))}
+                                                    </optgroup>
+
+                                                    {tx.type === 'EXPENSE' && (
+                                                        <>
+                                                            <optgroup label="Necessidades (Essencial)">
+                                                                {categories.filter(c =>
+                                                                    ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
+                                                                        .includes(c.name)
+                                                                ).map(c => (
+                                                                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                                ))}
+                                                            </optgroup>
+
+                                                            <optgroup label="Desejos (Estilo de Vida)">
+                                                                {categories.filter(c =>
+                                                                    ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
+                                                                        .includes(c.name)
+                                                                ).map(c => (
+                                                                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                                ))}
+                                                            </optgroup>
+
+                                                            <optgroup label="Objetivos (Quitação e Reserva)">
+                                                                {categories.filter(c =>
+                                                                    ['Aplicações / Poupança', 'Pagamento de Dívidas']
+                                                                        .includes(c.name)
+                                                                ).map(c => (
+                                                                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                                ))}
+                                                            </optgroup>
+                                                        </>
+                                                    )}
+                                                </select>
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                                    <i data-lucide="chevron-down" className="w-3 h-3"></i>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-slate-100 flex justify-between items-center bg-white">
-                            <button onClick={() => setStep(1)} className="px-6 py-3 text-slate-500 font-bold hover:bg-slate-100 rounded-xl transition-colors">Voltar</button>
-                            <button onClick={handleSubmit} disabled={isLoading || parsedTxs.filter(t => t.selected).length === 0} className="px-8 py-3 text-white font-black bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50">
-                                {isLoading ? 'Salvando...' : `Confirmar ${parsedTxs.filter(t => t.selected).length} Transações`}
-                                <Check className="w-5 h-5" />
+                        <div className="p-8 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900">
+                            <button onClick={() => setStep(1)} className="w-full sm:w-auto px-8 py-4 text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest text-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all active:scale-95">
+                                Alterar Arquivo
+                            </button>
+                            <button onClick={handleSubmit} disabled={isLoading || parsedTxs.filter(t => t.selected).length === 0} className="w-full sm:w-auto px-10 py-5 text-white font-black uppercase tracking-widest text-xs bg-emerald-500 hover:bg-emerald-600 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                                {isLoading ? 'Finalizando...' : `Importar ${parsedTxs.filter(t => t.selected).length} Transações`}
                             </button>
                         </div>
                     </div>

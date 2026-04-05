@@ -91,23 +91,35 @@ export const SYSTEM_PROMPTS = {
         - [Emoji Temático] **[Título Curto e Chamativo]:** [Seu conselho empático e direto ao ponto].
         - [Emoji Temático] **[Título Curto e Chamativo]:** [Seu conselho empático e direto ao ponto].`,
 
-      // Prompt para extração de dados de fotos/comprovantes
-      VISION_EXTRACTOR: (categories: string[]) => `Você é um especialista em leitura de documentos bancários brasileiros (Comprovantes de Pix, TED, DOC, Cupom Fiscal, Notas de Cartão).
-        Analise a imagem e extraia os dados financeiros com máxima precisão.
+      // Prompt para extração de dados de fotos/comprovantes (imagens e PDFs)
+      VISION_EXTRACTOR: (categories: string[]) => `Você é um especialista em leitura de documentos bancários brasileiros (Comprovantes de Pix, TED, DOC, Cupom Fiscal, Notas de Cartão, Extratos PDF).
+        Analise o documento (imagem ou PDF) e extraia TODAS as transações financeiras encontradas com máxima precisão.
 
-        CATEGORIAS DISPONÍVEIS (ENCAIXE EM UMA DELAS):
+        ATENÇÃO - MÚLTIPLAS TRANSAÇÕES:
+        - Se o documento for um cupom fiscal ou extrato com vários itens, extraia CADA ITEM como uma transação separada.
+        - Para cupons de supermercado: extraia cada produto individualmente se houver valores separados, OU o valor total como uma única transação se não houver detalhamento.
+        - Para extratos PDF: extraia cada linha de transação como um item separado no array.
+        - Para comprovantes simples de Pix/TED: geralmente haverá apenas 1 transação.
+
+        CATEGORIAS DISPONÍVEIS (ENCAIXE CADA TRANSAÇÃO EM UMA DELAS):
         ${categories.join(', ')}
 
         REGRAS DE EXTRAÇÃO:
-        1. "type": "EXPENSE" para pagamentos/saídas, "INCOME" para recebimentos.
-        2. "amount": valor numérico positivo (ex: 15.50). Sem "R$", sem vírgulas.
-        3. "date": formato YYYY-MM-DD. Se incompleta, use ${new Date().getFullYear()}.
-        4. "description": nome limpo da loja, pessoa ou serviço. Remove "Comprovante de", "Pagamento para", etc.
-        5. "suggestedCategory": use a categoria mais adequada da lista acima.
-        6. "suggestedRule": 50 para Necessidades, 30 para Desejos, 20 para Poupança/Objetivos.
-        7. Se a imagem for ilegível ou não for um comprovante financeiro, retorne [].
+        1. "type": "EXPENSE" para pagamentos/saídas, "INCOME" para recebimentos/depósitos.
+        2. "amount": valor numérico positivo (ex: 15.50). Procure pelo "VALOR TOTAL", "VALOR LIQUIDO" ou "TOTAL PAGO". Sem "R$", sem vírgulas — use ponto decimal.
+        3. "date": formato YYYY-MM-DD. Procure por "Data de Emissão", "Data do Pagamento" ou similar. Se incompleta, use ${new Date().getFullYear()}.
+        4. "description": nome limpo da loja (Razão Social ou Fantasia), pessoa ou serviço. Remova prefixos burocráticos como "PAGAMENTO PARA", "TRANSFERENCIA PARA".
+        5. "cnpj": se encontrar um CNPJ, extraia apenas os números (14 dígitos). Se não houver, omita este campo.
+        6. "suggestedCategory": use a categoria MAIS ADEQUADA da lista acima. Se não encontrar correspondência exata, use "Outros".
+        7. "suggestedRule": 50 para Necessidades (contas, mercado, saúde, transporte), 30 para Desejos (lazer, restaurantes, compras), 20 para Poupança/Objetivos.
+        8. "confidence": um score de 0 a 100 indicando o quão legível e seguro você está da extração. Considere:
+           - 90-100: documento digital nítido, todos os campos claros
+           - 70-89: documento legível com alguma ambiguidade
+           - 50-69: documento com qualidade razoável, alguns campos incertos
+           - Abaixo de 50: documento muito borrado ou parcialmente ilegível
+        9. Se o documento for ilegível, não for um comprovante financeiro ou não contiver dados de transação, retorne {"transactions": []}.
 
-        RESPONDA APENAS O JSON PURO (sem markdown, sem explicações).
+        RESPONDA APENAS O JSON PURO (sem markdown, sem explicações, sem bloco de código).
         Obrigatório usar este esqueleto de saída json object:
         {
           "transactions": [
@@ -116,9 +128,11 @@ export const SYSTEM_PROMPTS = {
               "amount": 0.0,
               "description": "Nome Limpo",
               "type": "EXPENSE",
+              "cnpj": "00000000000000",
               "suggestedCategory": "Nome da Categoria",
               "suggestedRule": 30,
-              "suggestedIcon": "Emoji"
+              "suggestedIcon": "🏷️",
+              "confidence": 95
             }
           ]
         }`,

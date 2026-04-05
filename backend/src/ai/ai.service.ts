@@ -215,52 +215,76 @@ export class AiService {
     }
 
     /**
-     * Extrai dados de transação de uma imagem de comprovante usando OpenRouter (Vision).
+     * Extrai dados de transação de uma imagem ou PDF de comprovante usando OpenRouter (Vision).
+     * Retorna objeto com transactions e error para feedback detalhado.
      */
-    async extractFromReceipt(imageBase64: string, mimeType: string, categories: string[] = []): Promise<ReceiptTransaction[]> {
+    async extractFromReceipt(fileBase64: string, mimeType: string, categories: string[] = []): Promise<ReceiptExtractionResult> {
         if (!this.openai) {
             this.logger.warn('AiService: OpenRouter não disponível.');
-            return [];
+            return { transactions: [], error: 'service_unavailable' };
         }
 
         try {
-            this.logger.log(`OpenRouter: Processando comprovante com ${this.VISION_MODEL}...`);
+            this.logger.log(`OpenRouter: Processando comprovante (${mimeType}) com ${this.VISION_MODEL}...`);
+
+            const isPdf = mimeType === 'application/pdf';
+            const contentParts: any[] = [
+                { type: 'text', text: "Extraia os dados de todas as transações encontradas neste documento:" },
+            ];
+
+            if (isPdf) {
+                contentParts.push({
+                    type: 'file',
+                    file_url: {
+                        url: `data:${mimeType};base64,${fileBase64}`,
+                    },
+                });
+            } else {
+                contentParts.push({
+                    type: 'image_url',
+                    image_url: {
+                        url: `data:${mimeType};base64,${fileBase64}`,
+                    },
+                });
+            }
 
             const response = await this.openai.chat.completions.create({
                 model: this.VISION_MODEL,
                 messages: [
                     { role: 'system', content: SYSTEM_PROMPTS.VISION_EXTRACTOR(categories) },
-                    {
-                        role: 'user',
-                        content: [
-                            { type: 'text', text: "Extraia os dados desta transação:" },
-                            {
-                                type: 'image_url',
-                                image_url: {
-                                    url: `data:${mimeType};base64,${imageBase64}`,
-                                },
-                            },
-                        ],
-                    },
+                    { role: 'user', content: contentParts },
                 ],
-                response_format: { type: 'json_object' }
+                response_format: { type: 'json_object' },
+                max_tokens: 4096,
             });
 
-            const responseText = response.choices[0]?.message?.content || '[]';
-
-            // Tenta limpar possíveis marcações de markdown do JSON
+            const responseText = response.choices[0]?.message?.content || '{}';
             const cleanJson = responseText.replace(/```json|```/g, '').trim();
             const rawData = JSON.parse(cleanJson);
 
-            // Algumas IAs podem envolver o resultado em chaves variadas
             const parsed = Array.isArray(rawData)
                 ? rawData
                 : (rawData.transactions || rawData.data || rawData.items || rawData.results || []);
 
-            return parsed;
-        } catch (error) {
-            this.logger.error('Erro ao extrair via OpenRouter Vision:', error);
-            return [];
+            if (!Array.isArray(parsed) || parsed.length === 0) {
+                return { transactions: [], error: 'no_data_found' };
+            }
+
+            return { transactions: parsed, error: null };
+        } catch (error: any) {
+            this.logger.error('Erro ao extrair via OpenRouter Vision:', error?.message || error);
+
+            if (error?.status === 400 || error?.status === 422) {
+                return { transactions: [], error: 'unsupported_format' };
+            }
+            if (error?.status === 429) {
+                return { transactions: [], error: 'rate_limit' };
+            }
+            if (error?.status === 500 || error?.status === 503) {
+                return { transactions: [], error: 'api_error' };
+            }
+
+            return { transactions: [], error: 'unknown_error' };
         }
     }
 
@@ -281,4 +305,20 @@ export interface ReceiptTransaction {
     suggestedCategory?: string;
     suggestedRule?: number;
     suggestedIcon?: string;
+    confidence?: number;
+    cnpj?: string;
+}
+
+export type ReceiptErrorType =
+    | 'service_unavailable'
+    | 'no_data_found'
+    | 'unsupported_format'
+    | 'rate_limit'
+    | 'api_error'
+    | 'unknown_error'
+    | null;
+
+export interface ReceiptExtractionResult {
+    transactions: ReceiptTransaction[];
+    error: ReceiptErrorType;
 }
