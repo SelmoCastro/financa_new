@@ -1,0 +1,15 @@
+{
+  "name": "financa-new",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Finanza AI — Dashboard Financeiro Inteligente",
+  "scripts": {
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:patch": "standard-version --release-as patch"
+  },
+  "devDependencies": {
+    "standard-version": "^9.5.0"
+  }
+}

@@ -1,0 +1,97 @@
+# Changelog
+
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+## [1.2.0](https://github.com/SelmoCastro/financa_new/compare/v1.1.0...v1.2.0) (2026-04-05)
+
+### ⚠ BREAKING CHANGES
+
+* **reports:** dashboard balance now sums account balances instead of all transactions
+* **backend:** migration baseline required (P3005 fix)
+
+### Features
+
+* **ai:** enhance receipt AI engine — PDF support, detailed error feedback, editable amounts, image preview, multi-transaction extraction ([7d71294](https://github.com/SelmoCastro/financa_new/commit/7d71294))
+* **ai:** add Pet and Fuel categories to 50/30/20 rule ([6640d1b](https://github.com/SelmoCastro/financa_new/commit/6640d1b))
+* **backend:** add Pets and Vehicle categories with AI classification rules ([da6f4bf](https://github.com/SelmoCastro/financa_new/commit/da6f4bf))
+* **frontend:** redesign Dashboard, Budgets, Goals, Accounts, History views ([21d08c3](https://github.com/SelmoCastro/financa_new/commit/21d08c3))
+* **frontend:** add ActionMenu component, update tailwind config and types ([21d08c3](https://github.com/SelmoCastro/financa_new/commit/21d08c3))
+* **mobile:** update ImportModal, TransactionModal, CategoryChart, contexts ([21d08c3](https://github.com/SelmoCastro/financa_new/commit/21d08c3))
+* **mobile:** expo SDK 54 upgrade with React Native 0.81 ([f7717f2](https://github.com/SelmoCastro/financa_new/commit/f7717f2))
+* **docs:** complete README with full project documentation, architecture, API docs, feature matrix ([c2c0ded](https://github.com/SelmoCastro/financa_new/commit/c2c0ded))
+
+### Bug Fixes
+
+* **reports:** exclude only real transfers from dashboard calculations ([34c6efa](https://github.com/SelmoCastro/financa_new/commit/34c6efa))
+* **deploy:** resolve P3005 migration error on Render with baseline ([a2af47a](https://github.com/SelmoCastro/financa_new/commit/a2af47a))
+* **git:** remove non-code files from tracking and update .gitignore ([9b00da7](https://github.com/SelmoCastro/financa_new/commit/9b00da7))
+
+### Chores
+
+* remove .agent/skills directory (2739 files) ([ec5d5b9](https://github.com/SelmoCastro/financa_new/commit/ec5d5b9))
+* add project backlog, BMad config and migration scripts ([e85896c](https://github.com/SelmoCastro/financa_new/commit/e85896c))
+
+---
+
+## [1.1.0](https://github.com/SelmoCastro/financa_new/compare/v1.0.0...v1.1.0) (2026-03-13)
+
+### Features
+
+* **mobile:** multi-currency support (BRL/USD/EUR) with CurrencyContext, SettingsModal ([6c0a8da](https://github.com/SelmoCastro/financa_new/commit/6c0a8da))
+* **frontend:** multi-currency support and compact UI design ([17693e9](https://github.com/SelmoCastro/financa_new/commit/17693e9))
+* **frontend:** finance rigor 50/30/20 and Available Real metric ([b0fe97e](https://github.com/SelmoCastro/financa_new/commit/b0fe97e))
+* **social:** transaction invites and shared billing across web and mobile ([6959a6f](https://github.com/SelmoCastro/financa_new/commit/6959a6f), [883b6d9](https://github.com/SelmoCastro/financa_new/commit/883b6d9), [b4741bc](https://github.com/SelmoCastro/financa_new/commit/b4741bc))
+* **frontend:** simplify dashboard layout, clean header, move APK link to sidebar ([afde98a](https://github.com/SelmoCastro/financa_new/commit/afde98a))
+
+### Bug Fixes
+
+* **timeline:** display full history instead of filtered month ([cda7419](https://github.com/SelmoCastro/financa_new/commit/cda7419))
+* **auth:** return refreshToken in login body for mobile compatibility ([157570c](https://github.com/SelmoCastro/financa_new/commit/157570c))
+* **mobile:** update budgets/goals/fixed to useCurrency, fix balance input ([159827d](https://github.com/SelmoCastro/financa_new/commit/159827d))
+* **social:** fix inverted invite acceptance and update notification modal UI ([8ae54aa](https://github.com/SelmoCastro/financa_new/commit/8ae54aa))
+* **social:** render notification modal in React Portal for centering ([ac01d45](https://github.com/SelmoCastro/financa_new/commit/ac01d45))
+* **deploy:** remove migrate deploy from render start script ([740a0f0](https://github.com/SelmoCastro/financa_new/commit/740a0f0))
+* **prisma:** map directUrl to DATABASE_URL for Render compatibility ([4fdb9f0](https://github.com/SelmoCastro/financa_new/commit/4fdb9f0))
+* **auth:** fix login email regexp pattern ([604edcb](https://github.com/SelmoCastro/financa_new/commit/604edcb))
+* **filters:** unify date filters, fix category cleaning bug, add account diagnostics ([32926ec](https://github.com/SelmoCastro/financa_new/commit/32926ec))
+* **categories:** prevent aggressive category cleanup, improve data fetching resilience ([ea701d3](https://github.com/SelmoCastro/financa_new/commit/ea701d3))
+* **backend:** resolve build errors in accounts service ([ef27c34](https://github.com/SelmoCastro/financa_new/commit/ef27c34))
+
+---
+
+## 1.0.0 (2026-03-07)
+
+### Features
+
+* **auth:** JWT authentication with access + refresh tokens
+* **auth:** email verification and password reset flow
+* **transactions:** full CRUD with installment support
+* **transactions:** OFX import with 4-layer deduplication (FITID, history, content match, fuzzy hash)
+* **transactions:** AI auto-classification of bank statement transactions
+* **accounts:** bank account management with real-time balance
+* **credit-cards:** credit card management with limit, closing day, due day
+* **categories:** customizable income/expense categories with icons and colors
+* **budgets:** budget limits per category with percentage tracking
+* **goals:** financial goals with target amount, current amount, deadline
+* **reports:** dashboard summary with 50/30/20 rule, pie charts, bar charts, month-over-month trends
+* **reports:** financial profile for AI brain (goals, budgets, top expenses, recent transactions)
+* **ai:** financial chat assistant with Gemini via OpenRouter
+* **ai:** monthly insights generation (3 golden tips)
+* **ai:** subscription/recurring expense detection
+* **ai:** monthly forecasting (red/green prediction)
+* **notifications:** in-app notification system
+* **frontend:** responsive dashboard with Recharts + Framer Motion
+* **frontend:** dark mode support
+* **frontend:** privacy blur mode
+* **frontend:** fixed/recurring transaction management
+* **frontend:** ImportOverlay for OFX/CSV/AI Vision
+* **frontend:** ChatWidget for AI assistant
+* **frontend:** NotificationCenter with real-time updates
+* **mobile:** Expo app with tab navigation
+* **mobile:** transaction management and import
+* **mobile:** AI chat and insights
+* **mobile:** dark mode and privacy blur
+* **backend:** Swagger API documentation
+* **backend:** Helmet security headers
+* **backend:** Global rate limiting (100 req/60s)
+* **backend:** Feedback collection system
