@@ -11,3 +11,6 @@ coverage
 .vercel
 .env*.local
 .agent/
+._bmad-output/
+._bmad/
+
