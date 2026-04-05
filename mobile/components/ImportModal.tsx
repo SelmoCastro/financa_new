@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, Modal, Pressable, ActivityIndicator,
-    ScrollView, SafeAreaView, Platform, Alert, Image, Switch
+    ScrollView, SafeAreaView, Platform, Alert, Image, Switch, TextInput
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
 import * as Haptics from 'expo-haptics';
+
+const ERROR_MESSAGES: Record<string, string> = {
+    no_data_found: 'Não foi possível identificar transações neste documento. Verifique se é um comprovante financeiro válido e tente com uma imagem mais nítida.',
+    unsupported_format: 'Formato não suportado. Use JPG, PNG, WEBP ou PDF.',
+    rate_limit: 'Muitas solicitações em sequência. Aguarde um momento e tente novamente.',
+    api_error: 'Erro temporário no serviço de IA. Tente novamente em alguns instantes.',
+    service_unavailable: 'Serviço de IA indisponível no momento. Tente novamente mais tarde.',
+    unknown_error: 'Erro inesperado ao processar o documento. Tente novamente.',
+};
 
 const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
     if (type === 'INCOME') return 'Entradas (Rendas)';
@@ -38,6 +47,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
     const [rejectedIds, setRejectedIds] = useState<string[]>([]);
     const [selectedAccountId, setSelectedAccountId] = useState<string>('');
     const [fileInfo, setFileInfo] = useState<{ name: string, uri: string, type: 'ofx' | 'receipt' } | null>(null);
+    const [receiptPreviewUri, setReceiptPreviewUri] = useState<string | null>(null);
 
     // Filter states
     const [filterType, setFilterType] = useState<'ALL' | 'NEW' | 'REJECTED'>('ALL');
@@ -76,6 +86,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
             setTransactions([]);
             setRejectedIds([]);
             setFileInfo(null);
+            setReceiptPreviewUri(null);
             setFilterType('ALL');
             setDuplicateIds([]);
             setIsAccountDropdownOpen(false);
@@ -120,20 +131,38 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
             if (result.canceled) return;
 
             const asset = result.assets[0];
-            // Extrair nome do arquivo da URI
             const filename = asset.uri.split('/').pop() || 'image.jpg';
 
-            // Detecta o mimetype real pela extensão para não confundir o OpenRouter API
             const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
             let mimeType = 'image/jpeg';
             if (ext === 'png') mimeType = 'image/png';
             if (ext === 'webp') mimeType = 'image/webp';
 
             setFileInfo({ name: filename, uri: asset.uri, type: 'receipt' });
+            setReceiptPreviewUri(asset.uri);
             processFile(asset.uri, filename, mimeType, 'receipt');
 
         } catch (err) {
             Alert.alert('Erro', 'Falha ao selecionar imagem');
+        }
+    };
+
+    const handlePickPdf = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/pdf',
+                copyToCacheDirectory: true,
+            });
+
+            if (result.canceled) return;
+
+            const file = result.assets[0];
+            setFileInfo({ name: file.name, uri: file.uri, type: 'receipt' });
+            setReceiptPreviewUri(null);
+            processFile(file.uri, file.name, 'application/pdf', 'receipt');
+
+        } catch (err) {
+            Alert.alert('Erro', 'Falha ao selecionar PDF');
         }
     };
 
@@ -176,7 +205,8 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
             setStep(2);
         } catch (error: any) {
             console.error('Import error:', error);
-            const msg = error.response?.data?.message || 'Falha ao ler arquivo. Tente novamente.';
+            const errorCode = error.response?.data?.errorCode;
+            const msg = ERROR_MESSAGES[errorCode] || error.response?.data?.message || 'Falha ao ler arquivo. Tente novamente.';
             Alert.alert('Erro de Importação', msg);
             setFileInfo(null);
         } finally {
@@ -204,6 +234,14 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
         setTransactions(prev => prev.map(t =>
             t.id === id ? { ...t, categoryId } : t
         ));
+    };
+
+    const updateTransactionAmount = (id: string, rawValue: string) => {
+        const cleaned = rawValue.replace(/[^0-9.,]/g, '').replace(',', '.');
+        const amount = parseFloat(cleaned);
+        if (!isNaN(amount) && amount >= 0) {
+            setTransactions(prev => prev.map(t => t.id === id ? { ...t, amount } : t));
+        }
     };
 
     const handleConfirm = async () => {
@@ -421,9 +459,31 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
                             </View>
                         </Pressable>
 
+                        <Pressable style={styles.optionCard} onPress={handlePickPdf}>
+                            <View style={[styles.iconCircle, { backgroundColor: '#fef3c7' }]}>
+                                <MaterialIcons name="picture-as-pdf" size={24} color="#f59e0b" />
+                            </View>
+                            <View style={styles.optionInfo}>
+                                <Text style={styles.optionTitle}>PDF / Extrato (IA)</Text>
+                                <Text style={styles.optionDesc}>Importe extratos ou comprovantes em PDF para extração.</Text>
+                            </View>
+                        </Pressable>
+
                     </View>
                 ) : (
                     <View style={styles.step2Container}>
+                        {/* Receipt Preview */}
+                        {receiptPreviewUri && fileInfo?.type === 'receipt' && (
+                            <View style={styles.receiptPreviewContainer}>
+                                <Image
+                                    source={{ uri: receiptPreviewUri }}
+                                    style={styles.receiptPreviewImage}
+                                    resizeMode="contain"
+                                />
+                                <Text style={styles.receiptPreviewLabel}>📷 Comprovante — toque para ampliar</Text>
+                            </View>
+                        )}
+
                         <View style={styles.filterRow}>
                             <Pressable
                                 style={[styles.filterChip, filterType === 'ALL' && styles.filterChipActive]}
@@ -458,9 +518,14 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
                                         <View style={{ flex: 1, marginLeft: 12 }}>
                                             <Text style={styles.txDate}>{new Date(tx.date).toLocaleDateString('pt-BR')}</Text>
                                             <Text style={styles.txDesc} numberOfLines={1}>{tx.description}</Text>
-                                            <Text style={[styles.txAmount, { color: tx.amount < 0 ? '#e11d48' : '#059669' }]}>
-                                                R$ {Math.abs(tx.amount).toFixed(2)}
-                                            </Text>
+                                            <TextInput
+                                                style={[styles.txAmountInput, { color: tx.amount < 0 ? '#e11d48' : '#059669' }]}
+                                                value={Math.abs(tx.amount).toFixed(2)}
+                                                onChangeText={(val) => updateTransactionAmount(tx.id, val)}
+                                                keyboardType="decimal-pad"
+                                                returnKeyType="done"
+                                                underlineColorAndroid="transparent"
+                                            />
                                             {duplicateIds.includes(tx.fitId) && (
                                                 <View style={styles.rejectBadge}>
                                                     <Text style={{ fontSize: 10, color: '#f43f5e', fontWeight: '700' }}>⛔ Rejeitada antes</Text>
@@ -526,9 +591,14 @@ const styles = StyleSheet.create({
     txDate: { fontSize: 12, color: '#94a3b8', fontWeight: '500' },
     txDesc: { fontSize: 15, color: '#1e293b', fontWeight: '700', marginVertical: 2 },
     txAmount: { fontSize: 16, fontWeight: '800' },
+    txAmountInput: { fontSize: 16, fontWeight: '800', padding: 0, borderWidth: 0, borderBottomWidth: 1, borderBottomColor: 'transparent', backgroundColor: 'transparent' },
     rejectBadge: { marginTop: 4, alignSelf: 'flex-start', backgroundColor: '#ffe4e6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
 
     categoryArea: { marginTop: 12, borderTopWidth: 1, borderTopColor: '#f8fafc', paddingTop: 8 },
+
+    receiptPreviewContainer: { padding: 12, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#f1f5f9', alignItems: 'center' },
+    receiptPreviewImage: { width: '100%', height: 120, borderRadius: 12, backgroundColor: '#f8fafc' },
+    receiptPreviewLabel: { fontSize: 10, color: '#94a3b8', fontWeight: '700', marginTop: 6, textTransform: 'uppercase', letterSpacing: 1 },
     selectInput: {
         backgroundColor: '#f8fafc',
         borderRadius: 12,
