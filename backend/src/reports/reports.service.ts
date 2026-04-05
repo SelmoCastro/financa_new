@@ -13,40 +13,28 @@ export class ReportsService {
         const startOfMonth = new Date(Date.UTC(targetYear, targetMonth, 1));
         const endOfMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59, 999));
 
-        // Get transfer categories to exclude them
-        const transferCategories = await this.prisma.category.findMany({
-            where: { userId, type: 'TRANSFER' },
-            select: { id: true }
-        });
-        const transferCatIds = transferCategories.map(c => c.id);
-
+        // Identify real transfer transactions by description pattern
+        // The /transfer endpoint creates transactions with "(Entrada)" and "(Saída)" suffixes
+        // We exclude ONLY these, NOT all transactions with transfer-related category names
+        // (many real PIX payments get classified as "Transferência Recebida" but ARE real income/expense)
         const filterOutTransfers = {
-            categoryId: { notIn: transferCatIds },
-            OR: [
-                { categoryLegacy: { not: 'Transferência' } },
-                { categoryLegacy: null }
-            ]
+            NOT: {
+                OR: [
+                    { description: { contains: '(Entrada)' } },
+                    { description: { contains: '(Saída)' } },
+                ]
+            }
         };
 
         // 1. Calculate General Balance (All time)
-        const balanceGroup = await this.prisma.transaction.groupBy({
-            by: ['type'],
-            where: {
-                userId,
-                ...filterOutTransfers
-            },
-            _sum: { amount: true },
+        // O "Saldo Atual" reflete fielmente o saldo em caixa (soma do balance das contas),
+        // ao invés de somar/subtrair todo histórico de transações que afasta o número real.
+        const userAccounts = await this.prisma.account.findMany({
+            where: { userId },
+            select: { balance: true }
         });
-
-        let totalIncome = 0;
-        let totalExpense = 0;
-
-        balanceGroup.forEach(g => {
-            if (g.type === 'INCOME') totalIncome += (g._sum.amount || 0);
-            else if (g.type === 'EXPENSE') totalExpense += (g._sum.amount || 0);
-        });
-
-        const balance = totalIncome - totalExpense;
+        
+        const balance = userAccounts.reduce((acc, account) => acc + account.balance, 0);
 
         // 2. Current Month Totals
         const currentMonthGroup = await this.prisma.transaction.groupBy({
@@ -193,9 +181,9 @@ export class ReportsService {
                 expenseTrend
             },
             rule503020: {
-                needs: { value: needs, percent: (needs / incomeBase) * 100 },
-                wants: { value: wants, percent: (wants / incomeBase) * 100 },
-                savings: { value: savings, percent: (savings / incomeBase) * 100 }
+                needs: { value: needs, percent: currentIncome > 0 ? (needs / currentIncome) * 100 : 0 },
+                wants: { value: wants, percent: currentIncome > 0 ? (wants / currentIncome) * 100 : 0 },
+                savings: { value: savings, percent: currentIncome > 0 ? (savings / currentIncome) * 100 : 0 }
             },
             categorySummary,
             monthlyHistory
