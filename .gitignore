@@ -5,12 +5,33 @@ dist
 .env.local
 .DS_Store
 coverage
-.vscode
-.idea
-*.log
 .vercel
 .env*.local
-.agent/
-._bmad-output/
-._bmad/
 
+# IDE
+.vscode
+.idea
+
+# Logs
+*.log
+
+# BMad
+.opencode/
+_bmad-output/
+_bmad/
+BACKLOG.md
+BMAD-GUIDE.md
+INDEX.md
+opencode.json
+
+# Scripts de migração
+backend/src/migrate-*.ts
+
+# Screenshots
+Captura de tela*.png
+
+# Deploy artifacts
+mobile/deploy_apk/
+
+# Start script
+start.sh
