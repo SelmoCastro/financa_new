@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/SelmoCastro/financa_new/compare/v1.2.0...v1.2.1) (2026-04-07)
+
+
+### 📝 Documentation
+
+* make conventional commits and versioning mandatory for all agents ([4d6b8ae](https://github.com/SelmoCastro/financa_new/commit/4d6b8aeaa22db815cb7cd7b771f2419e80ed9280))
+
+
+### ✨ Features
+
+* **mobile:** port Part 2 AI Vision improvements — PDF support, error feedback, editable amounts, receipt preview ([cdec795](https://github.com/SelmoCastro/financa_new/commit/cdec7959403dc0027bf6d9b87e644d40704acc16))
+
+
+### 🐛 Bug Fixes
+
+* **web:** corrigir edição de contas, dark mode no extrato/fixos e dropdowns ([1cbb768](https://github.com/SelmoCastro/financa_new/commit/1cbb76849d91b53235fba4ed002e68766e226094))
+
 ## [1.2.0](https://github.com/SelmoCastro/financa_new/compare/v1.1.0...v1.2.0) (2026-04-05)
 
 ### ⚠ BREAKING CHANGES
