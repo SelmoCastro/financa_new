@@ -15,7 +15,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
     const [type, setType] = useState(accountToEdit?.type || 'CHECKING');
     const [balance, setBalance] = useState(() => {
         if (accountToEdit && accountToEdit.balance !== undefined) {
-            return (accountToEdit.balance / 100).toFixed(2).replace('.', ',');
+            return accountToEdit.balance.toString().replace('.', ',');
         }
         return '';
     });
@@ -33,13 +33,15 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
     }, [onClose]);
 
     const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let val = e.target.value.replace(/\D/g, '');
-        if (val.length === 0) {
-            setBalance('');
-            return;
+        let val = e.target.value.replace(/[^\d,]/g, '');
+        const parts = val.split(',');
+        if (parts.length > 2) {
+            val = parts[0] + ',' + parts.slice(1).join('');
         }
-        const numericValue = (parseInt(val, 10) / 100).toFixed(2);
-        setBalance(numericValue.replace('.', ','));
+        if (parts[1] && parts[1].length > 2) {
+            val = parts[0] + ',' + parts[1].slice(0, 2);
+        }
+        setBalance(val);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
