@@ -146,19 +146,25 @@ export class ReportsService {
         categorySummary.sort((a, b) => b.value - a.value);
 
         // 5. Monthly History (Bar Chart Data)
+        // Limit to last 12 months to avoid showing future dates and keep chart readable
+        const twelveMonthsAgo = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 11, 1));
         const allTxs = await this.prisma.transaction.findMany({
             where: {
                 userId,
                 ...filterOutTransfers,
+                date: {
+                    gte: twelveMonthsAgo,
+                },
             },
             select: { date: true, amount: true, type: true },
-            orderBy: { date: 'asc' }
+            orderBy: { date: 'asc' },
         });
 
         const monthlyMap = new Map<string, { income: number; expenses: number; month: string }>();
         allTxs.forEach(t => {
+            // Use UTC consistently to avoid timezone drift
             const d = new Date(t.date);
-            const monthKey = `${d.getFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; // Avoid timezone drift
+            const monthKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
             if (!monthlyMap.has(monthKey)) {
                 // Use UTC month name extraction to be robust
                 const formatter = new Intl.DateTimeFormat('pt-BR', { month: 'short', timeZone: 'UTC' });
@@ -170,7 +176,11 @@ export class ReportsService {
             if (t.type === 'INCOME') stats!.income += Number(t.amount);
             else if (t.type === 'EXPENSE') stats!.expenses += Number(t.amount);
         });
-        const monthlyHistory = Array.from(monthlyMap.values());
+
+        // Sort chronologically and ensure proper month ordering
+        const monthlyHistory = Array.from(monthlyMap.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([, value]) => value);
 
         return {
             balance,
