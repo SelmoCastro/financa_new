@@ -194,12 +194,26 @@ export default function DashboardScreen() {
 
                     {/* Cards Grid */}
                     <View style={styles.cardsGrid}>
-                        <View style={[styles.card, styles.cardPrimary, styles.glassEffect]}>
+                        <View style={[
+                            styles.card,
+                            forecast.availableReal < 0 ? styles.cardRed : styles.cardPrimary,
+                            styles.glassEffect
+                        ]}>
                             <View style={styles.cardLabelRow}>
-                                <MaterialIcons name="track-changes" size={16} color="#e0e7ff" />
-                                <Text style={styles.cardLabelPrimary}>Saldo Projetado</Text>
+                                <MaterialIcons 
+                                    name={forecast.availableReal < 0 ? "warning" : "account-balance-wallet"} 
+                                    size={16} 
+                                    color={forecast.availableReal < 0 ? "#fecaca" : "#e0e7ff"} 
+                                />
+                                <Text style={[
+                                    styles.cardLabelPrimary,
+                                    forecast.availableReal < 0 ? { color: "#fecaca" } : null
+                                ]}>Disponível (Mês)</Text>
                             </View>
-                            <Text style={styles.cardValuePrimary}>{formatValue(forecast.projectedBalance)}</Text>
+                            <Text style={[
+                                styles.cardValuePrimary,
+                                forecast.availableReal < 0 ? { color: "white" } : null
+                            ]}>{formatValue(forecast.availableReal)}</Text>
                         </View>
 
                         <View style={[styles.card, styles.cardWhite, styles.glassEffectLight]}>

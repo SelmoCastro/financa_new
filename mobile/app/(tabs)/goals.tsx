@@ -5,18 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCurrency } from '../../context/CurrencyContext';
-import { parseCurrencyToNumber } from '../../utils/currencyUtils';
+import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
+import { Goal } from '../../types';
 import * as Haptics from 'expo-haptics';
-
-interface Goal {
-    id: string;
-    title: string;
-    targetAmount: number;
-    currentAmount: number;
-    deadline?: string;
-    progress: number;
-    remainingAmount: number;
-}
 
 export default function GoalsScreen() {
     const insets = useSafeAreaInsets();
@@ -28,6 +19,7 @@ export default function GoalsScreen() {
     const [modalVisible, setModalVisible] = useState(false);
     const [depositModalVisible, setDepositModalVisible] = useState(false);
     const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+    const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
     // Form
     const [title, setTitle] = useState('');
@@ -69,16 +61,52 @@ export default function GoalsScreen() {
         }
 
         try {
-            await api.post('/goals', { title, targetAmount: rawAmount });
+            if (editingGoal) {
+                await api.patch(`/goals/${editingGoal.id}`, { title, targetAmount: rawAmount });
+            } else {
+                await api.post('/goals', { title, targetAmount: rawAmount });
+            }
             setModalVisible(false);
+            setEditingGoal(null);
             setTitle('');
             setTargetAmount('');
             fetchGoals();
-            Alert.alert('Sucesso', 'Meta criada!');
+            Alert.alert('Sucesso', 'Meta salva!');
         } catch (error) {
             console.error('Erro ao salvar meta:', error);
             Alert.alert('Erro', 'Não foi possível salvar a meta.');
         }
+    };
+
+    const openEditGoal = (goal: Goal) => {
+        setEditingGoal(goal);
+        setTitle(goal.title);
+        setTargetAmount(formatCurrencyInput(String(Math.round(goal.targetAmount * 100)), currencySymbol));
+        setModalVisible(true);
+    };
+
+    const handleDeleteGoal = (goal: Goal) => {
+        Alert.alert(
+            'Excluir Meta',
+            `Deseja excluir a meta "${goal.title}"? Esta ação não pode ser desfeita.`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Excluir',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/goals/${goal.id}`);
+                            fetchGoals();
+                            Alert.alert('Sucesso', 'Meta excluída!');
+                        } catch (error) {
+                            console.error('Erro ao excluir meta:', error);
+                            Alert.alert('Erro', 'Não foi possível excluir a meta.');
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const handleDeposit = async () => {
@@ -185,6 +213,29 @@ export default function GoalsScreen() {
                                         Faltam {formatValue(goal.remainingAmount)}
                                     </Text>
                                 </View>
+
+                                <View className="flex-row gap-2 mt-3 pt-3 border-t border-slate-100">
+                                    <Pressable
+                                        onPress={() => {
+                                            openEditGoal(goal);
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        }}
+                                        className="flex-1 flex-row items-center justify-center gap-2 py-2 rounded-lg bg-indigo-50"
+                                    >
+                                        <MaterialIcons name="edit" size={16} color="#4f46e5" />
+                                        <Text className="text-indigo-600 font-bold text-xs">Editar</Text>
+                                    </Pressable>
+                                    <Pressable
+                                        onPress={() => {
+                                            handleDeleteGoal(goal);
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        }}
+                                        className="flex-1 flex-row items-center justify-center gap-2 py-2 rounded-lg bg-rose-50"
+                                    >
+                                        <MaterialIcons name="delete-outline" size={16} color="#ef4444" />
+                                        <Text className="text-rose-600 font-bold text-xs">Excluir</Text>
+                                    </Pressable>
+                                </View>
                             </View>
                         ))}
                     </View>
@@ -201,10 +252,14 @@ export default function GoalsScreen() {
                 <View className="flex-1 justify-end bg-slate-900/50">
                     <View className="bg-white rounded-t-3xl p-6">
                         <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-xl font-bold text-slate-800">Nova Meta</Text>
+                            <Text className="text-xl font-bold text-slate-800">{editingGoal ? 'Editar Meta' : 'Nova Meta'}</Text>
                             <View className="rounded-full overflow-hidden bg-slate-100">
                                 <Pressable
-                                    onPress={() => { setModalVisible(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    onPress={() => {
+                                        setModalVisible(false);
+                                        setEditingGoal(null);
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    }}
                                     className="p-2"
                                     android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
                                 >
@@ -241,7 +296,7 @@ export default function GoalsScreen() {
                                 android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
                                 className="w-full bg-indigo-600 py-4 items-center"
                             >
-                                <Text className="text-white font-bold text-lg">Criar Meta</Text>
+                                <Text className="text-white font-bold text-lg">{editingGoal ? 'Atualizar Meta' : 'Criar Meta'}</Text>
                             </Pressable>
                         </View>
                     </View>

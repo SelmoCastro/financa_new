@@ -35,3 +35,22 @@ export interface CreditCard {
     dueDay: number;
     accountId: string;
 }
+
+export interface Budget {
+    id: string;
+    category: string;
+    amount: number;
+    spent: number;
+    percentage: number;
+    isOverBudget: boolean;
+}
+
+export interface Goal {
+    id: string;
+    title: string;
+    targetAmount: number;
+    currentAmount: number;
+    deadline?: string;
+    progress: number;
+    remainingAmount: number;
+}

@@ -140,13 +140,19 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
             ...value
         })).sort((a, b) => a.day - b.day);
 
+        const availableReal = (totals.currentIncome || 0) 
+            + missingFixed.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0)
+            - totals.currentExpense
+            - missingFixed.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
+
         return {
             projectedBalance: projectedBalance || 0,
+            availableReal,
             missingFixed,
             fixedRatio: Math.min(fixedRatio, 100) || 0,
             totalFixedExpense: totalFixedExpenseSafe,
             fixedItems,
             topVillains
         };
-    }, [transactions, totals.balance, totals.income, totals.currentIncome]);
+    }, [transactions, totals.balance, totals.income, totals.currentIncome, totals.currentExpense]);
 };

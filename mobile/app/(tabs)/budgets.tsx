@@ -5,17 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCurrency } from '../../context/CurrencyContext';
-import { parseCurrencyToNumber } from '../../utils/currencyUtils';
+import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
+import { Budget } from '../../types';
 import * as Haptics from 'expo-haptics';
-
-interface Budget {
-    id: string;
-    category: string;
-    amount: number;
-    spent: number;
-    percentage: number;
-    isOverBudget: boolean;
-}
 
 const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
     if (type === 'INCOME') return 'Entradas (Rendas)';
@@ -39,6 +31,7 @@ export default function BudgetsScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
+    const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
     // Form
     const [category, setCategory] = useState('');
@@ -107,8 +100,13 @@ export default function BudgetsScreen() {
         }
 
         try {
-            await api.post('/budgets', { category, amount: rawAmount });
+            if (editingBudget) {
+                await api.patch(`/budgets/${editingBudget.id}`, { category, amount: rawAmount });
+            } else {
+                await api.post('/budgets', { category, amount: rawAmount });
+            }
             setModalVisible(false);
+            setEditingBudget(null);
             setCategory('');
             setAmount('');
             fetchBudgets();
@@ -117,6 +115,37 @@ export default function BudgetsScreen() {
             console.error('Erro ao salvar orçamento:', error);
             Alert.alert('Erro', 'Não foi possível salvar o orçamento.');
         }
+    };
+
+    const openEditBudget = (budget: Budget) => {
+        setEditingBudget(budget);
+        setCategory(budget.category);
+        setAmount(formatCurrencyInput(String(Math.round(budget.amount * 100)), currencySymbol));
+        setModalVisible(true);
+    };
+
+    const handleDeleteBudget = (budget: Budget) => {
+        Alert.alert(
+            'Excluir Orçamento',
+            `Deseja excluir o orçamento "${budget.category}"? Esta ação não pode ser desfeita.`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Excluir',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/budgets/${budget.id}`);
+                            fetchBudgets();
+                            Alert.alert('Sucesso', 'Orçamento excluído!');
+                        } catch (error) {
+                            console.error('Erro ao excluir orçamento:', error);
+                            Alert.alert('Erro', 'Não foi possível excluir o orçamento.');
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const getProgressColor = (percentage: number) => {
@@ -197,6 +226,29 @@ export default function BudgetsScreen() {
                                         {budget.percentage.toFixed(1)}% usado
                                     </Text>
                                 </View>
+
+                                <View className="flex-row gap-2 mt-3 pt-3 border-t border-slate-100">
+                                    <Pressable
+                                        onPress={() => {
+                                            openEditBudget(budget);
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        }}
+                                        className="flex-1 flex-row items-center justify-center gap-2 py-2 rounded-lg bg-indigo-50"
+                                    >
+                                        <MaterialIcons name="edit" size={16} color="#4f46e5" />
+                                        <Text className="text-indigo-600 font-bold text-xs">Editar</Text>
+                                    </Pressable>
+                                    <Pressable
+                                        onPress={() => {
+                                            handleDeleteBudget(budget);
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        }}
+                                        className="flex-1 flex-row items-center justify-center gap-2 py-2 rounded-lg bg-rose-50"
+                                    >
+                                        <MaterialIcons name="delete-outline" size={16} color="#ef4444" />
+                                        <Text className="text-rose-600 font-bold text-xs">Excluir</Text>
+                                    </Pressable>
+                                </View>
                             </View>
                         ))}
                     </View>
@@ -212,10 +264,14 @@ export default function BudgetsScreen() {
                 <View className="flex-1 justify-end bg-slate-900/50">
                     <View className="bg-white rounded-t-3xl p-6">
                         <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-xl font-bold text-slate-800">Novo Orçamento</Text>
+                            <Text className="text-xl font-bold text-slate-800">{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</Text>
                             <View className="rounded-full overflow-hidden bg-slate-100">
                                 <Pressable
-                                    onPress={() => { setModalVisible(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    onPress={() => {
+                                        setModalVisible(false);
+                                        setEditingBudget(null);
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    }}
                                     className="p-2"
                                     android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
                                 >
@@ -255,7 +311,7 @@ export default function BudgetsScreen() {
                                 android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
                                 className="w-full bg-indigo-600 py-4 items-center"
                             >
-                                <Text className="text-white font-bold text-lg">Salvar Orçamento</Text>
+                                <Text className="text-white font-bold text-lg">{editingBudget ? 'Atualizar Orçamento' : 'Salvar Orçamento'}</Text>
                             </Pressable>
                         </View>
                     </View>
