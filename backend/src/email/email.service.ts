@@ -12,7 +12,9 @@ export class EmailService {
     const pass = process.env.GMAIL_APP_PASSWORD;
 
     if (!user || !pass) {
-      this.logger.warn('⚠️  GMAIL_USER ou GMAIL_APP_PASSWORD não configurados - emails não serão enviados.');
+      this.logger.warn(
+        '⚠️  GMAIL_USER ou GMAIL_APP_PASSWORD não configurados - emails não serão enviados.',
+      );
     }
 
     this.transporter = nodemailer.createTransport({
@@ -26,7 +28,10 @@ export class EmailService {
     // Verifica conexão SMTP na inicialização e loga o resultado
     this.transporter.verify((error) => {
       if (error) {
-        this.logger.error(`❌ Falha na verificação do SMTP Gmail: ${error.message}`, error.stack);
+        this.logger.error(
+          `❌ Falha na verificação do SMTP Gmail: ${error.message}`,
+          error.stack,
+        );
       } else {
         this.logger.log('✅ Conexão SMTP Gmail validada com sucesso!');
       }
@@ -35,12 +40,16 @@ export class EmailService {
 
   async sendVerificationEmail(email: string, name: string, token: string) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const frontendAppUrl = frontendUrl.includes('localhost') ? frontendUrl : 'https://financa-new.vercel.app';
+    const frontendAppUrl = frontendUrl.includes('localhost')
+      ? frontendUrl
+      : 'https://financa-new.vercel.app';
     const verificationUrl = `${frontendAppUrl}/verify-email?token=${token}`;
 
     try {
       await this.transporter.sendMail({
-        from: process.env.GMAIL_USER ? `"Finanza" <${process.env.GMAIL_USER}>` : this.fromEmail,
+        from: process.env.GMAIL_USER
+          ? `"Finanza" <${process.env.GMAIL_USER}>`
+          : this.fromEmail,
         to: email,
         subject: 'Confirme seu e-mail no Finanza',
         html: `
@@ -64,12 +73,16 @@ export class EmailService {
 
   async sendPasswordResetEmail(email: string, name: string, token: string) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const frontendAppUrl = frontendUrl.includes('localhost') ? frontendUrl : 'https://financa-new.vercel.app';
+    const frontendAppUrl = frontendUrl.includes('localhost')
+      ? frontendUrl
+      : 'https://financa-new.vercel.app';
     const resetUrl = `${frontendAppUrl}/reset-password?token=${token}`;
 
     try {
       await this.transporter.sendMail({
-        from: process.env.GMAIL_USER ? `"Finanza" <${process.env.GMAIL_USER}>` : this.fromEmail,
+        from: process.env.GMAIL_USER
+          ? `"Finanza" <${process.env.GMAIL_USER}>`
+          : this.fromEmail,
         to: email,
         subject: 'Redefinição de Senha - Finanza',
         html: `
@@ -86,7 +99,10 @@ export class EmailService {
       });
       this.logger.log(`Password reset email dispatched to ${email}`);
     } catch (error) {
-      this.logger.error(`Error sending password reset email to ${email}`, error);
+      this.logger.error(
+        `Error sending password reset email to ${email}`,
+        error,
+      );
     }
   }
 }

@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  Query,
+} from '@nestjs/common';
 import { BudgetsService } from './budgets.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
@@ -10,7 +21,7 @@ import { AuthGuard } from '@nestjs/passport';
 })
 @UseGuards(AuthGuard('jwt'))
 export class BudgetsController {
-  constructor(private readonly budgetsService: BudgetsService) { }
+  constructor(private readonly budgetsService: BudgetsService) {}
 
   @Post()
   create(@Body() createBudgetDto: CreateBudgetDto, @Request() req) {
@@ -21,17 +32,21 @@ export class BudgetsController {
   findAll(
     @Request() req,
     @Query('year') year?: string,
-    @Query('month') month?: string
+    @Query('month') month?: string,
   ) {
     return this.budgetsService.findAll(
       req.user.userId,
       year ? parseInt(year, 10) : undefined,
-      month ? parseInt(month, 10) : undefined
+      month ? parseInt(month, 10) : undefined,
     );
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateBudgetDto: UpdateBudgetDto, @Request() req) {
+  update(
+    @Param('id') id: string,
+    @Body() updateBudgetDto: UpdateBudgetDto,
+    @Request() req,
+  ) {
     return this.budgetsService.update(id, updateBudgetDto, req.user.userId);
   }
 

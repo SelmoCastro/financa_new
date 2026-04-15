@@ -1,4 +1,8 @@
-import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -6,67 +10,98 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 export function configureApp(app: INestApplication) {
-    // CORS (Aceita Regex)
-    const frontendUrl = process.env.FRONTEND_URL || 'https://financa-new.vercel.app';
-    const allowedOriginsCORS = [frontendUrl, 'http://localhost:5173', 'http://localhost:3000', /\.vercel\.app$/, /^exp:\/\//, /^http:\/\/192\.168\.\d+\.\d+:\d+$/];
+  // CORS (Aceita Regex)
+  const frontendUrl =
+    process.env.FRONTEND_URL || 'https://financa-new.vercel.app';
+  const allowedOriginsCORS = [
+    frontendUrl,
+    'http://localhost:5173',
+    'http://localhost:3000',
+    /\.vercel\.app$/,
+    /^exp:\/\//,
+    /^http:\/\/192\.168\.\d+\.\d+:\d+$/,
+  ];
 
-    // CSP (Aceita Wildcard mas não Regex)
-    const allowedOriginsCSP = [frontendUrl, 'http://localhost:5173', 'http://localhost:3000', 'https://*.vercel.app', 'exp://*', 'http://192.168.*'];
+  // CSP (Aceita Wildcard mas não Regex)
+  const allowedOriginsCSP = [
+    frontendUrl,
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://*.vercel.app',
+    'exp://*',
+    'http://192.168.*',
+  ];
 
-    app.enableCors({
-        origin: allowedOriginsCORS,
-        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        credentials: true,
-        allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With, Cache-Control, Pragma, Expires',
-    });
+  app.enableCors({
+    origin: allowedOriginsCORS,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders:
+      'Content-Type, Accept, Authorization, X-Requested-With, Cache-Control, Pragma, Expires',
+  });
 
-    // Security Headers (Helmet com CSP restritivo e Policies adicionais)
-    app.use(helmet({
-        crossOriginResourcePolicy: { policy: "cross-origin" },
-        crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
-        frameguard: { action: 'deny' },
-        hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
-        xssFilter: true,
-        noSniff: true,
-        referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-        contentSecurityPolicy: {
-            directives: {
-                defaultSrc: ["'self'"],
-                scriptSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://esm.sh"], // Allow if needed for Swagger or frontend
-                styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-                imgSrc: ["'self'", "data:", "https:"],
-                connectSrc: ["'self'", ...allowedOriginsCSP],
-                fontSrc: ["'self'", "https://fonts.gstatic.com"],
-                objectSrc: ["'none'"],
-                upgradeInsecureRequests: [],
-            },
+  // Security Headers (Helmet com CSP restritivo e Policies adicionais)
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+      frameguard: { action: 'deny' },
+      hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+      xssFilter: true,
+      noSniff: true,
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            'https://unpkg.com',
+            'https://esm.sh',
+          ], // Allow if needed for Swagger or frontend
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            'https://fonts.googleapis.com',
+          ],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'", ...allowedOriginsCSP],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+          objectSrc: ["'none'"],
+          upgradeInsecureRequests: [],
         },
-    }));
+      },
+    }),
+  );
 
-    // Cookie Parser
-    app.use(cookieParser());
+  // Cookie Parser
+  app.use(cookieParser());
 
-    // API Versioning
-    app.enableVersioning({
-        type: VersioningType.URI,
-    });
+  // API Versioning
+  app.enableVersioning({
+    type: VersioningType.URI,
+  });
 
-    // Global Pipes & Interceptors
-    app.useGlobalPipes(new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-    }));
-    app.useGlobalInterceptors(new TransformInterceptor());
-    app.useGlobalFilters(new HttpExceptionFilter());
+  // Global Pipes & Interceptors
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+  app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalFilters(new HttpExceptionFilter());
 
-    // Swagger Config
-    const config = new DocumentBuilder()
-        .setTitle('Finanza API')
-        .setDescription('API do Dashboard Financeiro Simplificado. Use esta documentação para testar os endpoints.')
-        .setVersion('1.0')
-        .addBearerAuth()
-        .build();
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+  // Swagger Config
+  const config = new DocumentBuilder()
+    .setTitle('Finanza API')
+    .setDescription(
+      'API do Dashboard Financeiro Simplificado. Use esta documentação para testar os endpoints.',
+    )
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 }

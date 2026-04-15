@@ -1,11 +1,29 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards, Res, Query, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Request,
+  UseGuards,
+  Res,
+  Query,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
-import { ImportValidateTransactionDto, ImportConfirmPayloadDto } from './dto/import-transaction.dto';
+import {
+  ImportValidateTransactionDto,
+  ImportConfirmPayloadDto,
+} from './dto/import-transaction.dto';
 import { TransferTransactionDto } from './dto/transfer-transaction.dto';
 import { AiService } from '../ai/ai.service';
 import { ReportsService } from '../reports/reports.service';
@@ -21,11 +39,14 @@ export class TransactionsController {
     private readonly transactionsService: TransactionsService,
     private readonly aiService: AiService,
     private readonly reportsService: ReportsService,
-  ) { }
+  ) {}
 
   @Post()
   create(@Body() createTransactionDto: CreateTransactionDto, @Request() req) {
-    return this.transactionsService.create(createTransactionDto, req.user.userId);
+    return this.transactionsService.create(
+      createTransactionDto,
+      req.user.userId,
+    );
   }
 
   @Post('transfer')
@@ -34,24 +55,42 @@ export class TransactionsController {
   }
 
   @Post('import/validate')
-  validateImport(@Body() importData: ImportValidateTransactionDto[], @Request() req) {
+  validateImport(
+    @Body() importData: ImportValidateTransactionDto[],
+    @Request() req,
+  ) {
     return this.transactionsService.validateImport(importData, req.user.userId);
   }
 
   @Post('import/receipt')
-  @UseInterceptors(FileInterceptor('file', {
-    storage: memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-    fileFilter: (_req, file, cb) => {
-      const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-      if (allowed.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new BadRequestException(`Tipo de arquivo não suportado: ${file.mimetype}. Use JPG, PNG, WEBP ou PDF.`), false);
-      }
-    },
-  }))
-  async importReceipt(@UploadedFile() file: Express.Multer.File, @Request() req) {
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+      fileFilter: (_req, file, cb) => {
+        const allowed = [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'application/pdf',
+        ];
+        if (allowed.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(
+            new BadRequestException(
+              `Tipo de arquivo não suportado: ${file.mimetype}. Use JPG, PNG, WEBP ou PDF.`,
+            ),
+            false,
+          );
+        }
+      },
+    }),
+  )
+  async importReceipt(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req,
+  ) {
     if (!file) {
       throw new BadRequestException('Nenhum arquivo enviado.');
     }
@@ -59,23 +98,37 @@ export class TransactionsController {
     const fileBase64 = file.buffer.toString('base64');
 
     // Busca categorias do usuário para a IA saber o que sugerir
-    const userCategories = await this.transactionsService.getUserCategories(req.user.userId);
-    const categoryNames = userCategories.map(c => c.name);
+    const userCategories = await this.transactionsService.getUserCategories(
+      req.user.userId,
+    );
+    const categoryNames = userCategories.map((c) => c.name);
 
-    const result = await this.aiService.extractFromReceipt(fileBase64, file.mimetype, categoryNames);
+    const result = await this.aiService.extractFromReceipt(
+      fileBase64,
+      file.mimetype,
+      categoryNames,
+    );
 
     if (result.error) {
       const errorMessages: Record<string, string> = {
-        service_unavailable: 'Serviço de IA indisponível no momento. Tente novamente mais tarde.',
-        no_data_found: 'Não foi possível identificar transações neste documento. Verifique se é um comprovante financeiro válido e tente novamente.',
-        unsupported_format: 'Formato de arquivo não suportado pelo modelo de IA. Use JPG, PNG, WEBP ou PDF.',
-        rate_limit: 'Muitas solicitações em sequência. Aguarde um momento e tente novamente.',
-        api_error: 'Erro temporário no serviço de IA. Tente novamente em alguns instantes.',
-        unknown_error: 'Erro inesperado ao processar o documento. Tente novamente.',
+        service_unavailable:
+          'Serviço de IA indisponível no momento. Tente novamente mais tarde.',
+        no_data_found:
+          'Não foi possível identificar transações neste documento. Verifique se é um comprovante financeiro válido e tente novamente.',
+        unsupported_format:
+          'Formato de arquivo não suportado pelo modelo de IA. Use JPG, PNG, WEBP ou PDF.',
+        rate_limit:
+          'Muitas solicitações em sequência. Aguarde um momento e tente novamente.',
+        api_error:
+          'Erro temporário no serviço de IA. Tente novamente em alguns instantes.',
+        unknown_error:
+          'Erro inesperado ao processar o documento. Tente novamente.',
       };
       return {
         preview: [],
-        message: errorMessages[result.error] || 'Não foi possível processar este documento.',
+        message:
+          errorMessages[result.error] ||
+          'Não foi possível processar este documento.',
         errorCode: result.error,
       };
     }
@@ -83,21 +136,29 @@ export class TransactionsController {
     if (result.transactions.length === 0) {
       return {
         preview: [],
-        message: 'Nenhuma transação encontrada neste documento. Tente com um comprovante mais nítido.',
+        message:
+          'Nenhuma transação encontrada neste documento. Tente com um comprovante mais nítido.',
         errorCode: 'no_data_found',
       };
     }
 
     // Mapeia os nomes sugeridos pela IA para os IDs reais do banco usando o novo helper
-    const categoryNameToId = new Map(userCategories.map(c => [c.name.toLowerCase().trim(), c.id]));
-    const enrichedPreview = result.transactions.map(t => {
+    const categoryNameToId = new Map(
+      userCategories.map((c) => [c.name.toLowerCase().trim(), c.id]),
+    );
+    const enrichedPreview = result.transactions.map((t) => {
       const suggestion = {
         category: t.suggestedCategory,
         rule: t.suggestedRule,
         icon: t.suggestedIcon,
-        confidence: t.confidence
+        confidence: t.confidence,
       };
-      return this.transactionsService.enrichTransactionWithAi({ ...t, cnpj: t.cnpj }, suggestion, t.description, categoryNameToId);
+      return this.transactionsService.enrichTransactionWithAi(
+        { ...t, cnpj: t.cnpj },
+        suggestion,
+        t.description,
+        categoryNameToId,
+      );
     });
 
     return { preview: enrichedPreview };
@@ -108,25 +169,33 @@ export class TransactionsController {
     return this.transactionsService.confirmImport(
       payload.transactions,
       req.user.userId,
-      payload.rejectedFitIds || []
+      payload.rejectedFitIds || [],
     );
   }
 
   @Get()
-  findAll(@Request() req, @Query('year') year?: string, @Query('month') month?: string) {
+  findAll(
+    @Request() req,
+    @Query('year') year?: string,
+    @Query('month') month?: string,
+  ) {
     return this.transactionsService.findAll(
       req.user.userId,
       year ? parseInt(year, 10) : undefined,
-      month ? parseInt(month, 10) : undefined
+      month ? parseInt(month, 10) : undefined,
     );
   }
 
   @Get('dashboard-summary')
-  getDashboardSummary(@Request() req, @Query('year') year?: string, @Query('month') month?: string) {
+  getDashboardSummary(
+    @Request() req,
+    @Query('year') year?: string,
+    @Query('month') month?: string,
+  ) {
     return this.reportsService.getDashboardSummary(
       req.user.userId,
       year ? parseInt(year, 10) : undefined,
-      month ? parseInt(month, 10) : undefined
+      month ? parseInt(month, 10) : undefined,
     );
   }
 
@@ -145,8 +214,16 @@ export class TransactionsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTransactionDto: UpdateTransactionDto, @Request() req) {
-    return this.transactionsService.update(id, updateTransactionDto, req.user.userId);
+  update(
+    @Param('id') id: string,
+    @Body() updateTransactionDto: UpdateTransactionDto,
+    @Request() req,
+  ) {
+    return this.transactionsService.update(
+      id,
+      updateTransactionDto,
+      req.user.userId,
+    );
   }
 
   @Delete(':id')

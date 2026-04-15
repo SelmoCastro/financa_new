@@ -1,67 +1,74 @@
-import { IsString, IsNumber, IsDateString, IsOptional, IsBoolean, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsDateString,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+} from 'class-validator';
 
 export class ImportValidateTransactionDto {
-    @IsString()
-    description: string;
+  @IsString()
+  description: string;
 
-    @IsNumber()
-    amount: number;
+  @IsNumber()
+  amount: number;
 
-    @IsDateString()
-    date: Date;
+  @IsDateString()
+  date: Date;
 
-    @IsString()
-    type: string;
+  @IsString()
+  type: string;
 
-    @IsString()
-    @IsOptional()
-    fitId?: string;
+  @IsString()
+  @IsOptional()
+  fitId?: string;
 
-    @IsString()
-    @IsOptional()
-    accountId?: string;
+  @IsString()
+  @IsOptional()
+  accountId?: string;
 }
 
 export class ImportConfirmTransactionDto {
-    @IsString()
-    description: string;
+  @IsString()
+  description: string;
 
-    @IsNumber()
-    amount: number;
+  @IsNumber()
+  amount: number;
 
-    @IsDateString()
-    date: Date;
+  @IsDateString()
+  date: Date;
 
-    @IsString()
-    type: string;
+  @IsString()
+  type: string;
 
-    @IsString()
-    @IsOptional()
-    fitId?: string;
+  @IsString()
+  @IsOptional()
+  fitId?: string;
 
-    @IsBoolean()
-    @IsOptional()
-    isFixed?: boolean;
+  @IsBoolean()
+  @IsOptional()
+  isFixed?: boolean;
 
-    @IsString()
-    @IsOptional()
-    categoryId?: string;
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
 
-    @IsString()
-    @IsOptional()
-    categoryLegacy?: string;
+  @IsString()
+  @IsOptional()
+  categoryLegacy?: string;
 
-    @IsNumber()
-    @IsOptional()
-    classificationRule?: number;
+  @IsNumber()
+  @IsOptional()
+  classificationRule?: number;
 
-    @IsString()
-    @IsOptional()
-    accountId?: string;
+  @IsString()
+  @IsOptional()
+  accountId?: string;
 
-    @IsString()
-    @IsOptional()
-    creditCardId?: string;
+  @IsString()
+  @IsOptional()
+  creditCardId?: string;
 }
 
 /**
@@ -70,10 +77,10 @@ export class ImportConfirmTransactionDto {
  * na tela de revisão, para que possamos gravá-los e não mostrá-los novamente.
  */
 export class ImportConfirmPayloadDto {
-    @IsArray()
-    transactions: ImportConfirmTransactionDto[];
+  @IsArray()
+  transactions: ImportConfirmTransactionDto[];
 
-    @IsArray()
-    @IsOptional()
-    rejectedFitIds?: string[];
+  @IsArray()
+  @IsOptional()
+  rejectedFitIds?: string[];
 }

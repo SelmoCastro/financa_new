@@ -4,9 +4,9 @@ import { FeedbackService } from './feedback.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [FeedbackController],
-    providers: [FeedbackService],
-    exports: [FeedbackService],
+  imports: [PrismaModule],
+  controllers: [FeedbackController],
+  providers: [FeedbackService],
+  exports: [FeedbackService],
 })
-export class FeedbackModule { }
+export class FeedbackModule {}

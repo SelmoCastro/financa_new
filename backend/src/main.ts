@@ -1,4 +1,3 @@
-
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { configureApp } from './setup';
@@ -28,9 +27,10 @@ async function bootstrap() {
     console.error('Nome do Erro:', error?.name);
     console.error('Mensagem:', error?.message);
     console.error('Stack Trace Completa:', error?.stack);
-    console.error('\nO Servidor está morrendo intencionalmente após logar o erro acima.');
+    console.error(
+      '\nO Servidor está morrendo intencionalmente após logar o erro acima.',
+    );
     process.exit(1);
   }
 }
 bootstrap();
-

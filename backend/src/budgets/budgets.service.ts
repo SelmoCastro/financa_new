@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class BudgetsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createBudgetDto: CreateBudgetDto, userId: string) {
     // Upsert: Reset amount if exists, or create new
@@ -13,22 +13,22 @@ export class BudgetsService {
       where: {
         userId_category: {
           userId,
-          category: createBudgetDto.category
-        }
+          category: createBudgetDto.category,
+        },
       },
       update: { amount: Number(createBudgetDto.amount) },
       create: {
         userId,
         category: createBudgetDto.category,
-        amount: Number(createBudgetDto.amount)
-      }
+        amount: Number(createBudgetDto.amount),
+      },
     });
   }
 
   async findAll(userId: string, year?: number, month?: number) {
     const budgets = await this.prisma.budget.findMany({
       where: { userId },
-      orderBy: { amount: 'desc' }
+      orderBy: { amount: 'desc' },
     });
 
     const now = new Date();
@@ -36,42 +36,48 @@ export class BudgetsService {
     const targetMonth = month !== undefined ? month : now.getMonth();
 
     const startOfMonth = new Date(Date.UTC(targetYear, targetMonth, 1));
-    const endOfMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59, 999));
+    const endOfMonth = new Date(
+      Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59, 999),
+    );
 
     // Calculate usage for each budget
-    const budgetsWithUsage = await Promise.all(budgets.map(async (budget) => {
-      const expenses = await this.prisma.transaction.aggregate({
-        _sum: { amount: true },
-        where: {
-          userId,
-          type: 'EXPENSE',
-          OR: [
-            { categoryLegacy: budget.category },
-            { category: { name: budget.category } }
-          ],
-          date: {
-            gte: startOfMonth,
-            lte: endOfMonth
-          }
-        }
-      });
+    const budgetsWithUsage = await Promise.all(
+      budgets.map(async (budget) => {
+        const expenses = await this.prisma.transaction.aggregate({
+          _sum: { amount: true },
+          where: {
+            userId,
+            type: 'EXPENSE',
+            OR: [
+              { categoryLegacy: budget.category },
+              { category: { name: budget.category } },
+            ],
+            date: {
+              gte: startOfMonth,
+              lte: endOfMonth,
+            },
+          },
+        });
 
-      const spent = expenses._sum.amount || 0;
-      const percentage = (spent / budget.amount) * 100;
+        const spent = expenses._sum.amount || 0;
+        const percentage = (spent / budget.amount) * 100;
 
-      return {
-        ...budget,
-        spent,
-        percentage: Math.min(percentage, 100), // Cap for UI but maybe show >100% logic separate
-        isOverBudget: spent > budget.amount
-      };
-    }));
+        return {
+          ...budget,
+          spent,
+          percentage: Math.min(percentage, 100), // Cap for UI but maybe show >100% logic separate
+          isOverBudget: spent > budget.amount,
+        };
+      }),
+    );
 
     return budgetsWithUsage;
   }
 
   // Not used yet, but kept stubbed
-  findOne(id: number) { return `This action returns a #${id} budget`; }
+  findOne(id: number) {
+    return `This action returns a #${id} budget`;
+  }
 
   async update(id: string, updateBudgetDto: UpdateBudgetDto, userId: string) {
     if (updateBudgetDto.amount) {
@@ -79,14 +85,14 @@ export class BudgetsService {
     }
     await this.prisma.budget.updateMany({
       where: { id, userId },
-      data: updateBudgetDto
+      data: updateBudgetDto,
     });
     return this.prisma.budget.findFirst({ where: { id, userId } });
   }
 
   async remove(id: string, userId: string) {
     return this.prisma.budget.deleteMany({
-      where: { id, userId }
+      where: { id, userId },
     });
   }
 }

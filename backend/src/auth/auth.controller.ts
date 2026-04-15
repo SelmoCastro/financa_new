@@ -1,5 +1,14 @@
-
-import { Controller, Post, Body, UseGuards, Request, Get, UnauthorizedException, Res, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  Get,
+  UnauthorizedException,
+  Res,
+  Req,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -12,7 +21,7 @@ import { Response, Request as ExpressRequest } from 'express';
 })
 @Throttle({ default: { limit: 5, ttl: 60000 } })
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   private setCookies(res: Response, accessToken: string, refreshToken: string) {
     const isProduction = process.env.NODE_ENV === 'production';
@@ -32,7 +41,10 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() createUserDto: CreateUserDto, @Res({ passthrough: true }) res: Response) {
+  async register(
+    @Body() createUserDto: CreateUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const responseData = await this.authService.register(createUserDto);
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
     // Removemos os tokens do body enviado ao cliente para não ficarem soltos,
@@ -62,7 +74,10 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(@Req() request: ExpressRequest, @Res({ passthrough: true }) res: Response) {
+  async refresh(
+    @Req() request: ExpressRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     let refreshToken = request.cookies?.refresh_token;
 
     // Se mobile estiver enviando no body em vez de cookie
@@ -78,15 +93,20 @@ export class AuthController {
     // Para simplificar, Mobile/Web podem mandar o UserID no body do refresh
     const userId = request.body?.userId;
     if (!userId) {
-      throw new UnauthorizedException('User ID requerido no body para o refresh');
+      throw new UnauthorizedException(
+        'User ID requerido no body para o refresh',
+      );
     }
 
-    const responseData = await this.authService.refreshTokens(userId, refreshToken);
+    const responseData = await this.authService.refreshTokens(
+      userId,
+      refreshToken,
+    );
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
 
     return {
       access_token: responseData.access_token,
-      refreshToken: responseData.refreshToken
+      refreshToken: responseData.refreshToken,
     };
   }
 
@@ -99,7 +119,7 @@ export class AuthController {
     const cookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'none' as const : 'lax' as const,
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
     };
 
     res.clearCookie('access_token', cookieOptions);
@@ -122,7 +142,8 @@ export class AuthController {
 
   @Post('reset-password')
   resetPassword(@Body() body: { token: string; password: string }) {
-    if (!body.token || !body.password) throw new UnauthorizedException('Token and new password are required');
+    if (!body.token || !body.password)
+      throw new UnauthorizedException('Token and new password are required');
     return this.authService.resetPassword(body.token, body.password);
   }
 

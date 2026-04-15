@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { CreditCardsService } from './credit-cards.service';
 import { CreateCreditCardDto } from './dto/create-credit-card.dto';
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto';
@@ -10,7 +20,7 @@ import { AuthGuard } from '@nestjs/passport';
 })
 @UseGuards(AuthGuard('jwt'))
 export class CreditCardsController {
-  constructor(private readonly creditCardsService: CreditCardsService) { }
+  constructor(private readonly creditCardsService: CreditCardsService) {}
 
   @Post()
   create(@Body() createCreditCardDto: CreateCreditCardDto, @Request() req) {
@@ -28,8 +38,16 @@ export class CreditCardsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCreditCardDto: UpdateCreditCardDto, @Request() req) {
-    return this.creditCardsService.update(id, updateCreditCardDto, req.user.userId);
+  update(
+    @Param('id') id: string,
+    @Body() updateCreditCardDto: UpdateCreditCardDto,
+    @Request() req,
+  ) {
+    return this.creditCardsService.update(
+      id,
+      updateCreditCardDto,
+      req.user.userId,
+    );
   }
 
   @Delete(':id')

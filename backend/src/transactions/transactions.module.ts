@@ -10,6 +10,6 @@ import { SocialModule } from '../social/social.module';
   imports: [PrismaModule, ReportsModule, AiModule, SocialModule],
   controllers: [TransactionsController],
   providers: [TransactionsService],
-  exports: [TransactionsService]
+  exports: [TransactionsService],
 })
-export class TransactionsModule { }
+export class TransactionsModule {}

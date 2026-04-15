@@ -7,6 +7,6 @@ import { ReportsModule } from '../reports/reports.module';
   imports: [ReportsModule],
   controllers: [AiController],
   providers: [AiService],
-  exports: [AiService]
+  exports: [AiService],
 })
-export class AiModule { }
+export class AiModule {}

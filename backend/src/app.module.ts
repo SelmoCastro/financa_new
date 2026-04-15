@@ -25,11 +25,27 @@ import { SocialModule } from './social/social.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
-    UsersModule, AuthModule, PrismaModule, TransactionsModule, BudgetsModule, GoalsModule, AccountsModule, CategoriesModule, CreditCardsModule, AiModule, ReportsModule, FeedbackModule, EmailModule, NotificationsModule, SocialModule
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
+    UsersModule,
+    AuthModule,
+    PrismaModule,
+    TransactionsModule,
+    BudgetsModule,
+    GoalsModule,
+    AccountsModule,
+    CategoriesModule,
+    CreditCardsModule,
+    AiModule,
+    ReportsModule,
+    FeedbackModule,
+    EmailModule,
+    NotificationsModule,
+    SocialModule,
   ],
   controllers: [AppController],
   providers: [
@@ -41,4 +57,4 @@ import { SocialModule } from './social/social.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

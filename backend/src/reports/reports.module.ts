@@ -3,8 +3,8 @@ import { ReportsService } from './reports.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    providers: [ReportsService],
-    exports: [ReportsService],
+  imports: [PrismaModule],
+  providers: [ReportsService],
+  exports: [ReportsService],
 })
-export class ReportsModule { }
+export class ReportsModule {}

@@ -20,5 +20,8 @@
     "commit": false,
     "tag": true,
     "changelog": false
+  },
+  "scripts": {
+    "postbump": "node scripts/sync-versions.js && git add backend/package.json frontend/package.json mobile/package.json mobile/app.json"
   }
 }

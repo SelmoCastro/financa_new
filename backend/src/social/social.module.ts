@@ -5,9 +5,9 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-    imports: [PrismaModule, NotificationsModule],
-    controllers: [SocialController],
-    providers: [SocialService],
-    exports: [SocialService],
+  imports: [PrismaModule, NotificationsModule],
+  controllers: [SocialController],
+  providers: [SocialService],
+  exports: [SocialService],
 })
-export class SocialModule { }
+export class SocialModule {}

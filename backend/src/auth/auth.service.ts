@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -14,7 +19,7 @@ export class AuthService {
     private jwtService: JwtService,
     private prisma: PrismaService,
     private emailService: EmailService,
-  ) { }
+  ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findOneByEmail(email);
@@ -57,7 +62,7 @@ export class AuthService {
         email: user.email,
         isAdmin: user.isAdmin,
         isEmailVerified: user.isEmailVerified,
-      }
+      },
     };
   }
 
@@ -106,14 +111,14 @@ export class AuthService {
     return {
       message: 'Cadastro realizado com sucesso!',
       userId: user.id,
-      ...loginData
+      ...loginData,
     };
   }
 
   async verifyEmail(token: string) {
     const verificationToken = await this.prisma.verificationToken.findUnique({
       where: { token },
-      include: { user: true }
+      include: { user: true },
     });
 
     if (!verificationToken || verificationToken.type !== 'EMAIL_VERIFY') {
@@ -129,7 +134,9 @@ export class AuthService {
       data: { isEmailVerified: true },
     });
 
-    await this.prisma.verificationToken.delete({ where: { id: verificationToken.id } });
+    await this.prisma.verificationToken.delete({
+      where: { id: verificationToken.id },
+    });
     return { message: 'Email successfully verified' };
   }
 
@@ -137,7 +144,9 @@ export class AuthService {
     const user = await this.usersService.findOneByEmail(email);
     if (!user) {
       // Return success anyway to prevent email enumeration
-      return { message: 'If that email is registered, a reset link will be sent.' };
+      return {
+        message: 'If that email is registered, a reset link will be sent.',
+      };
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -147,19 +156,23 @@ export class AuthService {
         type: 'PASSWORD_RESET',
         userId: user.id,
         expiresAt: new Date(Date.now() + 1 * 60 * 60 * 1000), // 1 hour
-      }
+      },
     });
 
     // Dispara o email em background (fire-and-forget) para não travar a requisição HTTP caso o SMTP falhe/demore
-    this.emailService.sendPasswordResetEmail(user.email, user.name || 'Usuário', token).catch(e => console.error(e));
+    this.emailService
+      .sendPasswordResetEmail(user.email, user.name || 'Usuário', token)
+      .catch((e) => console.error(e));
 
-    return { message: 'If that email is registered, a reset link will be sent.' };
+    return {
+      message: 'If that email is registered, a reset link will be sent.',
+    };
   }
 
   async resetPassword(token: string, newPassword: string) {
     const verificationToken = await this.prisma.verificationToken.findUnique({
       where: { token },
-      include: { user: true }
+      include: { user: true },
     });
 
     if (!verificationToken || verificationToken.type !== 'PASSWORD_RESET') {
@@ -178,7 +191,7 @@ export class AuthService {
 
     // Revoke token
     await this.prisma.verificationToken.deleteMany({
-      where: { userId: verificationToken.userId, type: 'PASSWORD_RESET' }
+      where: { userId: verificationToken.userId, type: 'PASSWORD_RESET' },
     });
 
     return { message: 'Password has been successfully updated' };

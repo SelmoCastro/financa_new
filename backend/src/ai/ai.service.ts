@@ -3,322 +3,390 @@ import OpenAI from 'openai';
 import { SYSTEM_PROMPTS } from './prompts';
 
 interface ClassificationResult {
-    category: string;
-    rule: number;
-    icon: string;
+  category: string;
+  rule: number;
+  icon: string;
 }
 
 @Injectable()
 export class AiService {
-    private readonly logger = new Logger(AiService.name);
-    private openai: OpenAI | null = null;
+  private readonly logger = new Logger(AiService.name);
+  private openai: OpenAI | null = null;
 
-    // Modelos configuráveis via .env com fallbacks gratuitos
-    private readonly VISION_MODEL = process.env.AI_VISION_MODEL || 'google/gemini-2.0-flash-exp:free';
-    private readonly TEXT_MODEL = process.env.AI_TEXT_MODEL || 'google/gemini-2.0-flash-exp:free';
+  // Modelos configuráveis via .env com fallbacks gratuitos
+  private readonly VISION_MODEL =
+    process.env.AI_VISION_MODEL || 'google/gemini-2.0-flash-exp:free';
+  private readonly TEXT_MODEL =
+    process.env.AI_TEXT_MODEL || 'google/gemini-2.0-flash-exp:free';
 
-    constructor() {
-        const apiKey = process.env.OPENROUTER_API_KEY;
-        if (apiKey) {
-            this.openai = new OpenAI({
-                apiKey: apiKey,
-                baseURL: 'https://openrouter.ai/api/v1',
-                timeout: 9500, // 9.5 segundos (Limite Vercel Hobby é 10s)
-                defaultHeaders: {
-                    'HTTP-Referer': 'https://financa-new.vercel.app',
-                    'X-Title': 'Finanza AI',
-                },
-            });
-            this.logger.log(`OpenRouter Service inicializado. Timeout: 8s. Models: ${this.TEXT_MODEL} | ${this.VISION_MODEL}`);
-        } else {
-            this.logger.warn('OPENROUTER_API_KEY não configurada. Serviço AI rodará em modo Fallback (Desativado).');
-        }
+  constructor() {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (apiKey) {
+      this.openai = new OpenAI({
+        apiKey: apiKey,
+        baseURL: 'https://openrouter.ai/api/v1',
+        timeout: 9500, // 9.5 segundos (Limite Vercel Hobby é 10s)
+        defaultHeaders: {
+          'HTTP-Referer': 'https://financa-new.vercel.app',
+          'X-Title': 'Finanza AI',
+        },
+      });
+      this.logger.log(
+        `OpenRouter Service inicializado. Timeout: 8s. Models: ${this.TEXT_MODEL} | ${this.VISION_MODEL}`,
+      );
+    } else {
+      this.logger.warn(
+        'OPENROUTER_API_KEY não configurada. Serviço AI rodará em modo Fallback (Desativado).',
+      );
+    }
+  }
+
+  /**
+   * Recebe um array de descrições de transações e retorna a classificação delas
+   * usando a Regra 50-30-20 via OpenRouter.
+   */
+  async classifyTransactions(
+    descriptions: string[],
+    categories: string[] = [],
+  ): Promise<Record<string, ClassificationResult>> {
+    if (!this.openai || descriptions.length === 0) {
+      return this.fallbackClassification(descriptions);
     }
 
-    /**
-     * Recebe um array de descrições de transações e retorna a classificação delas
-     * usando a Regra 50-30-20 via OpenRouter.
-     */
-    async classifyTransactions(descriptions: string[], categories: string[] = []): Promise<Record<string, ClassificationResult>> {
-        if (!this.openai || descriptions.length === 0) {
-            return this.fallbackClassification(descriptions);
-        }
+    const prompt = `${SYSTEM_PROMPTS.CLASSIFIER(categories)}\n\nDados:\n${JSON.stringify(descriptions)}`;
 
-        const prompt = `${SYSTEM_PROMPTS.CLASSIFIER(categories)}\n\nDados:\n${JSON.stringify(descriptions)}`;
+    try {
+      this.logger.log(
+        `OpenRouter: Classificando ${descriptions.length} transações...`,
+      );
 
-        try {
-            this.logger.log(`OpenRouter: Classificando ${descriptions.length} transações...`);
+      const response = await this.openai.chat.completions.create({
+        model: this.TEXT_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+      });
 
-            const response = await this.openai.chat.completions.create({
-                model: this.TEXT_MODEL,
-                messages: [{ role: 'user', content: prompt }],
-                response_format: { type: 'json_object' },
-            });
+      const responseText = response.choices[0]?.message?.content || '{}';
 
-            const responseText = response.choices[0]?.message?.content || '{}';
+      // Tenta limpar possíveis marcações de markdown do JSON
+      const cleanJson = responseText.replace(/```json|```/g, '').trim();
+      const rawData = JSON.parse(cleanJson);
 
-            // Tenta limpar possíveis marcações de markdown do JSON
-            const cleanJson = responseText.replace(/```json|```/g, '').trim();
-            const rawData = JSON.parse(cleanJson);
+      // Algumas IAs podem envolver o resultado em uma chave "transactions" ou similar
+      const dataToProcess =
+        rawData.transactions || rawData.classifications || rawData;
 
-            // Algumas IAs podem envolver o resultado em uma chave "transactions" ou similar
-            const dataToProcess = rawData.transactions || rawData.classifications || rawData;
+      const parsedData: Record<string, ClassificationResult> = {};
+      for (const [key, value] of Object.entries<any>(dataToProcess)) {
+        parsedData[key] = {
+          category: value.c || value.category || 'Outros',
+          rule:
+            typeof (value.r || value.rule) === 'number'
+              ? value.r || value.rule
+              : 30,
+          icon: value.i || value.icon || '🏷️',
+        };
+      }
 
-            const parsedData: Record<string, ClassificationResult> = {};
-            for (const [key, value] of Object.entries<any>(dataToProcess)) {
-                parsedData[key] = {
-                    category: value.c || value.category || 'Outros',
-                    rule: typeof (value.r || value.rule) === 'number' ? (value.r || value.rule) : 30,
-                    icon: value.i || value.icon || '🏷️'
-                };
-            }
+      return parsedData;
+    } catch (error) {
+      this.logger.error(
+        'Erro na API do OpenRouter ao classificar. Usando fallback.',
+        error,
+      );
+      return this.fallbackClassification(descriptions);
+    }
+  }
 
-            return parsedData;
-        } catch (error) {
-            this.logger.error('Erro na API do OpenRouter ao classificar. Usando fallback.', error);
-            return this.fallbackClassification(descriptions);
-        }
+  /**
+   * Gera insights financeiros baseados no resumo do mês.
+   */
+  async getFinancialInsights(summary: any): Promise<string> {
+    if (!this.openai) {
+      return 'Serviço AI não disponível no momento.';
     }
 
-    /**
-     * Gera insights financeiros baseados no resumo do mês.
-     */
-    async getFinancialInsights(summary: any): Promise<string> {
-        if (!this.openai) {
-            return 'Serviço AI não disponível no momento.';
-        }
+    const prompt = SYSTEM_PROMPTS.INSIGHTS(JSON.stringify(summary, null, 2));
 
-        const prompt = SYSTEM_PROMPTS.INSIGHTS(JSON.stringify(summary, null, 2));
+    try {
+      this.logger.log('OpenRouter: Gerando insights financeiros...');
 
-        try {
-            this.logger.log('OpenRouter: Gerando insights financeiros...');
+      const response = await this.openai.chat.completions.create({
+        model: this.TEXT_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+      });
 
-            const response = await this.openai.chat.completions.create({
-                model: this.TEXT_MODEL,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.7,
-            });
+      return (
+        response.choices[0]?.message?.content ||
+        'Não foi possível gerar insights agora. Tente novamente mais tarde.'
+      );
+    } catch (error) {
+      this.logger.error('Erro ao gerar insights via OpenRouter:', error);
+      return 'Erro na conexão com a inteligência artificial.';
+    }
+  }
 
-            return response.choices[0]?.message?.content || 'Não foi possível gerar insights agora. Tente novamente mais tarde.';
-        } catch (error) {
-            this.logger.error('Erro ao gerar insights via OpenRouter:', error);
-            return 'Erro na conexão com a inteligência artificial.';
-        }
+  /**
+   * Limpa descrições de extratos bancários.
+   */
+  async cleanDescriptions(
+    descriptions: string[],
+  ): Promise<Record<string, string>> {
+    if (!this.openai || descriptions.length === 0) {
+      return {};
     }
 
-    /**
-     * Limpa descrições de extratos bancários.
-     */
-    async cleanDescriptions(descriptions: string[]): Promise<Record<string, string>> {
-        if (!this.openai || descriptions.length === 0) {
-            return {};
-        }
+    try {
+      this.logger.log('OpenRouter: Limpando nomes de transações...');
 
-        try {
-            this.logger.log('OpenRouter: Limpando nomes de transações...');
+      const response = await this.openai.chat.completions.create({
+        model: this.TEXT_MODEL,
+        messages: [
+          {
+            role: 'user',
+            content: `${SYSTEM_PROMPTS.CLEANER}\n\nDADOS:\n${JSON.stringify(descriptions)}`,
+          },
+        ],
+        response_format: { type: 'json_object' },
+      });
 
-            const response = await this.openai.chat.completions.create({
-                model: this.TEXT_MODEL,
-                messages: [{ role: 'user', content: `${SYSTEM_PROMPTS.CLEANER}\n\nDADOS:\n${JSON.stringify(descriptions)}` }],
-                response_format: { type: 'json_object' },
-            });
+      const responseText = response.choices[0]?.message?.content || '{}';
+      return JSON.parse(responseText);
+    } catch (error) {
+      this.logger.error('Erro ao limpar descrições via OpenRouter:', error);
+      return {};
+    }
+  }
 
-            const responseText = response.choices[0]?.message?.content || '{}';
-            return JSON.parse(responseText);
-        } catch (error) {
-            this.logger.error('Erro ao limpar descrições via OpenRouter:', error);
-            return {};
-        }
+  /**
+   * Chat financeiro interativo que recebe contexto profundo do perfil.
+   */
+  async chat(message: string, profile: any): Promise<string> {
+    if (!this.openai) {
+      return 'Serviço de chat não disponível.';
     }
 
-    /**
-     * Chat financeiro interativo que recebe contexto profundo do perfil.
-     */
-    async chat(message: string, profile: any): Promise<string> {
-        if (!this.openai) {
-            return 'Serviço de chat não disponível.';
-        }
+    const prompt = SYSTEM_PROMPTS.CHAT(JSON.stringify(profile, null, 2));
 
-        const prompt = SYSTEM_PROMPTS.CHAT(JSON.stringify(profile, null, 2));
+    try {
+      this.logger.log(
+        `OpenRouter: Processando chat - "${message.substring(0, 30)}..."`,
+      );
 
-        try {
-            this.logger.log(`OpenRouter: Processando chat - "${message.substring(0, 30)}..."`);
+      const response = await this.openai.chat.completions.create({
+        model: this.TEXT_MODEL,
+        messages: [
+          { role: 'system', content: prompt },
+          { role: 'user', content: message },
+        ],
+        temperature: 0.7,
+      });
 
-            const response = await this.openai.chat.completions.create({
-                model: this.TEXT_MODEL,
-                messages: [
-                    { role: 'system', content: prompt },
-                    { role: 'user', content: message }
-                ],
-                temperature: 0.7,
-            });
+      return (
+        response.choices[0]?.message?.content ||
+        'Desculpe, não consegui processar sua pergunta agora.'
+      );
+    } catch (error) {
+      this.logger.error('Erro no chat via OpenRouter:', error);
+      return 'Ocorreu um erro ao conversar com a IA.';
+    }
+  }
 
-            return response.choices[0]?.message?.content || 'Desculpe, não consegui processar sua pergunta agora.';
-        } catch (error) {
-            this.logger.error('Erro no chat via OpenRouter:', error);
-            return 'Ocorreu um erro ao conversar com a IA.';
-        }
+  /**
+   * Análise Preditiva - Com base no histórico de gastos recentes,
+   * prevê como o mês atual vai terminar e destaca riscos.
+   */
+  async getSpendingForecast(historicalData: any): Promise<string> {
+    if (!this.openai) {
+      return 'Serviço de previsão AI não disponível no momento.';
     }
 
-    /**
-     * Análise Preditiva - Com base no histórico de gastos recentes,
-     * prevê como o mês atual vai terminar e destaca riscos.
-     */
-    async getSpendingForecast(historicalData: any): Promise<string> {
-        if (!this.openai) {
-            return 'Serviço de previsão AI não disponível no momento.';
-        }
+    const prompt = SYSTEM_PROMPTS.FORECASTING(
+      JSON.stringify(historicalData, null, 2),
+    );
 
-        const prompt = SYSTEM_PROMPTS.FORECASTING(JSON.stringify(historicalData, null, 2));
+    try {
+      this.logger.log(
+        'OpenRouter: Gerando previsão de gastos (forecasting)...',
+      );
 
-        try {
-            this.logger.log('OpenRouter: Gerando previsão de gastos (forecasting)...');
+      const response = await this.openai.chat.completions.create({
+        model: this.TEXT_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.5,
+      });
 
-            const response = await this.openai.chat.completions.create({
-                model: this.TEXT_MODEL,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.5,
-            });
+      return (
+        response.choices[0]?.message?.content ||
+        'Não foi possível gerar a previsão no momento.'
+      );
+    } catch (error) {
+      this.logger.error('Erro ao gerar previsão via OpenRouter:', error);
+      return 'Erro na conexão com a inteligência artificial.';
+    }
+  }
 
-            return response.choices[0]?.message?.content || 'Não foi possível gerar a previsão no momento.';
-        } catch (error) {
-            this.logger.error('Erro ao gerar previsão via OpenRouter:', error);
-            return 'Erro na conexão com a inteligência artificial.';
-        }
+  /**
+   * Análise Preditiva - Identifica possíveis assinaturas pagas
+   * ou serviços esquecidos recorrentes nos últimos meses.
+   */
+  async findRecurringSubscriptions(recentTransactions: any): Promise<string> {
+    if (!this.openai) {
+      return 'Scanner de assinaturas não disponível no momento.';
     }
 
-    /**
-     * Análise Preditiva - Identifica possíveis assinaturas pagas
-     * ou serviços esquecidos recorrentes nos últimos meses.
-     */
-    async findRecurringSubscriptions(recentTransactions: any): Promise<string> {
-        if (!this.openai) {
-            return 'Scanner de assinaturas não disponível no momento.';
-        }
+    const prompt = SYSTEM_PROMPTS.FIND_SUBSCRIPTIONS(
+      JSON.stringify(recentTransactions, null, 2),
+    );
 
-        const prompt = SYSTEM_PROMPTS.FIND_SUBSCRIPTIONS(JSON.stringify(recentTransactions, null, 2));
+    try {
+      this.logger.log(
+        'OpenRouter: Procurando por contas recorrentes/assinaturas...',
+      );
 
-        try {
-            this.logger.log('OpenRouter: Procurando por contas recorrentes/assinaturas...');
+      const response = await this.openai.chat.completions.create({
+        model: this.TEXT_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+      });
 
-            const response = await this.openai.chat.completions.create({
-                model: this.TEXT_MODEL,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.3,
-            });
+      return (
+        response.choices[0]?.message?.content ||
+        'Não foi possível encontrar assinaturas no momento.'
+      );
+    } catch (error) {
+      this.logger.error('Erro ao procurar assinaturas via OpenRouter:', error);
+      return 'Erro na conexão com a inteligência artificial.';
+    }
+  }
 
-            return response.choices[0]?.message?.content || 'Não foi possível encontrar assinaturas no momento.';
-        } catch (error) {
-            this.logger.error('Erro ao procurar assinaturas via OpenRouter:', error);
-            return 'Erro na conexão com a inteligência artificial.';
-        }
+  /**
+   * Extrai dados de transação de uma imagem ou PDF de comprovante usando OpenRouter (Vision).
+   * Retorna objeto com transactions e error para feedback detalhado.
+   */
+  async extractFromReceipt(
+    fileBase64: string,
+    mimeType: string,
+    categories: string[] = [],
+  ): Promise<ReceiptExtractionResult> {
+    if (!this.openai) {
+      this.logger.warn('AiService: OpenRouter não disponível.');
+      return { transactions: [], error: 'service_unavailable' };
     }
 
-    /**
-     * Extrai dados de transação de uma imagem ou PDF de comprovante usando OpenRouter (Vision).
-     * Retorna objeto com transactions e error para feedback detalhado.
-     */
-    async extractFromReceipt(fileBase64: string, mimeType: string, categories: string[] = []): Promise<ReceiptExtractionResult> {
-        if (!this.openai) {
-            this.logger.warn('AiService: OpenRouter não disponível.');
-            return { transactions: [], error: 'service_unavailable' };
-        }
+    try {
+      this.logger.log(
+        `OpenRouter: Processando comprovante (${mimeType}) com ${this.VISION_MODEL}...`,
+      );
 
-        try {
-            this.logger.log(`OpenRouter: Processando comprovante (${mimeType}) com ${this.VISION_MODEL}...`);
+      const isPdf = mimeType === 'application/pdf';
+      const contentParts: any[] = [
+        {
+          type: 'text',
+          text: 'Extraia os dados de todas as transações encontradas neste documento:',
+        },
+      ];
 
-            const isPdf = mimeType === 'application/pdf';
-            const contentParts: any[] = [
-                { type: 'text', text: "Extraia os dados de todas as transações encontradas neste documento:" },
-            ];
+      if (isPdf) {
+        contentParts.push({
+          type: 'file',
+          file_url: {
+            url: `data:${mimeType};base64,${fileBase64}`,
+          },
+        });
+      } else {
+        contentParts.push({
+          type: 'image_url',
+          image_url: {
+            url: `data:${mimeType};base64,${fileBase64}`,
+          },
+        });
+      }
 
-            if (isPdf) {
-                contentParts.push({
-                    type: 'file',
-                    file_url: {
-                        url: `data:${mimeType};base64,${fileBase64}`,
-                    },
-                });
-            } else {
-                contentParts.push({
-                    type: 'image_url',
-                    image_url: {
-                        url: `data:${mimeType};base64,${fileBase64}`,
-                    },
-                });
-            }
+      const response = await this.openai.chat.completions.create({
+        model: this.VISION_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: SYSTEM_PROMPTS.VISION_EXTRACTOR(categories),
+          },
+          { role: 'user', content: contentParts },
+        ],
+        response_format: { type: 'json_object' },
+        max_tokens: 4096,
+      });
 
-            const response = await this.openai.chat.completions.create({
-                model: this.VISION_MODEL,
-                messages: [
-                    { role: 'system', content: SYSTEM_PROMPTS.VISION_EXTRACTOR(categories) },
-                    { role: 'user', content: contentParts },
-                ],
-                response_format: { type: 'json_object' },
-                max_tokens: 4096,
-            });
+      const responseText = response.choices[0]?.message?.content || '{}';
+      const cleanJson = responseText.replace(/```json|```/g, '').trim();
+      const rawData = JSON.parse(cleanJson);
 
-            const responseText = response.choices[0]?.message?.content || '{}';
-            const cleanJson = responseText.replace(/```json|```/g, '').trim();
-            const rawData = JSON.parse(cleanJson);
+      const parsed = Array.isArray(rawData)
+        ? rawData
+        : rawData.transactions ||
+          rawData.data ||
+          rawData.items ||
+          rawData.results ||
+          [];
 
-            const parsed = Array.isArray(rawData)
-                ? rawData
-                : (rawData.transactions || rawData.data || rawData.items || rawData.results || []);
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        return { transactions: [], error: 'no_data_found' };
+      }
 
-            if (!Array.isArray(parsed) || parsed.length === 0) {
-                return { transactions: [], error: 'no_data_found' };
-            }
+      return { transactions: parsed, error: null };
+    } catch (error: any) {
+      this.logger.error(
+        'Erro ao extrair via OpenRouter Vision:',
+        error?.message || error,
+      );
 
-            return { transactions: parsed, error: null };
-        } catch (error: any) {
-            this.logger.error('Erro ao extrair via OpenRouter Vision:', error?.message || error);
+      if (error?.status === 400 || error?.status === 422) {
+        return { transactions: [], error: 'unsupported_format' };
+      }
+      if (error?.status === 429) {
+        return { transactions: [], error: 'rate_limit' };
+      }
+      if (error?.status === 500 || error?.status === 503) {
+        return { transactions: [], error: 'api_error' };
+      }
 
-            if (error?.status === 400 || error?.status === 422) {
-                return { transactions: [], error: 'unsupported_format' };
-            }
-            if (error?.status === 429) {
-                return { transactions: [], error: 'rate_limit' };
-            }
-            if (error?.status === 500 || error?.status === 503) {
-                return { transactions: [], error: 'api_error' };
-            }
-
-            return { transactions: [], error: 'unknown_error' };
-        }
+      return { transactions: [], error: 'unknown_error' };
     }
+  }
 
-    private fallbackClassification(descriptions: string[]): Record<string, ClassificationResult> {
-        const result: Record<string, ClassificationResult> = {};
-        for (const desc of descriptions) {
-            result[desc] = { category: 'Outros', rule: 30, icon: '🏷️' };
-        }
-        return result;
+  private fallbackClassification(
+    descriptions: string[],
+  ): Record<string, ClassificationResult> {
+    const result: Record<string, ClassificationResult> = {};
+    for (const desc of descriptions) {
+      result[desc] = { category: 'Outros', rule: 30, icon: '🏷️' };
     }
+    return result;
+  }
 }
 
 export interface ReceiptTransaction {
-    date: string;
-    amount: number;
-    description: string;
-    type: 'INCOME' | 'EXPENSE';
-    suggestedCategory?: string;
-    suggestedRule?: number;
-    suggestedIcon?: string;
-    confidence?: number;
-    cnpj?: string;
+  date: string;
+  amount: number;
+  description: string;
+  type: 'INCOME' | 'EXPENSE';
+  suggestedCategory?: string;
+  suggestedRule?: number;
+  suggestedIcon?: string;
+  confidence?: number;
+  cnpj?: string;
 }
 
 export type ReceiptErrorType =
-    | 'service_unavailable'
-    | 'no_data_found'
-    | 'unsupported_format'
-    | 'rate_limit'
-    | 'api_error'
-    | 'unknown_error'
-    | null;
+  | 'service_unavailable'
+  | 'no_data_found'
+  | 'unsupported_format'
+  | 'rate_limit'
+  | 'api_error'
+  | 'unknown_error'
+  | null;
 
 export interface ReceiptExtractionResult {
-    transactions: ReceiptTransaction[];
-    error: ReceiptErrorType;
+  transactions: ReceiptTransaction[];
+  error: ReceiptErrorType;
 }

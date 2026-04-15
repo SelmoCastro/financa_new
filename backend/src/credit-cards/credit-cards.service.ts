@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class CreditCardsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createCreditCardDto: CreateCreditCardDto, userId: string) {
     return this.prisma.creditCard.create({
@@ -27,13 +27,18 @@ export class CreditCardsService {
   async findOne(id: string, userId: string) {
     const creditCard = await this.prisma.creditCard.findFirst({
       where: { id, userId },
-      include: { account: true }
+      include: { account: true },
     });
-    if (!creditCard) throw new NotFoundException('Cartão de crédito não encontrado');
+    if (!creditCard)
+      throw new NotFoundException('Cartão de crédito não encontrado');
     return creditCard;
   }
 
-  async update(id: string, updateCreditCardDto: UpdateCreditCardDto, userId: string) {
+  async update(
+    id: string,
+    updateCreditCardDto: UpdateCreditCardDto,
+    userId: string,
+  ) {
     await this.findOne(id, userId);
     return this.prisma.creditCard.update({
       where: { id },

@@ -12,7 +12,7 @@ export class TransactionsService {
     private prisma: PrismaService,
     private aiService: AiService,
     private socialService: SocialService,
-  ) { }
+  ) {}
 
   async create(createTransactionDto: CreateTransactionDto, userId: string) {
     const amount = Number(createTransactionDto.amount);
@@ -27,11 +27,12 @@ export class TransactionsService {
           date,
           userId,
         },
-        include: { category: true }
+        include: { category: true },
       });
 
       if (accountId) {
-        const adjustment = type === 'INCOME' ? amount : (type === 'EXPENSE' ? -amount : 0);
+        const adjustment =
+          type === 'INCOME' ? amount : type === 'EXPENSE' ? -amount : 0;
         if (adjustment !== 0) {
           await tx.account.updateMany({
             where: { id: accountId, userId },
@@ -59,33 +60,44 @@ export class TransactionsService {
   async getUserCategories(userId: string) {
     return this.prisma.category.findMany({
       where: { userId },
-      select: { id: true, name: true, type: true, icon: true }
+      select: { id: true, name: true, type: true, icon: true },
     });
   }
 
   async validateImport(transactionsData: any[], userId: string) {
-    if (!transactionsData || transactionsData.length === 0) return { valid: [], duplicateFitIds: [] };
+    if (!transactionsData || transactionsData.length === 0)
+      return { valid: [], duplicateFitIds: [] };
 
     // Filtro: Remove entradas de saldo OFX que não são transações reais
     const BALANCE_KEYWORDS = [
-      'saldo do dia', 'saldo anterior', 'saldo atual', 'saldo devedor',
-      'saldo em conta', 'opening balance', 'closing balance', 'saldo inicial', 'saldo final'
+      'saldo do dia',
+      'saldo anterior',
+      'saldo atual',
+      'saldo devedor',
+      'saldo em conta',
+      'opening balance',
+      'closing balance',
+      'saldo inicial',
+      'saldo final',
     ];
-    transactionsData = transactionsData.filter(t => {
+    transactionsData = transactionsData.filter((t) => {
       const desc = (t.description || '').toLowerCase().trim();
-      const isBalance = BALANCE_KEYWORDS.some(kw => desc.includes(kw));
+      const isBalance = BALANCE_KEYWORDS.some((kw) => desc.includes(kw));
       const isInvalidDate = t.date && new Date(t.date).getFullYear() < 2000;
       return !isBalance && !isInvalidDate;
     });
 
-    if (transactionsData.length === 0) return { valid: [], duplicateFitIds: [] };
+    if (transactionsData.length === 0)
+      return { valid: [], duplicateFitIds: [] };
 
     // 0. Busca categorias do usuário para alimentar a IA
     const userCategories = await this.getUserCategories(userId);
-    const categoryNames = userCategories.map(c => c.name);
-    const categoryNameToId = new Map(userCategories.map(c => [c.name.toLowerCase().trim(), c.id]));
+    const categoryNames = userCategories.map((c) => c.name);
+    const categoryNameToId = new Map(
+      userCategories.map((c) => [c.name.toLowerCase().trim(), c.id]),
+    );
 
-    const fitIds = transactionsData.map(t => t.fitId).filter(Boolean);
+    const fitIds = transactionsData.map((t) => t.fitId).filter(Boolean);
     const targetAccountId = transactionsData[0]?.accountId;
 
     // 1. Silent Skip: FITIDs já confirmados no banco (transação salva)
@@ -93,44 +105,57 @@ export class TransactionsService {
     if (fitIds.length > 0) {
       const existing = await this.prisma.transaction.findMany({
         where: { userId, fitId: { in: fitIds } },
-        select: { fitId: true }
+        select: { fitId: true },
       });
-      existingFitIds = new Set(existing.map(e => e.fitId!));
+      existingFitIds = new Set(existing.map((e) => e.fitId!));
     }
 
     // 2. Histórico de importação: FITIDs já ACEITOS ou REJEITADOS anteriormente
-    let historyMap = new Map<string, string>(); // fitId -> 'ACCEPTED' | 'REJECTED'
+    const historyMap = new Map<string, string>(); // fitId -> 'ACCEPTED' | 'REJECTED'
     if (fitIds.length > 0) {
       const history = await this.prisma.importedFitId.findMany({
         where: { userId, fitId: { in: fitIds } },
-        select: { fitId: true, status: true }
+        select: { fitId: true, status: true },
       });
-      history.forEach(h => historyMap.set(h.fitId, h.status));
+      history.forEach((h) => historyMap.set(h.fitId, h.status));
     }
 
     // 3. Content Match - Busca transações que batem exatamente em Data + Valor + Descrição
     // Isso resolve o problema de transações importadas antes do sistema de FITID ou inseridas manualmente.
-    const minDate = new Date(Math.min(...transactionsData.map(t => new Date(t.date).getTime())));
-    const maxDate = new Date(Math.max(...transactionsData.map(t => new Date(t.date).getTime())));
+    const minDate = new Date(
+      Math.min(...transactionsData.map((t) => new Date(t.date).getTime())),
+    );
+    const maxDate = new Date(
+      Math.max(...transactionsData.map((t) => new Date(t.date).getTime())),
+    );
 
     const existingContent = await this.prisma.transaction.findMany({
       where: {
         userId,
-        date: { gte: minDate, lte: maxDate }
+        date: { gte: minDate, lte: maxDate },
       },
-      select: { date: true, amount: true, description: true, fitId: true, accountId: true }
+      select: {
+        date: true,
+        amount: true,
+        description: true,
+        fitId: true,
+        accountId: true,
+      },
     });
 
     // Set para busca ultra-rápida de duplicatas exatas por conteúdo
     const contentSet = new Set(
-      existingContent.map(t => `${t.date.toISOString().split('T')[0]}_${t.amount}_${t.description.toUpperCase().trim()}`)
+      existingContent.map(
+        (t) =>
+          `${t.date.toISOString().split('T')[0]}_${t.amount}_${t.description.toUpperCase().trim()}`,
+      ),
     );
 
     // 4. Fuzzy Hash (mesma data + valor apenas, para avisar possível erro)
     const fuzzySet = new Set(
       existingContent
-        .filter(t => t.accountId === targetAccountId)
-        .map(t => `${t.date.toISOString().split('T')[0]}_${t.amount}`)
+        .filter((t) => t.accountId === targetAccountId)
+        .map((t) => `${t.date.toISOString().split('T')[0]}_${t.amount}`),
     );
 
     const toReview: any[] = [];
@@ -178,34 +203,48 @@ export class TransactionsService {
       const descriptionsArray = Array.from(descriptionsToClassify);
       [aiClassifications, cleanNames] = await Promise.all([
         this.aiService.classifyTransactions(descriptionsArray, categoryNames),
-        this.aiService.cleanDescriptions(descriptionsArray)
+        this.aiService.cleanDescriptions(descriptionsArray),
       ]);
     }
 
-    const finalPreview = toReview.map(tx => {
-      return this.enrichTransactionWithAi(tx, aiClassifications[tx.description], cleanNames[tx.description], categoryNameToId);
+    const finalPreview = toReview.map((tx) => {
+      return this.enrichTransactionWithAi(
+        tx,
+        aiClassifications[tx.description],
+        cleanNames[tx.description],
+        categoryNameToId,
+      );
     });
 
     return {
       preview: finalPreview,
-      skippedCount: transactionsData.length - toReview.length
+      skippedCount: transactionsData.length - toReview.length,
     };
   }
 
   /**
    * Helper para enriquecer uma transação com sugestões da IA e fallbacks de match
    */
-  enrichTransactionWithAi(tx: any, suggestion: any, cleanedName: string | undefined, categoryNameToId: Map<string, string>) {
+  enrichTransactionWithAi(
+    tx: any,
+    suggestion: any,
+    cleanedName: string | undefined,
+    categoryNameToId: Map<string, string>,
+  ) {
     const cleanedDescription = cleanedName || tx.description;
 
     // Tenta bater o nome sugerido pela IA com um ID real do banco
     let matchedCategoryId = suggestion
-      ? categoryNameToId.get((suggestion.category || suggestion.c || '').toLowerCase().trim())
+      ? categoryNameToId.get(
+          (suggestion.category || suggestion.c || '').toLowerCase().trim(),
+        )
       : undefined;
 
     // Fallback: Busca difusa se a IA sugeriu um nome parecido mas não exato
     if (suggestion && !matchedCategoryId) {
-      const suggestedLow = (suggestion.category || suggestion.c || '').toLowerCase().trim();
+      const suggestedLow = (suggestion.category || suggestion.c || '')
+        .toLowerCase()
+        .trim();
       if (suggestedLow) {
         for (const [name, id] of categoryNameToId.entries()) {
           if (name.includes(suggestedLow) || suggestedLow.includes(name)) {
@@ -219,13 +258,28 @@ export class TransactionsService {
     // Fallback Final: Keywords clássicas de extrato para quando a IA falha/timeout
     if (!matchedCategoryId) {
       const desc = cleanedDescription.toUpperCase();
-      if (desc.includes('IFOOD') || desc.includes('UBER EATS')) matchedCategoryId = categoryNameToId.get('restaurante / delivery');
-      if (desc.includes('UBER') || desc.includes('99APP')) matchedCategoryId = categoryNameToId.get('transporte app');
-      if (desc.includes('MERCADO') || desc.includes('PADARIA') || desc.includes('CONFIANCA')) matchedCategoryId = categoryNameToId.get('mercado / padaria');
-      if (desc.includes('POSTO') || desc.includes('GASOLINA')) matchedCategoryId = categoryNameToId.get('transporte fixo');
-      if (desc.includes('SALARIO') || desc.includes('VENCIMENTO')) matchedCategoryId = categoryNameToId.get('salário');
-      if (desc.includes('TRANSF') || desc.includes('PIX') || desc.includes('TED')) {
-        matchedCategoryId = categoryNameToId.get(tx.amount > 0 ? 'transferência recebida' : 'outros');
+      if (desc.includes('IFOOD') || desc.includes('UBER EATS'))
+        matchedCategoryId = categoryNameToId.get('restaurante / delivery');
+      if (desc.includes('UBER') || desc.includes('99APP'))
+        matchedCategoryId = categoryNameToId.get('transporte app');
+      if (
+        desc.includes('MERCADO') ||
+        desc.includes('PADARIA') ||
+        desc.includes('CONFIANCA')
+      )
+        matchedCategoryId = categoryNameToId.get('mercado / padaria');
+      if (desc.includes('POSTO') || desc.includes('GASOLINA'))
+        matchedCategoryId = categoryNameToId.get('transporte fixo');
+      if (desc.includes('SALARIO') || desc.includes('VENCIMENTO'))
+        matchedCategoryId = categoryNameToId.get('salário');
+      if (
+        desc.includes('TRANSF') ||
+        desc.includes('PIX') ||
+        desc.includes('TED')
+      ) {
+        matchedCategoryId = categoryNameToId.get(
+          tx.amount > 0 ? 'transferência recebida' : 'outros',
+        );
       }
     }
 
@@ -237,11 +291,15 @@ export class TransactionsService {
       suggestedCategoryId: matchedCategoryId,
       suggestedRule: suggestion?.rule || suggestion?.r || 30,
       suggestedIcon: suggestion?.icon || suggestion?.i || '🏷️',
-      confidence: suggestion?.confidence || 100
+      confidence: suggestion?.confidence || 100,
     };
   }
 
-  async confirmImport(transactionsData: any[], userId: string, rejectedFitIds: string[] = []) {
+  async confirmImport(
+    transactionsData: any[],
+    userId: string,
+    rejectedFitIds: string[] = [],
+  ) {
     if (!transactionsData || transactionsData.length === 0) {
       // Mesmo sem transações, registra os rejeitados
       if (rejectedFitIds.length > 0) {
@@ -252,19 +310,19 @@ export class TransactionsService {
 
     return this.prisma.$transaction(async (tx) => {
       // Verificação final de FITIDs duplicados antes de inserir
-      const fitIds = transactionsData.map(t => t.fitId).filter(Boolean);
+      const fitIds = transactionsData.map((t) => t.fitId).filter(Boolean);
       let existingFitIds = new Set<string>();
       if (fitIds.length > 0) {
         const existing = await tx.transaction.findMany({
           where: { userId, fitId: { in: fitIds } },
-          select: { fitId: true }
+          select: { fitId: true },
         });
-        existingFitIds = new Set(existing.map(e => e.fitId!));
+        existingFitIds = new Set(existing.map((e) => e.fitId!));
       }
 
       const toInsert = transactionsData
-        .filter(t => !(t.fitId && existingFitIds.has(t.fitId)))
-        .map(t => ({
+        .filter((t) => !(t.fitId && existingFitIds.has(t.fitId)))
+        .map((t) => ({
           description: t.description,
           amount: Number(t.amount),
           date: new Date(t.date),
@@ -286,14 +344,19 @@ export class TransactionsService {
 
       const result = await tx.transaction.createMany({
         data: toInsert,
-        skipDuplicates: true
+        skipDuplicates: true,
       });
 
       // Atualizar saldo das contas
       const accountDeltas: Record<string, number> = {};
       for (const t of toInsert) {
         if (t.accountId) {
-          const adj = t.type === 'INCOME' ? t.amount : (t.type === 'EXPENSE' ? -t.amount : 0);
+          const adj =
+            t.type === 'INCOME'
+              ? t.amount
+              : t.type === 'EXPENSE'
+                ? -t.amount
+                : 0;
           accountDeltas[t.accountId] = (accountDeltas[t.accountId] || 0) + adj;
         }
       }
@@ -302,13 +365,15 @@ export class TransactionsService {
         if (delta !== 0) {
           await tx.account.updateMany({
             where: { id: accId, userId },
-            data: { balance: { increment: delta } }
+            data: { balance: { increment: delta } },
           });
         }
       }
 
       // Persistir histórico de importação (fora da transaction principal para não bloquear)
-      const acceptedFitIds = toInsert.map(t => t.fitId).filter(Boolean) as string[];
+      const acceptedFitIds = toInsert
+        .map((t) => t.fitId)
+        .filter(Boolean) as string[];
       await this.saveImportHistory(userId, acceptedFitIds, rejectedFitIds);
 
       return { importedCount: result.count };
@@ -319,7 +384,11 @@ export class TransactionsService {
    * Persiste o histórico de FITIDs aceitos e rejeitados.
    * Usa upsert para que reimports atualizem o status sem criar duplicatas.
    */
-  private async saveImportHistory(userId: string, acceptedFitIds: string[], rejectedFitIds: string[]) {
+  private async saveImportHistory(
+    userId: string,
+    acceptedFitIds: string[],
+    rejectedFitIds: string[],
+  ) {
     const upserts: Promise<any>[] = [];
 
     for (const fitId of acceptedFitIds) {
@@ -328,7 +397,7 @@ export class TransactionsService {
           where: { userId_fitId: { userId, fitId } },
           create: { fitId, userId, status: 'ACCEPTED' },
           update: { status: 'ACCEPTED' },
-        })
+        }),
       );
     }
 
@@ -339,23 +408,24 @@ export class TransactionsService {
           where: { userId_fitId: { userId, fitId } },
           create: { fitId, userId, status: 'REJECTED' },
           update: { status: 'REJECTED' }, // Se um dia foi aceito e o usuário deletou, não mudamos o status retroativamente
-        })
+        }),
       );
     }
 
     await Promise.all(upserts);
   }
 
-
   findAll(userId: string, year?: number, month?: number) {
-    let whereClause: any = { userId };
+    const whereClause: any = { userId };
 
     if (year !== undefined && month !== undefined) {
       const startOfMonth = new Date(Date.UTC(year, month, 1));
-      const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+      const endOfMonth = new Date(
+        Date.UTC(year, month + 1, 0, 23, 59, 59, 999),
+      );
       whereClause.date = {
         gte: startOfMonth,
-        lte: endOfMonth
+        lte: endOfMonth,
       };
     }
 
@@ -366,22 +436,28 @@ export class TransactionsService {
     });
   }
 
-
   async export(userId: string): Promise<string> {
     const transactions = await this.prisma.transaction.findMany({
       where: { userId },
       orderBy: { date: 'desc' },
-      include: { category: true }
+      include: { category: true },
     });
 
     // CSV Header
     const headers = ['Data', 'Descrição', 'Valor', 'Tipo', 'Categoria'];
-    const rows = transactions.map(t => {
+    const rows = transactions.map((t) => {
       const date = new Date(t.date).toLocaleDateString('pt-BR');
       const amount = t.amount.toString().replace('.', ','); // Excel PT-BR uses comma for decimals
       const type = t.type === 'INCOME' ? 'Receita' : 'Despesa';
-      const categoryName = t.category?.name || t.categoryLegacy || 'Sem categoria';
-      return [date, `"${t.description}"`, amount, type, `"${categoryName}"`].join(';');
+      const categoryName =
+        t.category?.name || t.categoryLegacy || 'Sem categoria';
+      return [
+        date,
+        `"${t.description}"`,
+        amount,
+        type,
+        `"${categoryName}"`,
+      ].join(';');
     });
 
     return [headers.join(';'), ...rows].join('\n');
@@ -394,27 +470,39 @@ export class TransactionsService {
     });
   }
 
-  async update(id: string, updateTransactionDto: UpdateTransactionDto, userId: string) {
+  async update(
+    id: string,
+    updateTransactionDto: UpdateTransactionDto,
+    userId: string,
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const oldTx = await tx.transaction.findFirst({
-        where: { id, userId }
+        where: { id, userId },
       });
 
       if (!oldTx) return null;
 
       // 1. Reverter saldo antigo se houver accountId
       if (oldTx.accountId) {
-        const revertAdj = oldTx.type === 'INCOME' ? -oldTx.amount : (oldTx.type === 'EXPENSE' ? oldTx.amount : 0);
+        const revertAdj =
+          oldTx.type === 'INCOME'
+            ? -oldTx.amount
+            : oldTx.type === 'EXPENSE'
+              ? oldTx.amount
+              : 0;
         if (revertAdj !== 0) {
           await tx.account.updateMany({
             where: { id: oldTx.accountId, userId },
-            data: { balance: { increment: revertAdj } }
+            data: { balance: { increment: revertAdj } },
           });
         }
       }
 
       // 2. Atualizar a transação
-      const newAmount = updateTransactionDto.amount !== undefined ? Number(updateTransactionDto.amount) : oldTx.amount;
+      const newAmount =
+        updateTransactionDto.amount !== undefined
+          ? Number(updateTransactionDto.amount)
+          : oldTx.amount;
       const newType = updateTransactionDto.type || oldTx.type;
 
       let newAccountId = oldTx.accountId;
@@ -426,18 +514,27 @@ export class TransactionsService {
         where: { id, userId },
         data: {
           ...updateTransactionDto,
-          amount: updateTransactionDto.amount ? Number(updateTransactionDto.amount) : undefined,
-          date: updateTransactionDto.date ? new Date(updateTransactionDto.date) : undefined,
-        }
+          amount: updateTransactionDto.amount
+            ? Number(updateTransactionDto.amount)
+            : undefined,
+          date: updateTransactionDto.date
+            ? new Date(updateTransactionDto.date)
+            : undefined,
+        },
       });
 
       // 3. Aplicar saldo novo se houver accountId
       if (newAccountId) {
-        const applyAdj = newType === 'INCOME' ? newAmount : (newType === 'EXPENSE' ? -newAmount : 0);
+        const applyAdj =
+          newType === 'INCOME'
+            ? newAmount
+            : newType === 'EXPENSE'
+              ? -newAmount
+              : 0;
         if (applyAdj !== 0) {
           await tx.account.updateMany({
             where: { id: newAccountId, userId },
-            data: { balance: { increment: applyAdj } }
+            data: { balance: { increment: applyAdj } },
           });
         }
       }
@@ -452,17 +549,22 @@ export class TransactionsService {
   async remove(id: string, userId: string) {
     return this.prisma.$transaction(async (tx) => {
       const oldTx = await tx.transaction.findFirst({
-        where: { id, userId }
+        where: { id, userId },
       });
 
       if (!oldTx) return { count: 0 };
 
       if (oldTx.accountId) {
-        const revertAdj = oldTx.type === 'INCOME' ? -oldTx.amount : (oldTx.type === 'EXPENSE' ? oldTx.amount : 0);
+        const revertAdj =
+          oldTx.type === 'INCOME'
+            ? -oldTx.amount
+            : oldTx.type === 'EXPENSE'
+              ? oldTx.amount
+              : 0;
         if (revertAdj !== 0) {
           await tx.account.updateMany({
             where: { id: oldTx.accountId, userId },
-            data: { balance: { increment: revertAdj } }
+            data: { balance: { increment: revertAdj } },
           });
         }
       }
@@ -483,7 +585,7 @@ export class TransactionsService {
       // Search by type: 'TRANSFER' to handle both 'Transferência' and 'Transferência Recebida'
       let transferCat = await tx.category.findFirst({
         where: { userId, type: 'TRANSFER' },
-        orderBy: { createdAt: 'asc' }
+        orderBy: { createdAt: 'asc' },
       });
 
       if (!transferCat) {
@@ -493,8 +595,8 @@ export class TransactionsService {
             type: 'TRANSFER',
             icon: '🔄',
             color: '#6366f1',
-            userId
-          }
+            userId,
+          },
         });
       }
 
@@ -510,7 +612,7 @@ export class TransactionsService {
           categoryId: transferCat.id,
           accountId: sourceAccountId,
           userId,
-        }
+        },
       });
 
       // 3. Create the IN transaction (Income)
@@ -523,18 +625,18 @@ export class TransactionsService {
           categoryId: transferCat.id,
           accountId: destinationAccountId,
           userId,
-        }
+        },
       });
 
       // 4. Update balances
       await tx.account.updateMany({
         where: { id: sourceAccountId, userId },
-        data: { balance: { decrement: amount } }
+        data: { balance: { decrement: amount } },
       });
 
       await tx.account.updateMany({
         where: { id: destinationAccountId, userId },
-        data: { balance: { increment: amount } }
+        data: { balance: { increment: amount } },
       });
 
       return { outTx, inTx };

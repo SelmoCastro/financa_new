@@ -1,41 +1,49 @@
-import { IsBoolean, IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateTransactionDto {
-    @IsString()
-    @IsNotEmpty()
-    description: string;
+  @IsString()
+  @IsNotEmpty()
+  description: string;
 
-    @IsNumber()
-    @IsNotEmpty()
-    amount: number;
+  @IsNumber()
+  @IsNotEmpty()
+  amount: number;
 
-    @IsDateString()
-    date: string; // ISO string
+  @IsDateString()
+  date: string; // ISO string
 
-    @IsString()
-    @IsOptional()
-    categoryId?: string;
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
 
-    @IsString()
-    @IsOptional()
-    categoryLegacy?: string;
+  @IsString()
+  @IsOptional()
+  categoryLegacy?: string;
 
-    @IsString()
-    @IsOptional()
-    accountId?: string;
+  @IsString()
+  @IsOptional()
+  accountId?: string;
 
-    @IsString()
-    @IsOptional()
-    creditCardId?: string;
+  @IsString()
+  @IsOptional()
+  creditCardId?: string;
 
-    @IsString()
-    type: string; // 'INCOME' | 'EXPENSE'
+  @IsString()
+  type: string; // 'INCOME' | 'EXPENSE'
 
-    @IsBoolean()
-    @IsOptional()
-    isFixed?: boolean;
+  @IsBoolean()
+  @IsOptional()
+  isFixed?: boolean;
 
-    @IsString()
-    @IsOptional()
-    sharedWithEmail?: string;
+  @IsString()
+  @IsOptional()
+  sharedWithEmail?: string;
 }

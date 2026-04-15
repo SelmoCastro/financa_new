@@ -1,4 +1,3 @@
-
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -8,7 +7,7 @@ async function main() {
   const endOfMonth = new Date('2026-04-01T00:00:00Z');
 
   console.log('--- BUSCANDO TRANSAÇÕES DE MARÇO/2026 ---');
-  
+
   const transactions = await prisma.transaction.findMany({
     where: {
       date: {
@@ -22,13 +21,13 @@ async function main() {
   });
 
   console.log(`Total encontrado: ${transactions.length}`);
-  
+
   const income = transactions
-    .filter(t => t.type === 'INCOME')
+    .filter((t) => t.type === 'INCOME')
     .reduce((acc, t) => acc + t.amount, 0);
-    
+
   const expense = transactions
-    .filter(t => t.type === 'EXPENSE')
+    .filter((t) => t.type === 'EXPENSE')
     .reduce((acc, t) => acc + t.amount, 0);
 
   console.log(`Renda do mês: R$ ${income.toFixed(2)}`);
@@ -36,8 +35,10 @@ async function main() {
   console.log(`Saldo Real do mês: R$ ${(income - expense).toFixed(2)}`);
 
   console.log('\n--- DETALHES ---');
-  transactions.forEach(t => {
-    console.log(`[${t.date.toISOString().slice(0, 10)}] ${t.type === 'INCOME' ? '(+)' : '(-)'} ${t.description}: R$ ${t.amount.toFixed(2)} ${t.isFixed ? '[FIXO]' : ''}`);
+  transactions.forEach((t) => {
+    console.log(
+      `[${t.date.toISOString().slice(0, 10)}] ${t.type === 'INCOME' ? '(+)' : '(-)'} ${t.description}: R$ ${t.amount.toFixed(2)} ${t.isFixed ? '[FIXO]' : ''}`,
+    );
   });
 
   // Buscar fixos que NÃO estão no mês
@@ -45,20 +46,25 @@ async function main() {
   const allFixed = await prisma.transaction.findMany({
     where: { isFixed: true },
     distinct: ['description'],
-    orderBy: { date: 'desc' }
+    orderBy: { date: 'desc' },
   });
 
   for (const fixed of allFixed) {
-    const existsThisMonth = transactions.some(t => t.description.toLowerCase().trim() === fixed.description.toLowerCase().trim());
+    const existsThisMonth = transactions.some(
+      (t) =>
+        t.description.toLowerCase().trim() ===
+        fixed.description.toLowerCase().trim(),
+    );
     if (!existsThisMonth) {
-        console.log(`PENDENTE: ${fixed.description} (Previsto: R$ ${fixed.amount.toFixed(2)})`);
+      console.log(
+        `PENDENTE: ${fixed.description} (Previsto: R$ ${fixed.amount.toFixed(2)})`,
+      );
     }
   }
-
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     console.error(e);
     process.exit(1);
   })

@@ -1,23 +1,23 @@
 import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 
 export class CreateCreditCardDto {
-    @IsString()
-    @IsNotEmpty()
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsNumber()
-    @IsNotEmpty()
-    limit: number;
+  @IsNumber()
+  @IsNotEmpty()
+  limit: number;
 
-    @IsNumber()
-    @IsNotEmpty()
-    closingDay: number;
+  @IsNumber()
+  @IsNotEmpty()
+  closingDay: number;
 
-    @IsNumber()
-    @IsNotEmpty()
-    dueDay: number;
+  @IsNumber()
+  @IsNotEmpty()
+  dueDay: number;
 
-    @IsString()
-    @IsNotEmpty()
-    accountId: string;
+  @IsString()
+  @IsNotEmpty()
+  accountId: string;
 }

@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AccountsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createAccountDto: CreateAccountDto, userId: string) {
     return this.prisma.$transaction(async (tx) => {
@@ -47,6 +47,12 @@ export class AccountsService {
             date: new Date(), // Current date as starting point
             classificationRule: 20, // Objectives/Savings by default
           },
+        });
+
+        // 3. Update account balance with the initial balance
+        await tx.account.update({
+          where: { id: account.id },
+          data: { balance: { increment: initialBalance } },
         });
       }
 
