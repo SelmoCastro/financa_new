@@ -2,7 +2,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://financa-new.onrender.com/:path*"
+            "destination": "https://api.finanzaai.tech/:path*"
         },
         {
             "source": "/(.*)",

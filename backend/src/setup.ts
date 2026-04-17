@@ -9,12 +9,13 @@ import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 export function configureApp(app: INestApplication) {
   // CORS (Aceita Regex)
   const frontendUrl =
-    process.env.FRONTEND_URL || 'https://financa-new.vercel.app';
+    process.env.FRONTEND_URL || 'https://finanzaai.tech';
   const allowedOriginsCORS = [
     frontendUrl,
     'http://localhost:5173',
     'http://localhost:3000',
     /\.vercel\.app$/,
+    /\.finanzaai\.tech$/,
     /^exp:\/\//,
     /^http:\/\/192\.168\.\d+\.\d+:\d+$/,
   ];
@@ -25,6 +26,7 @@ export function configureApp(app: INestApplication) {
     'http://localhost:5173',
     'http://localhost:3000',
     'https://*.vercel.app',
+    'https://*.finanzaai.tech',
     'exp://*',
     'http://192.168.*',
   ];

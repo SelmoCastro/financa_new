@@ -33,7 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
       <aside className={`fixed left-0 top-0 h-full bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-xl border-r border-slate-800/50 text-white z-50 sidebar-transition hidden lg:flex flex-col ${isOpen ? 'w-64' : 'w-20'}`}>
         <div className="p-6 flex items-center gap-3 overflow-hidden border-b border-slate-800/50">
           <div className="min-w-[40px] h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/20">F</div>
-          {isOpen && <span className="font-bold text-xl tracking-tight whitespace-nowrap">Finanza Lite</span>}
+          {isOpen && <span className="font-bold text-xl tracking-tight whitespace-nowrap">Finanza AI</span>}
         </div>
 
         <nav className="flex-1 px-4 py-8 space-y-2">

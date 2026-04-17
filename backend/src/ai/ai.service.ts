@@ -27,7 +27,7 @@ export class AiService {
         baseURL: 'https://openrouter.ai/api/v1',
         timeout: 9500, // 9.5 segundos (Limite Vercel Hobby é 10s)
         defaultHeaders: {
-          'HTTP-Referer': 'https://financa-new.vercel.app',
+          'HTTP-Referer': 'https://finanzaai.tech',
           'X-Title': 'Finanza AI',
         },
       });

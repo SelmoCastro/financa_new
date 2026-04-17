@@ -116,7 +116,7 @@ export default function LoginScreen() {
                     <Pressable
                         onPress={async () => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            await WebBrowser.openBrowserAsync('https://financa-new.vercel.app/login?mode=recovery');
+                            await WebBrowser.openBrowserAsync('https://finanzaai.tech/login?mode=recovery');
                         }}
                         style={styles.forgotPasswordLink}
                     >

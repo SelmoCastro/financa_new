@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { DeviceEventEmitter } from 'react-native';
 
-const API_URL = 'https://financa-new-api.vercel.app/v1'; // Production Vercel URL
+const API_URL = 'https://api.finanzaai.tech/v1'; // Production API URL
 // Para teste local, use o seu IP:
 // const API_URL = 'http://192.168.18.114:3000/v1';
 

@@ -27,7 +27,7 @@ export class EmailService {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     return frontendUrl.includes('localhost')
       ? frontendUrl
-      : 'https://financa-new.vercel.app';
+      : 'https://finanzaai.tech';
   }
 
   async sendVerificationEmail(email: string, name: string, token: string) {
