@@ -1,25 +1,24 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards, Request } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { SubscriptionService } from './subscription.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CurrentUser } from '../auth/current-user.decorator';
 
 @Controller('subscription')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard('jwt'))
 export class SubscriptionController {
   constructor(private subscriptionService: SubscriptionService) {}
 
   @Get()
-  async getMySubscription(@CurrentUser() user: any) {
-    return this.subscriptionService.getSubscription(user.id);
+  async getMySubscription(@Request() req: any) {
+    return this.subscriptionService.getSubscription(req.user.id);
   }
 
   @Get('limits')
-  async getMyLimits(@CurrentUser() user: any) {
-    return this.subscriptionService.getLimits(user.id);
+  async getMyLimits(@Request() req: any) {
+    return this.subscriptionService.getLimits(req.user.id);
   }
 
   @Post('cancel')
-  async cancelSubscription(@CurrentUser() user: any) {
-    return this.subscriptionService.cancel(user.id);
+  async cancelSubscription(@Request() req: any) {
+    return this.subscriptionService.cancel(req.user.id);
   }
 }

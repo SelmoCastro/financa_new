@@ -288,7 +288,7 @@ export class ReportsService {
     // 3. Orçamentos vs Realizado
     const budgets = await this.prisma.budget.findMany({
       where: { userId },
-      select: { category: true, amount: true },
+      select: { categoryId: true, amount: true },
     });
 
     // 4. Maiores categorias de gasto no mês
