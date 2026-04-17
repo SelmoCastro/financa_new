@@ -21,6 +21,7 @@ import { ReportsModule } from './reports/reports.module';
 import { EmailModule } from './email/email.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SocialModule } from './social/social.module';
+import { VerifiedEmailGuard } from './auth/verified-email.guard';
 
 @Module({
   imports: [
@@ -54,6 +55,10 @@ import { SocialModule } from './social/social.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: VerifiedEmailGuard,
     },
   ],
 })

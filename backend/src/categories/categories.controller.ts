@@ -13,6 +13,7 @@ import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 
 @Controller({
   path: 'categories',
@@ -23,6 +24,7 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Post()
+  @RequireVerifiedEmail()
   create(@Body() createCategoryDto: CreateCategoryDto, @Request() req) {
     return this.categoriesService.create(createCategoryDto, req.user.userId);
   }
@@ -38,6 +40,7 @@ export class CategoriesController {
   }
 
   @Patch(':id')
+  @RequireVerifiedEmail()
   update(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
@@ -51,6 +54,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
+  @RequireVerifiedEmail()
   remove(@Param('id') id: string, @Request() req) {
     return this.categoriesService.remove(id, req.user.userId);
   }

@@ -30,8 +30,8 @@ export class AuthService {
     return null;
   }
 
-  async generateTokens(userId: string, email: string) {
-    const payload = { sub: userId, email };
+  async generateTokens(userId: string, email: string, isEmailVerified: boolean) {
+    const payload = { sub: userId, email, isEmailVerified };
 
     // Build separate tokens
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
@@ -51,7 +51,7 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified);
 
     return {
       access_token: tokens.accessToken, // Keeping for backward compatibility with mobile initially
@@ -92,7 +92,7 @@ export class AuthService {
       throw new UnauthorizedException('Access Denied: Invalid Refresh Token');
     }
 
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified);
     return {
       access_token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
@@ -230,5 +230,42 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async resendVerification(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    if (user.isEmailVerified) {
+      return { message: 'Email já verificado' };
+    }
+
+    // Delete any existing EMAIL_VERIFY tokens for this user
+    await this.prisma.verificationToken.deleteMany({
+      where: { userId: user.id, type: 'EMAIL_VERIFY' },
+    });
+
+    // Generate a new verification token
+    const verifyToken = crypto.randomBytes(32).toString('hex');
+    await this.prisma.verificationToken.create({
+      data: {
+        token: verifyToken,
+        type: 'EMAIL_VERIFY',
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 horas
+      },
+    });
+
+    // Fire-and-forget email
+    this.emailService
+      .sendVerificationEmail(user.email, user.name || 'Usuário', verifyToken)
+      .catch((e) => console.error('Falha ao enviar verification email:', e));
+
+    return { message: 'Email de verificação reenviado com sucesso' };
   }
 }

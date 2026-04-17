@@ -28,6 +28,7 @@ import { TransferTransactionDto } from './dto/transfer-transaction.dto';
 import { AiService } from '../ai/ai.service';
 import { ReportsService } from '../reports/reports.service';
 import { memoryStorage } from 'multer';
+import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 
 @Controller({
   path: 'transactions',
@@ -42,6 +43,7 @@ export class TransactionsController {
   ) {}
 
   @Post()
+  @RequireVerifiedEmail()
   create(@Body() createTransactionDto: CreateTransactionDto, @Request() req) {
     return this.transactionsService.create(
       createTransactionDto,
@@ -50,11 +52,13 @@ export class TransactionsController {
   }
 
   @Post('transfer')
+  @RequireVerifiedEmail()
   transfer(@Body() transferDto: TransferTransactionDto, @Request() req) {
     return this.transactionsService.transfer(transferDto, req.user.userId);
   }
 
   @Post('import/validate')
+  @RequireVerifiedEmail()
   validateImport(
     @Body() importData: ImportValidateTransactionDto[],
     @Request() req,
@@ -63,6 +67,7 @@ export class TransactionsController {
   }
 
   @Post('import/receipt')
+  @RequireVerifiedEmail()
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -165,6 +170,7 @@ export class TransactionsController {
   }
 
   @Post('import/confirm')
+  @RequireVerifiedEmail()
   confirmImport(@Body() payload: ImportConfirmPayloadDto, @Request() req) {
     return this.transactionsService.confirmImport(
       payload.transactions,
@@ -214,6 +220,7 @@ export class TransactionsController {
   }
 
   @Patch(':id')
+  @RequireVerifiedEmail()
   update(
     @Param('id') id: string,
     @Body() updateTransactionDto: UpdateTransactionDto,
@@ -227,6 +234,7 @@ export class TransactionsController {
   }
 
   @Delete(':id')
+  @RequireVerifiedEmail()
   remove(@Param('id') id: string, @Request() req) {
     return this.transactionsService.remove(id, req.user.userId);
   }

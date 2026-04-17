@@ -27,6 +27,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getYearMonth } from './utils/dateUtils';
 import { Plus } from 'lucide-react';
 import api from './services/api';
+import { Mail } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const {
@@ -38,6 +39,12 @@ const AppContent: React.FC = () => {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [isEmailVerified, setIsEmailVerified] = useState(() => localStorage.getItem('isEmailVerified') === 'true');
+  const [showVerifyBanner, setShowVerifyBanner] = useState(() => {
+    if (localStorage.getItem('isEmailVerified') === 'true') return false;
+    return !sessionStorage.getItem('verifyBannerDismissed');
+  });
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Usuário');
@@ -128,6 +135,18 @@ const AppContent: React.FC = () => {
     localStorage.removeItem('isAdmin');
     localStorage.removeItem('isEmailVerified');
     navigate('/login');
+  };
+
+  const handleResendVerification = async () => {
+    setIsResendingEmail(true);
+    try {
+      await api.post('/auth/resend-verification');
+      addToast('E-mail de verificação reenviado! Verifique sua caixa de entrada.', 'success');
+    } catch (err: any) {
+      addToast(err.response?.data?.message || 'Erro ao reenviar e-mail.', 'error');
+    } finally {
+      setIsResendingEmail(false);
+    }
   };
 
   const openEditForm = (tx: Transaction) => {
@@ -238,6 +257,38 @@ const AppContent: React.FC = () => {
             </button>
           </div>
         </header>
+
+        {showVerifyBanner && !isEmailVerified && (
+          <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700 px-4 py-3">
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  Verifique seu e-mail para acessar todos os recursos.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleResendVerification}
+                  disabled={isResendingEmail}
+                  className="text-xs font-bold uppercase tracking-wider bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {isResendingEmail ? 'Enviando...' : 'Reenviar E-mail'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowVerifyBanner(false);
+                    sessionStorage.setItem('verifyBannerDismissed', 'true');
+                  }}
+                  className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 text-lg font-bold leading-none p-1"
+                  title="Dispensar"
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <main className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 md:py-10 overflow-hidden">
           <AnimatePresence mode="wait">

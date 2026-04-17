@@ -13,6 +13,7 @@ import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 
 @Controller({
   path: 'accounts',
@@ -23,6 +24,7 @@ export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
   @Post()
+  @RequireVerifiedEmail()
   create(@Body() createAccountDto: CreateAccountDto, @Request() req) {
     return this.accountsService.create(createAccountDto, req.user.userId);
   }
@@ -38,6 +40,7 @@ export class AccountsController {
   }
 
   @Patch(':id')
+  @RequireVerifiedEmail()
   update(
     @Param('id') id: string,
     @Body() updateAccountDto: UpdateAccountDto,
@@ -47,6 +50,7 @@ export class AccountsController {
   }
 
   @Delete(':id')
+  @RequireVerifiedEmail()
   remove(@Param('id') id: string, @Request() req) {
     return this.accountsService.remove(id, req.user.userId);
   }

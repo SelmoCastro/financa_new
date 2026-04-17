@@ -10,6 +10,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AiService } from './ai.service';
 import { ReportsService } from '../reports/reports.service';
+import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 
 @Controller({
   path: 'ai',
@@ -23,6 +24,7 @@ export class AiController {
   ) {}
 
   @Get('insights')
+  @RequireVerifiedEmail()
   async getInsights(
     @Request() req,
     @Query('year') year?: string,
@@ -43,6 +45,7 @@ export class AiController {
   }
 
   @Post('chat')
+  @RequireVerifiedEmail()
   async postChat(@Request() req, @Body('message') message: string) {
     const userId = req.user.userId;
 

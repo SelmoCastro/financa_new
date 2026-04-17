@@ -13,6 +13,7 @@ import { CreditCardsService } from './credit-cards.service';
 import { CreateCreditCardDto } from './dto/create-credit-card.dto';
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 
 @Controller({
   path: 'credit-cards',
@@ -23,6 +24,7 @@ export class CreditCardsController {
   constructor(private readonly creditCardsService: CreditCardsService) {}
 
   @Post()
+  @RequireVerifiedEmail()
   create(@Body() createCreditCardDto: CreateCreditCardDto, @Request() req) {
     return this.creditCardsService.create(createCreditCardDto, req.user.userId);
   }
@@ -38,6 +40,7 @@ export class CreditCardsController {
   }
 
   @Patch(':id')
+  @RequireVerifiedEmail()
   update(
     @Param('id') id: string,
     @Body() updateCreditCardDto: UpdateCreditCardDto,
@@ -51,6 +54,7 @@ export class CreditCardsController {
   }
 
   @Delete(':id')
+  @RequireVerifiedEmail()
   remove(@Param('id') id: string, @Request() req) {
     return this.creditCardsService.remove(id, req.user.userId);
   }

@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { SocialService } from './social.service';
+import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 
 @Controller({
   path: 'social',
@@ -25,6 +26,7 @@ export class SocialController {
   }
 
   @Post('invites/:id/accept')
+  @RequireVerifiedEmail()
   async acceptInvite(
     @Param('id') id: string,
     @Body() body: { accountId: string; categoryId: string },

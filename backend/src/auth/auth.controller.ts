@@ -150,6 +150,12 @@ export class AuthController {
     return this.authService.resetPassword(body.token, body.password);
   }
 
+  @Post('resend-verification')
+  @UseGuards(AuthGuard('jwt'))
+  async resendVerification(@Request() req) {
+    return this.authService.resendVerification(req.user.userId);
+  }
+
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
   async getProfile(@Request() req) {

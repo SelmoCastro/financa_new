@@ -14,6 +14,7 @@ import { BudgetsService } from './budgets.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 
 @Controller({
   path: 'budgets',
@@ -24,6 +25,7 @@ export class BudgetsController {
   constructor(private readonly budgetsService: BudgetsService) {}
 
   @Post()
+  @RequireVerifiedEmail()
   create(@Body() createBudgetDto: CreateBudgetDto, @Request() req) {
     return this.budgetsService.create(createBudgetDto, req.user.userId);
   }
@@ -42,6 +44,7 @@ export class BudgetsController {
   }
 
   @Patch(':id')
+  @RequireVerifiedEmail()
   update(
     @Param('id') id: string,
     @Body() updateBudgetDto: UpdateBudgetDto,
@@ -51,6 +54,7 @@ export class BudgetsController {
   }
 
   @Delete(':id')
+  @RequireVerifiedEmail()
   remove(@Param('id') id: string, @Request() req) {
     return this.budgetsService.remove(id, req.user.userId);
   }

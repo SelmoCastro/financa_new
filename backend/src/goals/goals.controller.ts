@@ -13,6 +13,7 @@ import { GoalsService } from './goals.service';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 
 @Controller({
   path: 'goals',
@@ -23,6 +24,7 @@ export class GoalsController {
   constructor(private readonly goalsService: GoalsService) {}
 
   @Post()
+  @RequireVerifiedEmail()
   create(@Body() createGoalDto: CreateGoalDto, @Request() req) {
     return this.goalsService.create(createGoalDto, req.user.userId);
   }
@@ -38,6 +40,7 @@ export class GoalsController {
   }
 
   @Patch(':id')
+  @RequireVerifiedEmail()
   update(
     @Param('id') id: string,
     @Body() updateGoalDto: UpdateGoalDto,
@@ -47,6 +50,7 @@ export class GoalsController {
   }
 
   @Delete(':id')
+  @RequireVerifiedEmail()
   remove(@Param('id') id: string, @Request() req) {
     return this.goalsService.remove(id, req.user.userId);
   }
