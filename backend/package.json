@@ -45,6 +45,7 @@
     "openai": "^6.25.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "pg": "^8.20.0",
     "prisma": "^5.22.0",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.9.3",
