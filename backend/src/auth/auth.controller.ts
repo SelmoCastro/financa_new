@@ -7,12 +7,14 @@ import {
   Get,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
   Res,
   Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { PrismaService } from '../prisma/prisma.service';
 import { Throttle } from '@nestjs/throttler';
 import { Response, Request as ExpressRequest } from 'express';
 
@@ -22,7 +24,10 @@ import { Response, Request as ExpressRequest } from 'express';
 })
 @Throttle({ default: { limit: 5, ttl: 60000 } })
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   private setCookies(res: Response, accessToken: string, refreshToken: string) {
     const isProduction = process.env.NODE_ENV === 'production';
@@ -154,6 +159,21 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   async resendVerification(@Request() req) {
     return this.authService.resendVerification(req.user.userId);
+  }
+
+  @Post('verify-all-emails')
+  @UseGuards(AuthGuard('jwt'))
+  async verifyAllEmails(@Request() req) {
+    // Apenas admin pode rodar — marca todos usuarios como verificados
+    const user = await this.prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!user?.isAdmin) {
+      throw new ForbiddenException('Admin only');
+    }
+    const result = await this.prisma.user.updateMany({
+      where: { isEmailVerified: false },
+      data: { isEmailVerified: true },
+    });
+    return { message: `${result.count} usuarios marcados como verificados` };
   }
 
   @Get('me')

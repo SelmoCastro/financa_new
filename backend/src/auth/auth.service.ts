@@ -104,6 +104,9 @@ export class AuthService {
     const user = await this.usersService.create({
       ...createUserDto,
       password: hashedPassword,
+      // Auto-verificar email enquanto nao temos dominio verificado na Resend
+      // TODO: Reverter para false quando dominio for verificado
+      isEmailVerified: true,
     });
 
     // Gerar token de verificação de email e enviar
@@ -125,7 +128,7 @@ export class AuthService {
     const loginData = await this.login(user);
 
     return {
-      message: 'Cadastro realizado com sucesso! Verifique seu e-mail para ativar sua conta.',
+      message: 'Cadastro realizado com sucesso!',
       userId: user.id,
       ...loginData,
     };

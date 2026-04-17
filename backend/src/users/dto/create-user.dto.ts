@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, MinLength, Matches } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsBoolean, MinLength, Matches } from 'class-validator';
 import { IsValidEmail } from '../validators/is-valid-email.validator';
 
 export class CreateUserDto {
@@ -16,4 +16,8 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   name?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isEmailVerified?: boolean;
 }
