@@ -19,6 +19,7 @@ import { ImportModal } from '../../components/ImportModal';
 import { FeedbackModal } from '../../components/FeedbackModal';
 import SettingsModal from '../../components/SettingsModal';
 import { InviteNotification } from '../../components/InviteNotification';
+import { AiChatWidget } from '../../components/AiChatWidget';
 import { useCurrency } from '../../context/CurrencyContext';
 
 
@@ -411,7 +412,10 @@ export default function DashboardScreen() {
                 onClose={() => setSettingsModalVisible(false)}
             />
 
-            {/* Global FAB (Floating Action Button) */}
+            {/* AI Chat Widget (FAB + Modal) */}
+            <AiChatWidget />
+
+            {/* Global FAB (Floating Action Button) - deslocado para cima para nao sobrepor o chat FAB */}
             <Pressable
                 style={({ pressed }) => [
                     styles.fabButton,
@@ -507,7 +511,7 @@ const styles = StyleSheet.create({
     emptyStateTitle: { fontSize: 16, fontWeight: '800', color: '#334155', marginBottom: 8 },
     emptyStateSubtitle: { fontSize: 13, color: '#64748b', textAlign: 'center', lineHeight: 20 },
 
-    // FAB
-    fabButton: { position: 'absolute', right: 24, bottom: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: '#4f46e5', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 10, zIndex: 9999 },
+    // FAB - subido para ficar acima do AiChatWidget FAB
+    fabButton: { position: 'absolute', right: 24, bottom: 96, width: 64, height: 64, borderRadius: 32, backgroundColor: '#4f46e5', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 10, zIndex: 9999 },
     fabButtonPressed: { transform: [{ scale: 0.92 }], opacity: 0.9 },
 });

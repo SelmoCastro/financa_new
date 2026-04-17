@@ -57,7 +57,7 @@ export function AiChatWidget() {
             const aiMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: res.data?.reply || 'Desculpe, não consegui processar sua mensagem.'
+                content: res.data?.response || res.data?.reply || 'Desculpe, não consegui processar sua mensagem.'
             };
             setMessages(prev => [...prev, aiMsg]);
         } catch (error) {
