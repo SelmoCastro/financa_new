@@ -28,8 +28,13 @@ export const Login: React.FC = () => {
             } else if (isRegister) {
                 const response = await api.post('/auth/register', { email, password, name });
 
-                // Salvar credenciais no Local Storage para auto-login e UI state (excluindo os tokens q agora são cookies HttpOnly)
+                // Salvar credenciais no Local Storage para auto-login e UI state
+                // O cookie HttpOnly é enviado automaticamente pelo browser, mas armazenamos
+                // o access_token como fallback para ambientes onde cookies third-party são bloqueados
                 if (response.data.user) {
+                    if (response.data.access_token) {
+                        localStorage.setItem('token', response.data.access_token);
+                    }
                     localStorage.setItem('userId', response.data.user.id);
                     localStorage.setItem('userName', response.data.user.name);
                     localStorage.setItem('userEmail', response.data.user.email);
@@ -42,6 +47,11 @@ export const Login: React.FC = () => {
                 }
             } else {
                 const response = await api.post('/auth/login', { email, password });
+                // Cookie HttpOnly já foi setado pelo backend, mas armazenamos access_token
+                // como fallback Bearer para quando cookies cross-origin são bloqueados
+                if (response.data.access_token) {
+                    localStorage.setItem('token', response.data.access_token);
+                }
                 localStorage.setItem('userId', response.data.user.id);
                 localStorage.setItem('userName', response.data.user.name);
                 localStorage.setItem('userEmail', response.data.user.email);

@@ -78,7 +78,13 @@ api.interceptors.response.use(
                 // Backend detecta HttpOnly RefreshCookie e retorna novos
                 // Não precisa mandar o payload pro refreshCookie automático funcionar
                 const userId = localStorage.getItem('userId');
-                await api.post('/auth/refresh', { userId });
+                const refreshResponse = await api.post('/auth/refresh', { userId });
+
+                // Atualiza o token no localStorage para fallback Bearer
+                // (cookies HttpOnly já são atualizados automaticamente pelo browser)
+                if (refreshResponse.data?.access_token) {
+                    localStorage.setItem('token', refreshResponse.data.access_token);
+                }
 
                 // Se der certo, refaz os requests que travaram no 401
                 processQueue(null);
@@ -89,6 +95,10 @@ api.interceptors.response.use(
                 // Se falhar de vez, desloga e manda pra home
                 localStorage.removeItem('token');
                 localStorage.removeItem('userId');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('isAdmin');
+                localStorage.removeItem('isEmailVerified');
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
             } finally {

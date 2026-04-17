@@ -124,7 +124,9 @@ const AppContent: React.FC = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
     localStorage.removeItem('isAdmin');
+    localStorage.removeItem('isEmailVerified');
     navigate('/login');
   };
 
