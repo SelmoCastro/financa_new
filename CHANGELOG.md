@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/SelmoCastro/financa_new/compare/v1.3.0...v1.4.0) (2026-04-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **release:** versão 1.3.0 requer rebuild de todos os packages
+
+### 🧹 Chores
+
+* **release:** 1.3.0 - refatoração geral, documentação e scripts de debug ([e857d68](https://github.com/SelmoCastro/financa_new/commit/e857d684bb65f7f28cfaafa261ba23e69ece7ce4))
+
+
+### 📝 Documentation
+
+* add implementation roadmap with 7 sections ([b0b137c](https://github.com/SelmoCastro/financa_new/commit/b0b137cc73dd1324ab825b0961c06f6691b0bcb8))
+* add technical debts and security implementation plan ([ce19012](https://github.com/SelmoCastro/financa_new/commit/ce190128cab6cad15b4cd017a648f4690130ccdf))
+
+
+### ♻️ Code Refactoring
+
+* **budgets:** remove legacy category string, use categoryId only ([2bdbc19](https://github.com/SelmoCastro/financa_new/commit/2bdbc194b2f9b85823d6185df987b06db267d09e))
+
+
+### ✅ Tests
+
+* **backend:** add 40 unit tests for AccountsService and BudgetsService + fix app.controller spec ([52912a1](https://github.com/SelmoCastro/financa_new/commit/52912a1de0e15e23da91847234179c3d4deb5e61))
+
+
+### 🐛 Bug Fixes
+
+* **auth:** auto-verify emails and disable VerifiedEmailGuard until Resend domain is configured ([3c89830](https://github.com/SelmoCastro/financa_new/commit/3c8983060899bcaa1b6cbe362b54965d35d006a6))
+* **auth:** corrigir loop infinito de login por inconsistência de chave do token ([bd51b0f](https://github.com/SelmoCastro/financa_new/commit/bd51b0fe9d4174034c315f8be3df8ebc4f28ae70))
+* **cors:** add X-CSRF-Token to allowed headers for cross-origin requests ([7da6e25](https://github.com/SelmoCastro/financa_new/commit/7da6e25efb9d6e427559902dd894280de6611a59))
+* **cors:** use Vercel proxy rewrite to eliminate cross-origin requests and CSRF cookie issues ([7625a7f](https://github.com/SelmoCastro/financa_new/commit/7625a7f6fcc26196c79495f71d57f98740ec84ac))
+* **db:** consolidate migrations - add Subscription + AiRequestLog tables and fix Budget categoryId ([7833627](https://github.com/SelmoCastro/financa_new/commit/7833627fa1b88605ed64cd88250bb54b4b1e498a))
+* **security:** add CSRF protection with double-submit cookie pattern ([73ce96f](https://github.com/SelmoCastro/financa_new/commit/73ce96f5fd1b9cae5e2d895ca238de741de186b9))
+* **security:** fix CSRF token mismatch on login - generate token once per session and match excluded paths correctly ([536c0b5](https://github.com/SelmoCastro/financa_new/commit/536c0b5c3a420293c3e36ad2d574473d5c9549bd))
+* **subscription:** fix imports and reports category field after subscription module ([1f9498e](https://github.com/SelmoCastro/financa_new/commit/1f9498e1031835dc9605272ffde0c8372affc1b8))
+
+
+### ✨ Features
+
+* **auth:** add password strength validation on register ([fe601c3](https://github.com/SelmoCastro/financa_new/commit/fe601c395d930b713975f9728b7255276e299e52))
+* **auth:** add verified email guard + banner + resend endpoint ([f8d2518](https://github.com/SelmoCastro/financa_new/commit/f8d251816f074f7a4a4eb9cae4e5e3d0f77d1787))
+* **auth:** implementar recuperação de senha funcional com Resend ([36ce6cd](https://github.com/SelmoCastro/financa_new/commit/36ce6cdf8f7dc4e5153015edbed55927d9ed0e85))
+* **debug:** add email health check endpoint at /health/email ([605007a](https://github.com/SelmoCastro/financa_new/commit/605007a688960815ec5d5e8ea46a7e4e3c70c9e1))
+* **domain:** migrate to finanzaai.tech custom domain ([3424ae8](https://github.com/SelmoCastro/financa_new/commit/3424ae84f9f21ec816ef424e0c38d765ea4ebc6e))
+* **mobile:** add Reports screen with charts + fix budgets JSX + fix useFixedTransactions type ([45a4e7c](https://github.com/SelmoCastro/financa_new/commit/45a4e7c2d661f3dfc6c6323878d54e13206fed93))
+* **mobile:** mount AiChatWidget on Home screen + fix chat response field ([a22f17d](https://github.com/SelmoCastro/financa_new/commit/a22f17d57bb0b390a5201a227a56d372d789dece))
+* **security:** add env variable validation on backend startup + fix app.controller spec ([d0a512d](https://github.com/SelmoCastro/financa_new/commit/d0a512ddc5f15f44f82a10c25d2337e0d707c85b))
+* **subscription:** add Subscription module with plan guard and AI rate limiting ([36c87e4](https://github.com/SelmoCastro/financa_new/commit/36c87e4269ee0d3b0fb171f438c1215f8d344bb0))
+
 ## [1.3.0](https://github.com/SelmoCastro/financa_new/compare/v1.2.2...v1.3.0) (2026-04-08)
 
 
