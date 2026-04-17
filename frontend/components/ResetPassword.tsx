@@ -31,8 +31,16 @@ export const ResetPassword: React.FC = () => {
             return;
         }
 
-        if (password.length < 6) {
-            setError('A senha deve ter pelo menos 6 caracteres.');
+        if (password.length < 8) {
+            setError('A senha deve ter pelo menos 8 caracteres.');
+            return;
+        }
+
+        // Validação de força mínima
+        const hasLetter = /[a-zA-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        if (!hasLetter || !hasNumber) {
+            setError('A senha deve conter pelo menos letras e números.');
             return;
         }
 

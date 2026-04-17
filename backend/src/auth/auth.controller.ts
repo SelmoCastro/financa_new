@@ -6,6 +6,7 @@ import {
   Request,
   Get,
   UnauthorizedException,
+  BadRequestException,
   Res,
   Req,
 } from '@nestjs/common';
@@ -144,6 +145,8 @@ export class AuthController {
   resetPassword(@Body() body: { token: string; password: string }) {
     if (!body.token || !body.password)
       throw new UnauthorizedException('Token and new password are required');
+    if (body.password.length < 8)
+      throw new BadRequestException('Password must be at least 8 characters');
     return this.authService.resetPassword(body.token, body.password);
   }
 

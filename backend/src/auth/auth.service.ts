@@ -106,10 +106,26 @@ export class AuthService {
       password: hashedPassword,
     });
 
+    // Gerar token de verificação de email e enviar
+    const verifyToken = crypto.randomBytes(32).toString('hex');
+    await this.prisma.verificationToken.create({
+      data: {
+        token: verifyToken,
+        type: 'EMAIL_VERIFY',
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 horas
+      },
+    });
+
+    // Dispara email de verificação em background (fire-and-forget)
+    this.emailService
+      .sendVerificationEmail(user.email, user.name || 'Usuário', verifyToken)
+      .catch((e) => console.error('Falha ao enviar verification email:', e));
+
     const loginData = await this.login(user);
 
     return {
-      message: 'Cadastro realizado com sucesso!',
+      message: 'Cadastro realizado com sucesso! Verifique seu e-mail para ativar sua conta.',
       userId: user.id,
       ...loginData,
     };
