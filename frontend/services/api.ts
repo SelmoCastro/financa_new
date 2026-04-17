@@ -7,6 +7,15 @@ const getBaseUrl = () => {
     return url.replace(/\/$/, '') + '/v1';
 };
 
+/**
+ * Lê o CSRF token do cookie setado pelo backend (double-submit pattern).
+ * O cookie não é HttpOnly para que o JS possa ler.
+ */
+function getCsrfTokenFromCookie(): string | null {
+    const match = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
 const api = axios.create({
     baseURL: getBaseUrl(),
     withCredentials: true, // Garante envio dos HttpOnly Cookies
@@ -18,12 +27,22 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-    // Web: Se o fallback via localStorage existir, manda. 
+    // Auth: Se o fallback via localStorage existir, manda.
     // Mas o backend vai preferir sempre extrair do Cookie HttpOnly (mais seguro).
     const token = localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // CSRF: Para métodos de escrita, enviar o token do cookie como header
+    const method = (config.method || 'get').toLowerCase();
+    if (['post', 'put', 'patch', 'delete'].includes(method)) {
+        const csrfToken = getCsrfTokenFromCookie();
+        if (csrfToken) {
+            config.headers['x-csrf-token'] = csrfToken;
+        }
+    }
+
     return config;
 });
 

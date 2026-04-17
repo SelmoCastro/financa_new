@@ -1,13 +1,10 @@
-import {
-  INestApplication,
-  ValidationPipe,
-  VersioningType,
-} from '@nestjs/common';
+import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 
 export function configureApp(app: INestApplication) {
   // CORS (Aceita Regex)
@@ -74,8 +71,14 @@ export function configureApp(app: INestApplication) {
     }),
   );
 
-  // Cookie Parser
+  // Cookie Parser (necessário para CSRF e auth cookies)
   app.use(cookieParser());
+
+  // CSRF Protection (double-submit cookie pattern)
+  // Para requests de escrita (POST/PUT/PATCH/DELETE), exige header x-csrf-token = cookie csrf-token
+  // Rotas de auth (login, register, etc.) são excluídas
+  const csrfMiddleware = new CsrfMiddleware();
+  app.use((req: any, res: any, next: any) => csrfMiddleware.use(req, res, next));
 
   // API Versioning
   app.enableVersioning({
