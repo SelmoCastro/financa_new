@@ -1,4 +1,13 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateBudgetDto } from './create-budget.dto';
+import { IsNotEmpty, IsNumber, IsOptional, IsUUID } from 'class-validator';
 
-export class UpdateBudgetDto extends PartialType(CreateBudgetDto) {}
+export class UpdateBudgetDto {
+  @IsOptional()
+  @IsUUID()
+  @IsNotEmpty()
+  categoryId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @IsNotEmpty()
+  amount?: number;
+}

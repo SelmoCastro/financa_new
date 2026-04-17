@@ -8,8 +8,9 @@ import { Category } from '../types';
 
 interface Budget {
     id: string;
-    category: string;
     amount: number;
+    categoryId: string;
+    categoryObj: { id: string; name: string; icon: string; color?: string };
     spent: number;
     percentage: number;
     isOverBudget: boolean;
@@ -27,7 +28,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [form, setForm] = useState({ category: '', amount: '' });
+    const [form, setForm] = useState({ categoryId: '', amount: '' });
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
     
     const fetchBudgets = async () => {
@@ -59,7 +60,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!form.category || !form.amount) {
+        if (!form.categoryId || !form.amount) {
             addToast('Preencha todos os campos', 'info');
             return;
         }
@@ -75,19 +76,19 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
 
             if (editingBudget) {
                 await api.patch(`/budgets/${editingBudget.id}`, {
-                    category: form.category,
+                    categoryId: form.categoryId,
                     amount: rawAmount
                 });
                 addToast('Orçamento atualizado com sucesso!', 'success');
             } else {
                 await api.post('/budgets', {
-                    category: form.category,
+                    categoryId: form.categoryId,
                     amount: rawAmount
                 });
                 addToast('Orçamento salvo com sucesso!', 'success');
             }
 
-            setForm({ category: '', amount: '' });
+            setForm({ categoryId: '', amount: '' });
             setEditingBudget(null);
             setIsModalOpen(false);
             fetchBudgets(); // Refresh to ensure calculation is correct
@@ -119,7 +120,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
     const openEditModal = (budget: Budget) => {
         setEditingBudget(budget);
         setForm({
-            category: budget.category,
+            categoryId: budget.categoryId,
             amount: budget.amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         });
         setIsModalOpen(true);
@@ -135,7 +136,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                 <button
                     onClick={() => {
                         setEditingBudget(null);
-                        setForm({ category: '', amount: '' });
+                        setForm({ categoryId: '', amount: '' });
                         setIsModalOpen(true);
                     }}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center gap-2"
@@ -158,10 +159,10 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {budgets.map((budget) => (
-                        <div key={budget.category} className="glass-card p-8 rounded-[2.5rem] relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300">
+                        <div key={budget.categoryId} className="glass-card p-8 rounded-[2.5rem] relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300">
                             <div className="flex justify-between items-start mb-6">
                                 <div className="space-y-1">
-                                    <h3 className="font-black text-slate-800 dark:text-white text-xl tracking-tight">{budget.category}</h3>
+                                    <h3 className="font-black text-slate-800 dark:text-white text-xl tracking-tight">{budget.categoryObj?.name || 'Categoria'}</h3>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Gasto Atual</span>
                                         <span className={`text-sm font-black ${budget.isOverBudget ? 'text-rose-500' : 'text-slate-600 dark:text-slate-300'} ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
@@ -179,7 +180,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                             <i data-lucide="edit-3" className="w-4 h-4"></i>
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(budget.id, budget.category)}
+                                            onClick={() => handleDelete(budget.id, budget.categoryObj?.name || 'Categoria')}
                                             className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
                                             title="Excluir Orçamento"
                                         >
@@ -235,15 +236,18 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Categoria do Gasto</label>
                                 <div className="relative">
                                     <select
-                                        value={form.category}
-                                        onChange={e => setForm({ ...form, category: e.target.value })}
+                                        value={form.categoryId}
+                                        onChange={e => {
+                                            const selectedId = e.target.value;
+                                            setForm({ ...form, categoryId: selectedId });
+                                        }}
                                         className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none appearance-none cursor-pointer transition-all"
                                     >
                                         <option value="">Selecione uma categoria...</option>
 
                                         <optgroup label="Entradas (Rendas)">
                                             {categories.filter(c => c.type === 'INCOME').map(c => (
-                                                <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                                             ))}
                                         </optgroup>
 
@@ -252,7 +256,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                                 ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
                                                     .includes(c.name)
                                             ).map(c => (
-                                                <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                                             ))}
                                         </optgroup>
 
@@ -261,7 +265,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                                 ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
                                                     .includes(c.name)
                                             ).map(c => (
-                                                <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                                             ))}
                                         </optgroup>
 
@@ -270,7 +274,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                                 ['Aplicações / Poupança', 'Pagamento de Dívidas']
                                                     .includes(c.name)
                                             ).map(c => (
-                                                <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                                             ))}
                                         </optgroup>
                                     </select>

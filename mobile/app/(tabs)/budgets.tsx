@@ -34,7 +34,7 @@ export default function BudgetsScreen() {
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
     // Form
-    const [category, setCategory] = useState('');
+    const [categoryId, setCategoryId] = useState('');
     const [selectedCat, setSelectedCat] = useState<any>(null);
     const [amount, setAmount] = useState('');
     const [categories, setCategories] = useState<any[]>([]);
@@ -88,7 +88,7 @@ export default function BudgetsScreen() {
     }, []);
 
     const handleSave = async () => {
-        if (!category || !amount) {
+        if (!categoryId || !amount) {
             Alert.alert('Atenção', 'Preencha todos os campos.');
             return;
         }
@@ -101,13 +101,13 @@ export default function BudgetsScreen() {
 
         try {
             if (editingBudget) {
-                await api.patch(`/budgets/${editingBudget.id}`, { category, amount: rawAmount });
+                await api.patch(`/budgets/${editingBudget.id}`, { categoryId, amount: rawAmount });
             } else {
-                await api.post('/budgets', { category, amount: rawAmount });
+                await api.post('/budgets', { categoryId, amount: rawAmount });
             }
             setModalVisible(false);
             setEditingBudget(null);
-            setCategory('');
+            setCategoryId('');
             setAmount('');
             fetchBudgets();
             Alert.alert('Sucesso', 'Orçamento salvo!');
@@ -119,7 +119,7 @@ export default function BudgetsScreen() {
 
     const openEditBudget = (budget: Budget) => {
         setEditingBudget(budget);
-        setCategory(budget.category);
+        setCategoryId(budget.categoryId);
         setAmount(formatCurrencyInput(String(Math.round(budget.amount * 100)), currencySymbol));
         setModalVisible(true);
     };
@@ -127,7 +127,7 @@ export default function BudgetsScreen() {
     const handleDeleteBudget = (budget: Budget) => {
         Alert.alert(
             'Excluir Orçamento',
-            `Deseja excluir o orçamento "${budget.category}"? Esta ação não pode ser desfeita.`,
+            `Deseja excluir o orçamento "${budget.categoryObj?.name || 'Categoria'}"? Esta ação não pode ser desfeita.`,
             [
                 { text: 'Cancelar', style: 'cancel' },
                 {
@@ -195,10 +195,10 @@ export default function BudgetsScreen() {
                 ) : (
                     <View className="px-4 space-y-4">
                         {budgets.map(budget => (
-                            <View key={budget.category} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                                <View className="flex-row justify-between items-start mb-3">
-                                    <View>
-                                        <Text className="text-lg font-bold text-slate-700">{budget.category}</Text>
+                            <View key={budget.categoryId} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                                {/* header */}
+                                <View className="flex-row justify-between items-center mb-3">
+                                    <Text className="text-lg font-bold text-slate-700">{budget.categoryObj?.name || 'Categoria'}</Text>
                                         <Text className="text-xs text-slate-400 font-bold uppercase mt-1">
                                             Gasto: {formatValue(budget.spent)}
                                         </Text>
@@ -270,6 +270,8 @@ export default function BudgetsScreen() {
                                     onPress={() => {
                                         setModalVisible(false);
                                         setEditingBudget(null);
+                                        setCategory('');
+                                        setCategoryId('');
                                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     }}
                                     className="p-2"
@@ -287,8 +289,8 @@ export default function BudgetsScreen() {
                                     onPress={() => setIsCategoryPickerOpen(true)}
                                     className="w-full p-4 bg-slate-50 rounded-2xl flex-row justify-between items-center"
                                 >
-                                    <Text className={`font-bold ${category ? 'text-slate-700' : 'text-slate-400'}`}>
-                                        {category || 'Selecione uma categoria'}
+                                    <Text className={`font-bold ${categoryId ? 'text-slate-700' : 'text-slate-400'}`}>
+                                        {categoryId ? categories.find(c => c.id === categoryId)?.name || 'Selecione uma categoria' : 'Selecione uma categoria'}
                                     </Text>
                                     <MaterialIcons name="keyboard-arrow-down" size={20} color="#64748b" />
                                 </Pressable>
@@ -336,7 +338,7 @@ export default function BudgetsScreen() {
                                                 <Pressable
                                                     key={cat.id}
                                                     onPress={() => {
-                                                        setCategory(cat.name);
+                                                        setCategoryId(cat.id);
                                                         setSelectedCat(cat);
                                                         setIsCategoryPickerOpen(false);
                                                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -345,15 +347,15 @@ export default function BudgetsScreen() {
                                                         flexDirection: 'row',
                                                         alignItems: 'center',
                                                         padding: 16,
-                                                        backgroundColor: category === cat.name ? '#f1f5f9' : 'transparent',
+                                                        backgroundColor: categoryId === cat.id ? '#f1f5f9' : 'transparent',
                                                         borderRadius: 16,
                                                         borderWidth: 1,
-                                                        borderColor: category === cat.name ? '#e2e8f0' : 'transparent'
+                                                        borderColor: categoryId === cat.id ? '#e2e8f0' : 'transparent'
                                                     }}
                                                 >
                                                     <Text style={{ fontSize: 18, marginRight: 12 }}>{cat.icon}</Text>
-                                                    <Text style={{ fontSize: 16, fontWeight: '700', color: category === cat.name ? '#4f46e5' : '#475569', flex: 1 }}>{cat.name}</Text>
-                                                    {category === cat.name && <MaterialIcons name="check" size={20} color="#4f46e5" />}
+                                                    <Text style={{ fontSize: 16, fontWeight: '700', color: categoryId === cat.id ? '#4f46e5' : '#475569', flex: 1 }}>{cat.name}</Text>
+                                                    {categoryId === cat.id && <MaterialIcons name="check" size={20} color="#4f46e5" />}
                                                 </Pressable>
                                             ))}
                                         </View>

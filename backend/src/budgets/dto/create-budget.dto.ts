@@ -1,9 +1,9 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsUUID } from 'class-validator';
 
 export class CreateBudgetDto {
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
-  category: string;
+  categoryId: string;
 
   @IsNumber()
   @IsNotEmpty()

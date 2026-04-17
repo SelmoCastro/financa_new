@@ -38,8 +38,9 @@ export interface CreditCard {
 
 export interface Budget {
     id: string;
-    category: string;
     amount: number;
+    categoryId: string;
+    categoryObj: { id: string; name: string; icon: string; color?: string };
     spent: number;
     percentage: number;
     isOverBudget: boolean;

@@ -45,8 +45,9 @@ export interface Transaction {
 
 export interface Budget {
   id: string;
-  category: string;
   amount: number;
+  categoryId: string;
+  categoryObj: Category;
   spent?: number;
   percentage?: number;
   isOverBudget?: boolean;

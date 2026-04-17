@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,19 +8,29 @@ export class BudgetsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createBudgetDto: CreateBudgetDto, userId: string) {
-    // Upsert: Reset amount if exists, or create new
+    const { categoryId, amount } = createBudgetDto;
+
+    // Verify category exists and belongs to user
+    const cat = await this.prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+    if (!cat || cat.userId !== userId) {
+      throw new BadRequestException('Category not found');
+    }
+
+    // Upsert: update amount if budget for this category already exists, or create new
     return this.prisma.budget.upsert({
       where: {
-        userId_category: {
+        userId_categoryId: {
           userId,
-          category: createBudgetDto.category,
+          categoryId,
         },
       },
-      update: { amount: Number(createBudgetDto.amount) },
+      update: { amount: Number(amount) },
       create: {
         userId,
-        category: createBudgetDto.category,
-        amount: Number(createBudgetDto.amount),
+        categoryId,
+        amount: Number(amount),
       },
     });
   }
@@ -29,6 +39,7 @@ export class BudgetsService {
     const budgets = await this.prisma.budget.findMany({
       where: { userId },
       orderBy: { amount: 'desc' },
+      include: { categoryObj: true },
     });
 
     const now = new Date();
@@ -48,10 +59,7 @@ export class BudgetsService {
           where: {
             userId,
             type: 'EXPENSE',
-            OR: [
-              { categoryLegacy: budget.category },
-              { category: { name: budget.category } },
-            ],
+            categoryId: budget.categoryId,
             date: {
               gte: startOfMonth,
               lte: endOfMonth,
@@ -65,7 +73,7 @@ export class BudgetsService {
         return {
           ...budget,
           spent,
-          percentage: Math.min(percentage, 100), // Cap for UI but maybe show >100% logic separate
+          percentage: Math.min(percentage, 100),
           isOverBudget: spent > budget.amount,
         };
       }),
@@ -74,20 +82,31 @@ export class BudgetsService {
     return budgetsWithUsage;
   }
 
-  // Not used yet, but kept stubbed
-  findOne(id: number) {
-    return `This action returns a #${id} budget`;
-  }
-
   async update(id: string, updateBudgetDto: UpdateBudgetDto, userId: string) {
-    if (updateBudgetDto.amount) {
-      updateBudgetDto.amount = Number(updateBudgetDto.amount);
+    const data: any = { ...updateBudgetDto };
+
+    if (data.amount) {
+      data.amount = Number(data.amount);
     }
+
+    // If categoryId is being updated, verify it exists and belongs to user
+    if (data.categoryId) {
+      const cat = await this.prisma.category.findUnique({
+        where: { id: data.categoryId },
+      });
+      if (!cat || cat.userId !== userId) {
+        throw new BadRequestException('Category not found');
+      }
+    }
+
     await this.prisma.budget.updateMany({
       where: { id, userId },
-      data: updateBudgetDto,
+      data,
     });
-    return this.prisma.budget.findFirst({ where: { id, userId } });
+    return this.prisma.budget.findFirst({
+      where: { id, userId },
+      include: { categoryObj: true },
+    });
   }
 
   async remove(id: string, userId: string) {
