@@ -199,15 +199,10 @@ export default function BudgetsScreen() {
                                 {/* header */}
                                 <View className="flex-row justify-between items-center mb-3">
                                     <Text className="text-lg font-bold text-slate-700">{budget.categoryObj?.name || 'Categoria'}</Text>
-                                        <Text className="text-xs text-slate-400 font-bold uppercase mt-1">
-                                            Gasto: {formatValue(budget.spent)}
-                                        </Text>
-                                    </View>
                                     <View className="items-end">
-                                        <Text className="text-xs text-slate-400 font-bold uppercase">Teto</Text>
-                                        <Text className="text-lg font-black text-indigo-600">
-                                            {formatValue(budget.amount)}
-                                        </Text>
+                                        <Text className="text-xs text-slate-400 font-bold uppercase">Gasto: {formatValue(budget.spent)}</Text>
+                                        <Text className="text-xs text-slate-400 font-bold uppercase mt-1">Teto</Text>
+                                        <Text className="text-lg font-black text-indigo-600">{formatValue(budget.amount)}</Text>
                                     </View>
                                 </View>
 
@@ -270,7 +265,6 @@ export default function BudgetsScreen() {
                                     onPress={() => {
                                         setModalVisible(false);
                                         setEditingBudget(null);
-                                        setCategory('');
                                         setCategoryId('');
                                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                     }}

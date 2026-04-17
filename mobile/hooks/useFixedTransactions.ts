@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Transaction } from '../types';
 import { getStartOfDay, getYearMonth, parseDate } from '../utils/dateUtils';
 
-export const useFixedTransactions = (transactions: Transaction[], totals: { balance: number, income: number, currentIncome?: number }) => {
+export const useFixedTransactions = (transactions: Transaction[], totals: { balance: number, income: number, currentIncome?: number, currentExpense?: number }) => {
     return useMemo(() => {
         const now = new Date();
         const { year: currentYear, month: currentMonth } = getYearMonth(now);
@@ -142,7 +142,7 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
 
         const availableReal = (totals.currentIncome || 0) 
             + missingFixed.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0)
-            - totals.currentExpense
+            - (totals.currentExpense || 0)
             - missingFixed.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
 
         return {
