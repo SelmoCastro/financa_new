@@ -26,6 +26,18 @@ export const Login: React.FC = () => {
                 setSuccessMsg('Se este e-mail estiver cadastrado, você receberá um link de recuperação em breve.');
                 setIsForgotPassword(false);
             } else if (isRegister) {
+                // Validação de força de senha no front (eco do back)
+                if (password.length < 8) {
+                    setError('A senha deve ter pelo menos 8 caracteres.');
+                    setIsLoading(false);
+                    return;
+                }
+                if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+                    setError('A senha deve conter pelo menos letras e números.');
+                    setIsLoading(false);
+                    return;
+                }
+
                 const response = await api.post('/auth/register', { email, password, name });
 
                 // Salvar credenciais no Local Storage para auto-login e UI state
