@@ -34,7 +34,7 @@ export function configureApp(app: INestApplication) {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders:
-      'Content-Type, Accept, Authorization, X-Requested-With, Cache-Control, Pragma, Expires',
+      'Content-Type, Accept, Authorization, X-Requested-With, Cache-Control, Pragma, Expires, X-CSRF-Token',
   });
 
   // Security Headers (Helmet com CSP restritivo e Policies adicionais)
