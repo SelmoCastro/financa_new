@@ -3,7 +3,10 @@ import axios from 'axios';
 
 const getBaseUrl = () => {
     // @ts-ignore
-    const url = import.meta.env.VITE_API_URL || 'https://financa-new.onrender.com';
+    const url = import.meta.env.VITE_API_URL || '';
+    // In production (Vercel), use relative /api/v1 — Vercel rewrites proxy to Render
+    // In development, use /api/v1 proxy from vite.config.ts -> localhost:3000
+    if (!url) return '/api/v1';
     return url.replace(/\/$/, '') + '/v1';
 };
 
