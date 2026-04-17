@@ -11,12 +11,13 @@ import { AuthGuard } from '@nestjs/passport';
 import { AiService } from './ai.service';
 import { ReportsService } from '../reports/reports.service';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
+import { AiRequestGuard } from '../subscription/ai-request.guard';
 
 @Controller({
   path: 'ai',
   version: '1',
 })
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), AiRequestGuard)
 export class AiController {
   constructor(
     private readonly aiService: AiService,

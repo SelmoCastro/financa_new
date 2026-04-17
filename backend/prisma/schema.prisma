@@ -30,6 +30,8 @@ model User {
   receivedInvites    TransactionInvite[] @relation("ReceivedInvites")
   sentInvites        TransactionInvite[] @relation("SentInvites")
   verificationTokens VerificationToken[]
+  subscription       Subscription?
+  aiRequestLogs      AiRequestLog[]
 }
 
 model Account {
@@ -215,4 +217,28 @@ model Notification {
 
   @@index([userId])
   @@index([isRead])
+}
+
+
+model Subscription {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  plan      String    @default("free") // free, pro, premium
+  status    String    @default("active") // active, past_due, canceled
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model AiRequestLog {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
 }
