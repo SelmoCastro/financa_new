@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import api from '../services/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export const Login: React.FC = () => {
+    const [searchParams] = useSearchParams();
     const [isRegister, setIsRegister] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -11,7 +12,7 @@ export const Login: React.FC = () => {
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isForgotPassword, setIsForgotPassword] = useState(false);
+    const [isForgotPassword, setIsForgotPassword] = useState(() => searchParams.get('mode') === 'recovery');
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
