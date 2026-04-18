@@ -161,17 +161,15 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={() => handleEditClick(item)}
-                                                        className="p-2 text-slate-400 dark:text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition-colors"
-                                                        title="Editar Detalhes"
+                                                        className="px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 rounded-lg transition-colors border border-indigo-200 dark:border-indigo-500/20"
                                                     >
-                                                        <i data-lucide="edit-2" className="w-4 h-4"></i>
+                                                        ✏️ Editar
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(item.lastTransactionId)}
-                                                        className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors"
-                                                        title="Excluir Fixo"
+                                                        className="px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 rounded-lg transition-colors border border-rose-200 dark:border-rose-500/20"
                                                     >
-                                                        <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                        🗑️ Excluir
                                                     </button>
                                                 </div>
                                             </div>
