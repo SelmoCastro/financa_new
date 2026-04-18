@@ -91,12 +91,12 @@ export class SocialService {
 
     return this.prisma.$transaction(async (tx) => {
       // Verify that accountId belongs to this user AND lock the row (FOR UPDATE)
-      let account: Awaited<ReturnType<typeof tx.account.findFirst>> = null;
+      // CRITICAL: Use SELECT ... FOR UPDATE to prevent concurrent overdraft
+      let account: { id: string; userId: string; balance: any; deletedAt: Date | null } | null = null;
       if (accountId) {
-        account = await tx.account.findFirst({
-          where: { id: accountId, userId, deletedAt: null },
-        });
-        if (!account) {
+        const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+        account = rows[0] || null;
+        if (!account || account.deletedAt) {
           throw new BadRequestException('Conta não encontrada ou não pertence ao usuário');
         }
       }

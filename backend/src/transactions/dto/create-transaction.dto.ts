@@ -26,7 +26,7 @@ export class CreateTransactionDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0.01, { message: 'O valor deve ser positivo' })
-  @Max(9999999999999.99)
+  @Max(99999999.99, { message: 'O valor deve ser menor que R$ 100.000.000' })
   amount: number;
 
   @IsDateString()

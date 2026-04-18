@@ -22,6 +22,12 @@ export class TransactionsService {
     if (date > new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) {
       throw new BadRequestException('Data não pode ser mais que 2 dias no futuro');
     }
+
+    // TRANSFER type must go through the dedicated /transfer endpoint
+    if (createTransactionDto.type === 'TRANSFER') {
+      throw new BadRequestException('Use o endpoint de transferência para criar transferências');
+    }
+
     const { type, accountId, categoryId, creditCardId } = createTransactionDto;
 
     // Validate FK ownership: accountId, categoryId, creditCardId must belong to the user
@@ -41,7 +47,7 @@ export class TransactionsService {
     return this.prisma.$transaction(async (tx) => {
       // CRITICAL: Balance check + row lock before EXPENSE to prevent overdraft
       if (type === 'EXPENSE' && accountId) {
-        const rows = await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+        const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE` as any[];
         const account = rows[0];
         if (!account) throw new NotFoundException('Account not found');
         if (Number(account.balance) < amount) {
@@ -594,7 +600,7 @@ export class TransactionsService {
 
       // VULN-05: Lock the old account row with userId scoping to prevent concurrent balance modifications
       if (oldTx.accountId) {
-        await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${oldTx.accountId} AND "userId" = ${userId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${oldTx.accountId} AND "userId" = ${userId} FOR UPDATE`;
       }
 
       // 1. Reverter saldo antigo se houver accountId
@@ -628,12 +634,12 @@ export class TransactionsService {
 
       // VULN-05: Lock the new account row with userId scoping if it's different from the old one
       if (newAccountId && newAccountId !== oldTx.accountId) {
-        await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE`;
       }
 
       // VULN-03: Overdraft check — after reverting old balance, before applying new one
       if (newType === 'EXPENSE' && newAccountId) {
-        const rows = await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+        const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE` as any[];
         const account = rows[0];
         if (!account) throw new NotFoundException('Account not found');
         if (Number(account.balance) < newAmount) {
@@ -728,15 +734,18 @@ export class TransactionsService {
 
     return this.prisma.$transaction(async (tx) => {
       // CRITICAL: Balance check + row lock for source account before transfer
-      const sourceRows = await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${sourceAccountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+      const sourceRows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${sourceAccountId} AND "userId" = ${userId} FOR UPDATE` as any[];
       const sourceAccount = sourceRows[0];
       if (!sourceAccount) throw new NotFoundException('Conta de origem não encontrada');
       if (Number(sourceAccount.balance) < amount) {
         throw new BadRequestException('Saldo insuficiente para transferência');
       }
 
-      // Lock the destination account row too
-      await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${destinationAccountId} AND "userId" = ${userId} FOR UPDATE`;
+      // Lock the destination account row too — and validate it belongs to the user
+      const destRows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${destinationAccountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+      if (!destRows[0]) {
+        throw new NotFoundException('Conta de destino não encontrada ou não pertence ao usuário');
+      }
 
       // 1. Ensure a "Transferência" category exists for the user
       // Search by type: 'TRANSFER' to handle both 'Transferência' and 'Transferência Recebida'

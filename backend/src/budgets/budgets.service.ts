@@ -10,11 +10,11 @@ export class BudgetsService {
   async create(createBudgetDto: CreateBudgetDto, userId: string) {
     const { categoryId, amount } = createBudgetDto;
 
-    // Verify category exists and belongs to user
-    const cat = await this.prisma.category.findUnique({
-      where: { id: categoryId },
+    // Verify category exists, belongs to user, and is not soft-deleted
+    const cat = await this.prisma.category.findFirst({
+      where: { id: categoryId, userId, deletedAt: null },
     });
-    if (!cat || cat.userId !== userId) {
+    if (!cat) {
       throw new BadRequestException('Category not found');
     }
 
@@ -91,12 +91,12 @@ export class BudgetsService {
       data.amount = Number(data.amount);
     }
 
-    // If categoryId is being updated, verify it exists and belongs to user
+    // If categoryId is being updated, verify it exists, belongs to user, and is not soft-deleted
     if (data.categoryId) {
-      const cat = await this.prisma.category.findUnique({
-        where: { id: data.categoryId },
+      const cat = await this.prisma.category.findFirst({
+        where: { id: data.categoryId, userId, deletedAt: null },
       });
-      if (!cat || cat.userId !== userId) {
+      if (!cat) {
         throw new BadRequestException('Category not found');
       }
     }

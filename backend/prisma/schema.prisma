@@ -9,43 +9,43 @@ datasource db {
 }
 
 model User {
-  id                 String              @id @default(uuid())
-  email              String              @unique
-  password           String
-  name               String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  isAdmin            Boolean             @default(false)
-  isEmailVerified    Boolean             @default(false)
-  hashedRefreshToken String?
-  failedLoginAttempts Int              @default(0)
-  lockedUntil        DateTime?
-  accounts           Account[]
-  budgets            Budget[]
-  categories         Category[]
-  creditCards        CreditCard[]
-  feedbacks          Feedback[]
-  goals              Goal[]
-  importedFitIds     ImportedFitId[]
-  notifications      Notification[]
-  transactions       Transaction[]
-  receivedInvites    TransactionInvite[] @relation("ReceivedInvites")
-  sentInvites        TransactionInvite[] @relation("SentInvites")
-  verificationTokens VerificationToken[]
-  subscription       Subscription?
-  aiRequestLogs      AiRequestLog[]
-  auditLogs          AuditLog[]
+  id                  String              @id @default(uuid())
+  email               String              @unique
+  password            String
+  name                String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  isAdmin             Boolean             @default(false)
+  isEmailVerified     Boolean             @default(false)
+  hashedRefreshToken  String?
+  failedLoginAttempts Int                 @default(0)
+  lockedUntil         DateTime?
+  accounts            Account[]
+  budgets             Budget[]
+  categories          Category[]
+  creditCards         CreditCard[]
+  feedbacks           Feedback[]
+  goals               Goal[]
+  importedFitIds      ImportedFitId[]
+  notifications       Notification[]
+  transactions        Transaction[]
+  receivedInvites     TransactionInvite[] @relation("ReceivedInvites")
+  sentInvites         TransactionInvite[] @relation("SentInvites")
+  verificationTokens  VerificationToken[]
+  subscription        Subscription?
+  aiRequestLogs       AiRequestLog[]
+  auditLogs           AuditLog[]
 }
 
 model Account {
   id           String        @id @default(uuid())
   name         String
   type         String
-  balance      Decimal       @default(0) @db.Decimal(15,2)
+  balance      Decimal       @default(0) @db.Decimal(15, 2)
   userId       String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?     // Soft delete
+  deletedAt    DateTime? // Soft delete
   user         User          @relation(fields: [userId], references: [id])
   creditCards  CreditCard[]
   transactions Transaction[]
@@ -56,14 +56,14 @@ model Account {
 model CreditCard {
   id           String        @id @default(uuid())
   name         String
-  limit        Decimal       @db.Decimal(15,2)
+  limit        Decimal       @db.Decimal(15, 2)
   closingDay   Int
   dueDay       Int
   accountId    String
   userId       String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?     // Soft delete
+  deletedAt    DateTime? // Soft delete
   account      Account       @relation(fields: [accountId], references: [id])
   user         User          @relation(fields: [userId], references: [id])
   transactions Transaction[]
@@ -80,7 +80,7 @@ model Category {
   userId       String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?     // Soft delete
+  deletedAt    DateTime? // Soft delete
   user         User          @relation(fields: [userId], references: [id])
   transactions Transaction[]
   budgets      Budget[]
@@ -91,7 +91,7 @@ model Category {
 model Transaction {
   id                 String      @id @default(uuid())
   description        String
-  amount             Decimal       @db.Decimal(15,2)
+  amount             Decimal     @db.Decimal(15, 2)
   date               DateTime
   categoryLegacy     String?     @map("category")
   type               String
@@ -99,7 +99,7 @@ model Transaction {
   userId             String
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
-  deletedAt          DateTime?   // Soft delete
+  deletedAt          DateTime? // Soft delete
   accountId          String?
   categoryId         String?
   creditCardId       String?
@@ -125,31 +125,35 @@ model Transaction {
 }
 
 model Budget {
-  id          String   @id @default(uuid())
-  amount      Decimal       @db.Decimal(15,2)
+  id          String    @id @default(uuid())
+  amount      Decimal   @db.Decimal(15, 2)
   userId      String
   categoryId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime? // Soft delete
-  user        User     @relation(fields: [userId], references: [id])
-  categoryObj Category @relation(fields: [categoryId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+  categoryObj Category  @relation(fields: [categoryId], references: [id])
 
   @@unique([userId, categoryId])
   @@index([categoryId])
+  @@index([userId])
 }
 
 model Goal {
   id            String    @id @default(uuid())
   title         String
-  targetAmount  Decimal    @db.Decimal(15,2)
-  currentAmount Decimal   @default(0) @db.Decimal(15,2)
+  targetAmount  Decimal   @db.Decimal(15, 2)
+  currentAmount Decimal   @default(0) @db.Decimal(15, 2)
   deadline      DateTime?
   userId        String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime? // Soft delete
   user          User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, deletedAt])
 }
 
 model ImportedFitId {
@@ -193,7 +197,7 @@ model VerificationToken {
 
 model TransactionInvite {
   id                    String   @id @default(uuid())
-  amount                Decimal @db.Decimal(15,2)
+  amount                Decimal  @db.Decimal(15, 2)
   description           String
   date                  DateTime
   type                  String
@@ -228,7 +232,6 @@ model Notification {
   @@index([isRead])
 }
 
-
 model Subscription {
   id        String    @id @default(uuid())
   userId    String    @unique
@@ -255,11 +258,11 @@ model AiRequestLog {
 model AuditLog {
   id         String   @id @default(uuid())
   userId     String
-  action     String   // CREATE, UPDATE, DELETE, IMPORT, TRANSFER, LOGIN, LOGIN_FAILED
-  resource   String   // Transaction, Account, Budget, Goal, etc
+  action     String // CREATE, UPDATE, DELETE, IMPORT, TRANSFER, LOGIN, LOGIN_FAILED
+  resource   String // Transaction, Account, Budget, Goal, etc
   resourceId String?
   ip         String?
-  details    String?  // JSON string with change details
+  details    String? // JSON string with change details
   createdAt  DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -1,15 +1,15 @@
-{
-  "name": "finanza-ai",
-  "version": "1.4.6",
-  "private": true,
-  "description": "Finanza AI — Dashboard Financeiro Inteligente",
-  "scripts": {
-    "release": "standard-version",
-    "release:minor": "standard-version --release-as minor",
-    "release:major": "standard-version --release-as major",
-    "release:patch": "standard-version --release-as patch"
-  },
-  "devDependencies": {
-    "standard-version": "^9.5.0"
-  }
-}
+     1|{
+     2|  "name": "finanza-ai",
+     3|  "version": "1.4.7",
+     4|  "private": true,
+     5|  "description": "Finanza AI — Dashboard Financeiro Inteligente",
+     6|  "scripts": {
+     7|    "release": "standard-version",
+     8|    "release:minor": "standard-version --release-as minor",
+     9|    "release:major": "standard-version --release-as major",
+    10|    "release:patch": "standard-version --release-as patch"
+    11|  },
+    12|  "devDependencies": {
+    13|    "standard-version": "^9.5.0"
+    14|  }
+    15|}

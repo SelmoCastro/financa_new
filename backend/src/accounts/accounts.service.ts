@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AccountsService {
@@ -110,27 +111,21 @@ export class AccountsService {
   async reconcile(id: string, userId: string) {
     const account = await this.findOne(id, userId);
 
-    // Sum all active transactions for this account
-    const result = await this.prisma.transaction.aggregate({
-      where: { accountId: id, userId, deletedAt: null },
-      _sum: { amount: true },
-    });
-
-    // Calculate correct balance: INCOME adds, EXPENSE subtracts
+    // Sum all active transactions for this account using Decimal arithmetic to avoid float drift
     const transactions = await this.prisma.transaction.findMany({
       where: { accountId: id, userId, deletedAt: null },
       select: { amount: true, type: true },
     });
 
-    let calculatedBalance = 0;
+    let calculatedBalance = new Prisma.Decimal(0);
     for (const tx of transactions) {
-      const amt = Number(tx.amount);
-      if (tx.type === 'INCOME') calculatedBalance += amt;
-      else if (tx.type === 'EXPENSE') calculatedBalance -= amt;
+      if (tx.type === 'INCOME') calculatedBalance = calculatedBalance.plus(tx.amount);
+      else if (tx.type === 'EXPENSE') calculatedBalance = calculatedBalance.minus(tx.amount);
     }
 
     const currentBalance = Number(account.balance);
-    const drift = calculatedBalance - currentBalance;
+    const calculatedBalanceNumber = Number(calculatedBalance);
+    const drift = Number(calculatedBalance.minus(new Prisma.Decimal(account.balance)));
 
     if (drift !== 0) {
       // Fix the balance — include userId in WHERE to prevent cross-user modification
@@ -144,7 +139,7 @@ export class AccountsService {
     return {
       accountId: id,
       previousBalance: currentBalance,
-      calculatedBalance,
+      calculatedBalance: calculatedBalanceNumber,
       drift,
       fixed: drift !== 0,
       transactionCount: transactions.length,

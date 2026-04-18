@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsDateString,
   Min,
+  Max,
 } from 'class-validator';
 
 export class CreateGoalDto {
@@ -15,11 +16,13 @@ export class CreateGoalDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
+  @Max(99999999.99, { message: 'Target amount must be less than R$ 100.000.000' })
   targetAmount: number;
 
   @IsNumber()
   @IsOptional()
   @Min(0)
+  @Max(99999999.99, { message: 'Current amount must be less than R$ 100.000.000' })
   currentAmount?: number;
 
   @IsDateString()
