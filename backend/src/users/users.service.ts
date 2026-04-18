@@ -17,6 +17,23 @@ const excludePassword = {
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
+  /** Versao de create() que permite setar isEmailVerified internamente (auth.service) */
+  async createWithEmailVerified(data: { email: string; name: string; password: string; isEmailVerified: boolean }) {
+    try {
+      return await this.prisma.user.create({
+        data,
+        select: excludePassword,
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new ForbiddenException(
+          'Este e-mail já está cadastrado em nossa base.',
+        );
+      }
+      throw error;
+    }
+  }
+
   async create(createUserDto: CreateUserDto) {
     let user;
     try {

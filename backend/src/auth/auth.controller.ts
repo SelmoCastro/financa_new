@@ -72,9 +72,9 @@ export class AuthController {
     const responseData = await this.authService.login(user);
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
 
+    // Nao retornar refreshToken no body — seguro apenas em HttpOnly cookie
     return {
       access_token: responseData.access_token,
-      refreshToken: responseData.refreshToken,
       user: responseData.user,
     };
   }
@@ -95,13 +95,17 @@ export class AuthController {
       throw new UnauthorizedException('Refresh Token ausente');
     }
 
-    // Identificar o userId (Pode extrair do payload decodificado puro se preciso ou exigir envio do ID)
-    // Para simplificar, Mobile/Web podem mandar o UserID no body do refresh
-    const userId = request.body?.userId;
+    // Extrair userId do proprio JWT decodificado (nunca confiar no body)
+    let userId: string;
+    try {
+      const decoded = this.authService.decodeJwt(refreshToken);
+      userId = decoded.sub;
+    } catch {
+      throw new UnauthorizedException('Refresh Token inválido');
+    }
+
     if (!userId) {
-      throw new UnauthorizedException(
-        'User ID requerido no body para o refresh',
-      );
+      throw new UnauthorizedException('Refresh Token inválido: userId ausente');
     }
 
     const responseData = await this.authService.refreshTokens(

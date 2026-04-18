@@ -19,10 +19,8 @@ import { VerifiedEmailGuard } from './verified-email.guard';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret:
-          configService.get<string>('JWT_SECRET') ||
-          'super-secret-key-change-in-production',
-        signOptions: { expiresIn: '7d' },
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '15m' },
       }),
       inject: [ConfigService],
     }),

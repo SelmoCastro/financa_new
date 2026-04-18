@@ -98,15 +98,17 @@ export function configureApp(app: INestApplication) {
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  // Swagger Config
-  const config = new DocumentBuilder()
-    .setTitle('Finanza API')
-    .setDescription(
-      'API do Dashboard Financeiro Simplificado. Use esta documentação para testar os endpoints.',
-    )
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  // Swagger Config (apenas em dev/staging, NUNCA em producao)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Finanza API')
+      .setDescription(
+        'API do Dashboard Financeiro Simplificado. Use esta documentação para testar os endpoints.',
+      )
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 }

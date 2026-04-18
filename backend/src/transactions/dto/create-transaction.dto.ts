@@ -2,11 +2,20 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  Min,
+  IsEmail,
 } from 'class-validator';
+
+export enum TransactionType {
+  INCOME = 'INCOME',
+  EXPENSE = 'EXPENSE',
+  TRANSFER = 'TRANSFER',
+}
 
 export class CreateTransactionDto {
   @IsString()
@@ -15,6 +24,7 @@ export class CreateTransactionDto {
 
   @IsNumber()
   @IsNotEmpty()
+  @Min(0.01, { message: 'O valor deve ser positivo' })
   amount: number;
 
   @IsDateString()
@@ -36,14 +46,14 @@ export class CreateTransactionDto {
   @IsOptional()
   creditCardId?: string;
 
-  @IsString()
-  type: string; // 'INCOME' | 'EXPENSE'
+  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'], { message: 'Tipo deve ser INCOME, EXPENSE ou TRANSFER' })
+  type: TransactionType;
 
   @IsBoolean()
   @IsOptional()
   isFixed?: boolean;
 
-  @IsString()
+  @IsEmail({}, { message: 'Email inválido para compartilhamento' })
   @IsOptional()
   sharedWithEmail?: string;
 }

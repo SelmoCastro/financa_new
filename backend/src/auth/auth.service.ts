@@ -38,7 +38,7 @@ export class AuthService {
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     // Store a hashed version of the refresh token in the database to allow remote invalidation
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 12);
     await this.prisma.user.update({
       where: { id: userId },
       data: { hashedRefreshToken },
@@ -89,6 +89,12 @@ export class AuthService {
     );
 
     if (!refreshTokenMatches) {
+      // Reuse detection: se o refresh token nao bate, possivel roubo.
+      // Invalidar TODOS os tokens do usuario para forcar re-login.
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { hashedRefreshToken: null },
+      });
       throw new UnauthorizedException('Access Denied: Invalid Refresh Token');
     }
 
@@ -100,9 +106,11 @@ export class AuthService {
   }
 
   async register(createUserDto: CreateUserDto) {
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const user = await this.usersService.create({
-      ...createUserDto,
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
+    const { email, name } = createUserDto;
+    const user = await this.usersService.createWithEmailVerified({
+      email,
+      name: name || '',
       password: hashedPassword,
       isEmailVerified: false,
     });
@@ -200,10 +208,10 @@ export class AuthService {
       throw new BadRequestException('Reset token has expired');
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
     await this.prisma.user.update({
       where: { id: verificationToken.userId },
-      data: { password: hashedPassword },
+      data: { password: hashedPassword, hashedRefreshToken: null },
     });
 
     // Revoke token
@@ -212,6 +220,11 @@ export class AuthService {
     });
 
     return { message: 'Password has been successfully updated' };
+  }
+
+  /** Decodifica um JWT sem verificar assinatura (usado apenas para extrair userId do refresh token) */
+  decodeJwt(token: string): any {
+    return this.jwtService.decode(token);
   }
 
   async getFullProfile(userId: string) {

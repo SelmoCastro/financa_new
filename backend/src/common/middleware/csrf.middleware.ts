@@ -51,9 +51,15 @@ export class CsrfMiddleware implements NestMiddleware {
 
     // Verificar se a rota exige CSRF
     const url = req.originalUrl || req.url;
+    // Normalizar: remover prefixo /api seexistir (Vercel strip)
+    const normalizedUrl = url.replace(/^\/api/, '');
     const requiresCsrf =
       !this.safeMethods.includes(req.method) &&
-      !this.excludedPatterns.some((pattern) => url.includes(pattern));
+      !this.excludedPatterns.some((pattern) => {
+        // Match exato: /auth/login deve bater mas /transactions/auth/login nao
+        const regex = new RegExp(`(^|/)${pattern.replace(/^\//, '')}($|[/?])`);
+        return regex.test(normalizedUrl);
+      });
 
     if (!requiresCsrf) {
       return next();
