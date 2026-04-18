@@ -105,7 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                 <MessageSquareHeart className="w-4 h-4" />
                 Deixar Feedback
               </button>
-              <p className="text-[10px] font-mono text-slate-600 opacity-50">v1.4.1</p>
+              <p className="text-[10px] font-mono text-slate-600 opacity-50">v1.4.2</p>
             </div>
           )}
         </div>
