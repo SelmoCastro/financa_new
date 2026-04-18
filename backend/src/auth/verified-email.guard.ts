@@ -36,8 +36,14 @@ export class VerifiedEmailGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    // Se não tem user ou email não verificado, bloqueia com 403
-    if (!user || user.isEmailVerified !== true) {
+    // Guard global roda ANTES do AuthGuard popular request.user.
+    // Se user não existe ainda, permite e deixa o AuthGuard local lidar.
+    if (!user) {
+      return true;
+    }
+
+    // Se tem user mas email não verificado, bloqueia com 403
+    if (user.isEmailVerified !== true) {
       throw new ForbiddenException('Email verification required');
     }
 

@@ -13,11 +13,11 @@ export class AiService {
   private readonly logger = new Logger(AiService.name);
   private openai: OpenAI | null = null;
 
-  // Modelos configuráveis via .env com fallbacks gratuitos
+  // Modelos configuráveis via .env com fallbacks
   private readonly VISION_MODEL =
-    process.env.AI_VISION_MODEL || 'google/gemini-2.0-flash-exp:free';
+    process.env.AI_VISION_MODEL || 'openai/gpt-4o-mini';
   private readonly TEXT_MODEL =
-    process.env.AI_TEXT_MODEL || 'google/gemini-2.0-flash-exp:free';
+    process.env.AI_TEXT_MODEL || 'openai/gpt-4o-mini';
 
   constructor() {
     const apiKey = process.env.OPENROUTER_API_KEY;
