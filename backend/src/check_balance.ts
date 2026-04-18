@@ -24,11 +24,11 @@ async function main() {
 
   const income = transactions
     .filter((t) => t.type === 'INCOME')
-    .reduce((acc, t) => acc + t.amount, 0);
+    .reduce((acc, t) => acc + Number(t.amount), 0);
 
   const expense = transactions
     .filter((t) => t.type === 'EXPENSE')
-    .reduce((acc, t) => acc + t.amount, 0);
+    .reduce((acc, t) => acc + Number(t.amount), 0);
 
   console.log(`Renda do mês: R$ ${income.toFixed(2)}`);
   console.log(`Despesa do mês: R$ ${expense.toFixed(2)}`);
@@ -37,7 +37,7 @@ async function main() {
   console.log('\n--- DETALHES ---');
   transactions.forEach((t) => {
     console.log(
-      `[${t.date.toISOString().slice(0, 10)}] ${t.type === 'INCOME' ? '(+)' : '(-)'} ${t.description}: R$ ${t.amount.toFixed(2)} ${t.isFixed ? '[FIXO]' : ''}`,
+      `[${t.date.toISOString().slice(0, 10)}] ${t.type === 'INCOME' ? '(+)' : '(-)'} ${t.description}: R$ ${Number(t.amount).toFixed(2)} ${t.isFixed ? '[FIXO]' : ''}`,
     );
   });
 
@@ -57,7 +57,7 @@ async function main() {
     );
     if (!existsThisMonth) {
       console.log(
-        `PENDENTE: ${fixed.description} (Previsto: R$ ${fixed.amount.toFixed(2)})`,
+        `PENDENTE: ${fixed.description} (Previsto: R$ ${Number(fixed.amount).toFixed(2)})`,
       );
     }
   }

@@ -22,7 +22,7 @@ async function main() {
     transactions: transactions.map((t) => ({
       id: t.id,
       description: t.description,
-      amount: t.amount,
+      amount: Number(t.amount),
       date: t.date,
       type: t.type,
       categoryId: t.categoryId,

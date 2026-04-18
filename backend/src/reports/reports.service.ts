@@ -32,12 +32,12 @@ export class ReportsService {
     // O "Saldo Atual" reflete fielmente o saldo em caixa (soma do balance das contas),
     // ao invés de somar/subtrair todo histórico de transações que afasta o número real.
     const userAccounts = await this.prisma.account.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       select: { balance: true },
     });
 
     const balance = userAccounts.reduce(
-      (acc, account) => acc + account.balance,
+      (acc, account) => acc + Number(account.balance),
       0,
     );
 
@@ -46,6 +46,7 @@ export class ReportsService {
       by: ['type'],
       where: {
         userId,
+        deletedAt: null,
         ...filterOutTransfers,
         date: {
           gte: startOfMonth,
@@ -59,8 +60,8 @@ export class ReportsService {
     let currentExpense = 0;
 
     currentMonthGroup.forEach((g) => {
-      if (g.type === 'INCOME') currentIncome += g._sum.amount || 0;
-      else if (g.type === 'EXPENSE') currentExpense += g._sum.amount || 0;
+      if (g.type === 'INCOME') currentIncome += Number(g._sum.amount || 0);
+      else if (g.type === 'EXPENSE') currentExpense += Number(g._sum.amount || 0);
     });
 
     // 2.5 Calculate Previous Month for Trends
@@ -75,6 +76,7 @@ export class ReportsService {
       by: ['type'],
       where: {
         userId,
+        deletedAt: null,
         ...filterOutTransfers,
         date: {
           gte: startOfPrevMonth,
@@ -111,6 +113,7 @@ export class ReportsService {
       where: {
         userId,
         type: 'EXPENSE',
+        deletedAt: null,
         date: {
           gte: startOfMonth,
           lte: endOfMonth,
@@ -144,7 +147,7 @@ export class ReportsService {
     let savings = 0;
 
     const categories = await this.prisma.category.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
     });
     const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
@@ -152,7 +155,7 @@ export class ReportsService {
       const catName =
         (g.categoryId ? categoryMap.get(g.categoryId) : g.categoryLegacy) ||
         'Outros';
-      const val = g._sum.amount || 0;
+      const val = Number(g._sum.amount || 0);
 
       if (needsCategories.includes(catName)) needs += val;
       else if (wantsCategories.includes(catName)) wants += val;
@@ -192,6 +195,7 @@ export class ReportsService {
     const allTxs = await this.prisma.transaction.findMany({
       where: {
         userId,
+        deletedAt: null,
         ...filterOutTransfers,
         date: {
           gte: twelveMonthsAgo,
@@ -276,7 +280,7 @@ export class ReportsService {
 
     // 2. Metas do usuário
     const goals = await this.prisma.goal.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       select: {
         title: true,
         targetAmount: true,
@@ -287,7 +291,7 @@ export class ReportsService {
 
     // 3. Orçamentos vs Realizado
     const budgets = await this.prisma.budget.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       select: { categoryId: true, amount: true },
     });
 
@@ -299,6 +303,7 @@ export class ReportsService {
       where: {
         userId,
         type: 'EXPENSE',
+        deletedAt: null,
         date: {
           gte: targetStart,
           lte: targetEnd,
@@ -310,7 +315,7 @@ export class ReportsService {
     });
 
     const categories = await this.prisma.category.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
     });
     const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
@@ -318,12 +323,12 @@ export class ReportsService {
       category:
         (g.categoryId ? categoryMap.get(g.categoryId) : g.categoryLegacy) ||
         'Outros',
-      amount: g._sum.amount || 0,
+      amount: Number(g._sum.amount || 0),
     }));
 
     // 5. Últimas 50 transações para contexto específico da IA
     const recentTransactions = await this.prisma.transaction.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       select: {
         description: true,
         amount: true,
@@ -360,6 +365,7 @@ export class ReportsService {
       where: {
         userId,
         type: 'EXPENSE',
+        deletedAt: null,
         date: {
           gte: startOfHistory,
           lte: endOfHistory,
@@ -374,12 +380,12 @@ export class ReportsService {
     });
 
     const categories = await this.prisma.category.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
     });
     const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
     return transactions.map((t) => ({
-      amount: t.amount,
+      amount: Number(t.amount),
       date: t.date,
       category:
         (t.categoryId ? categoryMap.get(t.categoryId) : t.categoryLegacy) ||
@@ -400,6 +406,7 @@ export class ReportsService {
       where: {
         userId,
         type: 'EXPENSE',
+        deletedAt: null,
         date: {
           gte: ninetyDaysAgo,
           lte: now,

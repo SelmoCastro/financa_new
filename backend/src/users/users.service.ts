@@ -278,17 +278,17 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    // Delete all dependent records in a transaction to avoid FK constraint errors
+    // Soft delete all dependent records and hard delete non-soft-delete ones
     return this.prisma.$transaction([
       this.prisma.verificationToken.deleteMany({ where: { userId: id } }),
       this.prisma.feedback.deleteMany({ where: { userId: id } }),
       this.prisma.importedFitId.deleteMany({ where: { userId: id } }),
-      this.prisma.transaction.deleteMany({ where: { userId: id } }),
-      this.prisma.category.deleteMany({ where: { userId: id } }),
-      this.prisma.creditCard.deleteMany({ where: { userId: id } }),
-      this.prisma.account.deleteMany({ where: { userId: id } }),
-      this.prisma.budget.deleteMany({ where: { userId: id } }),
-      this.prisma.goal.deleteMany({ where: { userId: id } }),
+      this.prisma.transaction.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
+      this.prisma.category.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
+      this.prisma.creditCard.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
+      this.prisma.account.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
+      this.prisma.budget.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
+      this.prisma.goal.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
       this.prisma.user.delete({ where: { id } }),
     ]);
   }

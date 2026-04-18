@@ -5,6 +5,7 @@ import { TransferTransactionDto } from './dto/transfer-transaction.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { SocialService } from '../social/social.service';
+import { AuditService, AuditAction } from '../audit/audit.service';
 
 @Injectable()
 export class TransactionsService {
@@ -12,6 +13,7 @@ export class TransactionsService {
     private prisma: PrismaService,
     private aiService: AiService,
     private socialService: SocialService,
+    private auditService: AuditService,
   ) {}
 
   async create(createTransactionDto: CreateTransactionDto, userId: string) {
@@ -53,13 +55,16 @@ export class TransactionsService {
         });
       }
 
+      // Audit log
+      this.auditService.log(userId, AuditAction.CREATE, 'Transaction', transaction.id);
+
       return transaction;
     });
   }
 
   async getUserCategories(userId: string) {
     return this.prisma.category.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       select: { id: true, name: true, type: true, icon: true },
     });
   }
@@ -104,7 +109,7 @@ export class TransactionsService {
     let existingFitIds = new Set<string>();
     if (fitIds.length > 0) {
       const existing = await this.prisma.transaction.findMany({
-        where: { userId, fitId: { in: fitIds } },
+        where: { userId, fitId: { in: fitIds }, deletedAt: null },
         select: { fitId: true },
       });
       existingFitIds = new Set(existing.map((e) => e.fitId!));
@@ -132,6 +137,7 @@ export class TransactionsService {
     const existingContent = await this.prisma.transaction.findMany({
       where: {
         userId,
+        deletedAt: null,
         date: { gte: minDate, lte: maxDate },
       },
       select: {
@@ -314,7 +320,7 @@ export class TransactionsService {
       let existingFitIds = new Set<string>();
       if (fitIds.length > 0) {
         const existing = await tx.transaction.findMany({
-          where: { userId, fitId: { in: fitIds } },
+          where: { userId, fitId: { in: fitIds }, deletedAt: null },
           select: { fitId: true },
         });
         existingFitIds = new Set(existing.map((e) => e.fitId!));
@@ -351,11 +357,12 @@ export class TransactionsService {
       const accountDeltas: Record<string, number> = {};
       for (const t of toInsert) {
         if (t.accountId) {
+          const amt = Number(t.amount);
           const adj =
             t.type === 'INCOME'
-              ? t.amount
+              ? amt
               : t.type === 'EXPENSE'
-                ? -t.amount
+                ? -amt
                 : 0;
           accountDeltas[t.accountId] = (accountDeltas[t.accountId] || 0) + adj;
         }
@@ -375,6 +382,9 @@ export class TransactionsService {
         .map((t) => t.fitId)
         .filter(Boolean) as string[];
       await this.saveImportHistory(userId, acceptedFitIds, rejectedFitIds);
+
+      // Audit log
+      this.auditService.log(userId, AuditAction.IMPORT, 'Transaction', undefined, undefined, { importedCount: result.count });
 
       return { importedCount: result.count };
     });
@@ -438,7 +448,7 @@ export class TransactionsService {
 
   async export(userId: string): Promise<string> {
     const transactions = await this.prisma.transaction.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { date: 'desc' },
       include: { category: true },
     });
@@ -465,7 +475,7 @@ export class TransactionsService {
 
   findOne(id: string, userId: string) {
     return this.prisma.transaction.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
       include: { category: true },
     });
   }
@@ -477,18 +487,19 @@ export class TransactionsService {
   ) {
     return this.prisma.$transaction(async (tx) => {
       const oldTx = await tx.transaction.findFirst({
-        where: { id, userId },
+        where: { id, userId, deletedAt: null },
       });
 
       if (!oldTx) return null;
 
       // 1. Reverter saldo antigo se houver accountId
       if (oldTx.accountId) {
+        const oldAmount = Number(oldTx.amount);
         const revertAdj =
           oldTx.type === 'INCOME'
-            ? -oldTx.amount
+            ? -oldAmount
             : oldTx.type === 'EXPENSE'
-              ? oldTx.amount
+              ? oldAmount
               : 0;
         if (revertAdj !== 0) {
           await tx.account.updateMany({
@@ -502,7 +513,7 @@ export class TransactionsService {
       const newAmount =
         updateTransactionDto.amount !== undefined
           ? Number(updateTransactionDto.amount)
-          : oldTx.amount;
+          : Number(oldTx.amount);
       const newType = updateTransactionDto.type || oldTx.type;
 
       let newAccountId = oldTx.accountId;
@@ -539,8 +550,11 @@ export class TransactionsService {
         }
       }
 
+      // Audit log
+      this.auditService.log(userId, AuditAction.UPDATE, 'Transaction', id);
+
       return tx.transaction.findFirst({
-        where: { id, userId },
+        where: { id, userId, deletedAt: null },
         include: { category: true },
       });
     });
@@ -549,17 +563,18 @@ export class TransactionsService {
   async remove(id: string, userId: string) {
     return this.prisma.$transaction(async (tx) => {
       const oldTx = await tx.transaction.findFirst({
-        where: { id, userId },
+        where: { id, userId, deletedAt: null },
       });
 
       if (!oldTx) return { count: 0 };
 
       if (oldTx.accountId) {
+        const oldAmount = Number(oldTx.amount);
         const revertAdj =
           oldTx.type === 'INCOME'
-            ? -oldTx.amount
+            ? -oldAmount
             : oldTx.type === 'EXPENSE'
-              ? oldTx.amount
+              ? oldAmount
               : 0;
         if (revertAdj !== 0) {
           await tx.account.updateMany({
@@ -569,8 +584,12 @@ export class TransactionsService {
         }
       }
 
-      return tx.transaction.deleteMany({
+      // Audit log
+      this.auditService.log(userId, AuditAction.DELETE, 'Transaction', id);
+
+      return tx.transaction.updateMany({
         where: { id, userId },
+        data: { deletedAt: new Date() },
       });
     });
   }
@@ -584,7 +603,7 @@ export class TransactionsService {
       // 1. Ensure a "Transferência" category exists for the user
       // Search by type: 'TRANSFER' to handle both 'Transferência' and 'Transferência Recebida'
       let transferCat = await tx.category.findFirst({
-        where: { userId, type: 'TRANSFER' },
+        where: { userId, type: 'TRANSFER', deletedAt: null },
         orderBy: { createdAt: 'asc' },
       });
 
@@ -638,6 +657,9 @@ export class TransactionsService {
         where: { id: destinationAccountId, userId },
         data: { balance: { increment: amount } },
       });
+
+      // Audit log
+      this.auditService.log(userId, AuditAction.TRANSFER, 'Transaction', undefined, undefined, { sourceAccountId, destinationAccountId, amount });
 
       return { outTx, inTx };
     });

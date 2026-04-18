@@ -3,6 +3,15 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "assets": [],
+    "exclude": [
+      "src/check_accounts.ts",
+      "src/check_balance.ts",
+      "src/cleanup_tests.ts",
+      "src/compare_data.ts",
+      "src/dump_data.ts",
+      "src/fix_account_balances.ts"
+    ]
   }
 }

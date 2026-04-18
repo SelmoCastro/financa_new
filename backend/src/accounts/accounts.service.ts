@@ -18,11 +18,11 @@ export class AccountsService {
       });
 
       // 2. If initial balance is not zero, create a matching transaction record
-      const initialBalance = createAccountDto.balance || 0;
+      const initialBalance = Number(createAccountDto.balance) || 0;
       if (initialBalance !== 0) {
         // Find or create 'Saldo Inicial' category
         let category = await tx.category.findFirst({
-          where: { userId, name: 'Saldo Inicial' },
+          where: { userId, name: 'Saldo Inicial', deletedAt: null },
         });
 
         if (!category) {
@@ -62,14 +62,14 @@ export class AccountsService {
 
   async findAll(userId: string) {
     return this.prisma.account.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async findOne(id: string, userId: string) {
     const account = await this.prisma.account.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
     });
     if (!account) throw new NotFoundException('Conta não encontrada');
     return account;
@@ -77,16 +77,21 @@ export class AccountsService {
 
   async update(id: string, updateAccountDto: UpdateAccountDto, userId: string) {
     await this.findOne(id, userId);
-    return this.prisma.account.update({
-      where: { id },
+    const result = await this.prisma.account.updateMany({
+      where: { id, userId, deletedAt: null },
       data: updateAccountDto,
     });
+    if (result.count === 0) throw new NotFoundException('Conta não encontrada');
+    return this.prisma.account.findUnique({ where: { id } });
   }
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    return this.prisma.account.delete({
-      where: { id },
+    const result = await this.prisma.account.updateMany({
+      where: { id, userId, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
+    if (result.count === 0) throw new NotFoundException('Conta não encontrada');
+    return { deleted: true };
   }
 }

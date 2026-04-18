@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { AuditService, AuditAction } from '../audit/audit.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -19,15 +20,55 @@ export class AuthService {
     private jwtService: JwtService,
     private prisma: PrismaService,
     private emailService: EmailService,
+    private auditService: AuditService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findOneByEmail(email);
-    if (user && (await bcrypt.compare(pass, user.password))) {
+    if (!user) {
+      throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    // Check if account is locked
+    if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+      const remainingMs = new Date(user.lockedUntil).getTime() - Date.now();
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      throw new UnauthorizedException(
+        `Conta temporariamente bloqueada. Tente novamente em ${remainingMin} minuto(s).`,
+      );
+    }
+
+    if (await bcrypt.compare(pass, user.password)) {
+      // Successful login — reset failed attempts and lock
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null },
+      });
+      // Audit log - successful login
+      this.auditService.log(user.id, AuditAction.LOGIN, 'User', user.id);
       const { password, ...result } = user;
       return result;
     }
-    return null;
+
+    // Failed login — increment counter
+    const newAttempts = user.failedLoginAttempts + 1;
+    const updateData: { failedLoginAttempts: number; lockedUntil?: Date } = {
+      failedLoginAttempts: newAttempts,
+    };
+
+    if (newAttempts >= 5) {
+      updateData.lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: updateData,
+    });
+
+    // Audit log - failed login
+    this.auditService.log(user.id, AuditAction.LOGIN_FAILED, 'User', user.id);
+
+    throw new UnauthorizedException('Credenciais inválidas');
   }
 
   async generateTokens(userId: string, email: string, isEmailVerified: boolean) {
@@ -117,9 +158,10 @@ export class AuthService {
 
     // Gerar token de verificação de email e enviar
     const verifyToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerifyToken = await bcrypt.hash(verifyToken, 10);
     await this.prisma.verificationToken.create({
       data: {
-        token: verifyToken,
+        token: hashedVerifyToken,
         type: 'EMAIL_VERIFY',
         userId: user.id,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 horas
@@ -141,17 +183,23 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    const verificationToken = await this.prisma.verificationToken.findUnique({
-      where: { token },
+    // Find all EMAIL_VERIFY tokens and compare with bcrypt
+    // (tokens are stored hashed, so we can't look up by plaintext)
+    const candidates = await this.prisma.verificationToken.findMany({
+      where: { type: 'EMAIL_VERIFY', expiresAt: { gte: new Date() } },
       include: { user: true },
     });
 
-    if (!verificationToken || verificationToken.type !== 'EMAIL_VERIFY') {
-      throw new BadRequestException('Invalid verification token');
+    let verificationToken: typeof candidates[number] | null = null;
+    for (const candidate of candidates) {
+      if (await bcrypt.compare(token, candidate.token)) {
+        verificationToken = candidate;
+        break;
+      }
     }
 
-    if (verificationToken.expiresAt < new Date()) {
-      throw new BadRequestException('Verification token has expired');
+    if (!verificationToken) {
+      throw new BadRequestException('Invalid verification token');
     }
 
     await this.prisma.user.update({
@@ -175,9 +223,10 @@ export class AuthService {
     }
 
     const token = crypto.randomBytes(32).toString('hex');
+    const hashedToken = await bcrypt.hash(token, 10);
     await this.prisma.verificationToken.create({
       data: {
-        token,
+        token: hashedToken,
         type: 'PASSWORD_RESET',
         userId: user.id,
         expiresAt: new Date(Date.now() + 1 * 60 * 60 * 1000), // 1 hour
@@ -195,17 +244,22 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string) {
-    const verificationToken = await this.prisma.verificationToken.findUnique({
-      where: { token },
+    // Find all PASSWORD_RESET tokens and compare with bcrypt (tokens are stored hashed)
+    const candidates = await this.prisma.verificationToken.findMany({
+      where: { type: 'PASSWORD_RESET', expiresAt: { gte: new Date() } },
       include: { user: true },
     });
 
-    if (!verificationToken || verificationToken.type !== 'PASSWORD_RESET') {
-      throw new BadRequestException('Invalid reset token');
+    let verificationToken: typeof candidates[number] | null = null;
+    for (const candidate of candidates) {
+      if (await bcrypt.compare(token, candidate.token)) {
+        verificationToken = candidate;
+        break;
+      }
     }
 
-    if (verificationToken.expiresAt < new Date()) {
-      throw new BadRequestException('Reset token has expired');
+    if (!verificationToken) {
+      throw new BadRequestException('Invalid or expired reset token');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -218,6 +272,9 @@ export class AuthService {
     await this.prisma.verificationToken.deleteMany({
       where: { userId: verificationToken.userId, type: 'PASSWORD_RESET' },
     });
+
+    // Audit log - password reset
+    this.auditService.log(verificationToken.userId, AuditAction.PASSWORD_RESET, 'User', verificationToken.userId);
 
     return { message: 'Password has been successfully updated' };
   }
@@ -266,9 +323,10 @@ export class AuthService {
 
     // Generate a new verification token
     const verifyToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerifyToken = await bcrypt.hash(verifyToken, 10);
     await this.prisma.verificationToken.create({
       data: {
-        token: verifyToken,
+        token: hashedVerifyToken,
         type: 'EMAIL_VERIFY',
         userId: user.id,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 horas

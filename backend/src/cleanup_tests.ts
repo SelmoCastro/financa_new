@@ -42,10 +42,10 @@ async function main() {
 
   const income = remaining
     .filter((t) => t.type === 'INCOME')
-    .reduce((acc, t) => acc + t.amount, 0);
+    .reduce((acc, t) => acc + Number(t.amount), 0);
   const expense = remaining
     .filter((t) => t.type === 'EXPENSE')
-    .reduce((acc, t) => acc + t.amount, 0);
+    .reduce((acc, t) => acc + Number(t.amount), 0);
 
   console.log(`Novo Resumo Março/2026:`);
   console.log(`Ganhos: R$ ${income.toFixed(2)}`);

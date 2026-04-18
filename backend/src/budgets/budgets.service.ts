@@ -37,7 +37,7 @@ export class BudgetsService {
 
   async findAll(userId: string, year?: number, month?: number) {
     const budgets = await this.prisma.budget.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { amount: 'desc' },
       include: { categoryObj: true },
     });
@@ -60,6 +60,7 @@ export class BudgetsService {
             userId,
             type: 'EXPENSE',
             categoryId: budget.categoryId,
+            deletedAt: null,
             date: {
               gte: startOfMonth,
               lte: endOfMonth,
@@ -67,14 +68,15 @@ export class BudgetsService {
           },
         });
 
-        const spent = expenses._sum.amount || 0;
-        const percentage = (spent / budget.amount) * 100;
+        const spent = Number(expenses._sum.amount || 0);
+        const budgetAmount = Number(budget.amount);
+        const percentage = (spent / budgetAmount) * 100;
 
         return {
           ...budget,
           spent,
           percentage: Math.min(percentage, 100),
-          isOverBudget: spent > budget.amount,
+          isOverBudget: spent > budgetAmount,
         };
       }),
     );
@@ -100,18 +102,19 @@ export class BudgetsService {
     }
 
     await this.prisma.budget.updateMany({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
       data,
     });
     return this.prisma.budget.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
       include: { categoryObj: true },
     });
   }
 
   async remove(id: string, userId: string) {
-    return this.prisma.budget.deleteMany({
-      where: { id, userId },
+    return this.prisma.budget.updateMany({
+      where: { id, userId, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
   }
 }

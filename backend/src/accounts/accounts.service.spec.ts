@@ -10,8 +10,8 @@ describe('AccountsService', () => {
       create: jest.Mock;
       findMany: jest.Mock;
       findFirst: jest.Mock;
-      update: jest.Mock;
-      delete: jest.Mock;
+      findUnique: jest.Mock;
+      updateMany: jest.Mock;
     };
     category: {
       findFirst: jest.Mock;
@@ -67,8 +67,8 @@ describe('AccountsService', () => {
         create: jest.fn(),
         findMany: jest.fn(),
         findFirst: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
+        findUnique: jest.fn(),
+        updateMany: jest.fn(),
       },
       category: {
         findFirst: jest.fn(),
@@ -140,7 +140,7 @@ describe('AccountsService', () => {
 
         // Verify category was looked up and created
         expect(tx.category.findFirst).toHaveBeenCalledWith({
-          where: { userId, name: 'Saldo Inicial' },
+          where: { userId, name: 'Saldo Inicial', deletedAt: null },
         });
         expect(tx.category.create).toHaveBeenCalledWith({
           data: {
@@ -308,7 +308,7 @@ describe('AccountsService', () => {
 
       expect(result).toEqual(accounts);
       expect(prisma.account.findMany).toHaveBeenCalledWith({
-        where: { userId },
+        where: { userId, deletedAt: null },
         orderBy: { createdAt: 'desc' },
       });
     });
@@ -327,7 +327,7 @@ describe('AccountsService', () => {
       await service.findAll('other-user');
 
       expect(prisma.account.findMany).toHaveBeenCalledWith({
-        where: { userId: 'other-user' },
+        where: { userId: 'other-user', deletedAt: null },
         orderBy: { createdAt: 'desc' },
       });
     });
@@ -344,7 +344,7 @@ describe('AccountsService', () => {
 
       expect(result).toEqual(mockAccount);
       expect(prisma.account.findFirst).toHaveBeenCalledWith({
-        where: { id: accountId, userId },
+        where: { id: accountId, userId, deletedAt: null },
       });
     });
 
@@ -367,7 +367,7 @@ describe('AccountsService', () => {
       ).rejects.toThrow(NotFoundException);
 
       expect(prisma.account.findFirst).toHaveBeenCalledWith({
-        where: { id: accountId, userId: 'different-user' },
+        where: { id: accountId, userId: 'different-user', deletedAt: null },
       });
     });
   });
@@ -380,16 +380,17 @@ describe('AccountsService', () => {
 
     it('should update an account after verifying ownership', async () => {
       prisma.account.findFirst.mockResolvedValue(mockAccount);
-      prisma.account.update.mockResolvedValue({ ...mockAccount, ...updateDto });
+      prisma.account.updateMany.mockResolvedValue({ count: 1 });
+      prisma.account.findUnique = jest.fn().mockResolvedValue({ ...mockAccount, ...updateDto });
 
       const result = await service.update(accountId, updateDto, userId);
 
       expect(result.name).toBe('Nubank Updated');
       expect(prisma.account.findFirst).toHaveBeenCalledWith({
-        where: { id: accountId, userId },
+        where: { id: accountId, userId, deletedAt: null },
       });
-      expect(prisma.account.update).toHaveBeenCalledWith({
-        where: { id: accountId },
+      expect(prisma.account.updateMany).toHaveBeenCalledWith({
+        where: { id: accountId, userId, deletedAt: null },
         data: updateDto,
       });
     });
@@ -401,8 +402,8 @@ describe('AccountsService', () => {
         service.update(accountId, updateDto, userId),
       ).rejects.toThrow(NotFoundException);
 
-      // update should NOT have been called
-      expect(prisma.account.update).not.toHaveBeenCalled();
+      // updateMany should NOT have been called
+      expect(prisma.account.updateMany).not.toHaveBeenCalled();
     });
 
     it('should not allow updating an account belonging to another user', async () => {
@@ -412,7 +413,7 @@ describe('AccountsService', () => {
         service.update(accountId, updateDto, 'other-user'),
       ).rejects.toThrow(NotFoundException);
 
-      expect(prisma.account.update).not.toHaveBeenCalled();
+      expect(prisma.account.updateMany).not.toHaveBeenCalled();
     });
   });
 
@@ -420,18 +421,19 @@ describe('AccountsService', () => {
   // remove
   // ---------------------------------------------------------------
   describe('remove', () => {
-    it('should delete an account after verifying ownership', async () => {
+    it('should soft-delete an account after verifying ownership', async () => {
       prisma.account.findFirst.mockResolvedValue(mockAccount);
-      prisma.account.delete.mockResolvedValue(mockAccount);
+      prisma.account.updateMany.mockResolvedValue({ count: 1 });
 
       const result = await service.remove(accountId, userId);
 
-      expect(result).toEqual(mockAccount);
+      expect(result).toEqual({ deleted: true });
       expect(prisma.account.findFirst).toHaveBeenCalledWith({
-        where: { id: accountId, userId },
+        where: { id: accountId, userId, deletedAt: null },
       });
-      expect(prisma.account.delete).toHaveBeenCalledWith({
-        where: { id: accountId },
+      expect(prisma.account.updateMany).toHaveBeenCalledWith({
+        where: { id: accountId, userId, deletedAt: null },
+        data: { deletedAt: expect.any(Date) },
       });
     });
 
@@ -442,7 +444,7 @@ describe('AccountsService', () => {
         NotFoundException,
       );
 
-      expect(prisma.account.delete).not.toHaveBeenCalled();
+      expect(prisma.account.updateMany).not.toHaveBeenCalled();
     });
 
     it('should not allow deleting an account belonging to another user', async () => {
@@ -452,7 +454,7 @@ describe('AccountsService', () => {
         service.remove(accountId, 'other-user'),
       ).rejects.toThrow(NotFoundException);
 
-      expect(prisma.account.delete).not.toHaveBeenCalled();
+      expect(prisma.account.updateMany).not.toHaveBeenCalled();
     });
   });
 

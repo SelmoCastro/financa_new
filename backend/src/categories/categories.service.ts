@@ -109,7 +109,7 @@ export class CategoriesService {
    */
   async findAll(userId: string) {
     const existing = await this.prisma.category.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { name: 'asc' },
     });
 
@@ -126,7 +126,7 @@ export class CategoriesService {
       });
       // Re-fetch after seeding
       return this.prisma.category.findMany({
-        where: { userId },
+        where: { userId, deletedAt: null },
         orderBy: { name: 'asc' },
       });
     }
@@ -136,7 +136,7 @@ export class CategoriesService {
 
   async findOne(id: string, userId: string) {
     const category = await this.prisma.category.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
     });
     if (!category) throw new NotFoundException('Categoria não encontrada');
     return category;
@@ -148,16 +148,21 @@ export class CategoriesService {
     userId: string,
   ) {
     await this.findOne(id, userId);
-    return this.prisma.category.update({
-      where: { id },
+    const result = await this.prisma.category.updateMany({
+      where: { id, userId, deletedAt: null },
       data: updateCategoryDto,
     });
+    if (result.count === 0) throw new NotFoundException('Categoria não encontrada');
+    return this.prisma.category.findUnique({ where: { id } });
   }
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    return this.prisma.category.delete({
-      where: { id },
+    const result = await this.prisma.category.updateMany({
+      where: { id, userId, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
+    if (result.count === 0) throw new NotFoundException('Categoria não encontrada');
+    return { deleted: true };
   }
 }

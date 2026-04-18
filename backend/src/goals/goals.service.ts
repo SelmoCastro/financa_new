@@ -20,27 +20,28 @@ export class GoalsService {
 
   findAll(userId: string) {
     return this.prisma.goal.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   findOne(id: string, userId: string) {
     return this.prisma.goal.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
     });
   }
 
   update(id: string, updateGoalDto: UpdateGoalDto, userId: string) {
     return this.prisma.goal.updateMany({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
       data: updateGoalDto,
     });
   }
 
   remove(id: string, userId: string) {
-    return this.prisma.goal.deleteMany({
-      where: { id, userId },
+    return this.prisma.goal.updateMany({
+      where: { id, userId, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
   }
 }

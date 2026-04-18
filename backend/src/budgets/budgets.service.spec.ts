@@ -164,7 +164,7 @@ describe('BudgetsService', () => {
       const result = await service.findAll(userId);
 
       expect(mockPrismaService.budget.findMany).toHaveBeenCalledWith({
-        where: { userId },
+        where: { userId, deletedAt: null },
         orderBy: { amount: 'desc' },
         include: { categoryObj: true },
       });
@@ -285,11 +285,11 @@ describe('BudgetsService', () => {
       const result = await service.update(budgetId, updateBudgetDto, userId);
 
       expect(mockPrismaService.budget.updateMany).toHaveBeenCalledWith({
-        where: { id: budgetId, userId },
+        where: { id: budgetId, userId, deletedAt: null },
         data: { amount: 2000 },
       });
       expect(mockPrismaService.budget.findFirst).toHaveBeenCalledWith({
-        where: { id: budgetId, userId },
+        where: { id: budgetId, userId, deletedAt: null },
         include: { categoryObj: true },
       });
       expect(result).toEqual(updatedBudget);
@@ -375,21 +375,22 @@ describe('BudgetsService', () => {
   /* ── REMOVE ─────────────────────────────────────────────────────── */
 
   describe('remove', () => {
-    it('should delete a budget scoped by userId', async () => {
-      const deleteResult = { count: 1 };
-      mockPrismaService.budget.deleteMany.mockResolvedValue(deleteResult);
+    it('should soft-delete a budget scoped by userId', async () => {
+      const softDeleteResult = { count: 1 };
+      mockPrismaService.budget.updateMany.mockResolvedValue(softDeleteResult);
 
       const result = await service.remove(budgetId, userId);
 
-      expect(mockPrismaService.budget.deleteMany).toHaveBeenCalledWith({
-        where: { id: budgetId, userId },
+      expect(mockPrismaService.budget.updateMany).toHaveBeenCalledWith({
+        where: { id: budgetId, userId, deletedAt: null },
+        data: { deletedAt: expect.any(Date) },
       });
-      expect(result).toEqual(deleteResult);
+      expect(result).toEqual(softDeleteResult);
     });
 
     it('should return count 0 when no budget matches id+userId', async () => {
-      const deleteResult = { count: 0 };
-      mockPrismaService.budget.deleteMany.mockResolvedValue(deleteResult);
+      const softDeleteResult = { count: 0 };
+      mockPrismaService.budget.updateMany.mockResolvedValue(softDeleteResult);
 
       const result = await service.remove('non-existent-id', userId);
 

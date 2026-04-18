@@ -66,9 +66,19 @@ export class SubscriptionService {
   }
 
   async cancel(userId: string) {
-    return this.prisma.subscription.update({
+    const result = await this.prisma.subscription.update({
       where: { userId },
       data: { status: 'canceled', plan: 'free' },
     });
+
+    // Reset AI request count to free tier limits on downgrade
+    // Delete today's AI request logs so the user starts fresh with free tier limits
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    await this.prisma.aiRequestLog.deleteMany({
+      where: { userId, createdAt: { gte: today } },
+    });
+
+    return result;
   }
 }

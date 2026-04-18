@@ -24,12 +24,22 @@ export class SocialService {
       originalTransactionId?: string;
     },
   ) {
-    // 1. Check if recipient exists
+    // 1. Verify originalTransactionId belongs to sender (if provided)
+    if (data.originalTransactionId) {
+      const originalTx = await this.prisma.transaction.findFirst({
+        where: { id: data.originalTransactionId, userId: senderId, deletedAt: null },
+      });
+      if (!originalTx) {
+        throw new BadRequestException('Transação original não encontrada ou não pertence ao remetente');
+      }
+    }
+
+    // 2. Check if recipient exists
     const recipient = await this.prisma.user.findUnique({
       where: { email: data.recipientEmail },
     });
 
-    // 2. Create the invite (even if recipient doesn't exist yet, we store the email)
+    // 3. Create the invite (even if recipient doesn't exist yet, we store the email)
     const invite = await this.prisma.transactionInvite.create({
       data: {
         amount: data.amount,
@@ -80,6 +90,26 @@ export class SocialService {
       throw new NotFoundException('Convite não encontrado ou já processado');
 
     return this.prisma.$transaction(async (tx) => {
+      // Verify that accountId belongs to this user
+      if (accountId) {
+        const account = await tx.account.findFirst({
+          where: { id: accountId, userId, deletedAt: null },
+        });
+        if (!account) {
+          throw new BadRequestException('Conta não encontrada ou não pertence ao usuário');
+        }
+      }
+
+      // Verify that categoryId belongs to this user
+      if (categoryId) {
+        const category = await tx.category.findFirst({
+          where: { id: categoryId, userId, deletedAt: null },
+        });
+        if (!category) {
+          throw new BadRequestException('Categoria não encontrada ou não pertence ao usuário');
+        }
+      }
+
       // 1. Create the mirrored transaction
       // Mantemos o mesmo tipo original: uma Despesa de Pizza compartilhada é Despesa para ambos.
 
@@ -88,7 +118,7 @@ export class SocialService {
           userId,
           accountId,
           categoryId,
-          amount: invite.amount,
+          amount: Number(invite.amount),
           description: invite.description,
           date: invite.date,
           type: invite.type,
@@ -96,8 +126,9 @@ export class SocialService {
       });
 
       // Atualizar Saldo da Conta
+      const inviteAmount = Number(invite.amount);
       const adjustment =
-        invite.type === 'INCOME' ? invite.amount : -invite.amount;
+        invite.type === 'INCOME' ? inviteAmount : -inviteAmount;
       await tx.account.updateMany({
         where: { id: accountId, userId },
         data: { balance: { increment: adjustment } },
@@ -113,7 +144,7 @@ export class SocialService {
       const recipient = await tx.user.findUnique({ where: { id: userId } });
       await this.notifications.create(invite.senderId, {
         title: 'Lançamento Aceito',
-        message: `${recipient?.name || recipient?.email} aceitou seu lançamento compartilhado de R$ ${invite.amount.toLocaleString('pt-BR')}.`,
+        message: `${recipient?.name || recipient?.email} aceitou seu lançamento compartilhado de R$ ${inviteAmount.toLocaleString('pt-BR')}.`,
         type: 'INVITE_ACCEPTED',
         metadata: { inviteId: invite.id },
       });

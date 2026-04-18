@@ -23,6 +23,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { SocialModule } from './social/social.module';
 import { VerifiedEmailGuard } from './auth/verified-email.guard';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
     NotificationsModule,
     SocialModule,
     SubscriptionModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [

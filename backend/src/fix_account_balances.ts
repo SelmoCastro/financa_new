@@ -21,16 +21,16 @@ async function main() {
 
     const income = transactions
       .filter((t) => t.type === 'INCOME')
-      .reduce((acc, t) => acc + t.amount, 0);
+      .reduce((acc, t) => acc + Number(t.amount), 0);
 
     const expense = transactions
       .filter((t) => t.type === 'EXPENSE')
-      .reduce((acc, t) => acc + t.amount, 0);
+      .reduce((acc, t) => acc + Number(t.amount), 0);
 
     const realBalance = income - expense;
 
     console.log(
-      `Sincronizando ${account.name}: R$ ${account.balance.toFixed(2)} -> R$ ${realBalance.toFixed(2)}`,
+      `Sincronizando ${account.name}: R$ ${Number(account.balance).toFixed(2)} -> R$ ${realBalance.toFixed(2)}`,
     );
 
     await prisma.account.update({

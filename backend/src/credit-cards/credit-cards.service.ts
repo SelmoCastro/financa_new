@@ -18,7 +18,7 @@ export class CreditCardsService {
 
   async findAll(userId: string) {
     return this.prisma.creditCard.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       include: { account: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -26,7 +26,7 @@ export class CreditCardsService {
 
   async findOne(id: string, userId: string) {
     const creditCard = await this.prisma.creditCard.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
       include: { account: true },
     });
     if (!creditCard)
@@ -40,16 +40,21 @@ export class CreditCardsService {
     userId: string,
   ) {
     await this.findOne(id, userId);
-    return this.prisma.creditCard.update({
-      where: { id },
+    const result = await this.prisma.creditCard.updateMany({
+      where: { id, userId, deletedAt: null },
       data: updateCreditCardDto,
     });
+    if (result.count === 0) throw new NotFoundException('Cartão de crédito não encontrado');
+    return this.prisma.creditCard.findUnique({ where: { id } });
   }
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    return this.prisma.creditCard.delete({
-      where: { id },
+    const result = await this.prisma.creditCard.updateMany({
+      where: { id, userId, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
+    if (result.count === 0) throw new NotFoundException('Cartão de crédito não encontrado');
+    return { deleted: true };
   }
 }
