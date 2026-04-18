@@ -16,7 +16,7 @@ async function main() {
 
   for (const account of accounts) {
     const transactions = await prisma.transaction.findMany({
-      where: { accountId: account.id },
+      where: { accountId: account.id, deletedAt: null },
     });
 
     const income = transactions

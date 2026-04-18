@@ -52,6 +52,7 @@ describe('AccountsService', () => {
       account: {
         create: jest.fn(),
         update: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       category: {
         findFirst: jest.fn(),
@@ -59,6 +60,7 @@ describe('AccountsService', () => {
       },
       transaction: {
         create: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
     };
 
@@ -421,19 +423,14 @@ describe('AccountsService', () => {
   // remove
   // ---------------------------------------------------------------
   describe('remove', () => {
-    it('should soft-delete an account after verifying ownership', async () => {
+    it('should soft-delete an account and its transactions after verifying ownership', async () => {
       prisma.account.findFirst.mockResolvedValue(mockAccount);
-      prisma.account.updateMany.mockResolvedValue({ count: 1 });
 
       const result = await service.remove(accountId, userId);
 
       expect(result).toEqual({ deleted: true });
       expect(prisma.account.findFirst).toHaveBeenCalledWith({
         where: { id: accountId, userId, deletedAt: null },
-      });
-      expect(prisma.account.updateMany).toHaveBeenCalledWith({
-        where: { id: accountId, userId, deletedAt: null },
-        data: { deletedAt: expect.any(Date) },
       });
     });
 

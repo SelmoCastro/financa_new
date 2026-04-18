@@ -4,6 +4,8 @@ import {
   IsDateString,
   IsOptional,
   IsNotEmpty,
+  Min,
+  Max,
 } from 'class-validator';
 
 export class TransferTransactionDto {
@@ -16,6 +18,8 @@ export class TransferTransactionDto {
   destinationAccountId: string;
 
   @IsNumber()
+  @Min(0.01, { message: 'O valor deve ser positivo' })
+  @Max(9999999999999.99)
   amount: number;
 
   @IsDateString()

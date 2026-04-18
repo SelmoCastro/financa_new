@@ -87,11 +87,66 @@ export class AccountsService {
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    const result = await this.prisma.account.updateMany({
-      where: { id, userId, deletedAt: null },
-      data: { deletedAt: new Date() },
+    return this.prisma.$transaction(async (tx) => {
+      // Soft-delete all transactions belonging to this account
+      await tx.transaction.updateMany({
+        where: { accountId: id, userId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      // Soft-delete the account
+      const result = await tx.account.updateMany({
+        where: { id, userId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      if (result.count === 0) throw new NotFoundException('Conta não encontrada');
+      return { deleted: true };
     });
-    if (result.count === 0) throw new NotFoundException('Conta não encontrada');
-    return { deleted: true };
+  }
+
+  /**
+   * Reconcile account balance from transaction history.
+   * Recalculates the correct balance by summing all active (non-soft-deleted) transactions.
+   */
+  async reconcile(id: string, userId: string) {
+    const account = await this.findOne(id, userId);
+
+    // Sum all active transactions for this account
+    const result = await this.prisma.transaction.aggregate({
+      where: { accountId: id, userId, deletedAt: null },
+      _sum: { amount: true },
+    });
+
+    // Calculate correct balance: INCOME adds, EXPENSE subtracts
+    const transactions = await this.prisma.transaction.findMany({
+      where: { accountId: id, userId, deletedAt: null },
+      select: { amount: true, type: true },
+    });
+
+    let calculatedBalance = 0;
+    for (const tx of transactions) {
+      const amt = Number(tx.amount);
+      if (tx.type === 'INCOME') calculatedBalance += amt;
+      else if (tx.type === 'EXPENSE') calculatedBalance -= amt;
+    }
+
+    const currentBalance = Number(account.balance);
+    const drift = calculatedBalance - currentBalance;
+
+    if (drift !== 0) {
+      // Fix the balance
+      await this.prisma.account.update({
+        where: { id },
+        data: { balance: { increment: drift } },
+      });
+    }
+
+    return {
+      accountId: id,
+      previousBalance: currentBalance,
+      calculatedBalance,
+      drift,
+      fixed: drift !== 0,
+      transactionCount: transactions.length,
+    };
   }
 }

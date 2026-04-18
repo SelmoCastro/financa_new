@@ -5,6 +5,9 @@ import {
   IsOptional,
   IsBoolean,
   IsArray,
+  Min,
+  IsIn,
+  Max,
 } from 'class-validator';
 
 export class ImportValidateTransactionDto {
@@ -12,12 +15,14 @@ export class ImportValidateTransactionDto {
   description: string;
 
   @IsNumber()
+  @Min(0.01)
   amount: number;
 
   @IsDateString()
   date: Date;
 
   @IsString()
+  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'])
   type: string;
 
   @IsString()
@@ -34,12 +39,15 @@ export class ImportConfirmTransactionDto {
   description: string;
 
   @IsNumber()
+  @Min(0.01)
+  @Max(9999999999999.99)
   amount: number;
 
   @IsDateString()
   date: Date;
 
   @IsString()
+  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'])
   type: string;
 
   @IsString()

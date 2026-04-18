@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { TransferTransactionDto } from './dto/transfer-transaction.dto';
@@ -19,6 +19,9 @@ export class TransactionsService {
   async create(createTransactionDto: CreateTransactionDto, userId: string) {
     const amount = Number(createTransactionDto.amount);
     const date = new Date(createTransactionDto.date);
+    if (date > new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) {
+      throw new BadRequestException('Data não pode ser mais que 2 dias no futuro');
+    }
     const { type, accountId, categoryId, creditCardId } = createTransactionDto;
 
     // Validate FK ownership: accountId, categoryId, creditCardId must belong to the user
@@ -36,6 +39,16 @@ export class TransactionsService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      // CRITICAL: Balance check + row lock before EXPENSE to prevent overdraft
+      if (type === 'EXPENSE' && accountId) {
+        const rows = await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+        const account = rows[0];
+        if (!account) throw new NotFoundException('Account not found');
+        if (Number(account.balance) < amount) {
+          throw new BadRequestException('Saldo insuficiente');
+        }
+      }
+
       const transaction = await tx.transaction.create({
         data: {
           ...createTransactionDto,
@@ -328,6 +341,22 @@ export class TransactionsService {
       return { importedCount: 0 };
     }
 
+    // Validate all amounts are positive
+    for (const t of transactionsData) {
+      const amt = Number(t.amount);
+      if (!amt || amt <= 0) {
+        throw new BadRequestException('Import amounts must be positive');
+      }
+    }
+
+    // Validate no transaction dates are more than 2 days in the future
+    const maxFutureDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    for (const t of transactionsData) {
+      if (new Date(t.date) > maxFutureDate) {
+        throw new BadRequestException('Transaction dates cannot be more than 2 days in the future');
+      }
+    }
+
     // Validate FK ownership for all imported transactions
     const uniqueAccountIds = [...new Set(transactionsData.map((t) => t.accountId).filter(Boolean))];
     const uniqueCategoryIds = [...new Set(transactionsData.map((t) => t.categoryId).filter(Boolean))];
@@ -436,7 +465,7 @@ export class TransactionsService {
       const acceptedFitIds = toInsert
         .map((t) => t.fitId)
         .filter(Boolean) as string[];
-      await this.saveImportHistory(userId, acceptedFitIds, rejectedFitIds);
+      await this.saveImportHistory(userId, acceptedFitIds, rejectedFitIds, tx);
 
       // Audit log
       this.auditService.log(userId, AuditAction.IMPORT, 'Transaction', undefined, undefined, { importedCount: result.count });
@@ -453,12 +482,14 @@ export class TransactionsService {
     userId: string,
     acceptedFitIds: string[],
     rejectedFitIds: string[],
+    tx?: any, // Prisma transaction client
   ) {
+    const client = tx || this.prisma;
     const upserts: Promise<any>[] = [];
 
     for (const fitId of acceptedFitIds) {
       upserts.push(
-        this.prisma.importedFitId.upsert({
+        client.importedFitId.upsert({
           where: { userId_fitId: { userId, fitId } },
           create: { fitId, userId, status: 'ACCEPTED' },
           update: { status: 'ACCEPTED' },
@@ -469,7 +500,7 @@ export class TransactionsService {
     for (const fitId of rejectedFitIds) {
       // Só gravamos REJECTED se não foi ACCEPTED antes (não sobreescrevemos uma confirmação)
       upserts.push(
-        this.prisma.importedFitId.upsert({
+        client.importedFitId.upsert({
           where: { userId_fitId: { userId, fitId } },
           create: { fitId, userId, status: 'REJECTED' },
           update: { status: 'REJECTED' }, // Se um dia foi aceito e o usuário deletou, não mudamos o status retroativamente
@@ -547,6 +578,11 @@ export class TransactionsService {
 
       if (!oldTx) return null;
 
+      // Lock the old account row to prevent concurrent balance modifications
+      if (oldTx.accountId) {
+        await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${oldTx.accountId} FOR UPDATE`;
+      }
+
       // 1. Reverter saldo antigo se houver accountId
       if (oldTx.accountId) {
         const oldAmount = Number(oldTx.amount);
@@ -574,6 +610,11 @@ export class TransactionsService {
       let newAccountId = oldTx.accountId;
       if (updateTransactionDto.accountId !== undefined) {
         newAccountId = updateTransactionDto.accountId; // Pode ser null se o cliente remover a conta na edição
+      }
+
+      // Lock the new account row if it's different from the old one
+      if (newAccountId && newAccountId !== oldTx.accountId) {
+        await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${newAccountId} FOR UPDATE`;
       }
 
       await tx.transaction.updateMany({
@@ -623,6 +664,13 @@ export class TransactionsService {
 
       if (!oldTx) return { count: 0 };
 
+      // Prevent double-delete - use conditional soft delete
+      const deleteResult = await tx.transaction.updateMany({
+        where: { id, userId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      if (deleteResult.count === 0) return { count: 0 };
+
       if (oldTx.accountId) {
         const oldAmount = Number(oldTx.amount);
         const revertAdj =
@@ -642,19 +690,30 @@ export class TransactionsService {
       // Audit log
       this.auditService.log(userId, AuditAction.DELETE, 'Transaction', id);
 
-      return tx.transaction.updateMany({
-        where: { id, userId },
-        data: { deletedAt: new Date() },
-      });
+      return { count: deleteResult.count };
     });
   }
 
   async transfer(transferDto: TransferTransactionDto, userId: string) {
     const amount = Number(transferDto.amount);
     const date = new Date(transferDto.date);
+    if (date > new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) {
+      throw new BadRequestException('Data não pode ser mais que 2 dias no futuro');
+    }
     const { sourceAccountId, destinationAccountId, description } = transferDto;
 
     return this.prisma.$transaction(async (tx) => {
+      // CRITICAL: Balance check + row lock for source account before transfer
+      const sourceRows = await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${sourceAccountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+      const sourceAccount = sourceRows[0];
+      if (!sourceAccount) throw new NotFoundException('Conta de origem não encontrada');
+      if (Number(sourceAccount.balance) < amount) {
+        throw new BadRequestException('Saldo insuficiente para transferência');
+      }
+
+      // Lock the destination account row too
+      await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${destinationAccountId} AND "userId" = ${userId} FOR UPDATE`;
+
       // 1. Ensure a "Transferência" category exists for the user
       // Search by type: 'TRANSFER' to handle both 'Transferência' and 'Transferência Recebida'
       let transferCat = await tx.category.findFirst({

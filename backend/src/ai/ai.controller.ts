@@ -12,6 +12,7 @@ import { AiService } from './ai.service';
 import { ReportsService } from '../reports/reports.service';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 import { AiRequestGuard } from '../subscription/ai-request.guard';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller({
   path: 'ai',
@@ -22,6 +23,7 @@ export class AiController {
   constructor(
     private readonly aiService: AiService,
     private readonly reportsService: ReportsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Get('insights')
@@ -41,6 +43,7 @@ export class AiController {
 
     // Gera os insights usando o perfil como contexto (ajustando para o mês se necessário)
     const insights = await this.aiService.getFinancialInsights(profile);
+    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'insights' } });
 
     return { insights };
   }
@@ -54,6 +57,7 @@ export class AiController {
     const profile = await this.reportsService.getFinancialProfile(userId);
 
     const response = await this.aiService.chat(message, profile);
+    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'chat' } });
 
     return { response };
   }
@@ -65,6 +69,7 @@ export class AiController {
     const historicalData =
       await this.reportsService.getHistoricalSpending(userId);
     const forecast = await this.aiService.getSpendingForecast(historicalData);
+    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'forecast' } });
 
     return { forecast };
   }
@@ -77,6 +82,7 @@ export class AiController {
       await this.reportsService.getRecentTransactionsForAudit(userId);
     const auditResult =
       await this.aiService.findRecurringSubscriptions(recentTxs);
+    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'subscriptions' } });
 
     return { subscriptions: auditResult };
   }

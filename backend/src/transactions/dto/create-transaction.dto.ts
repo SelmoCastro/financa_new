@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   Min,
+  Max,
   IsEmail,
 } from 'class-validator';
 
@@ -25,6 +26,7 @@ export class CreateTransactionDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0.01, { message: 'O valor deve ser positivo' })
+  @Max(9999999999999.99)
   amount: number;
 
   @IsDateString()

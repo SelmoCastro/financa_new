@@ -71,8 +71,8 @@ export class AuthService {
     throw new UnauthorizedException('Credenciais inválidas');
   }
 
-  async generateTokens(userId: string, email: string, isEmailVerified: boolean) {
-    const payload = { sub: userId, email, isEmailVerified };
+  async generateTokens(userId: string, email: string, isEmailVerified: boolean, isAdmin: boolean = false) {
+    const payload = { sub: userId, email, isEmailVerified, isAdmin };
 
     // Build separate tokens
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
@@ -92,7 +92,7 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified);
+    const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified, user.isAdmin);
 
     return {
       access_token: tokens.accessToken, // Keeping for backward compatibility with mobile initially
@@ -139,7 +139,7 @@ export class AuthService {
       throw new UnauthorizedException('Access Denied: Invalid Refresh Token');
     }
 
-    const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified);
+    const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified, user.isAdmin);
     return {
       access_token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
@@ -186,7 +186,7 @@ export class AuthService {
     // Find all EMAIL_VERIFY tokens and compare with bcrypt
     // (tokens are stored hashed, so we can't look up by plaintext)
     const candidates = await this.prisma.verificationToken.findMany({
-      where: { type: 'EMAIL_VERIFY', expiresAt: { gte: new Date() } },
+      where: { type: 'EMAIL_VERIFY', expiresAt: { gte: new Date() }, createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
       include: { user: true },
     });
 
@@ -222,6 +222,20 @@ export class AuthService {
       };
     }
 
+    // Per-user rate limit: max 1 reset email per 5 minutes
+    const recentToken = await this.prisma.verificationToken.findFirst({
+      where: {
+        userId: user.id,
+        type: 'PASSWORD_RESET',
+        createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) },
+      },
+    });
+    if (recentToken) {
+      return {
+        message: 'If that email is registered, a reset link will be sent.',
+      };
+    }
+
     const token = crypto.randomBytes(32).toString('hex');
     const hashedToken = await bcrypt.hash(token, 10);
     await this.prisma.verificationToken.create({
@@ -246,7 +260,7 @@ export class AuthService {
   async resetPassword(token: string, newPassword: string) {
     // Find all PASSWORD_RESET tokens and compare with bcrypt (tokens are stored hashed)
     const candidates = await this.prisma.verificationToken.findMany({
-      where: { type: 'PASSWORD_RESET', expiresAt: { gte: new Date() } },
+      where: { type: 'PASSWORD_RESET', expiresAt: { gte: new Date() }, createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) } },
       include: { user: true },
     });
 

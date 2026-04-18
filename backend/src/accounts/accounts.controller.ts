@@ -39,6 +39,12 @@ export class AccountsController {
     return this.accountsService.findOne(id, req.user.userId);
   }
 
+  @Post(':id/reconcile')
+  @RequireVerifiedEmail()
+  async reconcile(@Param('id') id: string, @Request() req) {
+    return this.accountsService.reconcile(id, req.user.userId);
+  }
+
   @Patch(':id')
   @RequireVerifiedEmail()
   update(

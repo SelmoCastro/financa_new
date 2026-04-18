@@ -10,14 +10,18 @@ export function configureApp(app: INestApplication) {
   // CORS (Aceita Regex)
   const frontendUrl =
     process.env.FRONTEND_URL || 'https://finanzaai.tech';
+  const isProduction = process.env.NODE_ENV === 'production';
   const allowedOriginsCORS = [
     frontendUrl,
     'http://localhost:5173',
     'http://localhost:3000',
-    /\.vercel\.app$/,
-    /\.finanzaai\.tech$/,
+    // Only allow specific Vercel deploys in production (prevent wildcard subdomain abuse)
+    ...(isProduction
+      ? [/^https:\/\/financa-new-[a-z0-9-]+\.vercel\.app$/, /finanzaai\.tech$/]
+      : [/\.vercel\.app$/, /\.finanzaai\.tech$/]),
     /^exp:\/\//,
-    /^http:\/\/192\.168\.\d+\.\d+:\d+$/,
+    // Local network only in development
+    ...(!isProduction ? [/^http:\/\/192\.168\.\d+\.\d+:\d+$/] : []),
   ];
 
   // CSP (Aceita Wildcard mas não Regex)

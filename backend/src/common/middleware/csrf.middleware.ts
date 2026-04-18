@@ -43,7 +43,7 @@ export class CsrfMiddleware implements NestMiddleware {
       res.cookie('csrf-token', csrfToken, {
         httpOnly: false, // Front precisa ler via document.cookie
         secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24h
         path: '/',
       });
