@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { AuditService } from './audit.service';
 import { AuthGuard } from '@nestjs/passport';
 import { AuditAction } from './audit.service';
@@ -26,13 +26,16 @@ export class AuditController {
   }
 
   @Get('admin')
-  @UseGuards(AuthGuard('jwt'))
   async getAllLogs(
+    @Request() req: any,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('resource') resource?: string,
     @Query('action') action?: string,
   ) {
+    if (!req.user.isAdmin) {
+      throw new ForbiddenException('Admin access required');
+    }
     return this.auditService.findAll(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 50,

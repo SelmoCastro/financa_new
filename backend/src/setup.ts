@@ -54,13 +54,13 @@ export function configureApp(app: INestApplication) {
           defaultSrc: ["'self'"],
           scriptSrc: [
             "'self'",
-            "'unsafe-inline'",
+            ...(process.env.NODE_ENV !== 'production' ? ["'unsafe-inline'"] : []),
             'https://unpkg.com',
             'https://esm.sh',
           ], // Allow if needed for Swagger or frontend
           styleSrc: [
             "'self'",
-            "'unsafe-inline'",
+            ...(process.env.NODE_ENV !== 'production' ? ["'unsafe-inline'"] : []),
             'https://fonts.googleapis.com',
           ],
           imgSrc: ["'self'", 'data:', 'https:'],

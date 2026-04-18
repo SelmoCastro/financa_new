@@ -9,16 +9,16 @@ export class SubscriptionController {
 
   @Get()
   async getMySubscription(@Request() req: any) {
-    return this.subscriptionService.getSubscription(req.user.id);
+    return this.subscriptionService.getSubscription(req.user.userId);
   }
 
   @Get('limits')
   async getMyLimits(@Request() req: any) {
-    return this.subscriptionService.getLimits(req.user.id);
+    return this.subscriptionService.getLimits(req.user.userId);
   }
 
   @Post('cancel')
   async cancelSubscription(@Request() req: any) {
-    return this.subscriptionService.cancel(req.user.id);
+    return this.subscriptionService.cancel(req.user.userId);
   }
 }

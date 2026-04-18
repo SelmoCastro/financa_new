@@ -30,6 +30,7 @@ async function bootstrap() {
     console.log('Iniciando NestFactory...');
 
     const app = await NestFactory.create(AppModule);
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
     console.log('NestFactory criado com sucesso. Configurando o App...');
 
     configureApp(app);

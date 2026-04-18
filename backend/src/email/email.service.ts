@@ -111,6 +111,12 @@ export class EmailService implements OnModuleInit {
     await this.sendEmail(email, subject, html);
   }
 
+  private maskEmail(email: string): string {
+    const [local, domain] = email.split('@');
+    if (!domain) return '***';
+    return `${local[0]}${'*'.repeat(Math.max(0, local.length - 1))}@${domain}`;
+  }
+
   private async sendEmail(to: string, subject: string, html: string) {
     // Prioridade 1: Resend
     if (this.useResend && this.resend) {
@@ -130,7 +136,7 @@ export class EmailService implements OnModuleInit {
           }
           return;
         }
-        this.logger.log(`✅ Email sent to ${to} via Resend`);
+        this.logger.log(`✅ Email sent to ${this.maskEmail(to)} via Resend`);
         return;
       } catch (error) {
         this.logger.error(`Resend exception: ${error.message}`);
@@ -158,9 +164,9 @@ export class EmailService implements OnModuleInit {
         subject,
         html,
       });
-      this.logger.log(`✅ Email sent to ${to} via SMTP`);
+      this.logger.log(`✅ Email sent to ${this.maskEmail(to)} via SMTP`);
     } catch (error) {
-      this.logger.error(`SMTP error sending to ${to}: ${error.message}`);
+      this.logger.error(`SMTP error sending to ${this.maskEmail(to)}: ${error.message}`);
     }
   }
 

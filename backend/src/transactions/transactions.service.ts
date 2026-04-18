@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { TransferTransactionDto } from './dto/transfer-transaction.dto';
@@ -19,7 +19,21 @@ export class TransactionsService {
   async create(createTransactionDto: CreateTransactionDto, userId: string) {
     const amount = Number(createTransactionDto.amount);
     const date = new Date(createTransactionDto.date);
-    const { type, accountId } = createTransactionDto;
+    const { type, accountId, categoryId, creditCardId } = createTransactionDto;
+
+    // Validate FK ownership: accountId, categoryId, creditCardId must belong to the user
+    if (accountId) {
+      const account = await this.prisma.account.findFirst({ where: { id: accountId, userId } });
+      if (!account) throw new NotFoundException('Account not found or does not belong to user');
+    }
+    if (categoryId) {
+      const category = await this.prisma.category.findFirst({ where: { id: categoryId, userId } });
+      if (!category) throw new NotFoundException('Category not found or does not belong to user');
+    }
+    if (creditCardId) {
+      const card = await this.prisma.creditCard.findFirst({ where: { id: creditCardId, userId } });
+      if (!card) throw new NotFoundException('Credit card not found or does not belong to user');
+    }
 
     return this.prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.create({
@@ -312,6 +326,47 @@ export class TransactionsService {
         await this.saveImportHistory(userId, [], rejectedFitIds);
       }
       return { importedCount: 0 };
+    }
+
+    // Validate FK ownership for all imported transactions
+    const uniqueAccountIds = [...new Set(transactionsData.map((t) => t.accountId).filter(Boolean))];
+    const uniqueCategoryIds = [...new Set(transactionsData.map((t) => t.categoryId).filter(Boolean))];
+    const uniqueCreditCardIds = [...new Set(transactionsData.map((t) => t.creditCardId).filter(Boolean))];
+
+    if (uniqueAccountIds.length > 0) {
+      const ownedAccounts = await this.prisma.account.findMany({
+        where: { id: { in: uniqueAccountIds }, userId },
+        select: { id: true },
+      });
+      const ownedAccountSet = new Set(ownedAccounts.map((a) => a.id));
+      const invalidIds = uniqueAccountIds.filter((id) => !ownedAccountSet.has(id));
+      if (invalidIds.length > 0) {
+        throw new ForbiddenException('One or more accountIds do not belong to the authenticated user');
+      }
+    }
+
+    if (uniqueCategoryIds.length > 0) {
+      const ownedCategories = await this.prisma.category.findMany({
+        where: { id: { in: uniqueCategoryIds }, userId },
+        select: { id: true },
+      });
+      const ownedCategorySet = new Set(ownedCategories.map((c) => c.id));
+      const invalidIds = uniqueCategoryIds.filter((id) => !ownedCategorySet.has(id));
+      if (invalidIds.length > 0) {
+        throw new ForbiddenException('One or more categoryIds do not belong to the authenticated user');
+      }
+    }
+
+    if (uniqueCreditCardIds.length > 0) {
+      const ownedCards = await this.prisma.creditCard.findMany({
+        where: { id: { in: uniqueCreditCardIds }, userId },
+        select: { id: true },
+      });
+      const ownedCardSet = new Set(ownedCards.map((c) => c.id));
+      const invalidIds = uniqueCreditCardIds.filter((id) => !ownedCardSet.has(id));
+      if (invalidIds.length > 0) {
+        throw new ForbiddenException('One or more creditCardIds do not belong to the authenticated user');
+      }
     }
 
     return this.prisma.$transaction(async (tx) => {

@@ -63,6 +63,9 @@ export class TransactionsController {
     @Body() importData: ImportValidateTransactionDto[],
     @Request() req,
   ) {
+    if (importData && importData.length > 500) {
+      throw new BadRequestException('Maximum 500 transactions per import');
+    }
     return this.transactionsService.validateImport(importData, req.user.userId);
   }
 

@@ -13,6 +13,11 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { LoginDto } from './dto/login.dto';
+import { RefreshDto } from './dto/refresh.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
 import { Throttle } from '@nestjs/throttler';
@@ -34,14 +39,14 @@ export class AuthController {
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax', // Permite PWA Mobile via webview/app
+      sameSite: 'lax',
       maxAge: 15 * 60 * 1000, // 15 Minutos (em ms)
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 Dias (em ms)
     });
   }
@@ -64,8 +69,8 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() req, @Res({ passthrough: true }) res: Response) {
-    const user = await this.authService.validateUser(req.email, req.password);
+  async login(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const user = await this.authService.validateUser(body.email, body.password);
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
@@ -81,14 +86,15 @@ export class AuthController {
 
   @Post('refresh')
   async refresh(
+    @Body() body: RefreshDto,
     @Req() request: ExpressRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
     let refreshToken = request.cookies?.refresh_token;
 
     // Se mobile estiver enviando no body em vez de cookie
-    if (!refreshToken && request.body?.refreshToken) {
-      refreshToken = request.body.refreshToken;
+    if (!refreshToken && body.refreshToken) {
+      refreshToken = body.refreshToken;
     }
 
     if (!refreshToken) {
@@ -116,7 +122,6 @@ export class AuthController {
 
     return {
       access_token: responseData.access_token,
-      refreshToken: responseData.refreshToken,
     };
   }
 
@@ -129,7 +134,7 @@ export class AuthController {
     const cookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? ('none' as const) : ('lax' as const),
+      sameSite: 'lax' as const,
     };
 
     res.clearCookie('access_token', cookieOptions);
@@ -139,23 +144,17 @@ export class AuthController {
   }
 
   @Post('verify-email')
-  verifyEmail(@Body() body: { token: string }) {
-    if (!body.token) throw new UnauthorizedException('Token is required');
+  verifyEmail(@Body() body: VerifyEmailDto) {
     return this.authService.verifyEmail(body.token);
   }
 
   @Post('forgot-password')
-  forgotPassword(@Body() body: { email: string }) {
-    if (!body.email) throw new UnauthorizedException('Email is required');
+  forgotPassword(@Body() body: ForgotPasswordDto) {
     return this.authService.forgotPassword(body.email);
   }
 
   @Post('reset-password')
-  resetPassword(@Body() body: { token: string; password: string }) {
-    if (!body.token || !body.password)
-      throw new UnauthorizedException('Token and new password are required');
-    if (body.password.length < 8)
-      throw new BadRequestException('Password must be at least 8 characters');
+  resetPassword(@Body() body: ResetPasswordDto) {
     return this.authService.resetPassword(body.token, body.password);
   }
 

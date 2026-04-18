@@ -1,11 +1,14 @@
 import {
   Controller,
   Get,
+  UseGuards,
   Request,
   Version,
   VERSION_NEUTRAL,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AppService } from './app.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller({
   version: VERSION_NEUTRAL,
@@ -18,22 +21,12 @@ export class AppController {
     return 'Finanza API Online';
   }
 
-  @Get('debug')
-  getRoutes(@Request() req) {
-    const router = req.app._router;
-    return {
-      message: 'Rotas carregadas',
-      routes: router.stack
-        .filter((layer) => layer.route)
-        .map((layer) => ({
-          path: layer.route.path,
-          method: Object.keys(layer.route.methods)[0].toUpperCase(),
-        })),
-    };
-  }
-
   @Get('health/email')
-  checkEmailConfig() {
+  @UseGuards(AuthGuard('jwt'))
+  checkEmailConfig(@Request() req: any) {
+    if (!req.user.isAdmin) {
+      throw new ForbiddenException('Admin access required');
+    }
     const hasKey = !!process.env.RESEND_API_KEY;
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
     return {
