@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, Min, Max } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, Min, Max, IsIn } from 'class-validator';
 
 export class CreateAccountDto {
   @IsString()
@@ -7,6 +7,7 @@ export class CreateAccountDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsIn(['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH', 'OTHER'])
   type: string;
 
   @IsNumber()

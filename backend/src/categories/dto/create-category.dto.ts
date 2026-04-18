@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsIn } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsString()
@@ -15,5 +15,6 @@ export class CreateCategoryDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'])
   type: string;
 }

@@ -58,6 +58,10 @@ export class SubscriptionService {
   }
 
   async upgrade(userId: string, plan: PlanType, expiresAt?: Date) {
+    const validPlans: PlanType[] = ['free', 'pro', 'premium'];
+    if (!validPlans.includes(plan)) {
+      throw new Error(`Plano invalido: ${plan}`);
+    }
     return this.prisma.subscription.upsert({
       where: { userId },
       update: { plan, status: 'active', expiresAt: expiresAt ?? null },
@@ -71,13 +75,8 @@ export class SubscriptionService {
       data: { status: 'canceled', plan: 'free' },
     });
 
-    // Reset AI request count to free tier limits on downgrade
-    // Delete today's AI request logs so the user starts fresh with free tier limits
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    await this.prisma.aiRequestLog.deleteMany({
-      where: { userId, createdAt: { gte: today } },
-    });
+    // Do NOT delete AiRequestLog entries — rate limit must still count today's usage
+    // so users cannot bypass limits by cancelling and re-subscribing.
 
     return result;
   }

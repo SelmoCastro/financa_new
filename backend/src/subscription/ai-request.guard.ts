@@ -12,10 +12,8 @@ export class AiRequestGuard implements CanActivate {
 
     const canUse = await this.subscriptionService.canUseAi(userId);
     if (!canUse) {
-      const plan = await this.subscriptionService.getPlan(userId);
-      const limits = (await import('./subscription.service')).PLAN_LIMITS[plan];
       throw new ForbiddenException(
-        `Limite diário de ${limits.aiRequestsPerDay} requisições de IA atingido. Upgrade para Pro ou Premium para mais.`,
+        'Limite diário de requisições de IA atingido. Faça upgrade do seu plano para mais.',
       );
     }
 

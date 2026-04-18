@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, Min, Max } from 'class-validator';
 
 export class CreateCreditCardDto {
   @IsString()
@@ -7,14 +7,19 @@ export class CreateCreditCardDto {
 
   @IsNumber()
   @IsNotEmpty()
+  @Min(0.01)
   limit: number;
 
   @IsNumber()
   @IsNotEmpty()
+  @Min(1)
+  @Max(31)
   closingDay: number;
 
   @IsNumber()
   @IsNotEmpty()
+  @Min(1)
+  @Max(31)
   dueDay: number;
 
   @IsString()

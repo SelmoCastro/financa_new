@@ -512,7 +512,7 @@ export class TransactionsService {
   }
 
   findAll(userId: string, year?: number, month?: number) {
-    const whereClause: any = { userId };
+    const whereClause: any = { userId, deletedAt: null };
 
     if (year !== undefined && month !== undefined) {
       const startOfMonth = new Date(Date.UTC(year, month, 1));
@@ -571,6 +571,20 @@ export class TransactionsService {
     updateTransactionDto: UpdateTransactionDto,
     userId: string,
   ) {
+    // VULN-04: Validate FK ownership before entering the transaction
+    if (updateTransactionDto.accountId) {
+      const account = await this.prisma.account.findFirst({ where: { id: updateTransactionDto.accountId, userId } });
+      if (!account) throw new NotFoundException('Account not found or does not belong to user');
+    }
+    if (updateTransactionDto.categoryId) {
+      const category = await this.prisma.category.findFirst({ where: { id: updateTransactionDto.categoryId, userId } });
+      if (!category) throw new NotFoundException('Category not found or does not belong to user');
+    }
+    if (updateTransactionDto.creditCardId) {
+      const card = await this.prisma.creditCard.findFirst({ where: { id: updateTransactionDto.creditCardId, userId } });
+      if (!card) throw new NotFoundException('Credit card not found or does not belong to user');
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const oldTx = await tx.transaction.findFirst({
         where: { id, userId, deletedAt: null },
@@ -578,9 +592,9 @@ export class TransactionsService {
 
       if (!oldTx) return null;
 
-      // Lock the old account row to prevent concurrent balance modifications
+      // VULN-05: Lock the old account row with userId scoping to prevent concurrent balance modifications
       if (oldTx.accountId) {
-        await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${oldTx.accountId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${oldTx.accountId} AND "userId" = ${userId} FOR UPDATE`;
       }
 
       // 1. Reverter saldo antigo se houver accountId
@@ -612,9 +626,19 @@ export class TransactionsService {
         newAccountId = updateTransactionDto.accountId; // Pode ser null se o cliente remover a conta na edição
       }
 
-      // Lock the new account row if it's different from the old one
+      // VULN-05: Lock the new account row with userId scoping if it's different from the old one
       if (newAccountId && newAccountId !== oldTx.accountId) {
-        await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${newAccountId} FOR UPDATE`;
+        await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE`;
+      }
+
+      // VULN-03: Overdraft check — after reverting old balance, before applying new one
+      if (newType === 'EXPENSE' && newAccountId) {
+        const rows = await tx.$queryRaw`SELECT * FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+        const account = rows[0];
+        if (!account) throw new NotFoundException('Account not found');
+        if (Number(account.balance) < newAmount) {
+          throw new BadRequestException('Saldo insuficiente');
+        }
       }
 
       await tx.transaction.updateMany({

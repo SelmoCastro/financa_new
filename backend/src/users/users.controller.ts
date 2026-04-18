@@ -35,10 +35,7 @@ export class UsersController {
 
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
-    if (id !== req.user.userId) {
-      throw new ForbiddenException('You can only access your own profile');
-    }
-    return this.usersService.findOne(id);
+    return this.usersService.findOne(id, req.user.userId);
   }
 
   @Patch(':id')
@@ -47,10 +44,7 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
     @Request() req,
   ) {
-    if (id !== req.user.userId) {
-      throw new ForbiddenException('You can only update your own profile');
-    }
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.update(id, updateUserDto, req.user.userId);
   }
 
   @Delete(':id')

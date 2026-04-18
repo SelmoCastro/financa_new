@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { FeedbackService } from './feedback.service';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateFeedbackDto } from './dto/create-feedback.dto';
 
 @Controller({
   path: 'feedback',
@@ -23,7 +24,7 @@ export class FeedbackController {
   @Post()
   async submitFeedback(
     @Request() req,
-    @Body() body: { content: string; platform: string },
+    @Body() body: CreateFeedbackDto,
   ) {
     return this.feedbackService.submitFeedback(
       req.user.userId,

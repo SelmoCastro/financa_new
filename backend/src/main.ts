@@ -45,7 +45,9 @@ async function bootstrap() {
     console.error('\n❌ ERRO FATAL AO INICIAR O SERVIDOR NESTJS ❌\n');
     console.error('Nome do Erro:', error?.name);
     console.error('Mensagem:', error?.message);
-    console.error('Stack Trace Completa:', error?.stack);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Stack Trace Completa:', error?.stack);
+    }
     console.error(
       '\nO Servidor está morrendo intencionalmente após logar o erro acima.',
     );

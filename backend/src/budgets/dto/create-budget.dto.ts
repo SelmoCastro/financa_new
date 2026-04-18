@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsUUID, Min } from 'class-validator';
 
 export class CreateBudgetDto {
   @IsUUID()
@@ -7,5 +7,6 @@ export class CreateBudgetDto {
 
   @IsNumber()
   @IsNotEmpty()
+  @Min(0.01)
   amount: number;
 }

@@ -20,7 +20,7 @@ export class PlanGuard implements CanActivate {
     if (!requiredPlan) return true;
 
     const request = context.switchToHttp().getRequest();
-    const userId = request.user?.id;
+    const userId = request.user?.userId;
     if (!userId) return false;
 
     const userPlan = await this.subscriptionService.getPlan(userId);

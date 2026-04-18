@@ -171,7 +171,11 @@ export class AuthService {
     // Dispara email de verificação em background (fire-and-forget)
     this.emailService
       .sendVerificationEmail(user.email, user.name || 'Usuário', verifyToken)
-      .catch((e) => console.error('Falha ao enviar verification email:', e));
+      .catch(() => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Falha ao enviar verification email');
+        }
+      });
 
     const loginData = await this.login(user);
 
@@ -250,7 +254,11 @@ export class AuthService {
     // Dispara o email em background (fire-and-forget) para não travar a requisição HTTP caso o SMTP falhe/demore
     this.emailService
       .sendPasswordResetEmail(user.email, user.name || 'Usuário', token)
-      .catch((e) => console.error(e));
+      .catch(() => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Falha ao enviar password reset email');
+        }
+      });
 
     return {
       message: 'If that email is registered, a reset link will be sent.',
@@ -350,7 +358,11 @@ export class AuthService {
     // Fire-and-forget email
     this.emailService
       .sendVerificationEmail(user.email, user.name || 'Usuário', verifyToken)
-      .catch((e) => console.error('Falha ao enviar verification email:', e));
+      .catch(() => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Falha ao enviar verification email');
+        }
+      });
 
     return { message: 'Email de verificação reenviado com sucesso' };
   }

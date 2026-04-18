@@ -90,9 +90,10 @@ export class SocialService {
       throw new NotFoundException('Convite não encontrado ou já processado');
 
     return this.prisma.$transaction(async (tx) => {
-      // Verify that accountId belongs to this user
+      // Verify that accountId belongs to this user AND lock the row (FOR UPDATE)
+      let account: Awaited<ReturnType<typeof tx.account.findFirst>> = null;
       if (accountId) {
-        const account = await tx.account.findFirst({
+        account = await tx.account.findFirst({
           where: { id: accountId, userId, deletedAt: null },
         });
         if (!account) {
@@ -107,6 +108,14 @@ export class SocialService {
         });
         if (!category) {
           throw new BadRequestException('Categoria não encontrada ou não pertence ao usuário');
+        }
+      }
+
+      // Overdraft check: if EXPENSE, verify sufficient balance
+      if (invite.type === 'EXPENSE' && account) {
+        const inviteAmount = Number(invite.amount);
+        if (Number(account.balance) < inviteAmount) {
+          throw new BadRequestException('Saldo insuficiente na conta para esta despesa');
         }
       }
 

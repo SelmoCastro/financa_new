@@ -133,11 +133,12 @@ export class AccountsService {
     const drift = calculatedBalance - currentBalance;
 
     if (drift !== 0) {
-      // Fix the balance
-      await this.prisma.account.update({
-        where: { id },
+      // Fix the balance — include userId in WHERE to prevent cross-user modification
+      const result = await this.prisma.account.updateMany({
+        where: { id, userId },
         data: { balance: { increment: drift } },
       });
+      if (result.count === 0) throw new NotFoundException('Conta não encontrada');
     }
 
     return {

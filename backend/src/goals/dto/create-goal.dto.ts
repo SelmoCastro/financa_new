@@ -4,6 +4,7 @@ import {
   IsString,
   IsOptional,
   IsDateString,
+  Min,
 } from 'class-validator';
 
 export class CreateGoalDto {
@@ -13,10 +14,12 @@ export class CreateGoalDto {
 
   @IsNumber()
   @IsNotEmpty()
+  @Min(0)
   targetAmount: number;
 
   @IsNumber()
   @IsOptional()
+  @Min(0)
   currentAmount?: number;
 
   @IsDateString()

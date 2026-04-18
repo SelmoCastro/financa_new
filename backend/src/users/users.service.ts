@@ -256,7 +256,10 @@ export class UsersService {
     });
   }
 
-  findOne(id: string) {
+  async findOne(id: string, requestingUserId?: string) {
+    if (requestingUserId !== undefined && requestingUserId !== id) {
+      throw new ForbiddenException('You can only access your own profile');
+    }
     return this.prisma.user.findUnique({
       where: { id },
       select: excludePassword,
@@ -269,12 +272,20 @@ export class UsersService {
     });
   }
 
-  update(id: string, updateUserDto: UpdateUserDto) {
-    return this.prisma.user.update({
+  async update(id: string, updateUserDto: UpdateUserDto, requestingUserId?: string) {
+    // VULN-10: Verify requesting user matches the target user
+    if (requestingUserId !== undefined && requestingUserId !== id) {
+      throw new ForbiddenException('You can only update your own profile');
+    }
+    return this.prisma.user.updateMany({
       where: { id },
       data: updateUserDto,
-      select: excludePassword,
-    });
+    }).then(() =>
+      this.prisma.user.findUnique({
+        where: { id },
+        select: excludePassword,
+      })
+    );
   }
 
   async remove(id: string) {
