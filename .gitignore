@@ -41,3 +41,16 @@ start.sh
 
 # AI agent artifacts
 .agent/
+
+# One-off fix scripts (not part of the project)
+fix_*.js
+
+# Audit/docs that don't belong in repo
+auditoria-*.md
+AGENTS.md
+
+# Plans (keep locally, not in repo)
+docs/plans/
+
+# __pycache__
+__pycache__/
