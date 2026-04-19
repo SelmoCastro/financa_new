@@ -33,5 +33,8 @@ Captura de tela*.png
 # Deploy artifacts
 mobile/deploy_apk/
 
+# APK (too large for git, deploy via SCP)
+*.apk
+
 # Start script
 start.sh
