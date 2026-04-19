@@ -26,6 +26,9 @@ opencode.json
 
 # Scripts de migração
 backend/src/migrate-*.ts
+backend/fix_*.js
+backend/scripts/fix_*.js
+backend/src/fix_*.ts
 
 # Screenshots
 Captura de tela*.png
