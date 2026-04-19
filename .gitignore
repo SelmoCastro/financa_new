@@ -38,3 +38,6 @@ mobile/deploy_apk/
 
 # Start script
 start.sh
+
+# AI agent artifacts
+.agent/
