@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Anchor, Check, Info, X } from 'lucide-react';
 import { Transaction, TransactionType } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -85,7 +86,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                         <p className="text-sm text-slate-500 dark:text-slate-400">Gerencie seus valores recorrentes</p>
                     </div>
                     <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
-                        <i data-lucide="anchor" className="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
+                        <Anchor className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     </div>
                 </div>
 
@@ -134,10 +135,10 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                                             </div>
                                             <div className="flex gap-2 shrink-0">
                                                 <button onClick={() => handleSave(item)} className="p-2.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors shadow-sm" title="Salvar">
-                                                    <i data-lucide="check" className="w-4 h-4"></i>
+                                                    <Check className="w-4 h-4" />
                                                 </button>
                                                 <button onClick={handleCancel} className="p-2.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors" title="Cancelar">
-                                                    <i data-lucide="x" className="w-4 h-4"></i>
+                                                    <X className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </div>
@@ -183,7 +184,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
 
                 <div className="mt-8 p-4 bg-indigo-50/50 dark:bg-indigo-500/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/20">
                     <div className="flex gap-3">
-                        <i data-lucide="info" className="w-5 h-5 text-indigo-500 dark:text-indigo-400 shrink-0 mt-0.5"></i>
+                        <Info className="w-5 h-5 text-indigo-500 dark:text-indigo-400 shrink-0 mt-0.5" />
                         <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed">
                             <strong>Controle Total:</strong> Aqui você edita o lançamento mais recente de cada conta fixa.
                             Alterar o <strong>Nome</strong>, <strong>Dia</strong> ou <strong>Valor</strong> refletirá imediatamente nas suas projeções.
