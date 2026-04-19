@@ -54,22 +54,26 @@ export class AuthController {
   @Post('register')
   async register(
     @Body() createUserDto: CreateUserDto,
+    @Req() req: ExpressRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
     const responseData = await this.authService.register(createUserDto);
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
-    // Removemos os tokens do body enviado ao cliente para não ficarem soltos,
-    // mas por compatibilidade com Mobile que usa JSON, mantermos apenas o de access
+    // Web (cookie auth): refreshToken seguro em HttpOnly cookie.
+    // Mobile (Bearer auth): precisa do refreshToken no body.
+    const isMobile = req.headers['authorization']?.startsWith('Bearer ') || 
+                     !req.cookies?.['access_token'];
     return {
       message: responseData.message,
       userId: responseData.userId,
       access_token: responseData.access_token,
+      ...(isMobile && { refreshToken: responseData.refreshToken }),
       user: responseData.user,
     };
   }
 
   @Post('login')
-  async login(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response) {
+  async login(@Body() body: LoginDto, @Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
     const user = await this.authService.validateUser(body.email, body.password);
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
@@ -77,9 +81,13 @@ export class AuthController {
     const responseData = await this.authService.login(user);
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
 
-    // Nao retornar refreshToken no body — seguro apenas em HttpOnly cookie
+    // Web (cookie auth): refreshToken seguro em HttpOnly cookie, nao no body.
+    // Mobile (Bearer auth): precisa do refreshToken no body pois nao usa cookies.
+    const isMobile = req.headers['authorization']?.startsWith('Bearer ') || 
+                     !req.cookies?.['access_token'];
     return {
       access_token: responseData.access_token,
+      ...(isMobile && { refreshToken: responseData.refreshToken }),
       user: responseData.user,
     };
   }
