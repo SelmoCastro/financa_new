@@ -17,11 +17,14 @@ interface DashboardViewProps {
     transactions: Transaction[];
     isPrivacyEnabled: boolean;
     isLoading?: boolean;
+    onAddAccount?: () => void;
+    onAddTransaction?: () => void;
+    onAddBudget?: () => void;
 }
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false, onAddAccount, onAddTransaction, onAddBudget }) => {
     const { formatCurrency } = useCurrency();
     const { selectedDate } = useMonth();
     const [insights, setInsights] = React.useState<string | null>(null);
@@ -93,7 +96,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <OnboardingWidget />
+            <OnboardingWidget onAddAccount={onAddAccount} onAddTransaction={onAddTransaction} onAddBudget={onAddBudget} />
 
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-10">
                 {isLoading ? (

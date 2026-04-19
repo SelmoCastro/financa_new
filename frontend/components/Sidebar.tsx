@@ -1,5 +1,6 @@
 import React from 'react';
 import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight, MessageSquareHeart } from 'lucide-react';
+import { version } from '../package.json';
 
 interface SidebarProps {
   activeTab: string;
@@ -105,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                 <MessageSquareHeart className="w-4 h-4" />
                 Deixar Feedback
               </button>
-              <p className="text-[10px] font-mono text-slate-600 opacity-50">v1.5.0</p>
+              <p className="text-[10px] font-mono text-slate-600 opacity-50">v{version}</p>
             </div>
           )}
         </div>

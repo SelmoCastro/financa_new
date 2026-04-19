@@ -166,7 +166,7 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} />;
+        return <DashboardView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} onAddAccount={() => setActiveTab('accounts')} onAddTransaction={handleOpenTransactionForm} onAddBudget={() => setActiveTab('budgets')} />;
       case 'accounts':
         return <AccountsView isPrivacyEnabled={isPrivacyEnabled} />;
       case 'budgets':
