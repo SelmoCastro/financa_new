@@ -215,7 +215,7 @@ const AppContent: React.FC = () => {
                   activeTab === 'timeline' ? 'Linha do Tempo' :
                     activeTab === 'goals' ? 'Metas & Sonhos' :
                       activeTab === 'budgets' ? 'Orçamentos' :
-                        activeTab === 'fixed' ? 'Controle Fixos' :
+                        activeTab === 'fixed' ? 'Recorrentes' :
                           activeTab === 'feedbacks' ? 'Feedbacks (Admin)' :
                             activeTab === 'history' ? 'Extrato' :
                               'Configurações'}
@@ -252,8 +252,8 @@ const AppContent: React.FC = () => {
               className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95 whitespace-nowrap group"
             >
               <Plus className="w-4 h-4 sm:w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-              <span className="hidden sm:inline">Gravar</span>
-              <span className="sm:hidden">Novo</span>
+              <span className="hidden sm:inline">Novo Lançamento</span>
+              <span className="sm:hidden">+ Lançamento</span>
             </button>
           </div>
         </header>

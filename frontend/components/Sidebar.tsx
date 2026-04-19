@@ -17,7 +17,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'budgets', label: 'Orçamentos', icon: Target },
     { id: 'goals', label: 'Metas', icon: Trophy },
     { id: 'timeline', label: 'Linha do Tempo', icon: Clock },
-    { id: 'fixed', label: 'Controle Fixos', icon: Anchor },
+    { id: 'fixed', label: 'Recorrentes', icon: Anchor },
     { id: 'history', label: 'Extrato', icon: Receipt },
     { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquareHeart },
   ];

@@ -364,14 +364,15 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             />
           </div>
 
-          <div className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-950 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 group cursor-pointer transition-all hover:bg-slate-100 dark:hover:bg-slate-900" onClick={() => setIsFixed(!isFixed)}>
+          <div className={`flex items-center gap-4 p-5 rounded-[1.5rem] border group cursor-pointer transition-all hover:bg-slate-100 dark:hover:bg-slate-900 ${isFixed ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30' : 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800'}`} onClick={() => setIsFixed(!isFixed)}>
             <div className={`w-7 h-7 rounded-xl flex items-center justify-center border-2 transition-all shadow-sm ${isFixed ? 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'}`}>
               {isFixed && <Check className="w-5 h-5 text-white" />}
             </div>
             <div className="flex-1">
               <span className="text-sm font-black text-slate-700 dark:text-slate-200 tracking-tight">Lançamento Recorrente</span>
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-0.5">Repetir todos os meses</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-0.5">{isFixed ? 'Ativado — repete todo mês' : 'Repetir todos os meses'}</p>
             </div>
+            {isFixed && <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-500/20 px-3 py-1 rounded-full">Ativo</span>}
           </div>
 
           <button

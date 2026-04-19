@@ -93,6 +93,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <OnboardingWidget />
 
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-10">
                 {isLoading ? (

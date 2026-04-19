@@ -37,11 +37,11 @@ export const OnboardingWidget: React.FC = () => {
     if (progress === 100) return null;
 
     return (
-        <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm mb-8">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm mb-8">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h3 className="text-lg font-bold text-slate-800">Primeiros Passos</h3>
-                    <p className="text-sm text-slate-500">Complete estas tarefas para dominar suas finanças.</p>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Primeiros Passos</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Complete estas tarefas para dominar suas finanças.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <span className="text-sm font-bold text-indigo-600">{Math.round(progress)}% completo</span>

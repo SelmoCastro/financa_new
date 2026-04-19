@@ -82,7 +82,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
             <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-white">Controle de Fixos</h3>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white">Recorrentes</h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">Gerencie seus valores recorrentes</p>
                     </div>
                     <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
@@ -93,8 +93,8 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                 <div className="space-y-4">
                     {items.length === 0 ? (
                         <div className="text-center py-12 text-slate-400 dark:text-slate-500">
-                            <p>Nenhum item fixo identificado ainda.</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Marque transações como "Fixo" para acompanhar previsões automáticas baseadas no seu histórico real.</p>
+                            <p>Nenhum item recorrente identificado ainda.</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Marque transações como "Recorrente" ao criar um lançamento para acompanhar previsões automáticas baseadas no seu histórico real.</p>
                         </div>
                     ) : (
                         <div className="grid gap-4">
@@ -186,7 +186,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                     <div className="flex gap-3">
                         <Info className="w-5 h-5 text-indigo-500 dark:text-indigo-400 shrink-0 mt-0.5" />
                         <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed">
-                            <strong>Controle Total:</strong> Aqui você edita o lançamento mais recente de cada conta fixa.
+                            <strong>Controle Total:</strong> Aqui você edita o lançamento mais recente de cada despesa ou receita recorrente.
                             Alterar o <strong>Nome</strong>, <strong>Dia</strong> ou <strong>Valor</strong> refletirá imediatamente nas suas projeções.
                             Ao <strong>Excluir</strong>, você remove o lançamento atual e o sistema deixará de considerá-lo nas previsões futuras até que apareça novamente.
                         </p>
