@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import api from '../services/api';
 import { Transaction, Budget, Account, CreditCard, Category } from '../types';
@@ -50,14 +50,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { addToast } = useToast();
     const { selectedDate } = useMonth();
 
+    // AbortController to cancel in-flight requests on unmount or rapid refresh
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    const isCanceledError = (error: any): boolean => {
+        return axios.isCancel(error) || error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError' || error?.name === 'AbortError';
+    };
+
     // Fetch 1: All base data — independent error handling per resource
-    const fetchBaseData = useCallback(async () => {
+    const fetchBaseData = useCallback(async (signal?: AbortSignal) => {
         const fetchResource = async (url: string, setter: (data: any) => void) => {
             try {
-                const res = await api.get(url);
+                const res = await api.get(url, { signal });
                 const data = res.data;
                 setter(Array.isArray(data) ? data : []);
             } catch (error: any) {
+                // Don't show toast for aborted/canceled requests (page unload or rapid F5)
+                if (isCanceledError(error)) return;
                 console.error(`Error fetching ${url}:`, error?.response?.status, error?.message);
                 setter([]);
                 if (error.response?.status !== 401) {
@@ -75,56 +84,76 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 fetchResource('/categories', setCategories),
             ]);
         } catch (error) {
+            if (isCanceledError(error)) return;
             console.error('Base data fetch error:', error);
         }
     }, [addToast]);
 
     // Fetch 2: Dashboard summary — re-fetches on EVERY selectedDate change
-    const fetchDashboardSummary = useCallback(async (date: Date) => {
+    const fetchDashboardSummary = useCallback(async (date: Date, signal?: AbortSignal) => {
         const year = date.getFullYear();
         const month = date.getMonth(); // 0-indexed
         try {
             const summaryRes = await api.get<DashboardSummary>(
-                `/transactions/dashboard-summary?year=${year}&month=${month}&_t=${Date.now()}`
+                `/transactions/dashboard-summary?year=${year}&month=${month}&_t=${Date.now()}`,
+                { signal }
             );
             setDashboardSummary(summaryRes.data);
         } catch (error: any) {
+            if (isCanceledError(error)) return;
             console.error('Dashboard summary fetch error:', error);
         }
     }, []);
 
     // Initial load on mount
     useEffect(() => {
-        let isMounted = true;
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         const init = async () => {
             setIsLoading(true);
             try {
-                // Fetch sequentially to prevent token-refresh race conditions 
-                // when waking up a sleeping backend / expired token session
-                await fetchBaseData();
-                if (isMounted) await fetchDashboardSummary(selectedDate);
+                await fetchBaseData(controller.signal);
+                await fetchDashboardSummary(selectedDate, controller.signal);
             } catch (err) {
+                if (isCanceledError(err)) return;
                 console.error('Error during initial fetch:', err);
             } finally {
-                if (isMounted) setIsLoading(false);
+                if (!controller.signal.aborted) {
+                    setIsLoading(false);
+                }
             }
         };
         init();
-        return () => { isMounted = false; };
+
+        // Cancel all in-flight requests on unmount (page refresh, navigation)
+        return () => {
+            controller.abort();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Re-fetch summary whenever the user switches months
     useEffect(() => {
-        fetchDashboardSummary(selectedDate);
+        const controller = new AbortController();
+        fetchDashboardSummary(selectedDate, controller.signal);
+        return () => { controller.abort(); };
     }, [selectedDate, fetchDashboardSummary]);
 
     // Manual full refresh (e.g. after adding a transaction)
     const refreshData = useCallback(async () => {
+        // Cancel any previous in-flight requests
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         try {
-            await fetchBaseData();
-            await fetchDashboardSummary(selectedDate);
+            await fetchBaseData(controller.signal);
+            await fetchDashboardSummary(selectedDate, controller.signal);
         } catch (err) {
+            if (isCanceledError(err)) return;
             console.error('Error during refresh:', err);
         }
     }, [fetchBaseData, fetchDashboardSummary, selectedDate]);

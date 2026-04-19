@@ -20,14 +20,13 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { Response, Request as ExpressRequest } from 'express';
 
 @Controller({
   path: 'auth',
   version: '1',
 })
-@Throttle({ default: { limit: 5, ttl: 60000 } })
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -51,6 +50,7 @@ export class AuthController {
     });
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
   async register(
     @Body() createUserDto: CreateUserDto,
@@ -74,6 +74,7 @@ export class AuthController {
     };
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login')
   async login(@Body() body: LoginDto, @Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
     console.log(`[AUTH] LOGIN ATTEMPT - email: ${body.email}`);
@@ -97,6 +98,7 @@ export class AuthController {
     };
   }
 
+  @SkipThrottle()
   @Post('refresh')
   async refresh(
     @Body() body: RefreshDto,
@@ -161,6 +163,7 @@ export class AuthController {
     return this.authService.verifyEmail(body.token);
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('forgot-password')
   forgotPassword(@Body() body: ForgotPasswordDto) {
     return this.authService.forgotPassword(body.email);
@@ -171,6 +174,7 @@ export class AuthController {
     return this.authService.resetPassword(body.token, body.password);
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('resend-verification')
   @UseGuards(AuthGuard('jwt'))
   async resendVerification(@Request() req) {
@@ -192,6 +196,7 @@ export class AuthController {
     return { message: `${result.count} usuarios marcados como verificados` };
   }
 
+  @SkipThrottle()
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
   async getProfile(@Request() req) {
