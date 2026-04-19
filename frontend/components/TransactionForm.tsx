@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, ChevronDown, Check } from 'lucide-react';
 import { TransactionType, Transaction, Account, CreditCard, Category } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
-import api from '../services/api';
 import { toYYYYMMDD } from '../utils/dateUtils';
 
 interface TransactionFormProps {
@@ -11,6 +10,9 @@ interface TransactionFormProps {
   onClose: () => void;
   existingCategories: string[];
   editingTransaction?: Transaction | null;
+  accounts: Account[];
+  creditCards: CreditCard[];
+  categories: Category[];
 }
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({
@@ -18,7 +20,10 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   onUpdate,
   onClose,
   existingCategories,
-  editingTransaction
+  editingTransaction,
+  accounts: externalAccounts,
+  creditCards: externalCreditCards,
+  categories: externalCategories
 }) => {
   const [description, setDescription] = useState('');
   const [displayAmount, setDisplayAmount] = useState('');
@@ -33,11 +38,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [destinationAccountId, setDestinationAccountId] = useState('');
   const [creditCardId, setCreditCardId] = useState('');
 
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const { currencySymbol, locale } = useCurrency();
-  const [isLoadingEntities, setIsLoadingEntities] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formatCurrency = (value: string) => {
@@ -60,43 +61,25 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  // Auto-select first account when accounts become available
   useEffect(() => {
-    const fetchEntities = async () => {
-      try {
-        const [accRes, cardsRes, catRes] = await Promise.all([
-          api.get('/accounts'),
-          api.get('/credit-cards'),
-          api.get('/categories')
-        ]);
-        setAccounts(accRes.data);
-        setCreditCards(cardsRes.data);
-        setCategories(catRes.data);
-
-        // Auto-select first account if available
-        if (accRes.data.length > 0 && !editingTransaction) {
-          setAccountId(accRes.data[0].id);
-        }
-      } catch (err) {
-        console.error('Error fetching entities for form', err);
-      } finally {
-        setIsLoadingEntities(false);
-      }
-    };
-    fetchEntities();
-  }, [editingTransaction]);
+    if (externalAccounts.length > 0 && !editingTransaction && !accountId) {
+      setAccountId(externalAccounts[0].id);
+    }
+  }, [externalAccounts, editingTransaction]);
 
   // Reset category if type changes and current category is no longer valid
   useEffect(() => {
-    if (isLoadingEntities || !type || !categories.length) return;
+    if (!type || !externalCategories.length) return;
 
-    const currentCat = categories.find(c => c.id === categoryId);
+    const currentCat = externalCategories.find(c => c.id === categoryId);
     if (currentCat && currentCat.type !== type && currentCat.type !== 'TRANSFER') {
       setCategoryId('');
     }
-  }, [type, categories, isLoadingEntities]);
+  }, [type, externalCategories]);
 
   useEffect(() => {
-    if (editingTransaction && !isLoadingEntities) {
+    if (editingTransaction) {
       setDescription(editingTransaction.description);
       const initialValue = (editingTransaction.amount * 100).toString();
       setDisplayAmount(formatCurrency(initialValue));
@@ -104,14 +87,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
 
       // Select correct IDs
       setCategoryId(editingTransaction.categoryId || '');
-      setAccountId(editingTransaction.accountId || '');
+      setAccountId(editingTransaction.accountId || editingTransaction.account?.id || '');
       setCreditCardId(editingTransaction.creditCardId || '');
 
       setDate(toYYYYMMDD(new Date(editingTransaction.date)));
       setIsFixed(editingTransaction.isFixed || false);
       setSharedWithEmail(editingTransaction.sharedWithEmail || '');
     }
-  }, [editingTransaction, isLoadingEntities]);
+  }, [editingTransaction]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
@@ -255,9 +238,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     onChange={(e) => setCategoryId(e.target.value)}
                   >
                     <option value="">Nenhuma / Outros</option>
-                    {categories.filter(c => c.type === 'INCOME').length > 0 && type === 'INCOME' && (
+                    {externalCategories.filter(c => c.type === 'INCOME').length > 0 && type === 'INCOME' && (
                       <optgroup label="Entradas (Rendas)" className="dark:bg-slate-900">
-                        {categories.filter(c => c.type === 'INCOME').map(c => (
+                        {externalCategories.filter(c => c.type === 'INCOME').map(c => (
                           <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
                         ))}
                       </optgroup>
@@ -266,7 +249,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     {type === 'EXPENSE' && (
                       <>
                         <optgroup label="Necessidades (Essencial)" className="dark:bg-slate-900">
-                          {categories.filter(c =>
+                          {externalCategories.filter(c =>
                             ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
                               .includes(c.name)
                           ).map(c => (
@@ -275,7 +258,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                         </optgroup>
 
                         <optgroup label="Desejos (Estilo de Vida)" className="dark:bg-slate-900">
-                          {categories.filter(c =>
+                          {externalCategories.filter(c =>
                             ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
                               .includes(c.name)
                           ).map(c => (
@@ -284,7 +267,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                         </optgroup>
 
                         <optgroup label="Objetivos (Quitação e Reserva)" className="dark:bg-slate-900">
-                          {categories.filter(c =>
+                          {externalCategories.filter(c =>
                             ['Aplicações / Poupança', 'Pagamento de Dívidas']
                               .includes(c.name)
                           ).map(c => (
@@ -312,7 +295,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     onChange={(e) => setAccountId(e.target.value)}
                   >
                     <option value="" disabled>Selecione...</option>
-                    {accounts.map(acc => (
+                    {externalAccounts.map(acc => (
                       <option key={acc.id} value={acc.id}>{acc.name}</option>
                     ))}
                   </select>
@@ -335,7 +318,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       onChange={(e) => setDestinationAccountId(e.target.value)}
                     >
                       <option value="" disabled>Selecione...</option>
-                      {accounts.map(acc => (
+                      {externalAccounts.map(acc => (
                         <option key={acc.id} value={acc.id}>{acc.name}</option>
                       ))}
                     </select>
@@ -346,7 +329,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       onChange={(e) => {
                         setCreditCardId(e.target.value);
                         if (e.target.value) {
-                          const selectedCard = creditCards.find(c => c.id === e.target.value);
+                          const selectedCard = externalCreditCards.find(c => c.id === e.target.value);
                           if (selectedCard && selectedCard.accountId) {
                             setAccountId(selectedCard.accountId);
                           }
@@ -354,7 +337,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       }}
                     >
                       <option value="">Nenhum (Débito)</option>
-                      {creditCards.map(card => (
+                      {externalCreditCards.map(card => (
                         <option key={card.id} value={card.id}>{card.name}</option>
                       ))}
                     </select>

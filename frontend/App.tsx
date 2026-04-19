@@ -315,6 +315,9 @@ const AppContent: React.FC = () => {
           }}
           existingCategories={Array.isArray(transactions) ? Array.from(new Set(transactions.map(t => typeof t.category === 'object' && t.category !== null ? t.category.name : t.categoryLegacy || 'Outros'))).filter(Boolean) : []}
           editingTransaction={editingTransaction}
+          accounts={accounts}
+          creditCards={creditCards}
+          categories={categories}
         />
       )}
 
