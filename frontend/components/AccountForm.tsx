@@ -13,14 +13,26 @@ interface AccountFormProps {
 export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave, onClose }) => {
     const [name, setName] = useState(accountToEdit?.name || BANKS[0]);
     const [type, setType] = useState(accountToEdit?.type || 'CHECKING');
-    const [balance, setBalance] = useState(() => {
+    const [displayBalance, setDisplayBalance] = useState(() => {
         if (accountToEdit && accountToEdit.balance !== undefined) {
-            return accountToEdit.balance.toString().replace('.', ',');
+            const val = (accountToEdit.balance * 100).toFixed(0);
+            const amount = parseInt(val) / 100;
+            return amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
         return '';
     });
     const [isLoading, setIsLoading] = useState(false);
-    const { currencySymbol } = useCurrency();
+    const { currencySymbol, locale } = useCurrency();
+
+    const formatCurrency = (value: string) => {
+        const digits = value.replace(/\D/g, '');
+        if (!digits) return '';
+        const amount = parseInt(digits) / 100;
+        return amount.toLocaleString(locale, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    };
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -33,15 +45,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
     }, [onClose]);
 
     const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let val = e.target.value.replace(/[^\d,]/g, '');
-        const parts = val.split(',');
-        if (parts.length > 2) {
-            val = parts[0] + ',' + parts.slice(1).join('');
-        }
-        if (parts[1] && parts[1].length > 2) {
-            val = parts[0] + ',' + parts[1].slice(0, 2);
-        }
-        setBalance(val);
+        setDisplayBalance(formatCurrency(e.target.value));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +53,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
         setIsLoading(true);
 
         try {
-            const parsedBalance = balance ? parseFloat(balance.replace(/\./g, '').replace(',', '.')) : 0;
+            const parsedBalance = displayBalance ? parseFloat(displayBalance.replace(/\./g, '').replace(',', '.')) : 0;
 
             if (accountToEdit) {
                 await api.patch(`/accounts/${accountToEdit.id}`, {
@@ -138,7 +142,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                                 type="text"
                                 inputMode="numeric"
                                 required
-                                value={balance}
+                                value={displayBalance}
                                 onChange={handleBalanceChange}
                                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl pl-14 pr-6 py-5 text-slate-800 dark:text-white font-black text-2xl tracking-tighter focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
                                 placeholder="0,00"
