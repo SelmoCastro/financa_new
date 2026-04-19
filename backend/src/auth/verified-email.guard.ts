@@ -44,6 +44,7 @@ export class VerifiedEmailGuard implements CanActivate {
 
     // Se tem user mas email não verificado, bloqueia com 403
     if (user.isEmailVerified !== true) {
+      console.log(`[GUARD] VerifiedEmail BLOCKED - userId: ${user.userId || user.sub}, isEmailVerified: ${user.isEmailVerified}, path: ${request.url}`);
       throw new ForbiddenException('Email verification required');
     }
 

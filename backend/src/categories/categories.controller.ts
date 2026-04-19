@@ -31,7 +31,17 @@ export class CategoriesController {
 
   @Get()
   findAll(@Request() req) {
-    return this.categoriesService.findAll(req.user.userId);
+    console.log(`[CATEGORIES] GET /categories - userId: ${req.user.userId}, isEmailVerified: ${req.user.isEmailVerified}`);
+    const result = this.categoriesService.findAll(req.user.userId);
+    result.then((cats) => {
+      const income = cats.filter(c => c.type === 'INCOME').length;
+      const expense = cats.filter(c => c.type === 'EXPENSE').length;
+      const transfer = cats.filter(c => c.type === 'TRANSFER').length;
+      console.log(`[CATEGORIES] RETURN - userId: ${req.user.userId}, total: ${cats.length}, INCOME: ${income}, EXPENSE: ${expense}, TRANSFER: ${transfer}`);
+    }).catch((err) => {
+      console.error(`[CATEGORIES] ERROR - userId: ${req.user.userId}`, err.message);
+    });
+    return result;
   }
 
   @Get(':id')

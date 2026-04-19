@@ -57,7 +57,9 @@ export class AuthController {
     @Req() req: ExpressRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
+    console.log(`[AUTH] REGISTER - email: ${createUserDto.email}, name: ${createUserDto.name}`);
     const responseData = await this.authService.register(createUserDto);
+    console.log(`[AUTH] REGISTER OK - userId: ${responseData.userId}, isEmailVerified: ${responseData.user?.isEmailVerified}`);
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
     // Web (cookie auth): refreshToken seguro em HttpOnly cookie.
     // Mobile (Bearer auth): precisa do refreshToken no body.
@@ -74,11 +76,14 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body: LoginDto, @Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
+    console.log(`[AUTH] LOGIN ATTEMPT - email: ${body.email}`);
     const user = await this.authService.validateUser(body.email, body.password);
     if (!user) {
+      console.log(`[AUTH] LOGIN FAILED - email: ${body.email}`);
       throw new UnauthorizedException('Credenciais inválidas');
     }
     const responseData = await this.authService.login(user);
+    console.log(`[AUTH] LOGIN OK - userId: ${responseData.user?.id}, isEmailVerified: ${responseData.user?.isEmailVerified}`);
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
 
     // Web (cookie auth): refreshToken seguro em HttpOnly cookie, nao no body.

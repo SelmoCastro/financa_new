@@ -45,6 +45,7 @@ export class TransactionsController {
   @Post()
   @RequireVerifiedEmail()
   create(@Body() createTransactionDto: CreateTransactionDto, @Request() req) {
+    console.log(`[TRANSACTION] CREATE - userId: ${req.user.userId}, type: ${createTransactionDto.type}, categoryId: ${createTransactionDto.categoryId}, amount: ${createTransactionDto.amount}`);
     return this.transactionsService.create(
       createTransactionDto,
       req.user.userId,
