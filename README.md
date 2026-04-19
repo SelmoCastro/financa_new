@@ -1,30 +1,31 @@
-# 🚀 Finanza AI — Dashboard Financeiro Inteligente
+# Finanza AI — Dashboard Financeiro Inteligente
 
 > Controle financeiro pessoal com IA, importação de extratos OFX, leitura de comprovantes por visão computacional e app mobile.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.2.0--dev-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.5.4-blue" alt="Version" />
   <img src="https://img.shields.io/badge/backend-NestJS%20v11-ea2845" alt="Backend" />
   <img src="https://img.shields.io/badge/frontend-React%2019-61dafb" alt="Frontend" />
   <img src="https://img.shields.io/badge/mobile-Expo%20SDK%2054-000020" alt="Mobile" />
   <img src="https://img.shields.io/badge/database-PostgreSQL-336791" alt="Database" />
-  <img src="https://img.shields.io/badge/AI-Gemini%20via%20OpenRouter-4285f4" alt="AI" />
+  <img src="https://img.shields.io/badge/AI-GPT--4o--mini%20via%20OpenRouter-4285f4" alt="AI" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
 </p>
 
 ---
 
-## ✨ Funcionalidades
+## Funcionalidades
 
-### 💰 Gestão Financeira Completa
+### Gestão Financeira Completa
 - **Transações** — CRUD com parcelas, itens fixos e compartilhamento entre usuários
 - **Contas Bancárias** — Múltiplas contas com saldo em tempo real
 - **Cartões de Crédito** — Limite, dia de fechamento e vencimento
-- **Categorias** — Personalizáveis com ícones e cores
+- **Categorias** — 25+ categorias BR pré-seed (Receita, Despesa, Transferência)
 - **Orçamentos** — Tetos de gastos por categoria com acompanhamento percentual
 - **Metas** — Cofres para objetivos com prazo e progresso
+- **Recorrentes** — Controle de despesas fixas mensais
 
-### 🤖 Inteligência Artificial (Gemini via OpenRouter)
+### Inteligência Artificial (GPT-4o-mini via OpenRouter)
 | Capacidade | Descrição |
 |---|---|
 | **Chat Financeiro** | Assistente em PT-BR com contexto real dos seus dados |
@@ -35,36 +36,38 @@
 | **Leitor de Comprovantes** | Extrai dados de fotos/PDFs (PIX, TED, cupons, extratos) |
 | **Limpeza de Descrições** | Normaliza descrições confusas de extratos |
 
-### 📊 Dashboard & Relatórios
+### Dashboard & Relatórios
 - **Regra 50/30/20** — Necessidades, Desejos e Objetivos
 - **Gráficos Interativos** — Pizza, barras, tendências month-over-month
 - **Modo Privacidade** — Blur em todos os valores com um clique
 - **Dark Mode** — Tema escuro completo (web + mobile)
+- **Onboarding** — Widget de primeiros passos para novos usuários
 
-### 📥 Importação Inteligente
+### Importação Inteligente
 - **OFX/QFX** — Deduplicação em 4 camadas (FITID, histórico, content match, fuzzy hash)
 - **Comprovantes (AI Vision)** — JPG/PNG/WEBP/PDF com extração de valor, data, descrição e CNPJ
 - **CSV Export** — Exportação para planilhas
 
-### 📱 App Mobile (Expo)
-- Abas: Dashboard, Transações, Contas, Orçamentos, Metas
+### App Mobile (Expo)
+- 7 abas: Dashboard, Transações, Contas, Orçamentos, Metas, Recorrentes, Extrato
 - Captura de comprovantes pela câmera
-- Chat AI integrado
+- Chat AI integrado (FAB)
+- Download direto: finanzaai.tech/Finanza_new.apk
 
-### 🔔 Social & Notificações
+### Social & Notificações
 - Compartilhamento de transações por e-mail
-- Notificações in-app em tempo real
+- Notificações in-app
 - Verificação de e-mail no signup
 
 ---
 
-## 🏗️ Arquitetura
+## Arquitetura
 
 ```
-financa-new/
+financa_new/
 ├── backend/              # NestJS v11 — API REST
 │   ├── src/
-│   │   ├── accounts/     # Contas bancárias
+│   │   ├── accounts/      # Contas bancárias
 │   │   ├── ai/           # IA (chat, insights, vision)
 │   │   ├── auth/         # JWT + refresh tokens
 │   │   ├── budgets/      # Orçamentos
@@ -91,19 +94,19 @@ financa-new/
 
 ---
 
-## 🛠️ Stack
+## Stack
 
 | Camada | Tecnologias |
 |---|---|
 | **Frontend** | React 19 · TypeScript · Vite 6 · Tailwind CSS 3 · Recharts · Framer Motion |
 | **Backend** | NestJS 11 · Prisma 5 · PostgreSQL · JWT · Passport · Helmet · Throttler · Swagger |
 | **Mobile** | Expo 54 · RN 0.81 · Expo Router · NativeWind · Gifted Charts · FlashList |
-| **IA** | OpenRouter · Gemini 2.0 Flash · `@google/genai` · `openai` SDK |
-| **Infra** | Neon PostgreSQL · Vercel · Render · Docker (dev) |
+| **IA** | OpenRouter · GPT-4o-mini · `openai` SDK |
+| **Infra** | VPS Hostinger · Nginx · PM2 · Docker (PostgreSQL) · Let's Encrypt |
 
 ---
 
-## 🗄️ Modelo de Dados
+## Modelo de Dados
 
 ```
 User ───┬─── Account ───┬─── Transaction ─── Category
@@ -117,7 +120,7 @@ User ───┬─── Account ───┬─── Transaction ─── C
 
 ---
 
-## 🚀 Começando
+## Começando
 
 ### Pré-requisitos
 - Node.js 18+
@@ -131,8 +134,7 @@ cd financa_new
 
 ### 2. Banco de Dados (Docker)
 ```bash
-cd backend
-docker-compose up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### 3. Backend
@@ -142,7 +144,7 @@ npm install
 cp .env.example .env
 # Edite: DATABASE_URL, JWT_SECRET, OPENROUTER_API_KEY, FRONTEND_URL
 npx prisma generate
-npx prisma migrate dev
+npx prisma db push
 npm run start:dev
 ```
 API: `http://localhost:3000` | Swagger: `http://localhost:3000/api/docs`
@@ -159,34 +161,27 @@ Web: `http://localhost:5173`
 ```bash
 cd ../mobile
 npm install
-npm start
-```
-
-### ⚡ Setup Automático
-```bash
-chmod +x start.sh
-./start.sh
-# Opção 6 = setup completo
+npx expo start
 ```
 
 ---
 
-## 🔑 Variáveis de Ambiente
+## Variáveis de Ambiente
 
 | Variável | Obrigatória | Descrição |
 |---|---|---|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `JWT_SECRET` | ✅ | Chave JWT |
-| `OPENROUTER_API_KEY` | ✅ | API key OpenRouter |
-| `FRONTEND_URL` | ✅ | URL do frontend (CORS) |
-| `DIRECT_URL` | ❌ | URL direta Prisma Migrate |
-| `AI_TEXT_MODEL` | ❌ | Default: `google/gemini-2.0-flash-exp:free` |
-| `AI_VISION_MODEL` | ❌ | Default: `google/gemini-2.0-flash-exp:free` |
-| `PORT` | ❌ | Default: `3000` |
+| `DATABASE_URL` | Sim | PostgreSQL connection string |
+| `JWT_SECRET` | Sim | Chave JWT |
+| `OPENROUTER_API_KEY` | Sim | API key OpenRouter |
+| `FRONTEND_URL` | Sim | URL do frontend (CORS) |
+| `DIRECT_URL` | Não | URL direta Prisma Migrate |
+| `AI_TEXT_MODEL` | Não | Default: `openai/gpt-4o-mini` |
+| `AI_VISION_MODEL` | Não | Default: `openai/gpt-4o-mini` |
+| `PORT` | Não | Default: `3000` |
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 Base: `/api/v1` (todos protegidos por JWT, exceto `/auth`)
 
@@ -210,76 +205,85 @@ Base: `/api/v1` (todos protegidos por JWT, exceto `/auth`)
 | `POST` | `/auth/login` | Login |
 | `POST` | `/auth/refresh` | Refresh token |
 | `POST` | `/auth/forgot-password` | Reset de senha |
+| `POST` | `/auth/resend-verification` | Reenviar verificação de e-mail |
 
 ### Outros
 - `/accounts`, `/credit-cards`, `/categories`, `/budgets`, `/goals`
 - `/reports/dashboard-summary`, `/reports/financial-profile`
-- `/ai/chat`, `/notifications`, `/social/invite`
+- `/ai/chat`, `/notifications`, `/social/invites`, `/feedback`
 
 ---
 
-## 📊 Feature Matrix
+## Feature Matrix
 
 | Feature | Web | Mobile |
 |---|:---:|:---:|
-| Auth (login/signup/email) | ✅ | ✅ |
-| Dashboard + Regra 50/30/20 | ✅ | ✅ |
-| Transações CRUD | ✅ | ✅ |
-| Importação OFX (4-layer dedup) | ✅ | ✅ |
-| Contas & Cartões | ✅ | ✅ |
-| Orçamentos | ✅ | ✅ |
-| Metas | ✅ | ✅ |
-| Controle de Fixos | ✅ | ⚠️ |
-| AI Chat | ✅ | ✅ |
-| AI Insights | ✅ | ✅ |
-| Notificações | ✅ | ✅ |
-| Social Invites | ✅ | ✅ |
-| Reports/Export | ✅ | ❌ |
-| Receipt AI Vision | ✅ | ⚠️ |
-| Dark Mode | ✅ | ✅ |
-| Privacy Blur | ✅ | ✅ |
+| Auth (login/signup/email) | Sim | Sim |
+| Dashboard + Regra 50/30/20 | Sim | Sim |
+| Transações CRUD | Sim | Sim |
+| Importação OFX (4-layer dedup) | Sim | Sim |
+| Contas & Cartões | Sim | Sim |
+| Orçamentos | Sim | Sim |
+| Metas | Sim | Sim |
+| Recorrentes | Sim | Sim |
+| AI Chat | Sim | Sim |
+| AI Insights | Sim | Sim |
+| Notificações | Sim | Sim |
+| Social Invites | Sim | Sim |
+| Reports/Export | Sim | Não |
+| Receipt AI Vision | Sim | Parcial |
+| Dark Mode | Sim | Sim |
+| Privacy Blur | Sim | Sim |
+| Onboarding Widget | Sim | Não |
 
 ---
 
-## 🚀 Deploy
+## Deploy (VPS)
 
-### Backend (Render)
-1. Conecte o repo no Render
-2. Configure env vars: `DATABASE_URL`, `JWT_SECRET`, `OPENROUTER_API_KEY`, `FRONTEND_URL`
-3. Push para `master` → auto-deploy
+O app roda inteiramente em uma VPS (Hostinger) com Nginx + PM2 + PostgreSQL (Docker).
 
-### Frontend (Vercel)
+### Deploy automático
 ```bash
-cd frontend && npx vercel
+# Na VPS (2.24.211.92):
+cd /opt/finanza
+git pull origin master
+bash deploy.sh          # all (backend + frontend)
+bash deploy.sh backend  # só backend
+bash deploy.sh frontend # só frontend
+systemctl reload nginx
 ```
-Configure `VITE_API_URL` → URL do backend.
 
-### Banco (Neon)
-Crie projeto em [neon.tech](https://neon.tech), copie a connection string.
-
----
-
-## 🔐 Segurança
-- Helmet · JWT access+refresh · bcrypt · class-validator · ThrottlerGuard (100 req/60s) · CORS · Prisma parameterized queries
-
----
-
-## 🧪 Testes
+### Build Mobile (EAS)
 ```bash
-cd backend
-npm run test          # Unit
-npm run test:cov      # Coverage
-npm run test:e2e      # E2E
+cd mobile
+npx eas build --platform android --profile preview --non-interactive
+# APK baixado e deployado via SCP para /var/www/finanzaai.tech/downloads/
 ```
 
 ---
 
-## 🗺️ Roadmap (v1.2.0)
-- [ ] Otimização do motor Vision (múltiplos tipos de comprovantes)
-- [ ] Confidence Score + edição de valores no review
-- [ ] Dark Mode aprimorado no mobile
-- [ ] Testes E2E: Upload → IA → Dashboard
-- [ ] Monitoramento de custos OpenRouter
+## Segurança
+- Helmet · JWT access (15min) + refresh (7d) · bcrypt · class-validator
+- ThrottlerGuard (100 req/60s global, login 10/min, /auth/me e /auth/refresh isentos)
+- CORS · Prisma parameterized queries · Dual auth (cookie + bearer)
+
+---
+
+## Scripts Úteis
+
+| Script | Descrição |
+|---|---|
+| `bash deploy.sh all` | Deploy completo na VPS |
+| `bash cleanup-and-push.sh` | Limpa repo + push GitHub |
+| `bash cleanup-and-push.sh --dry-run` | Preview do que será limpo |
+| `bash cleanup-and-push.sh --force` | Force push (após filter-repo) |
+| `npm run release:patch/minor/major` | Bump versão (conventional commits) |
+
+---
+
+## Contribuindo
+
+Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para convenções de commits, branching e versionamento.
 
 ---
 
