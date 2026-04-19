@@ -1,10 +1,9 @@
-
 import axios from 'axios';
 
 const getBaseUrl = () => {
     // @ts-ignore
     const url = import.meta.env.VITE_API_URL || '';
-    // In production (Vercel), use relative /api/v1 — Vercel rewrites proxy to Render
+    // In production, use relative /api/v1 — Nginx proxies to backend
     // In development, use /api/v1 proxy from vite.config.ts -> localhost:3000
     if (!url) return '/api/v1';
     return url.replace(/\/$/, '') + '/v1';
@@ -51,20 +50,15 @@ api.interceptors.request.use((config) => {
 
 // Evita refresh loop infinito caso o próprio refresh falhe
 let isRefreshing = false;
-let failedQueue: Array<{
-    resolve: (value?: unknown) => void;
-    reject: (reason?: any) => void;
-}> = [];
+let refreshSubscribers: Array<(token: string) => void> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
-    failedQueue.forEach(prom => {
-        if (error) {
-            prom.reject(error);
-        } else {
-            prom.resolve(token);
-        }
-    });
-    failedQueue = [];
+const onTokenRefreshed = (newToken: string) => {
+    refreshSubscribers.forEach(cb => cb(newToken));
+    refreshSubscribers = [];
+};
+
+const addRefreshSubscriber = (cb: (token: string) => void) => {
+    refreshSubscribers.push(cb);
 };
 
 // Response interceptor to unwrap the standardized backend envelope and trap 401s
@@ -93,13 +87,12 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
 
             if (isRefreshing) {
-                // Aguarda a fila do request atual em refresh para continuar dps
-                return new Promise(function (resolve, reject) {
-                    failedQueue.push({ resolve, reject });
-                }).then(() => {
-                    return api(originalRequest);
-                }).catch(err => {
-                    return Promise.reject(err);
+                // Se já está fazendo refresh, espera o novo token e retry
+                return new Promise((resolve) => {
+                    addRefreshSubscriber((newToken: string) => {
+                        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                        resolve(api(originalRequest));
+                    });
                 });
             }
 
@@ -108,23 +101,24 @@ api.interceptors.response.use(
 
             try {
                 // Backend detecta HttpOnly RefreshCookie e retorna novos
-                // Não precisa mandar o payload pro refreshCookie automático funcionar
                 const userId = localStorage.getItem('userId');
                 const refreshResponse = await api.post('/auth/refresh', { userId });
 
-                // Atualiza o token no localStorage para fallback Bearer
-                // (cookies HttpOnly já são atualizados automaticamente pelo browser)
-                if (refreshResponse.data?.access_token) {
-                    localStorage.setItem('token', refreshResponse.data.access_token);
+                const newToken = refreshResponse.data?.access_token;
+                if (newToken) {
+                    localStorage.setItem('token', newToken);
                 }
 
-                // Se der certo, refaz os requests que travaram no 401
-                processQueue(null);
+                // Notifica todos os requests que estavam esperando
+                onTokenRefreshed(newToken || '');
+
+                // Atualiza o header do request original e retry
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
                 return api(originalRequest);
 
             } catch (refreshError) {
-                processQueue(refreshError, null);
-                // Se falhar de vez, desloga e manda pra home
+                refreshSubscribers = [];
+                // Se falhar de vez, desloga e manda pra login
                 localStorage.removeItem('token');
                 localStorage.removeItem('userId');
                 localStorage.removeItem('userName');

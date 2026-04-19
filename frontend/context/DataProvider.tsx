@@ -49,16 +49,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { addToast } = useToast();
     const { selectedDate } = useMonth();
 
-    // Fetch 1: All base data — now with independent error handling
+    // Fetch 1: All base data — independent error handling per resource
     const fetchBaseData = useCallback(async () => {
         const fetchResource = async (url: string, setter: (data: any) => void) => {
             try {
                 const res = await api.get(url);
-                setter(Array.isArray(res.data) ? res.data : []);
+                const data = res.data;
+                setter(Array.isArray(data) ? data : []);
             } catch (error: any) {
-                console.error(`Error fetching ${url}:`, error);
-                setter([]); // Ensure state is reset to empty array on error
-                // 401 is handled by interceptors or App.tsx redirect logic
+                console.error(`Error fetching ${url}:`, error?.response?.status, error?.message);
+                setter([]);
                 if (error.response?.status !== 401) {
                     addToast(`Erro ao sincronizar ${url.replace('/', '')}.`, 'error');
                 }
