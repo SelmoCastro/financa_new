@@ -53,7 +53,12 @@ export const Login: React.FC = () => {
                     localStorage.setItem('userEmail', response.data.user.email);
                     localStorage.setItem('isAdmin', response.data.user.isAdmin ? 'true' : 'false');
                     localStorage.setItem('isEmailVerified', response.data.user.isEmailVerified ? 'true' : 'false');
-                    navigate('/dashboard');
+                    // Redireciona pra verificação se email não verificado
+                    if (!response.data.user.isEmailVerified) {
+                        navigate('/verify-email');
+                    } else {
+                        navigate('/dashboard');
+                    }
                 } else {
                     setSuccessMsg(response.data.message || 'Cadastro realizado com sucesso!');
                     setIsRegister(false);
@@ -70,7 +75,12 @@ export const Login: React.FC = () => {
                 localStorage.setItem('userEmail', response.data.user.email);
                 localStorage.setItem('isAdmin', response.data.user.isAdmin ? 'true' : 'false');
                 localStorage.setItem('isEmailVerified', response.data.user.isEmailVerified ? 'true' : 'false');
-                navigate('/dashboard');
+                // Redireciona pra verificação se email não verificado
+                if (!response.data.user.isEmailVerified) {
+                    navigate('/verify-email');
+                } else {
+                    navigate('/dashboard');
+                }
             }
         } catch (err: any) {
             console.error(err);

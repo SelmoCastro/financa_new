@@ -78,6 +78,16 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
+        // Se for 403 por email não verificado, marca e redireciona pra verificação
+        if (error.response?.status === 403 && error.response?.data?.message?.includes('Email verification required')) {
+            localStorage.setItem('isEmailVerified', 'false');
+            // Se nao estamos na tela de verify-email, redireciona
+            if (!window.location.pathname.includes('verify-email')) {
+                window.location.href = '/verify-email';
+            }
+            return Promise.reject(error);
+        }
+
         // Se for 401 (sem autorização) e não for rota de auth (evita loops e atrasos no logout)
         const isAuthRoute = ['/auth/refresh', '/auth/logout', '/auth/login'].some(r => originalRequest.url?.includes(r));
         if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {

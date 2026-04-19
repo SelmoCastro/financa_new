@@ -5,15 +5,17 @@ import api from '../services/api';
 export const VerifyEmail: React.FC = () => {
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+    const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'pending'>('loading');
     const [message, setMessage] = useState('Verificando seu e-mail...');
+    const [resendCooldown, setResendCooldown] = useState(0);
     const navigate = useNavigate();
 
     useEffect(() => {
         const verifyToken = async () => {
+            // Sem token = chegou pelo redirect do 403 ou acessou direto
             if (!token) {
-                setStatus('error');
-                setMessage('Link de verificação inválido ou inexistente.');
+                setStatus('pending');
+                setMessage('Verifique sua caixa de entrada ou reenvie o e-mail de confirmação.');
                 return;
             }
 
@@ -21,9 +23,10 @@ export const VerifyEmail: React.FC = () => {
                 const response = await api.post('/auth/verify-email', { token });
                 setStatus('success');
                 setMessage(response.data.message || 'E-mail verificado com sucesso!');
+                localStorage.setItem('isEmailVerified', 'true');
                 setTimeout(() => {
-                    navigate('/login');
-                }, 4000);
+                    navigate('/dashboard');
+                }, 3000);
             } catch (err: any) {
                 console.error(err);
                 setStatus('error');
@@ -34,10 +37,28 @@ export const VerifyEmail: React.FC = () => {
         verifyToken();
     }, [token, navigate]);
 
+    // Cooldown timer pro botao de resend
     useEffect(() => {
-        // @ts-ignore
-        if (window.lucide) window.lucide.createIcons();
-    }, [status]);
+        if (resendCooldown <= 0) return;
+        const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [resendCooldown]);
+
+    const handleResend = async () => {
+        const userEmail = localStorage.getItem('userEmail');
+        if (!userEmail) {
+            setMessage('Email não encontrado. Faça login novamente.');
+            return;
+        }
+
+        try {
+            await api.post('/auth/resend-verification');
+            setResendCooldown(60); // 60s cooldown
+            setMessage('E-mail de verificação reenviado! Verifique sua caixa de entrada.');
+        } catch (err: any) {
+            setMessage(err.response?.data?.message || 'Erro ao reenviar. Tente novamente.');
+        }
+    };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors duration-500">
@@ -47,39 +68,72 @@ export const VerifyEmail: React.FC = () => {
                         ? 'bg-emerald-600 shadow-emerald-600/40 text-white' 
                         : status === 'error' 
                             ? 'bg-rose-600 shadow-rose-600/40 text-white' 
-                            : 'bg-indigo-600 shadow-indigo-600/40 text-white'
+                            : status === 'pending'
+                                ? 'bg-amber-500 shadow-amber-500/40 text-white'
+                                : 'bg-indigo-600 shadow-indigo-600/40 text-white'
                 }`}>
-                    {status === 'loading' && <i data-lucide="loader-2" className="w-12 h-12 animate-spin"></i>}
-                    {status === 'success' && <i data-lucide="check-circle" className="w-12 h-12"></i>}
-                    {status === 'error' && <i data-lucide="x-circle" className="w-12 h-12"></i>}
+                    {status === 'loading' && <span className="text-5xl animate-spin">⏳</span>}
+                    {status === 'success' && <span className="text-5xl">✅</span>}
+                    {status === 'error' && <span className="text-5xl">❌</span>}
+                    {status === 'pending' && <span className="text-5xl">📧</span>}
                 </div>
 
                 <div className="space-y-2 mb-8">
                     <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${
-                        status === 'success' ? 'text-emerald-600 dark:text-emerald-400' : status === 'error' ? 'text-rose-600 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'
+                        status === 'success' ? 'text-emerald-600 dark:text-emerald-400' 
+                        : status === 'error' ? 'text-rose-600 dark:text-rose-400' 
+                        : status === 'pending' ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-indigo-600 dark:text-indigo-400'
                     }`}>
                         Autenticação
                     </p>
                     <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">
-                        {status === 'loading' ? 'Verificando...' : status === 'success' ? 'Sucesso!' : 'Ops! Algo deu errado'}
+                        {status === 'loading' ? 'Verificando...' 
+                        : status === 'success' ? 'Sucesso!' 
+                        : status === 'pending' ? 'Verifique seu e-mail'
+                        : 'Ops! Algo deu errado'}
                     </h2>
-                    <p className={`text-sm font-medium leading-relaxed px-4 ${status === 'error' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                    <p className={`text-sm font-medium leading-relaxed px-4 ${
+                        status === 'error' ? 'text-rose-600 dark:text-rose-400' 
+                        : status === 'pending' ? 'text-slate-500 dark:text-slate-400'
+                        : 'text-slate-500 dark:text-slate-400'
+                    }`}>
                         {message}
                     </p>
                 </div>
 
-                {status !== 'loading' && (
-                    <button
-                        onClick={() => navigate('/login')}
-                        className={`w-full py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 shadow-2xl ${
-                            status === 'success' 
-                                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30 text-white' 
-                                : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30 text-white'
-                        }`}
-                    >
-                        Acessar Minha Conta
-                    </button>
-                )}
+                <div className="space-y-3">
+                    {/* Botao de reenviar (pending/error) */}
+                    {(status === 'pending' || status === 'error') && (
+                        <button
+                            onClick={handleResend}
+                            disabled={resendCooldown > 0}
+                            className={`w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-95 shadow-xl ${
+                                resendCooldown > 0 
+                                    ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed shadow-none' 
+                                    : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30 text-white'
+                            }`}
+                        >
+                            {resendCooldown > 0 
+                                ? `Aguarde ${resendCooldown}s para reenviar` 
+                                : 'Reenviar e-mail de verificação'}
+                        </button>
+                    )}
+
+                    {/* Botao de acessar conta (success) ou voltar pro login */}
+                    {status !== 'loading' && (
+                        <button
+                            onClick={() => navigate(status === 'success' ? '/dashboard' : '/login')}
+                            className={`w-full py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 shadow-2xl ${
+                                status === 'success' 
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30 text-white' 
+                                    : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30 text-white'
+                            }`}
+                        >
+                            {status === 'success' ? 'Acessar Minha Conta' : 'Voltar para Login'}
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );
