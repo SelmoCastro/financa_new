@@ -1,6 +1,7 @@
-import { Controller, Get, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, Request, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminService } from './admin.service';
+import { UpdatePlanDto } from './dto/update-plan.dto';
 
 @Controller({
   path: 'admin',
@@ -32,5 +33,26 @@ export class AdminController {
   @Get('health')
   getSystemHealth(@Request() req) {
     return this.adminService.getSystemHealth(req.user.userId);
+  }
+
+  /** GET /v1/admin/plans — Stats de planos */
+  @Get('plans')
+  getPlanStats(@Request() req) {
+    return this.adminService.getPlanStats(req.user.userId);
+  }
+
+  /** PATCH /v1/admin/users/:id/plan — Alterar plano de um usuario */
+  @Patch('users/:id/plan')
+  updateUserPlan(
+    @Param('id') userId: string,
+    @Body() dto: UpdatePlanDto,
+    @Request() req,
+  ) {
+    return this.adminService.updateUserPlan(
+      req.user.userId,
+      userId,
+      dto.plan,
+      dto.duration,
+    );
   }
 }

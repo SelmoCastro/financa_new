@@ -32,6 +32,11 @@ interface UserRow {
   isEmailVerified: boolean;
   createdAt: string;
   updatedAt: string;
+  subscription: {
+    plan: string;
+    status: string;
+    expiresAt: string | null;
+  } | null;
   _count: {
     transactions: number;
     accounts: number;
@@ -40,6 +45,17 @@ interface UserRow {
     aiRequestLogs: number;
     feedbacks: number;
   };
+}
+
+interface PlanStatsData {
+  plans: { free: number; pro: number; premium: number; total: number };
+  lifetimeUsers: number;
+  expiringSoon: Array<{
+    userId: string;
+    plan: string;
+    expiresAt: string;
+    user: { name: string; email: string };
+  }>;
 }
 
 interface ActivityData {
@@ -96,13 +112,17 @@ function formatDate(iso: string, locale: string): string {
   });
 }
 
-type Tab = 'overview' | 'users' | 'activity' | 'health';
+type Tab = 'overview' | 'users' | 'plans' | 'activity' | 'health';
 
 export const AdminPanelView: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [activity, setActivity] = useState<ActivityData | null>(null);
   const [health, setHealth] = useState<HealthData | null>(null);
+  const [planStats, setPlanStats] = useState<PlanStatsData | null>(null);
+  const [planEditing, setPlanEditing] = useState<string | null>(null);
+  const [planForm, setPlanForm] = useState<{ plan: string; duration: string }>({ plan: 'premium', duration: 'lifetime' });
+  const [isSavingPlan, setIsSavingPlan] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<Tab>('overview');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
@@ -112,16 +132,18 @@ export const AdminPanelView: React.FC = () => {
   const loadAll = async () => {
     setIsLoading(true);
     try {
-      const [statsRes, usersRes, activityRes, healthRes] = await Promise.all([
+      const [statsRes, usersRes, activityRes, healthRes, plansRes] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/users'),
         api.get('/admin/activity'),
         api.get('/admin/health'),
+        api.get('/admin/plans'),
       ]);
       setStats(statsRes.data);
       setUsers(usersRes.data);
       setActivity(activityRes.data);
       setHealth(healthRes.data);
+      setPlanStats(plansRes.data);
     } catch (error: any) {
       if (error?.response?.status === 403) {
         addToast('Acesso restrito a administradores.', 'error');
@@ -130,6 +152,23 @@ export const AdminPanelView: React.FC = () => {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSavePlan = async (userId: string) => {
+    setIsSavingPlan(true);
+    try {
+      await api.patch(`/admin/users/${userId}/plan`, {
+        plan: planForm.plan,
+        duration: planForm.duration,
+      });
+      addToast('Plano atualizado com sucesso!', 'success');
+      setPlanEditing(null);
+      loadAll();
+    } catch (error: any) {
+      addToast(error?.response?.data?.message || 'Erro ao alterar plano.', 'error');
+    } finally {
+      setIsSavingPlan(false);
     }
   };
 
@@ -152,6 +191,7 @@ export const AdminPanelView: React.FC = () => {
   const sections: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Visão Geral', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'users', label: 'Usuários', icon: <Users className="w-4 h-4" /> },
+    { id: 'plans', label: 'Planos', icon: <CreditCard className="w-4 h-4" /> },
     { id: 'activity', label: 'Atividade', icon: <Activity className="w-4 h-4" /> },
     { id: 'health', label: 'Sistema', icon: <Server className="w-4 h-4" /> },
   ];
@@ -283,7 +323,12 @@ export const AdminPanelView: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {users.map(user => (
+            {users.map(user => {
+              const userPlan = user.subscription?.plan || 'free';
+              const userExpires = user.subscription?.expiresAt;
+              const isLifetime = userPlan !== 'free' && !userExpires;
+
+              return (
               <div key={user.id} className="bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl overflow-hidden shadow-lg shadow-slate-100/50 dark:shadow-none">
                 <button
                   onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
@@ -294,11 +339,20 @@ export const AdminPanelView: React.FC = () => {
                       {(user.name || user.email)[0].toUpperCase()}
                     </div>
                     <div className="text-left">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-bold text-slate-800 dark:text-white text-sm">{user.name || 'Sem nome'}</p>
                         {user.isAdmin && (
                           <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] font-black uppercase rounded-md tracking-wider">Admin</span>
                         )}
+                        {/* Plan badge */}
+                        <span className={`px-1.5 py-0.5 text-[9px] font-black uppercase rounded-md tracking-wider ${
+                          userPlan === 'premium' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
+                          userPlan === 'pro' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                          'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                        }`}>
+                          {userPlan === 'premium' ? 'PREMIUM' : userPlan === 'pro' ? 'PRO' : 'FREE'}
+                          {isLifetime ? ' (vitalicio)' : userExpires ? ` ate ${new Date(userExpires).toLocaleDateString('pt-BR')}` : ''}
+                        </span>
                         {user.isEmailVerified ? (
                           <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
                         ) : (
@@ -344,10 +398,135 @@ export const AdminPanelView: React.FC = () => {
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Criado: {formatDate(user.createdAt, locale)}</span>
                       <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> Atualizado: {formatDate(user.updatedAt, locale)}</span>
                     </div>
+
+                    {/* Plan Editor */}
+                    <div className="mt-4 p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-800/30">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <CreditCard className="w-3.5 h-3.5" /> Gerenciar Plano
+                        </p>
+                        {planEditing !== user.id ? (
+                          <button
+                            onClick={() => {
+                              setPlanEditing(user.id);
+                              setPlanForm({ plan: userPlan, duration: isLifetime ? 'lifetime' : '30d' });
+                            }}
+                            className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                          >
+                            Alterar Plano
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setPlanEditing(null)}
+                            className="text-[10px] font-bold text-slate-400 hover:text-slate-600"
+                          >
+                            Cancelar
+                          </button>
+                        )}
+                      </div>
+
+                      {planEditing === user.id && (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">Plano</label>
+                              <select
+                                value={planForm.plan}
+                                onChange={e => setPlanForm({ ...planForm, plan: e.target.value })}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                              >
+                                <option value="free">Free</option>
+                                <option value="pro">Pro</option>
+                                <option value="premium">Premium</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">Duracao</label>
+                              <select
+                                value={planForm.duration}
+                                onChange={e => setPlanForm({ ...planForm, duration: e.target.value })}
+                                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                              >
+                                <option value="lifetime">Vitalicio</option>
+                                <option value="30d">30 dias</option>
+                                <option value="60d">60 dias</option>
+                                <option value="90d">90 dias</option>
+                                <option value="custom">Manter expiracao atual</option>
+                              </select>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleSavePlan(user.id)}
+                            disabled={isSavingPlan || planForm.plan === 'free' && planForm.duration !== 'lifetime'}
+                            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isSavingPlan ? 'Salvando...' : 'Salvar Alteracao'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* PLANS */}
+      {activeSection === 'plans' && planStats && (
+        <div className="space-y-6">
+          {/* Plan distribution */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Free', value: planStats.plans.free, color: 'bg-slate-100 dark:bg-slate-700', textColor: 'text-slate-600 dark:text-slate-300' },
+              { label: 'Pro', value: planStats.plans.pro, color: 'bg-blue-100 dark:bg-blue-900/30', textColor: 'text-blue-600 dark:text-blue-400' },
+              { label: 'Premium', value: planStats.plans.premium, color: 'bg-emerald-100 dark:bg-emerald-900/30', textColor: 'text-emerald-600 dark:text-emerald-400' },
+              { label: 'Vitalicio', value: planStats.lifetimeUsers, color: 'bg-amber-100 dark:bg-amber-900/30', textColor: 'text-amber-600 dark:text-amber-400' },
+            ].map(card => (
+              <div key={card.label} className={`${card.color} border border-slate-100 dark:border-slate-700/50 rounded-2xl p-5 text-center`}>
+                <p className={`text-2xl font-black ${card.textColor}`}>{card.value}</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1">{card.label}</p>
+              </div>
             ))}
+          </div>
+
+          {/* Expiring soon */}
+          <div className="bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl p-5 shadow-lg shadow-slate-100/50 dark:shadow-none">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-5 h-5 text-amber-500" />
+              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Expirando em 7 dias</h3>
+            </div>
+            {planStats.expiringSoon.length === 0 ? (
+              <p className="text-sm text-slate-400 dark:text-slate-500">Nenhum plano expirando em breve.</p>
+            ) : (
+              <div className="space-y-2">
+                {planStats.expiringSoon.map(sub => (
+                  <div key={sub.userId} className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-100 dark:border-amber-800/30">
+                    <div>
+                      <p className="text-sm font-bold text-slate-800 dark:text-white">{sub.user.name || sub.user.email}</p>
+                      <p className="text-[10px] text-slate-400">{sub.user.email}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`px-2 py-1 text-[9px] font-black rounded-lg ${
+                        sub.plan === 'premium' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                      }`}>{sub.plan.toUpperCase()}</span>
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-1">
+                        Expira: {new Date(sub.expiresAt).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Bulk actions hint */}
+          <div className="bg-slate-50 dark:bg-slate-800/30 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-5 text-center">
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              Para alterar o plano de um usuario, va para a aba <strong>Usuarios</strong>, expanda o usuario e clique em <strong>Alterar Plano</strong>.
+            </p>
           </div>
         </div>
       )}

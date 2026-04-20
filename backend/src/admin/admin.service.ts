@@ -1,6 +1,9 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+export type AdminPlanType = 'free' | 'pro' | 'premium';
+export type AdminDurationType = 'lifetime' | '30d' | '60d' | '90d' | 'custom';
+
 @Injectable()
 export class AdminService {
   constructor(private prisma: PrismaService) {}
@@ -80,6 +83,13 @@ export class AdminService {
         isEmailVerified: true,
         createdAt: true,
         updatedAt: true,
+        subscription: {
+          select: {
+            plan: true,
+            status: true,
+            expiresAt: true,
+          },
+        },
         _count: {
           select: {
             transactions: { where: { deletedAt: null } },
@@ -185,6 +195,90 @@ export class AdminService {
         uptimeSeconds: Number((dbUptime as any)[0]?.uptime_seconds ?? 0),
         activeUsers30d,
       },
+    };
+  }
+
+  /** Alterar plano de um usuario */
+  async updateUserPlan(
+    adminUserId: string,
+    targetUserId: string,
+    plan: AdminPlanType,
+    duration: AdminDurationType,
+  ) {
+    await this.verifyAdmin(adminUserId);
+
+    const validPlans: AdminPlanType[] = ['free', 'pro', 'premium'];
+    if (!validPlans.includes(plan)) {
+      throw new ForbiddenException(`Plano invalido: ${plan}`);
+    }
+
+    // Verificar se o usuario alvo existe
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+    });
+    if (!targetUser) {
+      throw new ForbiddenException('Usuario nao encontrado');
+    }
+
+    // Calcular expiresAt baseado na duracao
+    let expiresAt: Date | null = null;
+    if (duration === 'lifetime') {
+      expiresAt = null; // Vitalicio = sem expiracao
+    } else if (duration === '30d') {
+      expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    } else if (duration === '60d') {
+      expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+    } else if (duration === '90d') {
+      expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+    } else if (duration === 'custom') {
+      // Nao alterar expiresAt existente (mantem o que tem)
+      const existing = await this.prisma.subscription.findUnique({
+        where: { userId: targetUserId },
+      });
+      expiresAt = existing?.expiresAt ?? null;
+    }
+
+    // Se plano for free, status = active mas sem expiresAt relevante
+    const status = plan === 'free' ? 'active' : 'active';
+
+    return this.prisma.subscription.upsert({
+      where: { userId: targetUserId },
+      update: { plan, status, expiresAt },
+      create: { userId: targetUserId, plan, status, expiresAt },
+    });
+  }
+
+  /** Stats de planos */
+  async getPlanStats(adminUserId: string) {
+    await this.verifyAdmin(adminUserId);
+
+    const [free, pro, premium, total, lifetimeUsers] = await Promise.all([
+      this.prisma.subscription.count({ where: { plan: 'free' } }),
+      this.prisma.subscription.count({ where: { plan: 'pro' } }),
+      this.prisma.subscription.count({ where: { plan: 'premium' } }),
+      this.prisma.subscription.count(),
+      this.prisma.subscription.count({
+        where: { plan: { in: ['pro', 'premium'] }, expiresAt: null },
+      }),
+    ]);
+
+    const expiringSoon = await this.prisma.subscription.findMany({
+      where: {
+        plan: { in: ['pro', 'premium'] },
+        expiresAt: { not: null, lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+      },
+      select: {
+        userId: true,
+        plan: true,
+        expiresAt: true,
+        user: { select: { name: true, email: true } },
+      },
+    });
+
+    return {
+      plans: { free, pro, premium, total },
+      lifetimeUsers,
+      expiringSoon,
     };
   }
 }
