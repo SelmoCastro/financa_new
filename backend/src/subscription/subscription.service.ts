@@ -16,7 +16,7 @@ export class SubscriptionService {
     let sub = await this.prisma.subscription.findUnique({ where: { userId } });
     if (!sub) {
       sub = await this.prisma.subscription.create({
-        data: { userId, plan: 'free', status: 'active' },
+        data: { userId, plan: 'premium', status: 'active' },
       });
     }
     return sub;
