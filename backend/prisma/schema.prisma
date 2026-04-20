@@ -235,7 +235,7 @@ model Notification {
 model Subscription {
   id        String    @id @default(uuid())
   userId    String    @unique
-  plan      String    @default("free") // free, pro, premium
+  plan      String    @default("free") // free, premium
   status    String    @default("active") // active, past_due, canceled
   expiresAt DateTime?
   createdAt DateTime  @default(now())

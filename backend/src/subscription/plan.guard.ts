@@ -24,7 +24,7 @@ export class PlanGuard implements CanActivate {
     if (!userId) return false;
 
     const userPlan = await this.subscriptionService.getPlan(userId);
-    const planHierarchy: PlanType[] = ['free', 'pro', 'premium'];
+    const planHierarchy: PlanType[] = ['free', 'premium'];
     const userLevel = planHierarchy.indexOf(userPlan);
     const requiredLevel = planHierarchy.indexOf(requiredPlan);
 

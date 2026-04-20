@@ -49,7 +49,7 @@ interface UserRow {
 }
 
 interface PlanStatsData {
-  plans: { free: number; pro: number; premium: number; total: number };
+  plans: { free: number; premium: number; total: number };
   lifetimeUsers: number;
   expiringSoon: Array<{
     userId: string;
@@ -129,7 +129,7 @@ export const AdminPanelView: React.FC = () => {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   // User filters
   const [userSearch, setUserSearch] = useState('');
-  const [userPlanFilter, setUserPlanFilter] = useState<'all' | 'free' | 'pro' | 'premium'>('all');
+  const [userPlanFilter, setUserPlanFilter] = useState<'all' | 'free' | 'premium'>('all');
   const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'verified' | 'unverified' | 'admin'>('all');
   const [userSort, setUserSort] = useState<'name' | 'newest' | 'oldest' | 'transactions' | 'ai'>('newest');
   const [userPage, setUserPage] = useState(1);
@@ -140,7 +140,6 @@ export const AdminPanelView: React.FC = () => {
   // Computed user lists (top-level hooks, not inside conditionals)
   const planCounts = useMemo(() => ({
     free: users.filter(u => (u.subscription?.plan || 'free') === 'free').length,
-    pro: users.filter(u => u.subscription?.plan === 'pro').length,
     premium: users.filter(u => u.subscription?.plan === 'premium').length,
     verified: users.filter(u => u.isEmailVerified).length,
     unverified: users.filter(u => !u.isEmailVerified).length,
@@ -383,7 +382,6 @@ export const AdminPanelView: React.FC = () => {
               {[
                 { id: 'all' as const, label: 'Todos', count: users.length },
                 { id: 'free' as const, label: 'Free', count: planCounts.free },
-                { id: 'pro' as const, label: 'Pro', count: planCounts.pro },
                 { id: 'premium' as const, label: 'Premium', count: planCounts.premium },
               ].map(chip => (
                 <button
@@ -476,10 +474,9 @@ export const AdminPanelView: React.FC = () => {
                           )}
                           <span className={`px-1.5 py-0.5 text-[9px] font-black uppercase rounded-md tracking-wider ${
                             userPlan === 'premium' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
-                            userPlan === 'pro' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
-                            'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                            'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                           }`}>
-                            {userPlan === 'premium' ? 'PREMIUM' : userPlan === 'pro' ? 'PRO' : 'FREE'}
+                            {userPlan === 'premium' ? 'PREMIUM' : 'FREE'}
                             {isLifetime ? ' (vitalicio)' : userExpires ? ` ate ${new Date(userExpires).toLocaleDateString('pt-BR')}` : ''}
                           </span>
                           {user.isEmailVerified ? (
@@ -565,7 +562,6 @@ export const AdminPanelView: React.FC = () => {
                                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                                 >
                                   <option value="free">Free</option>
-                                  <option value="pro">Pro</option>
                                   <option value="premium">Premium</option>
                                 </select>
                               </div>
@@ -658,7 +654,6 @@ export const AdminPanelView: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: 'Free', value: planStats.plans.free, color: 'bg-slate-100 dark:bg-slate-700', textColor: 'text-slate-600 dark:text-slate-300' },
-              { label: 'Pro', value: planStats.plans.pro, color: 'bg-blue-100 dark:bg-blue-900/30', textColor: 'text-blue-600 dark:text-blue-400' },
               { label: 'Premium', value: planStats.plans.premium, color: 'bg-emerald-100 dark:bg-emerald-900/30', textColor: 'text-emerald-600 dark:text-emerald-400' },
               { label: 'Vitalicio', value: planStats.lifetimeUsers, color: 'bg-amber-100 dark:bg-amber-900/30', textColor: 'text-amber-600 dark:text-amber-400' },
             ].map(card => (

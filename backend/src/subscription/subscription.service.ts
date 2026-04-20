@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-export type PlanType = 'free' | 'pro' | 'premium';
+export type PlanType = 'free' | 'premium';
 
 export const PLAN_LIMITS: Record<PlanType, { aiRequestsPerDay: number; maxAccounts: number; maxBudgets: number }> = {
   free: { aiRequestsPerDay: 3, maxAccounts: 3, maxBudgets: 3 },
-  pro: { aiRequestsPerDay: 50, maxAccounts: 10, maxBudgets: 20 },
   premium: { aiRequestsPerDay: -1, maxAccounts: -1, maxBudgets: -1 }, // -1 = unlimited
 };
 
@@ -58,7 +57,7 @@ export class SubscriptionService {
   }
 
   async upgrade(userId: string, plan: PlanType, expiresAt?: Date) {
-    const validPlans: PlanType[] = ['free', 'pro', 'premium'];
+    const validPlans: PlanType[] = ['free', 'premium'];
     if (!validPlans.includes(plan)) {
       throw new Error(`Plano invalido: ${plan}`);
     }

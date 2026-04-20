@@ -1,7 +1,7 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-export type AdminPlanType = 'free' | 'pro' | 'premium';
+export type AdminPlanType = 'free' | 'premium';
 export type AdminDurationType = 'lifetime' | '30d' | '60d' | '90d' | 'custom';
 
 @Injectable()
@@ -207,7 +207,7 @@ export class AdminService {
   ) {
     await this.verifyAdmin(adminUserId);
 
-    const validPlans: AdminPlanType[] = ['free', 'pro', 'premium'];
+    const validPlans: AdminPlanType[] = ['free', 'premium'];
     if (!validPlans.includes(plan)) {
       throw new ForbiddenException(`Plano invalido: ${plan}`);
     }
@@ -252,19 +252,18 @@ export class AdminService {
   async getPlanStats(adminUserId: string) {
     await this.verifyAdmin(adminUserId);
 
-    const [free, pro, premium, total, lifetimeUsers] = await Promise.all([
+    const [free, premium, total, lifetimeUsers] = await Promise.all([
       this.prisma.subscription.count({ where: { plan: 'free' } }),
-      this.prisma.subscription.count({ where: { plan: 'pro' } }),
       this.prisma.subscription.count({ where: { plan: 'premium' } }),
       this.prisma.subscription.count(),
       this.prisma.subscription.count({
-        where: { plan: { in: ['pro', 'premium'] }, expiresAt: null },
+        where: { plan: 'premium', expiresAt: null },
       }),
     ]);
 
     const expiringSoon = await this.prisma.subscription.findMany({
       where: {
-        plan: { in: ['pro', 'premium'] },
+        plan: 'premium',
         expiresAt: { not: null, lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
       },
       select: {
@@ -276,7 +275,7 @@ export class AdminService {
     });
 
     return {
-      plans: { free, pro, premium, total },
+      plans: { free, premium, total },
       lifetimeUsers,
       expiringSoon,
     };
