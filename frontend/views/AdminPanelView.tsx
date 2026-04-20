@@ -150,8 +150,12 @@ export const AdminPanelView: React.FC = () => {
   const filteredUsers = useMemo(() => {
     let list = [...users];
     if (userSearch.trim()) {
-      const q = userSearch.toLowerCase().trim();
-      list = list.filter(u => (u.name || '').toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+      const q = userSearch.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      list = list.filter(u => {
+        const name = (u.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const email = u.email.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return name.includes(q) || email.includes(q);
+      });
     }
     if (userPlanFilter !== 'all') list = list.filter(u => (u.subscription?.plan || 'free') === userPlanFilter);
     if (userStatusFilter === 'verified') list = list.filter(u => u.isEmailVerified);
