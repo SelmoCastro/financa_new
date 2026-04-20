@@ -50,8 +50,8 @@ interface ActivityData {
   };
   recentFeedbacks: Array<{
     id: string;
-    message: string;
-    type: string;
+    content: string;
+    platform: string;
     createdAt: string;
     user: { name: string; email: string };
   }>;
@@ -401,7 +401,7 @@ export const AdminPanelView: React.FC = () => {
                       <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{fb.user.name || fb.user.email}</p>
                       <span className="text-[9px] text-slate-400">{formatDate(fb.createdAt, locale)}</span>
                     </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{fb.message}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{fb.content}</p>
                   </div>
                 ))}
               </div>

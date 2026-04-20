@@ -126,8 +126,8 @@ export class AdminService {
         where: { createdAt: { gte: thirtyDaysAgo } },
         select: {
           id: true,
-          message: true,
-          type: true,
+          content: true,
+          platform: true,
           createdAt: true,
           user: { select: { name: true, email: true } },
         },
