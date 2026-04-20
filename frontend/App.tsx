@@ -11,6 +11,7 @@ import { HistoryView } from './views/HistoryView';
 import { SettingsView } from './views/SettingsView';
 import { AccountsView } from './views/AccountsView';
 import { FeedbackAdminView } from './views/FeedbackAdminView';
+import { AdminPanelView } from './views/AdminPanelView';
 import { ImportOverlay } from './components/ImportOverlay';
 import { FeedbackModal } from './components/FeedbackModal';
 import { ActionMenu } from './components/ActionMenu';
@@ -195,6 +196,8 @@ const AppContent: React.FC = () => {
         );
       case 'feedbacks':
         return <FeedbackAdminView />;
+      case 'admin':
+        return <AdminPanelView />;
       case 'settings':
         return <SettingsView userName={userName} transactions={transactions} onLogout={handleLogout} />;
       default:
@@ -217,6 +220,7 @@ const AppContent: React.FC = () => {
                       activeTab === 'budgets' ? 'Orçamentos' :
                         activeTab === 'fixed' ? 'Recorrentes' :
                           activeTab === 'feedbacks' ? 'Feedbacks (Admin)' :
+                        activeTab === 'admin' ? 'Painel Admin' :
                             activeTab === 'history' ? 'Extrato' :
                               'Configurações'}
               {userName && (

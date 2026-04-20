@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight, MessageSquareHeart } from 'lucide-react';
+import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight, MessageSquareHeart, Shield } from 'lucide-react';
 import { version } from '../package.json';
 
 interface SidebarProps {
@@ -21,10 +21,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'fixed', label: 'Recorrentes', icon: Anchor },
     { id: 'history', label: 'Extrato', icon: Receipt },
     { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquareHeart },
+    { id: 'admin', label: 'Painel Admin', icon: Shield },
   ];
 
   const menuItems = allMenuItems.filter(item => {
     if (item.id === 'feedbacks') return isAdmin;
+    if (item.id === 'admin') return isAdmin;
     return true;
   });
 
@@ -115,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
       {/* Mobile Nav */}
       <nav className="lg:hidden fixed bottom-6 left-4 right-4 z-[90]">
         <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-slate-200/50 dark:border-slate-800/50 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-2 flex items-center justify-around">
-          {menuItems.filter(i => i.id !== 'feedbacks').concat([{ id: 'settings', label: 'Ajustes', icon: Settings } as any]).map((item: any) => (
+          {menuItems.filter(i => i.id !== 'feedbacks' && i.id !== 'admin').concat([{ id: 'settings', label: 'Ajustes', icon: Settings } as any]).map((item: any) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
