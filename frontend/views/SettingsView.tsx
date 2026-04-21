@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { LogOut } from 'lucide-react';
 import { Transaction } from '../types';
-import { useCurrency, CurrencyCode } from '../context/CurrencyContext';
 
 interface SettingsViewProps {
     userName: string;
@@ -11,12 +9,9 @@ interface SettingsViewProps {
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ userName, transactions, onLogout }) => {
-    const { currency, setCurrency } = useCurrency();
 
     const handleExportData = async () => {
         try {
-            // Using require/import based on how you access api
-            // Assuming api is imported from services/api
             const { default: api } = await import('../services/api');
 
             const response = await api.get('/transactions/export', {
@@ -40,11 +35,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, transactio
         alert('Esta funcionalidade não está disponível na versão com Banco de Dados para sua segurança.');
     };
 
-    React.useEffect(() => {
-        // @ts-ignore
-        if (window.lucide) window.lucide.createIcons();
-    }, []);
-
     return (
         <div className="max-w-3xl mx-auto space-y-12 animate-in fade-in slide-in-from-right duration-700">
             <div className="glass-card rounded-[2.5rem] md:rounded-[3rem] overflow-hidden">
@@ -54,36 +44,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, transactio
                     <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Personalize sua experiência e gerencie seus dados.</p>
                 </div>
                 <div className="p-8 md:p-12 space-y-12">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Nome de Exibição</label>
-                            <div className="relative">
-                                <i data-lucide="user" className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 dark:text-slate-600"></i>
-                                <input
-                                    type="text"
-                                    value={userName}
-                                    readOnly
-                                    className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-slate-300 cursor-not-allowed opacity-70 tracking-tight"
-                                />
-                            </div>
-                        </div>
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Moeda de Trabalho</label>
-                            <div className="relative group">
-                                <i data-lucide="banknote" className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 dark:text-slate-600 group-focus-within:text-indigo-500 transition-colors"></i>
-                                <select
-                                    value={currency}
-                                    onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-                                    className="w-full pl-14 pr-12 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none appearance-none font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all cursor-pointer"
-                                >
-                                    <option value="BRL">Real Brasileiro (BRL)</option>
-                                    <option value="USD">Dólar Americano (USD)</option>
-                                    <option value="EUR">Euro (EUR)</option>
-                                </select>
-                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                    <i data-lucide="chevron-down" className="w-4 h-4"></i>
-                                </div>
-                            </div>
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Nome de Exibição</label>
+                        <div className="relative">
+                            <i data-lucide="user" className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 dark:text-slate-600"></i>
+                            <input
+                                type="text"
+                                value={userName}
+                                readOnly
+                                className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-slate-300 cursor-not-allowed opacity-70 tracking-tight"
+                            />
                         </div>
                     </div>
 

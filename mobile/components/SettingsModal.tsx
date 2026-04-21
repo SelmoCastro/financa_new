@@ -8,7 +8,6 @@ import {
   Pressable,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useCurrency } from '../context/CurrencyContext';
 import { useAuth } from '../context/AuthContext';
 
 interface SettingsModalProps {
@@ -17,18 +16,7 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ visible, onClose }: SettingsModalProps) {
-  const { currency, setCurrency } = useCurrency();
   const { logout } = useAuth();
-
-  const currencies = [
-    { label: 'Real (BRL)', value: 'BRL', icon: 'payments' },
-    { label: 'Dólar (USD)', value: 'USD', icon: 'attach-money' },
-    { label: 'Euro (EUR)', value: 'EUR', icon: 'euro' },
-  ] as const;
-
-  const handleSelectCurrency = (value: 'BRL' | 'USD' | 'EUR') => {
-    setCurrency(value);
-  };
 
   return (
     <Modal
@@ -44,39 +32,6 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
             <TouchableOpacity onPress={onClose}>
               <MaterialIcons name="close" size={24} color="#64748b" />
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Moeda Preferencial</Text>
-            {currencies.map((item) => (
-              <TouchableOpacity
-                key={item.value}
-                style={[
-                  styles.option,
-                  currency === item.value && styles.optionSelected,
-                ]}
-                onPress={() => handleSelectCurrency(item.value)}
-              >
-                <View style={styles.optionLeft}>
-                  <MaterialIcons
-                    name={item.icon as any}
-                    size={20}
-                    color={currency === item.value ? '#4f46e5' : '#64748b'}
-                  />
-                  <Text
-                    style={[
-                      styles.optionLabel,
-                      currency === item.value && styles.optionLabelSelected,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </View>
-                {currency === item.value && (
-                  <MaterialIcons name="check" size={20} color="#4f46e5" />
-                )}
-              </TouchableOpacity>
-            ))}
           </View>
 
           <View style={styles.divider} />
@@ -115,55 +70,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#0f172a',
   },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-  },
-  optionSelected: {
-    borderColor: '#e0e7ff',
-    backgroundColor: '#f5f7ff',
-  },
-  optionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  optionLabel: {
-    fontSize: 16,
-    color: '#475569',
-    marginLeft: 12,
-  },
-  optionLabelSelected: {
-    color: '#4f46e5',
-    fontWeight: '600',
-  },
   divider: {
     height: 1,
     backgroundColor: '#f1f5f9',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   logoutButton: {
     flexDirection: 'row',
