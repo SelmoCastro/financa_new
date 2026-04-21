@@ -102,7 +102,7 @@ export class AuthController {
     };
   }
 
-  @SkipThrottle()
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Post('refresh')
   async refresh(
     @Body() body: RefreshDto,

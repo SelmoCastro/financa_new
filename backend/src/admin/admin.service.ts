@@ -207,6 +207,11 @@ export class AdminService {
   ) {
     await this.verifyAdmin(adminUserId);
 
+    // Prevent self-promotion (admin cannot change their own plan)
+    if (adminUserId === targetUserId) {
+      throw new ForbiddenException('Administradores não podem alterar o próprio plano');
+    }
+
     const validPlans: AdminPlanType[] = ['free', 'premium'];
     if (!validPlans.includes(plan)) {
       throw new ForbiddenException(`Plano invalido: ${plan}`);

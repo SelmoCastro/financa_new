@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
 
 export class LoginDto {
   @IsEmail()
@@ -6,5 +6,6 @@ export class LoginDto {
 
   @IsString()
   @MinLength(1)
+  @MaxLength(72) // bcrypt truncates >72 bytes, prevent DoS
   password: string;
 }

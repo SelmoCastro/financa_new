@@ -66,8 +66,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
             showFeedback('error', 'As senhas não coincidem');
             return;
         }
-        if (newPass.length < 6) {
-            showFeedback('error', 'A nova senha deve ter pelo menos 6 caracteres');
+        if (newPass.length < 8) {
+            showFeedback('error', 'A nova senha deve ter pelo menos 8 caracteres, incluindo letras e números');
             return;
         }
         setPassSaving(true);
@@ -252,7 +252,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     value={newPass}
                                     onChange={(e) => setNewPass(e.target.value)}
                                     className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500"
-                                    placeholder="Nova senha (mín. 6 caracteres)"
+                                    placeholder="Nova senha (mín. 8 caracteres, letras e números)"
                                 />
                                 <input
                                     type="password"

@@ -37,10 +37,12 @@ async function bootstrap() {
     console.log('App configurado (CORS, Pipes, Helmet).');
 
     const port = process.env.PORT ?? 3000;
-    console.log(`Tentando conectar na porta: ${port} e host: 0.0.0.0`);
+    console.log(`Iniciando na porta: ${port}`);
 
-    await app.listen(port, '0.0.0.0');
-    console.log(`🚀 Aplicação online na porta: ${port}`);
+    // Bind to 127.0.0.1 — nginx proxies to localhost, never expose directly
+    const host = process.env.HOST || '127.0.0.1';
+    await app.listen(port, host);
+    console.log(`🚀 Aplicação online na porta: ${port} (host: ${host})`);
   } catch (error) {
     console.error('\n❌ ERRO FATAL AO INICIAR O SERVIDOR NESTJS ❌\n');
     console.error('Nome do Erro:', error?.name);

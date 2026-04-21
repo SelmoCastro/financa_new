@@ -21,8 +21,8 @@ export default function SignupScreen() {
             return;
         }
 
-        if (password.length < 6) {
-            Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
+        if (password.length < 8) {
+            Alert.alert('Erro', 'A senha deve ter pelo menos 8 caracteres, incluindo letras e números');
             return;
         }
 
@@ -113,7 +113,7 @@ export default function SignupScreen() {
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Senha (mín. 6 caracteres)</Text>
+                            <Text style={styles.label}>Senha (mín. 8 caracteres, letras e números)</Text>
                             <TextInput
                                 style={styles.input}
                                 placeholder="••••••••"

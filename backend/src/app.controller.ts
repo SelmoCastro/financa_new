@@ -5,10 +5,10 @@ import {
   Request,
   Version,
   VERSION_NEUTRAL,
-  ForbiddenException,
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AuthGuard } from '@nestjs/passport';
+import { AdminGuard } from './common/guards/admin.guard';
 
 @Controller({
   version: VERSION_NEUTRAL,
@@ -22,19 +22,14 @@ export class AppController {
   }
 
   @Get('health/email')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   checkEmailConfig(@Request() req: any) {
-    if (!req.user.isAdmin) {
-      throw new ForbiddenException('Admin access required');
-    }
     const hasKey = !!process.env.RESEND_API_KEY;
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
     return {
       resendConfigured: hasKey,
-      fromEmail,
       hint: hasKey
-        ? 'Resend API key found. If emails are not arriving, check: 1) domain verification on resend.com/domains 2) fromEmail must use verified domain 3) onboarding@resend.dev only sends to account owner email'
-        : 'RESEND_API_KEY is missing! Add it to your environment variables.',
+        ? 'Resend API key found. If emails are not arriving, check domain verification on resend.com'
+        : 'RESEND_API_KEY is missing. Add it to environment variables.',
     };
   }
 }

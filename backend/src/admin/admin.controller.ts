@@ -1,5 +1,6 @@
 import { Controller, Get, Patch, Param, Body, Request, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AdminGuard } from '../common/guards/admin.guard';
 import { AdminService } from './admin.service';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 
@@ -7,7 +8,7 @@ import { UpdatePlanDto } from './dto/update-plan.dto';
   path: 'admin',
   version: '1',
 })
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), AdminGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
