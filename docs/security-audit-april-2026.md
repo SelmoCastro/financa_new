@@ -46,7 +46,7 @@
 
 ---
 
-## Ja Corrigido (confirmado nesta auditoria)
+## Ja Corrigido (confirmado e deployado)
 
 - JWT fallback hardcoded: CORRIGIDO (crasha se JWT_SECRET ausente)
 - POST /users com plaintext: NAO existe mais
@@ -61,6 +61,29 @@
 - FK ownership em transactions: CORRIGIDO
 - Future date em create/transfer/import: CORRIGIDO
 - Error sanitization em prod: CORRIGIDO
+- **V1**: Refresh token leak — x-platform header (mobile+backend)
+- **V2**: jwtService.decode() → jwtService.verify() (assinatura verificada)
+- **V3**: Import overdraft check (balance negativo bloqueado)
+- **V4**: CreditCard FK ownership validation
+- **V5**: PII logs gated behind NODE_ENV
+- **V6**: Rate limit on verify-email and reset-password
+- **V7**: ChangePasswordDto min 8 + regex
+- **V8**: Account soft-delete WITH balance reversal
+- **V9**: Transaction update future date validation (max 2 dias)
+- **V10**: Import TRANSFER mapeado para INCOME/EXPENSE
+- **V11**: AdminGuard reusável com DB check
+- **V12**: Subscription controller versioning
+- **V13**: DeleteAccountDto com validação
+- **V14**: Plano default FREE (migração SQL executada no VPS)
+- **V15**: PlanGuard + AiRequestGuard aplicados (3 contas, 3 orçamentos, 3 cartões, 3 AI/dia)
+- **V16**: Debug request logger gated to non-prod
+- **V17**: Goal targetAmount min 0.01
+- **V18**: FOR UPDATE lock on reconcile
+- **V19**: Nginx config versionado no repo
+- **V20**: UFW firewall script documentado
+- **Bind 127.0.0.1**: NestJS nao exposto direto (nginx proxy)
+- **Admin self-plan-change blocked**: Admin não pode alterar próprio plano
+- **health/email**: Removido fromEmail da resposta
 
 ---
 
@@ -169,8 +192,13 @@ Documentar regras: `ufw default deny incoming && ufw allow 22,80,443 && ufw enab
 
 ---
 
-### Ordem Recomendada de Deploy
+## Tudo Corrigido — Auditoria Completa
 
-1. **Batch seguro (sem risco):** V4, V5, V6, V11, V12, V13, V16, V17, V18, V19, V20
-2. **Batch medio (precisa cautela):** V2, V7, V9, V10
-3. **Bucket critico (precisa acao antes):** V1 (mobile header), V3 (import UX), V8 (ordem de operacoes), V14 (migracao + UI + V15)
+Todas as 20 vulnerabilidades foram identificadas, corrigidas e deployadas em produção.
+
+### Itens futuros (nao-bloqueantes, para evolution do produto)
+- **2FA**: Autenticação de dois fatores para operações críticas (saque, alteração de senha)
+- **Encryption at rest**: pgcrypto para dados sensíveis no banco
+- **CSP com nonces**: Content Security Policy com nonces dinâmicos
+- **Anomaly monitoring**: Detecção de padrões suspeitos (múltiplas falhas de login, requests anormais)
+- **Active premium revocation**: Revogar premium ativo quando subscription expira
