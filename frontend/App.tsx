@@ -29,6 +29,7 @@ import { getYearMonth } from './utils/dateUtils';
 import { Plus } from 'lucide-react';
 import api from './services/api';
 import { Mail } from 'lucide-react';
+import { SmartBanner } from './components/SmartBanner';
 
 const AppContent: React.FC = () => {
   const {
@@ -216,6 +217,8 @@ const AppContent: React.FC = () => {
   };
 
   return (
+    <>
+    <SmartBanner />
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex text-slate-900 dark:text-slate-100 selection:bg-indigo-100 dark:selection:bg-indigo-900 selection:text-indigo-900 dark:selection:text-indigo-100 transition-colors duration-300">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} onOpenFeedback={() => setIsFeedbackOpen(true)} isAdmin={isAdmin} />
       <div className={`flex-1 sidebar-transition ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pb-24 lg:pb-0`}>
@@ -365,6 +368,7 @@ const AppContent: React.FC = () => {
         </button>
       )}
     </div>
+    </>
   );
 };
 

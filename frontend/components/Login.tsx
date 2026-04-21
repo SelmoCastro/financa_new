@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import api from '../services/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { SmartBanner } from './SmartBanner';
 
 export const Login: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -98,7 +99,9 @@ export const Login: React.FC = () => {
     }, [error, isRegister, successMsg, isForgotPassword]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors duration-500">
+        <>
+            <SmartBanner />
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors duration-500">
             <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-500">
                 <div className="text-center mb-10">
                     <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-indigo-600/40 group hover:scale-110 transition-transform duration-500 cursor-pointer">
@@ -216,6 +219,7 @@ export const Login: React.FC = () => {
                     )}
                 </div>
             </div>
-        </div>
+            </div>
+        </>
     );
 };
