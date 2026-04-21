@@ -1,13 +1,29 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { CreateCreditCardDto } from './dto/create-credit-card.dto';
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
 
 @Injectable()
 export class CreditCardsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private subscriptionService: SubscriptionService,
+  ) {}
 
   async create(createCreditCardDto: CreateCreditCardDto, userId: string) {
+    // V15: Check credit card limit based on plan
+    const plan = await this.subscriptionService.getPlan(userId);
+    const limits = PLAN_LIMITS[plan];
+    const currentCount = await this.prisma.creditCard.count({
+      where: { userId, deletedAt: null },
+    });
+    if (limits.maxCreditCards !== -1 && currentCount >= limits.maxCreditCards) {
+      throw new ForbiddenException(
+        `Limite de ${limits.maxCreditCards} cartões atingido. Faça upgrade para Premium para cartões ilimitados.`,
+      );
+    }
+
     // V4: Validate accountId ownership
     if (createCreditCardDto.accountId) {
       const account = await this.prisma.account.findFirst({

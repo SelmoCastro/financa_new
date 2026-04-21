@@ -1,13 +1,29 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
 
 @Injectable()
 export class BudgetsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private subscriptionService: SubscriptionService,
+  ) {}
 
   async create(createBudgetDto: CreateBudgetDto, userId: string) {
+    // V15: Check budget limit based on plan
+    const plan = await this.subscriptionService.getPlan(userId);
+    const limits = PLAN_LIMITS[plan];
+    const currentCount = await this.prisma.budget.count({
+      where: { userId },
+    });
+    if (limits.maxBudgets !== -1 && currentCount >= limits.maxBudgets) {
+      throw new ForbiddenException(
+        `Limite de ${limits.maxBudgets} orçamentos atingido. Faça upgrade para Premium para orçamentos ilimitados.`,
+      );
+    }
+
     const { categoryId, amount } = createBudgetDto;
 
     // Verify category exists, belongs to user, and is not soft-deleted
