@@ -325,6 +325,102 @@ export class AuthService {
     return user;
   }
 
+  async changeName(userId: string, name: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { name },
+    });
+    return { name };
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('Senha atual incorreta');
+    }
+
+    if (newPassword.length < 6) {
+      throw new BadRequestException('A nova senha deve ter pelo menos 6 caracteres');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    this.auditService.log(userId, AuditAction.PASSWORD_RESET, 'User', userId);
+
+    return { message: 'Senha alterada com sucesso' };
+  }
+
+  async changeEmail(userId: string, newEmail: string, password: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('Senha incorreta');
+    }
+
+    // Check if email is already in use
+    const existing = await this.prisma.user.findUnique({ where: { email: newEmail } });
+    if (existing) {
+      throw new BadRequestException('Este e-mail já está em uso');
+    }
+
+    // Update email and mark as unverified
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { email: newEmail, isEmailVerified: false },
+    });
+
+    // Send verification email to the new address
+    const verifyToken = crypto.randomBytes(32).toString('hex');
+    const hashedVerifyToken = await bcrypt.hash(verifyToken, 10);
+    await this.prisma.verificationToken.create({
+      data: {
+        token: hashedVerifyToken,
+        type: 'EMAIL_VERIFY',
+        userId,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+    });
+
+    this.emailService
+      .sendVerificationEmail(newEmail, user.name || 'Usuário', verifyToken)
+      .catch(() => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Falha ao enviar verification email para novo endereço');
+        }
+      });
+
+    return { message: 'E-mail alterado. Verifique seu novo endereço para confirmar.', email: newEmail };
+  }
+
+  async deleteAccount(userId: string, password: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('Senha incorreta');
+    }
+
+    await this.usersService.remove(userId);
+
+    return { message: 'Conta excluída com sucesso' };
+  }
+
   async resendVerification(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

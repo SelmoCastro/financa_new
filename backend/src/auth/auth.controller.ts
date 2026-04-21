@@ -1,16 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  Request,
-  Get,
-  UnauthorizedException,
-  BadRequestException,
-  ForbiddenException,
-  Res,
-  Req,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, UnauthorizedException, BadRequestException, ForbiddenException, Res, Req, Patch, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
@@ -18,6 +6,7 @@ import { RefreshDto } from './dto/refresh.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto, ChangeEmailDto, ChangeNameDto } from './dto/account-settings.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
@@ -202,5 +191,29 @@ export class AuthController {
   async getProfile(@Request() req) {
     const user = await this.authService.getFullProfile(req.user.userId);
     return { user };
+  }
+
+  @Patch('change-name')
+  @UseGuards(AuthGuard('jwt'))
+  async changeName(@Request() req, @Body() dto: ChangeNameDto) {
+    return this.authService.changeName(req.user.userId, dto.name || '');
+  }
+
+  @Post('change-password')
+  @UseGuards(AuthGuard('jwt'))
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(req.user.userId, dto.currentPassword, dto.newPassword);
+  }
+
+  @Post('change-email')
+  @UseGuards(AuthGuard('jwt'))
+  async changeEmail(@Request() req, @Body() dto: ChangeEmailDto) {
+    return this.authService.changeEmail(req.user.userId, dto.newEmail, dto.password);
+  }
+
+  @Delete('delete-account')
+  @UseGuards(AuthGuard('jwt'))
+  async deleteAccount(@Request() req, @Body() body: { password: string }) {
+    return this.authService.deleteAccount(req.user.userId, body.password);
   }
 }

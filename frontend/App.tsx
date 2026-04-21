@@ -52,6 +52,7 @@ const AppContent: React.FC = () => {
   const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
   const [isAdmin] = useState(localStorage.getItem('isAdmin') === 'true');
   const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false);
+  const [userPlan, setUserPlan] = useState(localStorage.getItem('userPlan') || 'free');
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches));
   
   const navigate = useNavigate();
@@ -80,6 +81,15 @@ const AppContent: React.FC = () => {
         }
       } catch (err) {
         console.warn('Erro ao carregar perfil:', err);
+      }
+      try {
+        const sub = await api.get('/subscription');
+        if (sub.data) {
+          setUserPlan(sub.data.plan || 'free');
+          localStorage.setItem('userPlan', sub.data.plan || 'free');
+        }
+      } catch (err) {
+        // Silently fail - default to free
       }
     };
     fetchProfile();
@@ -199,7 +209,7 @@ const AppContent: React.FC = () => {
       case 'admin':
         return <AdminPanelView />;
       case 'settings':
-        return <SettingsView userName={userName} transactions={transactions} onLogout={handleLogout} />;
+        return <SettingsView userName={userName} userEmail={userEmail} userPlan={userPlan} transactions={transactions} onLogout={handleLogout} onNameChange={(name) => { setUserName(name); localStorage.setItem('userName', name); }} onEmailChange={(email) => { setUserEmail(email); localStorage.setItem('userEmail', email); }} />;
       default:
         return null;
     }
