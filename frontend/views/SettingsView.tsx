@@ -35,6 +35,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
     // Delete account
     const [showDeleteAccount, setShowDeleteAccount] = useState(false);
     const [deletePass, setDeletePass] = useState('');
+    const [deleteConfirm, setDeleteConfirm] = useState('');
     const [deleteSaving, setDeleteSaving] = useState(false);
 
     // Feedback
@@ -327,9 +328,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
 
                             {showDeleteAccount && (
                                 <div className="mt-4 pt-4 border-t border-rose-100 dark:border-rose-500/20 space-y-4">
-                                    <p className="text-sm text-rose-600 dark:text-rose-400 font-bold">
-                                        Tem certeza? Esta ação não pode ser desfeita. Todas as suas transações, contas, metas e orçamentos serão permanentemente excluídos.
-                                    </p>
+                                    <div className="p-4 bg-rose-100/50 dark:bg-rose-500/10 rounded-2xl border border-rose-200 dark:border-rose-500/30 space-y-2">
+                                        <p className="text-sm text-rose-700 dark:text-rose-300 font-black">
+                                            ⚠️ Esta ação é irreversível!
+                                        </p>
+                                        <ul className="text-xs text-rose-600 dark:text-rose-400 font-semibold space-y-1 list-disc list-inside">
+                                            <li>Todas as suas transações serão excluídas</li>
+                                            <li>Contas bancárias, cartões e saldos serão apagados</li>
+                                            <li>Metas, orçamentos e categorias personalizados serão perdidos</li>
+                                            <li>Seu plano premium será cancelado sem reembolso</li>
+                                            <li>Não será possível recuperar os dados depois</li>
+                                        </ul>
+                                    </div>
+
                                     <input
                                         type="password"
                                         value={deletePass}
@@ -337,13 +348,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                         className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-rose-200 dark:border-rose-500/30 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500"
                                         placeholder="Digite sua senha para confirmar"
                                     />
+
+                                    <div>
+                                        <label className="text-xs font-black text-rose-500 uppercase tracking-widest mb-2 block">
+                                            Digite <span className="bg-rose-600 text-white px-2 py-0.5 rounded-lg mx-1">EXCLUIR</span> para confirmar
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={deleteConfirm}
+                                            onChange={(e) => setDeleteConfirm(e.target.value)}
+                                            className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-rose-200 dark:border-rose-500/30 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 placeholder:text-slate-300 dark:placeholder:text-slate-600"
+                                            placeholder="EXCLUIR"
+                                        />
+                                    </div>
+
                                     <div className="flex gap-3">
-                                        <button onClick={handleDeleteAccount} disabled={deleteSaving || !deletePass}
-                                            className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2">
+                                        <button onClick={handleDeleteAccount} disabled={deleteSaving || !deletePass || deleteConfirm !== 'EXCLUIR'}
+                                            className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                                             {deleteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                             Excluir Permanentemente
                                         </button>
-                                        <button onClick={() => { setShowDeleteAccount(false); setDeletePass(''); }}
+                                        <button onClick={() => { setShowDeleteAccount(false); setDeletePass(''); setDeleteConfirm(''); }}
                                             className="px-5 py-3 bg-slate-100 dark:bg-slate-800 rounded-2xl font-bold text-sm text-slate-500 transition-all">
                                             Cancelar
                                         </button>
