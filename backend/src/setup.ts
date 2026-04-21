@@ -80,19 +80,21 @@ export function configureApp(app: INestApplication) {
   // Cookie Parser (necessário para CSRF e auth cookies)
   app.use(cookieParser());
 
-  // Request Logger (debug temporário - remove depois)
-  app.use((req: any, _res: any, next: any) => {
-    const start = Date.now();
-    const method = req.method;
-    const url = req.originalUrl || req.url;
-    const hasAuth = !!(req.cookies?.access_token || req.headers?.authorization);
-    _res.on('finish', () => {
-      const duration = Date.now() - start;
-      const status = _res.statusCode;
-      console.log(`[HTTP] ${method} ${url} ${status} ${duration}ms auth:${hasAuth}`);
+  // V16: Debug request logger — only in non-production
+  if (process.env.NODE_ENV !== 'production') {
+    app.use((req: any, _res: any, next: any) => {
+      const start = Date.now();
+      const method = req.method;
+      const url = req.originalUrl || req.url;
+      const hasAuth = !!(req.cookies?.access_token || req.headers?.authorization);
+      _res.on('finish', () => {
+        const duration = Date.now() - start;
+        const status = _res.statusCode;
+        console.log(`[HTTP] ${method} ${url} ${status} ${duration}ms auth:${hasAuth}`);
+      });
+      next();
     });
-    next();
-  });
+  }
 
   // CSRF Protection (double-submit cookie pattern)
   // Para requests de escrita (POST/PUT/PATCH/DELETE), exige header x-csrf-token = cookie csrf-token

@@ -6,11 +6,12 @@ import { RefreshDto } from './dto/refresh.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ChangePasswordDto, ChangeEmailDto, ChangeNameDto } from './dto/account-settings.dto';
+import { ChangePasswordDto, ChangeEmailDto, ChangeNameDto, DeleteAccountDto } from './dto/account-settings.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { Response, Request as ExpressRequest } from 'express';
+import { AdminGuard } from '../common/guards/admin.guard'; // V11
 
 @Controller({
   path: 'auth',
@@ -46,14 +47,20 @@ export class AuthController {
     @Req() req: ExpressRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log(`[AUTH] REGISTER - email: ${createUserDto.email}, name: ${createUserDto.name}`);
+    // V5: No PII in production logs
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[AUTH] REGISTER - email: ${createUserDto.email}, name: ${createUserDto.name}`);
+    }
     const responseData = await this.authService.register(createUserDto);
-    console.log(`[AUTH] REGISTER OK - userId: ${responseData.userId}, isEmailVerified: ${responseData.user?.isEmailVerified}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[AUTH] REGISTER OK - userId: ${responseData.userId}, isEmailVerified: ${responseData.user?.isEmailVerified}`);
+    }
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
-    // Web (cookie auth): refreshToken seguro em HttpOnly cookie.
-    // Mobile (Bearer auth): precisa do refreshToken no body.
-    const isMobile = req.headers['authorization']?.startsWith('Bearer ') || 
-                     !req.cookies?.['access_token'];
+    // V1: Use x-platform header for reliable mobile detection.
+    // Web: refreshToken stays in HttpOnly cookie only (never in body).
+    // Mobile: refreshToken in body because SecureStore can't access cookies.
+    const isMobile = req.headers['x-platform'] === 'mobile' ||
+                     req.headers['x-platform'] === 'react-native';
     return {
       message: responseData.message,
       userId: responseData.userId,
@@ -66,20 +73,28 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login')
   async login(@Body() body: LoginDto, @Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
-    console.log(`[AUTH] LOGIN ATTEMPT - email: ${body.email}`);
+    // V5: No PII in production logs
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[AUTH] LOGIN ATTEMPT - email: ${body.email}`);
+    }
     const user = await this.authService.validateUser(body.email, body.password);
     if (!user) {
-      console.log(`[AUTH] LOGIN FAILED - email: ${body.email}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[AUTH] LOGIN FAILED - email: ${body.email}`);
+      }
       throw new UnauthorizedException('Credenciais inválidas');
     }
     const responseData = await this.authService.login(user);
-    console.log(`[AUTH] LOGIN OK - userId: ${responseData.user?.id}, isEmailVerified: ${responseData.user?.isEmailVerified}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[AUTH] LOGIN OK - userId: ${responseData.user?.id}, isEmailVerified: ${responseData.user?.isEmailVerified}`);
+    }
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
 
-    // Web (cookie auth): refreshToken seguro em HttpOnly cookie, nao no body.
-    // Mobile (Bearer auth): precisa do refreshToken no body pois nao usa cookies.
-    const isMobile = req.headers['authorization']?.startsWith('Bearer ') || 
-                     !req.cookies?.['access_token'];
+    // V1: Use x-platform header for reliable mobile detection.
+    // Web: refreshToken stays in HttpOnly cookie only (never in body).
+    // Mobile: refreshToken in body because SecureStore can't access cookies.
+    const isMobile = req.headers['x-platform'] === 'mobile' ||
+                     req.headers['x-platform'] === 'react-native';
     return {
       access_token: responseData.access_token,
       ...(isMobile && { refreshToken: responseData.refreshToken }),
@@ -147,6 +162,7 @@ export class AuthController {
     return { message: 'Desconectado com sucesso' };
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // V6: Rate limit on verify-email
   @Post('verify-email')
   verifyEmail(@Body() body: VerifyEmailDto) {
     return this.authService.verifyEmail(body.token);
@@ -158,6 +174,7 @@ export class AuthController {
     return this.authService.forgotPassword(body.email);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // V6: Rate limit on reset-password
   @Post('reset-password')
   resetPassword(@Body() body: ResetPasswordDto) {
     return this.authService.resetPassword(body.token, body.password);
@@ -171,13 +188,8 @@ export class AuthController {
   }
 
   @Post('verify-all-emails')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), AdminGuard) // V11: Reusable AdminGuard instead of ad-hoc DB check
   async verifyAllEmails(@Request() req) {
-    // Apenas admin pode rodar — marca todos usuarios como verificados
-    const user = await this.prisma.user.findUnique({ where: { id: req.user.userId } });
-    if (!user?.isAdmin) {
-      throw new ForbiddenException('Admin only');
-    }
     const result = await this.prisma.user.updateMany({
       where: { isEmailVerified: false },
       data: { isEmailVerified: true },
@@ -213,7 +225,7 @@ export class AuthController {
 
   @Delete('delete-account')
   @UseGuards(AuthGuard('jwt'))
-  async deleteAccount(@Request() req, @Body() body: { password: string }) {
+  async deleteAccount(@Request() req, @Body() body: DeleteAccountDto) { // V13: Proper DTO
     return this.authService.deleteAccount(req.user.userId, body.password);
   }
 }

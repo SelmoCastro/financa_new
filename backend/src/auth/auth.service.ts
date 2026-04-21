@@ -301,9 +301,9 @@ export class AuthService {
     return { message: 'Password has been successfully updated' };
   }
 
-  /** Decodifica um JWT sem verificar assinatura (usado apenas para extrair userId do refresh token) */
+  /** V2: Verify JWT signature instead of just decoding (prevents token forgery) */
   decodeJwt(token: string): any {
-    return this.jwtService.decode(token);
+    return this.jwtService.verify(token, { ignoreExpiration: true });
   }
 
   async getFullProfile(userId: string) {

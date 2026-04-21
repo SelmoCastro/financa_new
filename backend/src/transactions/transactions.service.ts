@@ -347,7 +347,15 @@ export class TransactionsService {
       return { importedCount: 0 };
     }
 
-    // Validate all amounts are positive
+    // V10: Map TRANSFER type to INCOME/EXPENSE based on amount sign (TRANSFER not allowed in import)
+    for (const t of transactionsData) {
+      if (t.type === 'TRANSFER') {
+        t.type = Number(t.amount) >= 0 ? 'INCOME' : 'EXPENSE';
+        t.amount = Math.abs(Number(t.amount));
+      }
+    }
+
+    // Validate all amounts are positive (after TRANSFER mapping)
     for (const t of transactionsData) {
       const amt = Number(t.amount);
       if (!amt || amt <= 0) {
@@ -455,6 +463,23 @@ export class TransactionsService {
                 ? -amt
                 : 0;
           accountDeltas[t.accountId] = (accountDeltas[t.accountId] || 0) + adj;
+        }
+      }
+
+      // V3: Overdraft check — fetch current balances and validate no account goes negative
+      const accountIdsWithDeltas = Object.keys(accountDeltas).filter(id => accountDeltas[id] < 0);
+      if (accountIdsWithDeltas.length > 0) {
+        const currentBalances = await tx.account.findMany({
+          where: { id: { in: accountIdsWithDeltas }, userId },
+          select: { id: true, balance: true },
+        });
+        for (const acc of currentBalances) {
+          const projected = Number(acc.balance) + (accountDeltas[acc.id] || 0);
+          if (projected < 0) {
+            throw new BadRequestException(
+              `Import would cause negative balance on account ${acc.id}. Current: ${acc.balance}, projected: ${projected}`
+            );
+          }
         }
       }
 
@@ -577,6 +602,14 @@ export class TransactionsService {
     updateTransactionDto: UpdateTransactionDto,
     userId: string,
   ) {
+    // V9: Future date validation (same as create/transfer/import)
+    if (updateTransactionDto.date) {
+      const date = new Date(updateTransactionDto.date);
+      if (date > new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) {
+        throw new BadRequestException('Data não pode ser mais que 2 dias no futuro');
+      }
+    }
+
     // VULN-04: Validate FK ownership before entering the transaction
     if (updateTransactionDto.accountId) {
       const account = await this.prisma.account.findFirst({ where: { id: updateTransactionDto.accountId, userId } });

@@ -2,7 +2,10 @@ import { Controller, Get, Post, UseGuards, Request } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { SubscriptionService } from './subscription.service';
 
-@Controller('subscription')
+@Controller({
+  path: 'subscription',
+  version: '1', // V12: Add versioning to match all other controllers
+})
 @UseGuards(AuthGuard('jwt'))
 export class SubscriptionController {
   constructor(private subscriptionService: SubscriptionService) {}

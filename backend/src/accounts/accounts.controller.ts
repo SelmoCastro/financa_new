@@ -8,12 +8,15 @@ import {
   Delete,
   UseGuards,
   Request,
+  SetMetadata,
 } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
+import { PlanGuard } from '../subscription/plan.guard';
+import { REQUIRED_PLAN_KEY } from '../subscription/plan.guard';
 
 @Controller({
   path: 'accounts',
@@ -25,6 +28,8 @@ export class AccountsController {
 
   @Post()
   @RequireVerifiedEmail()
+  @UseGuards(PlanGuard) // V15: Enforce plan limits on account creation
+  @SetMetadata(REQUIRED_PLAN_KEY, 'free') // V15: Check limits (free=3 accounts max)
   create(@Body() createAccountDto: CreateAccountDto, @Request() req) {
     return this.accountsService.create(createAccountDto, req.user.userId);
   }

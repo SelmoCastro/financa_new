@@ -10,6 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { VerifiedEmailGuard } from './verified-email.guard';
+import { AdminGuard } from '../common/guards/admin.guard'; // V11
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { VerifiedEmailGuard } from './verified-email.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, VerifiedEmailGuard],
-  exports: [AuthService, VerifiedEmailGuard],
+  providers: [AuthService, JwtStrategy, VerifiedEmailGuard, AdminGuard], // V11
+  exports: [AuthService, VerifiedEmailGuard, AdminGuard], // V11
 })
 export class AuthModule {}

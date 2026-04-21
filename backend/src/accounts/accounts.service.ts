@@ -1,14 +1,29 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AccountsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private subscriptionService: SubscriptionService,
+  ) {}
 
   async create(createAccountDto: CreateAccountDto, userId: string) {
+    // V15: Check account limit based on plan
+    const plan = await this.subscriptionService.getPlan(userId);
+    const limits = PLAN_LIMITS[plan];
+    const currentCount = await this.prisma.account.count({
+      where: { userId, deletedAt: null },
+    });
+    if (limits.maxAccounts !== -1 && currentCount >= limits.maxAccounts) {
+      throw new ForbiddenException(
+        `Limite de ${limits.maxAccounts} contas atingido. Faça upgrade para Premium para contas ilimitadas.`,
+      );
+    }
     return this.prisma.$transaction(async (tx) => {
       // 1. Create the account
       const account = await tx.account.create({
@@ -89,6 +104,25 @@ export class AccountsService {
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
     return this.prisma.$transaction(async (tx) => {
+      // V8: Reverse balance contributions from all active transactions BEFORE soft-deleting them
+      const transactions = await tx.transaction.findMany({
+        where: { accountId: id, userId, deletedAt: null },
+        select: { amount: true, type: true },
+      });
+      let delta = 0;
+      for (const t of transactions) {
+        if (t.type === 'INCOME') delta += Number(t.amount);
+        else if (t.type === 'EXPENSE') delta -= Number(t.amount);
+        // TRANSFER handled by the other side
+      }
+      // Reverse the delta to bring account balance back to zero net contribution
+      if (delta !== 0) {
+        await tx.account.updateMany({
+          where: { id, userId },
+          data: { balance: { increment: -delta } },
+        });
+      }
+
       // Soft-delete all transactions belonging to this account
       await tx.transaction.updateMany({
         where: { accountId: id, userId, deletedAt: null },
@@ -109,40 +143,44 @@ export class AccountsService {
    * Recalculates the correct balance by summing all active (non-soft-deleted) transactions.
    */
   async reconcile(id: string, userId: string) {
-    const account = await this.findOne(id, userId);
+    // V18: Lock the account row to prevent concurrent balance changes during reconciliation
+    return this.prisma.$transaction(async (tx) => {
+      const accounts = await tx.$queryRaw<Array<{ id: string; balance: any }>>`
+        SELECT id, balance FROM "Account" WHERE id = ${id} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE
+      `;
+      if (accounts.length === 0) throw new NotFoundException('Conta não encontrada');
 
-    // Sum all active transactions for this account using Decimal arithmetic to avoid float drift
-    const transactions = await this.prisma.transaction.findMany({
-      where: { accountId: id, userId, deletedAt: null },
-      select: { amount: true, type: true },
-    });
-
-    let calculatedBalance = new Prisma.Decimal(0);
-    for (const tx of transactions) {
-      if (tx.type === 'INCOME') calculatedBalance = calculatedBalance.plus(tx.amount);
-      else if (tx.type === 'EXPENSE') calculatedBalance = calculatedBalance.minus(tx.amount);
-    }
-
-    const currentBalance = Number(account.balance);
-    const calculatedBalanceNumber = Number(calculatedBalance);
-    const drift = Number(calculatedBalance.minus(new Prisma.Decimal(account.balance)));
-
-    if (drift !== 0) {
-      // Fix the balance — include userId in WHERE to prevent cross-user modification
-      const result = await this.prisma.account.updateMany({
-        where: { id, userId },
-        data: { balance: { increment: drift } },
+      // Sum all active transactions for this account using Decimal arithmetic to avoid float drift
+      const transactions = await tx.transaction.findMany({
+        where: { accountId: id, userId, deletedAt: null },
+        select: { amount: true, type: true },
       });
-      if (result.count === 0) throw new NotFoundException('Conta não encontrada');
-    }
 
-    return {
-      accountId: id,
-      previousBalance: currentBalance,
-      calculatedBalance: calculatedBalanceNumber,
-      drift,
-      fixed: drift !== 0,
-      transactionCount: transactions.length,
-    };
+      let calculatedBalance = new Prisma.Decimal(0);
+      for (const t of transactions) {
+        if (t.type === 'INCOME') calculatedBalance = calculatedBalance.plus(t.amount);
+        else if (t.type === 'EXPENSE') calculatedBalance = calculatedBalance.minus(t.amount);
+      }
+
+      const currentBalance = Number(accounts[0].balance);
+      const calculatedBalanceNumber = Number(calculatedBalance);
+      const drift = Number(calculatedBalance.minus(new Prisma.Decimal(accounts[0].balance)));
+
+      if (drift !== 0) {
+        await tx.account.update({
+          where: { id },
+          data: { balance: { increment: drift } },
+        });
+      }
+
+      return {
+        accountId: id,
+        previousBalance: currentBalance,
+        calculatedBalance: calculatedBalanceNumber,
+        drift,
+        fixed: drift !== 0,
+        transactionCount: transactions.length,
+      };
+    });
   }
 }

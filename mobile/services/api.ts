@@ -7,6 +7,9 @@ const API_URL = 'https://api.finanzaai.tech/v1';
 const api = axios.create({
     baseURL: API_URL,
     timeout: 60000,
+    headers: {
+        'x-platform': 'mobile',
+    },
 });
 
 api.interceptors.request.use(async (config) => {
@@ -75,6 +78,8 @@ api.interceptors.response.use(
                 const refreshResponse = await axios.post(`${API_URL}/auth/refresh`, {
                     userId,
                     refreshToken
+                }, {
+                    headers: { 'x-platform': 'mobile' },
                 });
 
                 const newAccess = refreshResponse.data?.access_token || refreshResponse.data?.data?.access_token;

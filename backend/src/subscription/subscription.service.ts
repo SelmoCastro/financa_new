@@ -15,8 +15,9 @@ export class SubscriptionService {
   async getSubscription(userId: string) {
     let sub = await this.prisma.subscription.findUnique({ where: { userId } });
     if (!sub) {
+      // V14: Default to 'free' plan — new users must upgrade explicitly
       sub = await this.prisma.subscription.create({
-        data: { userId, plan: 'premium', status: 'active' },
+        data: { userId, plan: 'free', status: 'active' },
       });
     }
     return sub;

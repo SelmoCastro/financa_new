@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateCreditCardDto } from './dto/create-credit-card.dto';
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,6 +8,15 @@ export class CreditCardsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCreditCardDto: CreateCreditCardDto, userId: string) {
+    // V4: Validate accountId ownership
+    if (createCreditCardDto.accountId) {
+      const account = await this.prisma.account.findFirst({
+        where: { id: createCreditCardDto.accountId, userId, deletedAt: null },
+      });
+      if (!account) {
+        throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+      }
+    }
     return this.prisma.creditCard.create({
       data: {
         ...createCreditCardDto,
@@ -40,6 +49,15 @@ export class CreditCardsService {
     userId: string,
   ) {
     await this.findOne(id, userId);
+    // V4: Validate accountId ownership if being changed
+    if (updateCreditCardDto.accountId) {
+      const account = await this.prisma.account.findFirst({
+        where: { id: updateCreditCardDto.accountId, userId, deletedAt: null },
+      });
+      if (!account) {
+        throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+      }
+    }
     const result = await this.prisma.creditCard.updateMany({
       where: { id, userId, deletedAt: null },
       data: updateCreditCardDto,
