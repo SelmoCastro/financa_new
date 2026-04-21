@@ -2,13 +2,11 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { DeviceEventEmitter } from 'react-native';
 
-const API_URL = 'https://api.finanzaai.tech/v1'; // Production API URL
-// Para teste local, use o seu IP:
-// const API_URL = 'http://192.168.18.114:3000/v1';
+const API_URL = 'https://api.finanzaai.tech/v1';
 
 const api = axios.create({
     baseURL: API_URL,
-    timeout: 60000, // 60s timeout para processamentos de IA longos
+    timeout: 60000,
 });
 
 api.interceptors.request.use(async (config) => {
@@ -38,9 +36,7 @@ const processQueue = (error: any, token: string | null = null) => {
 
 api.interceptors.response.use(
     (response) => {
-        console.log(`[API Response] ${response.config.url} - Status: ${response.status}`);
         if (response.data && response.data.data !== undefined) {
-            console.log('[API Interceptor] Unwrapping data body...');
             response.data = response.data.data;
         }
         return response;
@@ -48,13 +44,16 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
         const isAuthRoute = originalRequest?.url?.includes('/auth/');
+        const status = error.response?.status;
 
-        if (!isAuthRoute && error.response && (error.response.status === 401 || error.response.status === 403) && !originalRequest._retry) {
+        // Only handle 401 for non-auth routes (auth route 401 = wrong credentials)
+        if (!isAuthRoute && (status === 401 || status === 403) && !originalRequest._retry) {
 
             if (isRefreshing) {
                 return new Promise(function (resolve, reject) {
                     failedQueue.push({ resolve, reject });
-                }).then(() => {
+                }).then((newToken) => {
+                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
                     return api(originalRequest);
                 }).catch(err => {
                     return Promise.reject(err);
@@ -66,37 +65,50 @@ api.interceptors.response.use(
 
             try {
                 const refreshToken = await SecureStore.getItemAsync('refreshToken');
-                const userId = await SecureStore.getItemAsync('userId'); // Added during login now
+                const userId = await SecureStore.getItemAsync('userId');
 
                 if (!refreshToken || !userId) {
-                    throw new Error("No refresh tokens available to retry auth");
+                    throw new Error("No refresh tokens available");
                 }
 
-                // Call backend via the standard POST body since missing Cookies
+                // Use raw axios to avoid interceptor loop
                 const refreshResponse = await axios.post(`${API_URL}/auth/refresh`, {
                     userId,
                     refreshToken
                 });
 
-                // Update SecureStore with new tokens
-                const newAccess = refreshResponse.data.access_token || refreshResponse.data.data.access_token;
-                const newRefresh = refreshResponse.data.refreshToken || refreshResponse.data.data.refreshToken;
+                const newAccess = refreshResponse.data?.access_token || refreshResponse.data?.data?.access_token;
+                const newRefresh = refreshResponse.data?.refreshToken || refreshResponse.data?.data?.refreshToken;
+
+                if (!newAccess) {
+                    throw new Error("No access token in refresh response");
+                }
 
                 await SecureStore.setItemAsync('token', newAccess);
-                await SecureStore.setItemAsync('refreshToken', newRefresh);
+                if (newRefresh) {
+                    await SecureStore.setItemAsync('refreshToken', newRefresh);
+                }
 
-                // Update current failed request and re-run queue
+                processQueue(null, newAccess);
+
                 originalRequest.headers.Authorization = `Bearer ${newAccess}`;
-                processQueue(null);
-
                 return api(originalRequest);
 
-            } catch (refreshError) {
-                console.log('[API] Refresh Local Error detectado. Limpando tokens e emitindo evento...');
-                await SecureStore.deleteItemAsync('token');
-                await SecureStore.deleteItemAsync('refreshToken');
-                await SecureStore.deleteItemAsync('userId');
-                DeviceEventEmitter.emit('auth:unauthorized');
+            } catch (refreshError: any) {
+                console.log('[API] Refresh falhou. Limpando tokens...');
+                
+                // Only logout if refresh explicitly failed (not network error)
+                const refreshStatus = refreshError?.response?.status;
+                if (refreshStatus === 401 || refreshStatus === 403) {
+                    // Refresh token is truly expired — must re-login
+                    await SecureStore.deleteItemAsync('token');
+                    await SecureStore.deleteItemAsync('refreshToken');
+                    await SecureStore.deleteItemAsync('userId');
+                    DeviceEventEmitter.emit('auth:unauthorized');
+                }
+                // Network errors — don't logout, just reject. User stays on screen,
+                // can pull-to-refresh or retry later
+                
                 processQueue(refreshError, null);
                 return Promise.reject(refreshError);
             } finally {
