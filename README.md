@@ -244,7 +244,7 @@ O app roda inteiramente em uma VPS (Hostinger) com Nginx + PM2 + PostgreSQL (Doc
 
 ### Deploy automático
 ```bash
-# Na VPS (2.24.211.92):
+# Na VPS:
 cd /opt/finanza
 git pull origin master
 bash deploy.sh          # all (backend + frontend)
