@@ -1,6 +1,6 @@
 
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App';
 import { Login } from './components/Login';
 import { ResetPassword } from './components/ResetPassword';
@@ -24,14 +24,6 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const Main = () => {
-    useEffect(() => {
-        // @ts-ignore
-        if (window.lucide) {
-            // @ts-ignore
-            window.lucide.createIcons();
-        }
-    });
-
     return (
         <BrowserRouter>
             <Routes>

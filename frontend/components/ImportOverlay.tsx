@@ -1,4 +1,4 @@
-import { X, FileSpreadsheet, Camera, Info, Loader2, Sparkles, AlertTriangle, Inbox, Check, ChevronLeft, ChevronRight, EyeOff, Eye, CheckSquare, UploadCloud, Image } from 'lucide-react';
+import { X, FileSpreadsheet, Camera, Info, Loader2, Sparkles, AlertTriangle, Inbox, Check, ChevronLeft, ChevronRight, ChevronDown, EyeOff, Eye, CheckSquare, UploadCloud, Image } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import { Account, CreditCard, Category } from '../types';
@@ -358,7 +358,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                         {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
                                     </select>
                                     <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                        <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                                        <ChevronDown className="w-4 h-4" />
                                     </div>
                                 </div>
                             </div>
@@ -370,7 +370,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                         {creditCards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
                                     <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                        <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                                        <ChevronDown className="w-4 h-4" />
                                     </div>
                                 </div>
                             </div>
@@ -639,7 +639,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                     )}
                                                 </select>
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                    <i data-lucide="chevron-down" className="w-3 h-3"></i>
+                                                    <ChevronDown className="w-3 h-3" />
                                                 </div>
                                             </div>
                                         </div>

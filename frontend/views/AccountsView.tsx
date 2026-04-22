@@ -7,6 +7,7 @@ import { AccountForm } from '../components/AccountForm';
 import { BankIcon } from '../components/BankIcon';
 import { useData } from '../context/DataProvider';
 import { useCurrency } from '../context/CurrencyContext';
+import { Wallet, Sparkles, Plus, MoreVertical, Edit3, Trash2, CreditCard as CreditCardIcon, Nfc } from 'lucide-react';
 
 interface AccountsViewProps {
     isPrivacyEnabled: boolean;
@@ -39,12 +40,6 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
     }, [openMenuId, openCardMenuId]);
-
-    // Reload icons when data changes
-    useEffect(() => {
-        //@ts-ignore
-        if (window.lucide) window.lucide.createIcons();
-    }, [accounts, creditCards, isCardFormOpen, isAccountFormOpen, openMenuId, openCardMenuId]);
 
     const totalBalance = useMemo(() => accounts.reduce((acc, curr) => acc + Number(curr.balance), 0), [accounts]);
 
@@ -127,7 +122,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                             </h4>
                             <div className="mt-8 flex items-center gap-2 relative z-10">
                                 <div className="p-2 bg-white/20 rounded-xl">
-                                    <i data-lucide="wallet" className="w-4 h-4 text-white"></i>
+                                    <Wallet className="w-4 h-4 text-white" />
                                 </div>
                                 <span className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest">{accounts.length} contas ativas</span>
                             </div>
@@ -137,7 +132,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                         {accounts.length === 0 ? (
                             <div className="md:col-span-1 lg:col-span-2 flex flex-col items-center justify-center p-8 glass-card border-dashed border-indigo-200 dark:border-indigo-500/30 rounded-[2.5rem] text-center">
                                 <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-6">
-                                    <i data-lucide="sparkles" className="w-8 h-8 text-indigo-400"></i>
+                                    <Sparkles className="w-8 h-8 text-indigo-400" />
                                 </div>
                                 <h4 className="text-lg font-black text-slate-800 dark:text-white mb-2">Sua primeira Conta!</h4>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-8 font-medium leading-relaxed">Você precisa adicionar pelo menos uma conta bancária ou carteira para conseguir registrar seus primeiros lançamentos.</p>
@@ -145,7 +140,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                     onClick={() => setIsAccountFormOpen(true)}
                                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center gap-2"
                                 >
-                                    <i data-lucide="plus" className="w-4 h-4"></i>
+                                    <Plus className="w-4 h-4" />
                                     Criar Conta Agora
                                 </button>
                             </div>
@@ -161,7 +156,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                                 onClick={() => setOpenMenuId(openMenuId === acc.id ? null : acc.id)}
                                                 className="text-slate-400 dark:text-slate-500 hover:text-indigo-500 transition-all p-2 bg-slate-50 dark:bg-slate-900 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
                                             >
-                                                <i data-lucide="more-vertical" className="w-5 h-5"></i>
+                                                <MoreVertical className="w-5 h-5" />
                                             </button>
 
                                             {openMenuId === acc.id && (
@@ -174,14 +169,14 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                                         }}
                                                         className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex items-center gap-3 rounded-xl"
                                                     >
-                                                        <i data-lucide="edit-3" className="w-4 h-4"></i>
+                                                        <Edit3 className="w-4 h-4" />
                                                         Editar Conta
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteAccount(acc.id, acc.name)}
                                                         className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-all flex items-center gap-3 rounded-xl"
                                                     >
-                                                        <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                        <Trash2 className="w-4 h-4" />
                                                         Excluir Conta
                                                     </button>
                                                 </div>
@@ -225,7 +220,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                     {creditCards.length === 0 ? (
                         <div className="glass-card border-dashed border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-16 text-center">
                             <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 mx-auto rounded-[2rem] flex items-center justify-center shadow-sm mb-8 border border-slate-100 dark:border-slate-800">
-                                <i data-lucide="credit-card" className="w-10 h-10 text-slate-300 dark:text-slate-600"></i>
+                                <CreditCardIcon className="w-10 h-10 text-slate-300 dark:text-slate-600" />
                             </div>
                             <h4 className="text-xl font-black text-slate-800 dark:text-white mb-2">Nenhum cartão cadastrado</h4>
                             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-medium leading-relaxed">Adicione seus cartões de crédito para acompanhar limites, faturas e datas de vencimento de forma inteligente.</p>
@@ -253,7 +248,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                                     onClick={() => setOpenCardMenuId(openCardMenuId === card.id ? null : card.id)}
                                                     className="text-white/30 hover:text-white transition-all p-2 rounded-xl hover:bg-white/10"
                                                 >
-                                                    <i data-lucide="more-vertical" className="w-5 h-5"></i>
+                                                    <MoreVertical className="w-5 h-5" />
                                                 </button>
 
                                                 {openCardMenuId === card.id && (
@@ -266,14 +261,14 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                                             }}
                                                             className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex items-center gap-3 rounded-xl"
                                                         >
-                                                            <i data-lucide="edit-3" className="w-4 h-4"></i>
+                                                            <Edit3 className="w-4 h-4" />
                                                             Editar Cartão
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteCard(card.id, card.name)}
                                                             className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-all flex items-center gap-3 rounded-xl"
                                                         >
-                                                            <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                                            <Trash2 className="w-4 h-4" />
                                                             Excluir Cartão
                                                         </button>
                                                     </div>
@@ -303,7 +298,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                                 <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-800 bg-slate-700"></div>
                                             ))}
                                         </div>
-                                        <i data-lucide="contactless-payment" className="w-6 h-6 text-white/20"></i>
+                                        <Nfc className="w-6 h-6 text-white/20" />
                                     </div>
                                 </div>
                             ))}

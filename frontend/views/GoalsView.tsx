@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { toYYYYMMDD } from '../utils/dateUtils';
 import { useCurrency } from '../context/CurrencyContext';
+import { PlusCircle, Target, Edit3, Trash2, Plus, Calendar, X, Tag, PiggyBank } from 'lucide-react';
 
 interface Goal {
     id: string;
@@ -56,13 +57,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
         fetchGoals();
     }, []);
 
-    useEffect(() => {
-        // @ts-ignore
-        if (window.lucide) {
-            // @ts-ignore
-            window.lucide.createIcons();
-        }
-    }, [goals]);
+
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -187,10 +182,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
         }
     };
 
-    useEffect(() => {
-        // @ts-ignore
-        if (window.lucide) window.lucide.createIcons();
-    }, [goals, depositModalOpen]); // Refresh icons when deposit modal opens too
+
 
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -209,7 +201,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                     }}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-600/20 transition-all active:scale-95 flex items-center gap-3"
                 >
-                    <i data-lucide="plus-circle" className="w-5 h-5"></i>
+                    <PlusCircle className="w-5 h-5" />
                     Nova Meta
                 </button>
             </div>
@@ -224,7 +216,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
             ) : goals.length === 0 ? (
                 <div className="text-center py-24 glass-card rounded-[3rem] border-dashed border-slate-200 dark:border-slate-800">
                     <div className="w-24 h-24 bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
-                        <i data-lucide="target" className="w-12 h-12 text-slate-300 dark:text-slate-600"></i>
+                        <Target className="w-12 h-12 text-slate-300 dark:text-slate-600" />
                     </div>
                     <h3 className="text-xl font-black text-slate-800 dark:text-white mb-3 tracking-tight">Nenhuma meta ainda</h3>
                     <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto font-medium leading-relaxed">Crie seu primeiro cofrinho para começar a juntar dinheiro para seus sonhos e visualize seu progresso!</p>
@@ -245,19 +237,19 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
                                 <div className="flex justify-between items-start mb-10">
                                     <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-[1.5rem] flex items-center justify-center shadow-sm">
-                                        <i data-lucide="target" className="w-8 h-8"></i>
+                                        <Target className="w-8 h-8" />
                                     </div>
                                     <div className="flex gap-2">
                                         <div className="flex gap-2 bg-slate-50 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <button onClick={() => openEditModal(goal)} className="p-2.5 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm" title="Editar Meta">
-                                                <i data-lucide="edit-3" className="w-5 h-5"></i>
+                                                <Edit3 className="w-5 h-5" />
                                             </button>
                                             <button onClick={() => handleDelete(goal)} className="p-2.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm" title="Excluir Meta">
-                                                <i data-lucide="trash-2" className="w-5 h-5"></i>
+                                                <Trash2 className="w-5 h-5" />
                                             </button>
                                         </div>
                                         <button onClick={() => openDepositModal(goal)} className="p-4 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-all active:scale-90 shadow-sm border border-emerald-100 dark:border-emerald-500/20" title="Adicionar dinheiro">
-                                            <i data-lucide="plus" className="w-6 h-6"></i>
+                                            <Plus className="w-6 h-6" />
                                         </button>
                                     </div>
                                 </div>
@@ -293,7 +285,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
                                     {goal.deadline && (
                                         <div className="flex items-center justify-center gap-2 pt-2">
-                                            <i data-lucide="calendar" className="w-3.5 h-3.5 text-slate-300"></i>
+                                            <Calendar className="w-3.5 h-3.5 text-slate-300" />
                                             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">
                                                 Prazo: {new Date(goal.deadline).toLocaleDateString()}
                                             </p>
@@ -316,7 +308,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                 <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Planejamento de Sonhos</p>
                             </div>
                             <button type="button" onClick={() => { setIsModalOpen(false); setEditingGoal(null); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm">
-                                <i data-lucide="x" className="w-6 h-6 text-slate-500 dark:text-slate-400"></i>
+                                <X className="w-6 h-6 text-slate-500 dark:text-slate-400" />
                             </button>
                         </div>
                         <form onSubmit={handleSave} className="space-y-8">
@@ -324,7 +316,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">O que você quer conquistar?</label>
                                 <div className="relative group">
                                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                                        <i data-lucide="tag" className="w-5 h-5"></i>
+                                        <Tag className="w-5 h-5" />
                                     </div>
                                     <input
                                         autoFocus
@@ -367,7 +359,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Prazo Final (Opcional)</label>
                                 <div className="relative group">
                                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
-                                        <i data-lucide="calendar" className="w-5 h-5"></i>
+                                        <Calendar className="w-5 h-5" />
                                     </div>
                                     <input
                                         type="date"
@@ -401,7 +393,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                 <p className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest mt-1">Meta: {selectedGoal.title}</p>
                             </div>
                             <button onClick={() => setDepositModalOpen(false)} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
-                                <i data-lucide="x" className="w-6 h-6 text-slate-500 dark:text-slate-400"></i>
+                                <X className="w-6 h-6 text-slate-500 dark:text-slate-400" />
                             </button>
                         </div>
 
@@ -424,7 +416,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                 type="submit"
                                 className="w-full py-6 rounded-[1.5rem] font-black text-xs uppercase tracking-widest text-white bg-emerald-500 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-3"
                             >
-                                <i data-lucide="piggy-bank" className="w-6 h-6"></i>
+                                <PiggyBank className="w-6 h-6" />
                                 Confirmar Depósito
                             </button>
                         </form>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, Check, X, ArrowUpRight, ArrowDownLeft, Wallet, Tag } from 'lucide-react';
+import { Bell, Check, X, ArrowUpRight, ArrowDownLeft, Wallet, Tag, ChevronDown } from 'lucide-react';
 import api from '../services/api';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastContext';
@@ -165,7 +165,7 @@ export const NotificationCenter: React.FC = () => {
                                                             ))}
                                                         </select>
                                                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                            <i data-lucide="chevron-down" className="w-3 h-3"></i>
+                                                            <ChevronDown className="w-3 h-3" />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -185,7 +185,7 @@ export const NotificationCenter: React.FC = () => {
                                                             ))}
                                                         </select>
                                                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                            <i data-lucide="chevron-down" className="w-3 h-3"></i>
+                                                            <ChevronDown className="w-3 h-3" />
                                                         </div>
                                                     </div>
                                                 </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Wallet } from 'lucide-react';
+import { X, Wallet, ChevronDown } from 'lucide-react';
 import api from '../services/api';
 import { BANKS } from '../constants';
 import { useCurrency } from '../context/CurrencyContext';
@@ -110,7 +110,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                                 ))}
                             </select>
                             <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                                <ChevronDown className="w-4 h-4" />
                             </div>
                         </div>
                     </div>
@@ -129,7 +129,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                                 <option value="WALLET">Carteira (Dinheiro Físico)</option>
                             </select>
                             <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                                <ChevronDown className="w-4 h-4" />
                             </div>
                         </div>
                     </div>

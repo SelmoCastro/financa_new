@@ -124,26 +124,31 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
 
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
+                allowsEditing: false,
                 quality: 0.7,
             });
 
             if (result.canceled) return;
 
             const asset = result.assets[0];
-            const filename = asset.uri.split('/').pop() || 'image.jpg';
+            // Usa mimeType do asset quando disponível, evita crash no Android
+            const filename = asset.fileName || asset.uri.split('/').pop() || 'image.jpg';
 
             const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
-            let mimeType = 'image/jpeg';
-            if (ext === 'png') mimeType = 'image/png';
-            if (ext === 'webp') mimeType = 'image/webp';
+            let mimeType = asset.mimeType || 'image/jpeg';
+            if (!mimeType.startsWith('image/')) {
+                if (ext === 'png') mimeType = 'image/png';
+                else if (ext === 'webp') mimeType = 'image/webp';
+                else mimeType = 'image/jpeg';
+            }
 
             setFileInfo({ name: filename, uri: asset.uri, type: 'receipt' });
             setReceiptPreviewUri(asset.uri);
             processFile(asset.uri, filename, mimeType, 'receipt');
 
         } catch (err) {
-            Alert.alert('Erro', 'Falha ao selecionar imagem');
+            console.error('ImagePicker error:', err);
+            Alert.alert('Erro', 'Falha ao selecionar imagem. Tente novamente.');
         }
     };
 
@@ -175,8 +180,14 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
         setLoading(true);
         try {
             const formData = new FormData();
+            // No Android, URIs content:// precisam ser tratadas;
+            // No iOS, remove file:// prefix
+            let fileUri = uri;
+            if (Platform.OS === 'ios') {
+                fileUri = uri.replace('file://', '');
+            }
             formData.append('file', {
-                uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+                uri: fileUri,
                 name: name,
                 type: mimeType,
             } as any);

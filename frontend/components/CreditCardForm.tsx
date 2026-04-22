@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CreditCard as CreditCardIcon } from 'lucide-react';
+import { X, CreditCard as CreditCardIcon, ChevronDown } from 'lucide-react';
 import { Account, CreditCard } from '../types';
 import api from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
@@ -146,7 +146,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                                 ))}
                             </select>
                             <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                                <ChevronDown className="w-4 h-4" />
                             </div>
                         </div>
                     </div>

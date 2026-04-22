@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Mic } from 'lucide-react';
 
 interface VoiceInputProps {
     onResult: (text: string) => void;
@@ -74,10 +75,10 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onResult, isProcessing =
         >
             {isListening ? (
                 <span className="flex items-center gap-2">
-                    <i data-lucide="mic" className="w-6 h-6"></i>
+                    <Mic className="w-6 h-6" />
                 </span>
             ) : (
-                <i data-lucide="mic" className="w-6 h-6"></i>
+                <Mic className="w-6 h-6" />
             )}
         </button>
     );

@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { Banknote, PiggyBank, Landmark } from 'lucide-react';
 
 const bankData = [
     { keywords: ['nubank', 'nu bank'], color: '#8A05BE', text: '#FFFFFF', render: () => <span className="text-xl font-medium tracking-tighter">nu</span> },
@@ -26,13 +27,7 @@ export const BankIcon: React.FC<BankIconProps> = ({ name, type = 'CHECKING', cla
     const normalizedName = name.toLowerCase();
     const bank = bankData.find(b => b.keywords.some(k => normalizedName.includes(k)));
 
-    useEffect(() => {
-        // Recarrega ícones padrão se cairmos no fallback
-        if (!bank) {
-            //@ts-ignore
-            if (window.lucide) window.lucide.createIcons();
-        }
-    }, [bank, type]);
+
 
     if (bank) {
         return (
@@ -46,11 +41,11 @@ export const BankIcon: React.FC<BankIconProps> = ({ name, type = 'CHECKING', cla
     }
 
     // Fallbacks por tipo
-    const defaultIcon = type === 'WALLET' ? 'banknote' : type === 'SAVINGS' ? 'piggy-bank' : 'landmark';
+    const DefaultIcon = type === 'WALLET' ? Banknote : type === 'SAVINGS' ? PiggyBank : Landmark;
 
     return (
         <div className={`${className} bg-slate-50 text-slate-400 flex items-center justify-center border border-slate-100 flex-shrink-0 select-none`}>
-            <i data-lucide={defaultIcon} className="w-5 h-5"></i>
+            <DefaultIcon className="w-5 h-5" />
         </div>
     );
 };

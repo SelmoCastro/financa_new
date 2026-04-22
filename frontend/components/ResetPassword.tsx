@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Key, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../services/api';
 
 export const ResetPassword: React.FC = () => {
@@ -17,9 +18,7 @@ export const ResetPassword: React.FC = () => {
         if (!token) {
             setError('Link de recuperação inválido ou inexistente.');
         }
-        // @ts-ignore
-        if (window.lucide) window.lucide.createIcons();
-    }, [token, error, successMsg]);
+    }, [token]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,7 +65,7 @@ export const ResetPassword: React.FC = () => {
             <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-500">
                 <div className="text-center mb-10">
                     <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-indigo-600/40">
-                        <i data-lucide="key" className="text-white w-10 h-10"></i>
+                        <Key className="text-white w-10 h-10" />
                     </div>
                     <div className="space-y-1">
                         <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-[0.3em] mb-2">Segurança</p>
@@ -77,14 +76,14 @@ export const ResetPassword: React.FC = () => {
 
                 {error && (
                     <div className="bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 p-5 rounded-2xl text-xs font-black uppercase tracking-widest mb-8 flex items-center gap-3 border border-rose-100 dark:border-rose-500/20">
-                        <i data-lucide="alert-circle" className="w-5 h-5 shrink-0"></i>
+                        <AlertCircle className="w-5 h-5 shrink-0" />
                         {error}
                     </div>
                 )}
 
                 {successMsg && (
                     <div className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-5 rounded-2xl text-xs font-black uppercase tracking-widest mb-8 flex items-center gap-3 border border-emerald-100 dark:border-emerald-500/20">
-                        <i data-lucide="check-circle" className="w-5 h-5 shrink-0"></i>
+                        <CheckCircle className="w-5 h-5 shrink-0" />
                         {successMsg}
                     </div>
                 )}

@@ -5,6 +5,7 @@ import { useData } from '../context/DataProvider';
 import { useMonth } from '../context/MonthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { Category } from '../types';
+import { Plus, PiggyBank, Edit3, Trash2, X, ChevronDown } from 'lucide-react';
 
 interface Budget {
     id: string;
@@ -53,10 +54,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
         fetchBudgets();
     }, [selectedDate]);
 
-    useEffect(() => {
-        // @ts-ignore
-        if (window.lucide) window.lucide.createIcons();
-    }, [budgets, isModalOpen]);
+
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -141,7 +139,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                     }}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center gap-2"
                 >
-                    <i data-lucide="plus" className="w-4 h-4"></i>
+                    <Plus className="w-4 h-4" />
                     Definir Teto
                 </button>
             </div>
@@ -151,7 +149,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
             ) : budgets.length === 0 ? (
                 <div className="text-center py-20 glass-card rounded-[2.5rem] border-dashed border-slate-200 dark:border-slate-800">
                     <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-sm">
-                        <i data-lucide="piggy-bank" className="w-10 h-10 text-slate-300 dark:text-slate-600"></i>
+                        <PiggyBank className="w-10 h-10 text-slate-300 dark:text-slate-600" />
                     </div>
                     <h3 className="text-slate-900 dark:text-white font-black text-xl mb-2">Nenhum orçamento definido</h3>
                     <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-xs mx-auto">Crie um teto de gastos para cada categoria e comece a economizar de verdade.</p>
@@ -177,14 +175,14 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                             className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all"
                                             title="Editar Orçamento"
                                         >
-                                            <i data-lucide="edit-3" className="w-4 h-4"></i>
+                                            <Edit3 className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(budget.id, budget.categoryObj?.name || 'Categoria')}
                                             className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
                                             title="Excluir Orçamento"
                                         >
-                                            <i data-lucide="trash-2" className="w-4 h-4"></i>
+                                            <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
                                     <div className="text-right">
@@ -228,7 +226,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                 <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Planeje seus gastos</p>
                             </div>
                             <button onClick={() => { setIsModalOpen(false); setEditingBudget(null); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
-                                <i data-lucide="x" className="w-5 h-5 text-slate-500 dark:text-slate-400"></i>
+                                <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                             </button>
                         </div>
                         <form onSubmit={handleSave} className="space-y-6">
@@ -279,7 +277,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                         </optgroup>
                                     </select>
                                     <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                        <i data-lucide="chevron-down" className="w-4 h-4"></i>
+                                        <ChevronDown className="w-4 h-4" />
                                     </div>
                                 </div>
                             </div>

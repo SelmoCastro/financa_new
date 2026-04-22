@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { LayoutDashboard, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../services/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SmartBanner } from './SmartBanner';
@@ -93,11 +94,6 @@ export const Login: React.FC = () => {
         }
     };
 
-    React.useEffect(() => {
-        // @ts-ignore
-        if (window.lucide) window.lucide.createIcons();
-    }, [error, isRegister, successMsg, isForgotPassword]);
-
     return (
         <>
             <SmartBanner />
@@ -105,7 +101,7 @@ export const Login: React.FC = () => {
             <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-500">
                 <div className="text-center mb-10">
                     <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-indigo-600/40 group hover:scale-110 transition-transform duration-500 cursor-pointer">
-                        <i data-lucide="layout-dashboard" className="text-white w-10 h-10"></i>
+                        <LayoutDashboard className="text-white w-10 h-10" />
                     </div>
                     <div className="space-y-1">
                         <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-[0.3em] mb-2">Finanza AI</p>
@@ -124,14 +120,14 @@ export const Login: React.FC = () => {
 
                 {error && (
                     <div className="bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 p-5 rounded-2xl text-xs font-black uppercase tracking-widest mb-8 flex items-center gap-3 border border-rose-100 dark:border-rose-500/20 animate-in slide-in-from-top-2">
-                        <i data-lucide="alert-circle" className="w-5 h-5 shrink-0"></i>
+                        <AlertCircle className="w-5 h-5 shrink-0" />
                         {error}
                     </div>
                 )}
 
                 {successMsg && (
                     <div className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-5 rounded-2xl text-xs font-black uppercase tracking-widest mb-8 flex items-center gap-3 border border-emerald-100 dark:border-emerald-500/20 animate-in slide-in-from-top-2">
-                        <i data-lucide="check-circle" className="w-5 h-5 shrink-0"></i>
+                        <CheckCircle className="w-5 h-5 shrink-0" />
                         {successMsg}
                     </div>
                 )}
