@@ -57,3 +57,20 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .vercel
 .env*.local
 backup_*.json
+
+# One-off/debug scripts (never commit these)
+check-*.js
+fix_*.js
+debug-*
+debug_*
+diagnose.*
+find-user.*
+make_admin.*
+backup_*.sql
+report_*.sql
+scripts/backup.*
+scripts/check_*
+scripts/dedup.*
+scripts/remove_*
+scripts/restore.*
+prisma/backup_data.*
