@@ -1,14 +1,26 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { DeviceEventEmitter, AppState, AppStateStatus } from 'react-native';
 import { router } from 'expo-router';
 import api from '../services/api';
 
+interface UserProfile {
+    id: string;
+    name: string;
+    email: string;
+    plan: string;
+    isEmailVerified: boolean;
+}
+
 interface AuthContextType {
     token: string | null;
     isLoading: boolean;
+    user: UserProfile | null;
     login: (token: string, refreshToken: string, userId: string) => Promise<void>;
     logout: () => Promise<void>;
+    refreshProfile: () => Promise<void>;
+    updateUserName: (name: string) => void;
+    updateUserEmail: (email: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -16,7 +28,26 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [user, setUser] = useState<UserProfile | null>(null);
     const appStateRef = useRef(AppState.currentState);
+
+    const fetchProfile = useCallback(async () => {
+        try {
+            const response = await api.get('/auth/me');
+            const userData = response.data?.user || response.data;
+            if (userData) {
+                setUser({
+                    id: userData.id,
+                    name: userData.name || '',
+                    email: userData.email || '',
+                    plan: userData.plan || 'free',
+                    isEmailVerified: userData.isEmailVerified ?? false,
+                });
+            }
+        } catch (e) {
+            console.warn('[AuthContext] Erro ao buscar perfil:', e);
+        }
+    }, []);
 
     // Load stored token on mount
     useEffect(() => {
@@ -25,6 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const storedToken = await SecureStore.getItemAsync('token');
                 if (storedToken) {
                     setToken(storedToken);
+                    // Fetch profile after token is set
+                    // (using a small delay so interceptor is ready)
+                    setTimeout(() => fetchProfile(), 100);
                 }
             } catch (e) {
                 console.error('[AuthContext] Erro ao carregar token:', e);
@@ -44,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await SecureStore.deleteItemAsync('refreshToken');
             await SecureStore.deleteItemAsync('userId');
             setToken(null);
+            setUser(null);
             router.replace('/');
 
             setTimeout(() => {
@@ -92,6 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             await SecureStore.setItemAsync('refreshToken', newRefresh);
                         }
                         setToken(newAccess);
+                        // Refresh profile after token refresh
+                        setTimeout(() => fetchProfile(), 100);
                         console.log('[AuthContext] Token refresh proativo com sucesso!');
                     }
                 } catch (e: any) {
@@ -100,7 +137,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         console.log('[AuthContext] Refresh token expirado. Sessão encerrada.');
                         DeviceEventEmitter.emit('auth:unauthorized');
                     } else {
-                        // Network error etc — don't logout, just log
                         console.warn('[AuthContext] Refresh proativo falhou (rede?). Continuando com token atual:', e?.message);
                     }
                 }
@@ -117,7 +153,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await SecureStore.setItemAsync('refreshToken', newRefreshToken);
         await SecureStore.setItemAsync('userId', newUserId);
         setToken(newToken);
-    }, []);
+        // Fetch profile after login
+        setTimeout(() => fetchProfile(), 200);
+    }, [fetchProfile]);
 
     const logout = React.useCallback(async () => {
         console.log('[AuthContext] Iniciando logout manual...');
@@ -130,12 +168,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await SecureStore.deleteItemAsync('refreshToken');
         await SecureStore.deleteItemAsync('userId');
         setToken(null);
+        setUser(null);
         router.replace('/');
     }, []);
 
+    const updateUserName = useCallback((name: string) => {
+        setUser(prev => prev ? { ...prev, name } : null);
+    }, []);
+
+    const updateUserEmail = useCallback((email: string) => {
+        setUser(prev => prev ? { ...prev, email, isEmailVerified: false } : null);
+    }, []);
+
     const value = React.useMemo(() => ({
-        token, isLoading, login, logout
-    }), [token, isLoading, login, logout]);
+        token, isLoading, user, login, logout, refreshProfile: fetchProfile, updateUserName, updateUserEmail
+    }), [token, isLoading, user, login, logout, fetchProfile, updateUserName, updateUserEmail]);
 
     return (
         <AuthContext.Provider value={value}>

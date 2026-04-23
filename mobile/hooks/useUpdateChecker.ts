@@ -51,7 +51,7 @@ export function useUpdateChecker(): UpdateStatus {
         try {
             setChecking(true);
             // Public endpoint — no auth needed
-            const response = await api.get('/app/version');
+            const response = await api.get('/v1/app/version');
             const data = response.data?.data || response.data;
             setVersionInfo(data);
         } catch (error) {
