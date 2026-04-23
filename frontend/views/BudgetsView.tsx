@@ -159,8 +159,8 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                     {budgets.map((budget) => (
                         <div key={budget.categoryId} className="glass-card p-8 rounded-[2.5rem] relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300">
                             <div className="flex justify-between items-start mb-6">
-                                <div className="space-y-1">
-                                    <h3 className="font-black text-slate-800 dark:text-white text-xl tracking-tight">{budget.categoryObj?.name || 'Categoria'}</h3>
+                                <div className="space-y-1 min-w-0 flex-1 mr-4">
+                                    <h3 className="font-black text-slate-800 dark:text-white text-xl tracking-tight truncate">{budget.categoryObj?.name || 'Categoria'}</h3>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Gasto Atual</span>
                                         <span className={`text-sm font-black ${budget.isOverBudget ? 'text-rose-500' : 'text-slate-600 dark:text-slate-300'} ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>

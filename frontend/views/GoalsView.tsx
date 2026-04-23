@@ -254,8 +254,8 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-1 mb-8">
-                                    <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{goal.title}</h3>
+                                <div className="space-y-1 mb-8 min-w-0">
+                                    <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">{goal.title}</h3>
                                     <p className={`text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-[0.2em] ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
                                         Meta: {isPrivacyEnabled ? '•••' : formatCurrency(goal.targetAmount)}
                                     </p>

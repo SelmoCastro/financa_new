@@ -222,26 +222,26 @@ export default function BudgetsScreen() {
                                     </Text>
                                 </View>
 
-                                <View className="flex-row gap-2 mt-3 pt-3 border-t border-slate-100">
+                                <View className="flex-row justify-between mt-3 pt-3 border-t border-slate-100">
                                     <Pressable
                                         onPress={() => {
                                             openEditBudget(budget);
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                         }}
-                                        className="flex-1 flex-row items-center justify-center gap-2 py-2 rounded-lg bg-indigo-50"
+                                        className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-indigo-50 mr-2"
                                     >
-                                        <MaterialIcons name="edit" size={16} color="#4f46e5" />
-                                        <Text className="text-indigo-600 font-bold text-xs">Editar</Text>
+                                        <MaterialIcons name="edit" size={18} color="#4f46e5" />
+                                        <Text className="text-indigo-600 font-bold text-xs ml-2">Editar</Text>
                                     </Pressable>
                                     <Pressable
                                         onPress={() => {
                                             handleDeleteBudget(budget);
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                         }}
-                                        className="flex-1 flex-row items-center justify-center gap-2 py-2 rounded-lg bg-rose-50"
+                                        className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-rose-50"
                                     >
-                                        <MaterialIcons name="delete-outline" size={16} color="#ef4444" />
-                                        <Text className="text-rose-600 font-bold text-xs">Excluir</Text>
+                                        <MaterialIcons name="delete-outline" size={18} color="#ef4444" />
+                                        <Text className="text-rose-600 font-bold text-xs ml-2">Excluir</Text>
                                     </Pressable>
                                 </View>
                             </View>
