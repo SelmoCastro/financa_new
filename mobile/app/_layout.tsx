@@ -6,6 +6,7 @@ import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CurrencyProvider } from '../context/CurrencyContext';
+import { UpdateDialog } from '../components/UpdateDialog';
 import '../global.css';
 
 export {
@@ -81,6 +82,7 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <UpdateDialog />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="signup" />

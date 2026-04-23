@@ -1,0 +1,4 @@
+{
+  "minRequiredVersion": "1.6.0",
+  "releaseNotes": "Correção de bug no upload de comprovantes e tipo de conta no formulário."
+}
