@@ -26,6 +26,7 @@ import { AdminGuard } from './common/guards/admin.guard';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { AuditModule } from './audit/audit.module';
 import { AdminModule } from './admin/admin.module';
+import { AppVersionModule } from './app-version/app-version.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AdminModule } from './admin/admin.module';
     SubscriptionModule,
     AuditModule,
     AdminModule,
+    AppVersionModule,
   ],
   controllers: [AppController],
   providers: [
