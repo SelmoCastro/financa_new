@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { getStartOfDay, getYearMonth, parseDate } from '../../utils/dateUtils';
 import api from '../../services/api';
-import { View, Text, ScrollView, RefreshControl, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, StyleSheet, Platform, DeviceEventEmitter } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -52,6 +52,12 @@ export default function DashboardScreen() {
             }
         };
         fetchFiltersData();
+
+        // Re-fetch when token is refreshed
+        const sub = DeviceEventEmitter.addListener('auth:token-refreshed', () => {
+            fetchFiltersData();
+        });
+        return () => sub.remove();
     }, []);
 
     const openModal = (type: 'INCOME' | 'EXPENSE') => {
@@ -77,6 +83,14 @@ export default function DashboardScreen() {
 
     useEffect(() => {
         fetchSummary();
+    }, [fetchSummary]);
+
+    // Re-fetch summary when token is refreshed (e.g. after returning from background)
+    useEffect(() => {
+        const sub = DeviceEventEmitter.addListener('auth:token-refreshed', () => {
+            fetchSummary();
+        });
+        return () => sub.remove();
     }, [fetchSummary]);
 
     const handleRefresh = async () => {

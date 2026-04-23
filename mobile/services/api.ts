@@ -94,6 +94,9 @@ api.interceptors.response.use(
                     await SecureStore.setItemAsync('refreshToken', newRefresh);
                 }
 
+                // Notify AuthContext that token was refreshed so it can update state
+                DeviceEventEmitter.emit('auth:token-refreshed', newAccess);
+
                 processQueue(null, newAccess);
 
                 originalRequest.headers.Authorization = `Bearer ${newAccess}`;

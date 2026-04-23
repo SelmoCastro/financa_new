@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
+import { DeviceEventEmitter } from 'react-native';
 import { Transaction } from '../types';
 import api from '../services/api';
 import { useAuth } from './AuthContext';
@@ -48,12 +49,28 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
         setIsPrivacyEnabled(prev => !prev);
     }, []);
 
-    // Initial fetch
+    // Fetch when token changes (initial load + token refresh)
     useEffect(() => {
         if (token) {
+            // Reset loading state on token change so UI shows skeletons
+            setLoading(true);
             fetchTransactions();
+        } else {
+            // No token = logged out, clear data
+            setTransactions([]);
+            setLoading(false);
         }
-    }, [token]);
+    }, [token, fetchTransactions]);
+
+    // Also listen for explicit token-refreshed events (from 401 interceptor)
+    // This handles cases where setToken was already called but the effect
+    // above may not re-fire if the token value didn't actually change string
+    useEffect(() => {
+        const sub = DeviceEventEmitter.addListener('auth:token-refreshed', () => {
+            fetchTransactions();
+        });
+        return () => sub.remove();
+    }, [fetchTransactions]);
 
     const value = React.useMemo(() => ({
         transactions,

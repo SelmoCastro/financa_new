@@ -86,8 +86,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }, 1000);
         });
 
-        return () => authSubscription.remove();
-    }, []);
+        // Listen for token refreshes from the API interceptor
+        // This ensures AuthContext state is in sync when the 401 interceptor
+        // swaps an expired token for a fresh one — components watching `token`
+        // will re-render and re-fetch their data.
+        const tokenRefreshedSubscription = DeviceEventEmitter.addListener('auth:token-refreshed', (newToken: string) => {
+            console.log('[AuthContext] Token refreshed via interceptor. Updating state...');
+            setToken(newToken);
+            fetchProfile();
+        });
+
+        return () => {
+            authSubscription.remove();
+            tokenRefreshedSubscription.remove();
+        };
+    }, [fetchProfile]);
 
     // Proactive token refresh when app comes back from background
     useEffect(() => {
@@ -116,6 +129,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     const response = await axios.post(`${API_URL}/auth/refresh`, {
                         userId,
                         refreshToken
+                    }, {
+                        headers: { 'x-platform': 'mobile' },
                     });
 
                     const newAccess = response.data?.access_token || response.data?.data?.access_token;
@@ -127,8 +142,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             await SecureStore.setItemAsync('refreshToken', newRefresh);
                         }
                         setToken(newAccess);
-                        // Refresh profile after token refresh
-                        setTimeout(() => fetchProfile(), 100);
+                        // Notify other components that token was refreshed
+                        DeviceEventEmitter.emit('auth:token-refreshed', newAccess);
                         console.log('[AuthContext] Token refresh proativo com sucesso!');
                     }
                 } catch (e: any) {
