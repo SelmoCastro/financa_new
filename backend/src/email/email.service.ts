@@ -19,9 +19,9 @@ export class EmailService implements OnModuleInit {
     // Prioridade 1: Resend (API, mais confiável)
     if (resendApiKey && resendApiKey !== 'placeholder') {
       this.resend = new Resend(resendApiKey);
-      this.fromEmail = process.env.EMAIL_FROM || 'Finanza <noreply@finanzaai.tech>';
+      this.fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL || 'Finanza <noreply@finanzaai.tech>';
       this.useResend = true;
-      this.logger.log('✅ Resend API configurada! Emails via Resend.');
+      this.logger.log(`✅ Resend API configurada! Emails via Resend. Remetente: ${this.fromEmail}`);
       return;
     }
 
