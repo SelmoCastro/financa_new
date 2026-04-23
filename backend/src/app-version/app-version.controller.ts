@@ -15,7 +15,7 @@ export class AppVersionController {
     let releaseNotes = '';
 
     try {
-      const pkgPath = path.resolve(__dirname, '..', '..', 'package.json');
+      const pkgPath = path.resolve(__dirname, '..', '..', '..', 'package.json');
       const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
       version = pkg.version || '0.0.0';
     } catch {
@@ -23,7 +23,7 @@ export class AppVersionController {
     }
 
     try {
-      const metaPath = path.resolve(__dirname, '..', 'version-meta.json');
+      const metaPath = path.resolve(__dirname, '..', '..', 'version-meta.json');
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
       minRequiredVersion = meta.minRequiredVersion || '1.0.0';
       releaseNotes = meta.releaseNotes || '';
