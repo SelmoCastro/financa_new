@@ -27,6 +27,14 @@ export interface Account {
     balance: number;
 }
 
+export const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+    CHECKING: 'Corrente',
+    SAVINGS: 'Poupança',
+    INVESTMENT: 'Investimento',
+    CASH: 'Carteira',
+    OTHER: 'Outro',
+};
+
 export interface CreditCard {
     id: string;
     name: string;

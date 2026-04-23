@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown, Check } from 'lucide-react';
-import { TransactionType, Transaction, Account, CreditCard, Category } from '../types';
+import { TransactionType, Transaction, Account, CreditCard, Category, ACCOUNT_TYPE_LABELS } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { toYYYYMMDD } from '../utils/dateUtils';
 
@@ -296,7 +296,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   >
                     <option value="" disabled>Selecione...</option>
                     {externalAccounts.map(acc => (
-                      <option key={acc.id} value={acc.id}>{acc.name}</option>
+                      <option key={acc.id} value={acc.id}>{acc.name} ({ACCOUNT_TYPE_LABELS[acc.type] || acc.type})</option>
                     ))}
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
@@ -319,7 +319,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     >
                       <option value="" disabled>Selecione...</option>
                       {externalAccounts.map(acc => (
-                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                        <option key={acc.id} value={acc.id}>{acc.name} ({ACCOUNT_TYPE_LABELS[acc.type] || acc.type})</option>
                       ))}
                     </select>
                   ) : (

@@ -5,7 +5,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../services/api';
 import { triggerHaptic } from '../utils/haptics';
-import { Account, CreditCard } from '../types';
+import { Account, CreditCard, ACCOUNT_TYPE_LABELS } from '../types';
 import { formatCurrencyInput, parseCurrencyToNumber } from '../utils/currencyUtils';
 
 const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
@@ -393,7 +393,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                                                 onPress={() => { setAccountId(acc.id === accountId ? '' : acc.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                                                 style={[styles.smallChip, accountId === acc.id && styles.smallChipActive]}
                                             >
-                                                <Text style={[styles.smallChipText, accountId === acc.id && styles.smallChipTextActive]}>{acc.name}</Text>
+                                                <Text style={[styles.smallChipText, accountId === acc.id && styles.smallChipTextActive]}>{acc.name} ({ACCOUNT_TYPE_LABELS[acc.type as string] || acc.type})</Text>
                                             </Pressable>
                                         ))}
                                     </ScrollView>
@@ -430,7 +430,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                                                     onPress={() => { setDestinationAccountId(acc.id === destinationAccountId ? '' : acc.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                                                     style={[styles.smallChip, destinationAccountId === acc.id && styles.smallChipActiveGreen]}
                                                 >
-                                                    <Text style={[styles.smallChipText, destinationAccountId === acc.id && styles.smallChipTextActive]}>{acc.name}</Text>
+                                                    <Text style={[styles.smallChipText, destinationAccountId === acc.id && styles.smallChipTextActive]}>{acc.name} ({ACCOUNT_TYPE_LABELS[acc.type as string] || acc.type})</Text>
                                                 </Pressable>
                                             ))}
                                         </ScrollView>
