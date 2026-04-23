@@ -65,14 +65,12 @@ export class CsrfMiddleware implements NestMiddleware {
       return next();
     }
 
-    // Mobile usa Bearer token — nao e vulneravel a CSRF
+    // Mobile/Bearer auth — Bearer token proves request is intentional,
+    // residual cookies set by login response don't matter.
+    // This also fixes CSRF 403 on multipart/form-data uploads where
+    // okhttp auto-sends the access_token cookie alongside Bearer header.
     const hasBearerToken = !!req.headers?.authorization?.startsWith('Bearer ');
-
-    // Web usa cookies — precisa de CSRF
-    const hasAuthCookie = !!req.cookies?.['access_token'];
-
-    if (hasBearerToken && !hasAuthCookie) {
-      // Mobile/Bearer auth — dispensar CSRF
+    if (hasBearerToken) {
       return next();
     }
 
