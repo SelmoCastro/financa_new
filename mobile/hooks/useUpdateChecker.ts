@@ -43,7 +43,9 @@ export function useUpdateChecker(): UpdateStatus {
     const [checking, setChecking] = useState(false);
     const [dismissed, setDismissed] = useState(false);
 
-    const currentVersion = Constants.expoConfig?.version || '0.0.0';
+    // nativeApplicationVersion works in production builds (EAS standalone APKs)
+    // expoConfig.version only works in development (Expo Go / dev client)
+    const currentVersion = Application.nativeApplicationVersion || Constants.expoConfig?.version || '0.0.0';
 
     const checkForUpdate = useCallback(async () => {
         if (Platform.OS !== 'android') return;
@@ -52,18 +54,25 @@ export function useUpdateChecker(): UpdateStatus {
             setChecking(true);
             // Public endpoint — no auth needed
             const response = await api.get('/v1/app/version');
+            // The response interceptor already unwraps { statusCode, data, timestamp } → data
+            // So response.data is already the inner data object
             const data = response.data?.data || response.data;
+            console.log('[UpdateChecker] currentVersion:', currentVersion, 'serverVersion:', data?.version, 'hasUpdate:', data ? compareVersions(data.version, currentVersion) > 0 : 'no data');
             setVersionInfo(data);
-        } catch (error) {
-            // Silently fail — don't disrupt the user
-            console.log('[UpdateChecker] Failed to check for updates:', error);
+        } catch (error: any) {
+            // Log error details to help debug
+            console.log('[UpdateChecker] Failed to check for updates:', error?.message || error);
         } finally {
             setChecking(false);
         }
-    }, []);
+    }, [currentVersion]);
 
     useEffect(() => {
-        checkForUpdate();
+        // Delay check by 3s to let app fully initialize (auth, network, etc.)
+        const timer = setTimeout(() => {
+            checkForUpdate();
+        }, 3000);
+        return () => clearTimeout(timer);
     }, [checkForUpdate]);
 
     const hasUpdate = versionInfo
