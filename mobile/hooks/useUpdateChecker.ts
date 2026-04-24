@@ -53,7 +53,7 @@ export function useUpdateChecker(): UpdateStatus {
         try {
             setChecking(true);
             // Public endpoint — no auth needed
-            const response = await api.get('/v1/app/version');
+            const response = await api.get('/app/version');
             // The response interceptor already unwraps { statusCode, data, timestamp } → data
             // So response.data is already the inner data object
             const data = response.data?.data || response.data;
