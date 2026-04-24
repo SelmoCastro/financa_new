@@ -47,6 +47,9 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
     const [destinationAccountId, setDestinationAccountId] = useState('');
     const [creditCardId, setCreditCardId] = useState('');
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+    const [isAccountOpen, setIsAccountOpen] = useState(false);
+    const [isDestinationAccountOpen, setIsDestinationAccountOpen] = useState(false);
+    const [isCreditCardOpen, setIsCreditCardOpen] = useState(false);
     const [sharedWithEmail, setSharedWithEmail] = useState('');
 
     const [categories, setCategories] = useState<any[]>([]);
@@ -80,6 +83,9 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                 setSharedWithEmail('');
             }
             setIsCategoryOpen(false);
+            setIsAccountOpen(false);
+            setIsDestinationAccountOpen(false);
+            setIsCreditCardOpen(false);
 
             // Fetch data (keep as is to ensure dropdowns have latest info)
             Promise.all([
@@ -130,6 +136,21 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
 
         return filteredGroups;
     }, [categories, type]);
+
+    const getSelectedAccountName = () => {
+        const acc = accounts.find(a => a.id === accountId);
+        return acc ? `${acc.name} (${ACCOUNT_TYPE_LABELS[acc.type as string] || acc.type})` : '';
+    };
+
+    const getSelectedDestinationAccountName = () => {
+        const acc = accounts.find(a => a.id === destinationAccountId);
+        return acc ? `${acc.name} (${ACCOUNT_TYPE_LABELS[acc.type as string] || acc.type})` : '';
+    };
+
+    const getSelectedCreditCardName = () => {
+        const cc = creditCards.find(c => c.id === creditCardId);
+        return cc ? cc.name : '';
+    };
 
     const handleSave = async () => {
         const rawAmount = parseCurrencyToNumber(amount);
@@ -381,63 +402,244 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                             </View>
                         )}
 
-                        <View style={styles.row}>
-                            <View style={[styles.inputSection, { flex: 1 }]}>
-                                <Text style={styles.sectionLabel}>{type === 'TRANSFER' ? 'Conta de Origem' : 'Conta Habitual'}</Text>
-
-                                <View style={styles.selectWrapper}>
-                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
-                                        {accounts.map(acc => (
-                                            <Pressable
-                                                key={acc.id}
-                                                onPress={() => { setAccountId(acc.id === accountId ? '' : acc.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                                                style={[styles.smallChip, accountId === acc.id && styles.smallChipActive]}
-                                            >
-                                                <Text style={[styles.smallChipText, accountId === acc.id && styles.smallChipTextActive]}>{acc.name} ({ACCOUNT_TYPE_LABELS[acc.type as string] || acc.type})</Text>
-                                            </Pressable>
-                                        ))}
-                                    </ScrollView>
-                                </View>
-                            </View>
-
-                            {type === 'EXPENSE' && (
-                                <View style={[styles.inputSection, { flex: 1 }]}>
-                                    <Text style={styles.sectionLabel}>Cartão (Opcional)</Text>
-                                    <View style={styles.selectWrapper}>
-                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
-                                            {creditCards.map(cc => (
-                                                <Pressable
-                                                    key={cc.id}
-                                                    onPress={() => { setCreditCardId(cc.id === creditCardId ? '' : cc.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                                                    style={[styles.smallChip, creditCardId === cc.id && styles.smallChipActivePurple]}
-                                                >
-                                                    <Text style={[styles.smallChipText, creditCardId === cc.id && styles.smallChipTextActive]}>{cc.name}</Text>
-                                                </Pressable>
-                                            ))}
-                                        </ScrollView>
+                        {/* Conta Habitual / Conta de Origem */}
+                        <View style={styles.inputSection}>
+                            <Text style={styles.sectionLabel}>{type === 'TRANSFER' ? 'Conta de Origem' : 'Conta Habitual'}</Text>
+                            <Pressable
+                                onPress={() => { setIsAccountOpen(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                style={[styles.selectInput, isAccountOpen && styles.selectInputActive]}
+                            >
+                                <View style={styles.selectInputContent}>
+                                    <View style={styles.selectInputLabelRow}>
+                                        <MaterialIcons
+                                            name="account-balance"
+                                            size={18}
+                                            color={accountId ? '#4f46e5' : '#94a3b8'}
+                                        />
+                                        <Text style={[styles.selectInputText, !accountId && styles.selectInputPlaceholder]}>
+                                            {accountId ? getSelectedAccountName() : 'Selecione uma conta'}
+                                        </Text>
                                     </View>
+                                    <MaterialIcons
+                                        name={isAccountOpen ? "expand-less" : "expand-more"}
+                                        size={24}
+                                        color="#64748b"
+                                    />
                                 </View>
-                            )}
-
-                            {type === 'TRANSFER' && (
-                                <View style={[styles.inputSection, { flex: 1 }]}>
-                                    <Text style={styles.sectionLabel}>Conta de Destino</Text>
-                                    <View style={styles.selectWrapper}>
-                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
-                                            {accounts.map(acc => (
-                                                <Pressable
-                                                    key={acc.id}
-                                                    onPress={() => { setDestinationAccountId(acc.id === destinationAccountId ? '' : acc.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                                                    style={[styles.smallChip, destinationAccountId === acc.id && styles.smallChipActiveGreen]}
-                                                >
-                                                    <Text style={[styles.smallChipText, destinationAccountId === acc.id && styles.smallChipTextActive]}>{acc.name} ({ACCOUNT_TYPE_LABELS[acc.type as string] || acc.type})</Text>
+                            </Pressable>
+                            {isAccountOpen && (
+                                <Modal visible={isAccountOpen} transparent animationType="fade" onRequestClose={() => setIsAccountOpen(false)}>
+                                    <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 24 }}>
+                                        <View style={{ backgroundColor: 'white', borderRadius: 32, padding: 16, maxHeight: '80%' }}>
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingHorizontal: 8 }}>
+                                                <Text style={{ fontSize: 18, fontWeight: '900', color: '#1e293b' }}>{type === 'TRANSFER' ? 'Escolher Conta de Origem' : 'Escolher Conta'}</Text>
+                                                <Pressable onPress={() => setIsAccountOpen(false)} style={{ padding: 4 }}>
+                                                    <MaterialIcons name="close" size={24} color="#94a3b8" />
                                                 </Pressable>
-                                            ))}
-                                        </ScrollView>
+                                            </View>
+                                            <ScrollView showsVerticalScrollIndicator={false}>
+                                                {accounts.map(acc => (
+                                                    <Pressable
+                                                        key={acc.id}
+                                                        onPress={() => {
+                                                            setAccountId(acc.id === accountId ? '' : acc.id);
+                                                            setIsAccountOpen(false);
+                                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                        }}
+                                                        style={{
+                                                            flexDirection: 'row',
+                                                            alignItems: 'center',
+                                                            padding: 16,
+                                                            backgroundColor: accountId === acc.id ? '#f1f5f9' : 'transparent',
+                                                            borderRadius: 16,
+                                                            borderWidth: 1,
+                                                            borderColor: accountId === acc.id ? '#e2e8f0' : 'transparent',
+                                                            marginBottom: 8,
+                                                        }}
+                                                    >
+                                                        <MaterialIcons
+                                                            name="account-balance"
+                                                            size={22}
+                                                            color={accountId === acc.id ? '#4f46e5' : '#94a3b8'}
+                                                            style={{ marginRight: 14 }}
+                                                        />
+                                                        <Text style={{ fontSize: 16, fontWeight: '700', color: accountId === acc.id ? '#4f46e5' : '#475569', flex: 1 }}>{acc.name}</Text>
+                                                        <Text style={{ fontSize: 12, fontWeight: '600', color: accountId === acc.id ? '#4f46e5' : '#94a3b8', marginRight: 8 }}>{ACCOUNT_TYPE_LABELS[acc.type as string] || acc.type}</Text>
+                                                        {accountId === acc.id && <MaterialIcons name="check" size={20} color="#4f46e5" />}
+                                                    </Pressable>
+                                                ))}
+                                            </ScrollView>
+                                        </View>
                                     </View>
-                                </View>
+                                </Modal>
                             )}
                         </View>
+
+                        {/* Cartão (Opcional) */}
+                        {type === 'EXPENSE' && (
+                            <View style={styles.inputSection}>
+                                <Text style={styles.sectionLabel}>Cartão (Opcional)</Text>
+                                <Pressable
+                                    onPress={() => { setIsCreditCardOpen(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    style={[styles.selectInput, isCreditCardOpen && styles.selectInputActive]}
+                                >
+                                    <View style={styles.selectInputContent}>
+                                        <View style={styles.selectInputLabelRow}>
+                                            <MaterialIcons
+                                                name="credit-card"
+                                                size={18}
+                                                color={creditCardId ? '#9333ea' : '#94a3b8'}
+                                            />
+                                            <Text style={[styles.selectInputText, !creditCardId && styles.selectInputPlaceholder]}>
+                                                {creditCardId ? getSelectedCreditCardName() : 'Nenhum (Débito)'}
+                                            </Text>
+                                        </View>
+                                        <MaterialIcons
+                                            name={isCreditCardOpen ? "expand-less" : "expand-more"}
+                                            size={24}
+                                            color="#64748b"
+                                        />
+                                    </View>
+                                </Pressable>
+                                {isCreditCardOpen && (
+                                    <Modal visible={isCreditCardOpen} transparent animationType="fade" onRequestClose={() => setIsCreditCardOpen(false)}>
+                                        <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 24 }}>
+                                            <View style={{ backgroundColor: 'white', borderRadius: 32, padding: 16, maxHeight: '80%' }}>
+                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingHorizontal: 8 }}>
+                                                    <Text style={{ fontSize: 18, fontWeight: '900', color: '#1e293b' }}>Escolher Cartão</Text>
+                                                    <Pressable onPress={() => setIsCreditCardOpen(false)} style={{ padding: 4 }}>
+                                                        <MaterialIcons name="close" size={24} color="#94a3b8" />
+                                                    </Pressable>
+                                                </View>
+                                                <ScrollView showsVerticalScrollIndicator={false}>
+                                                    {/* Nenhum (Débito) option */}
+                                                    <Pressable
+                                                        onPress={() => {
+                                                            setCreditCardId('');
+                                                            setIsCreditCardOpen(false);
+                                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                        }}
+                                                        style={{
+                                                            flexDirection: 'row',
+                                                            alignItems: 'center',
+                                                            padding: 16,
+                                                            backgroundColor: !creditCardId ? '#f1f5f9' : 'transparent',
+                                                            borderRadius: 16,
+                                                            borderWidth: 1,
+                                                            borderColor: !creditCardId ? '#e2e8f0' : 'transparent',
+                                                            marginBottom: 8,
+                                                        }}
+                                                    >
+                                                        <MaterialIcons name="block" size={22} color={!creditCardId ? '#64748b' : '#94a3b8'} style={{ marginRight: 14 }} />
+                                                        <Text style={{ fontSize: 16, fontWeight: '700', color: !creditCardId ? '#475569' : '#475569', flex: 1 }}>Nenhum (Débito)</Text>
+                                                        {!creditCardId && <MaterialIcons name="check" size={20} color="#4f46e5" />}
+                                                    </Pressable>
+                                                    {creditCards.map(cc => (
+                                                        <Pressable
+                                                            key={cc.id}
+                                                            onPress={() => {
+                                                                setCreditCardId(cc.id === creditCardId ? '' : cc.id);
+                                                                setIsCreditCardOpen(false);
+                                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                            }}
+                                                            style={{
+                                                                flexDirection: 'row',
+                                                                alignItems: 'center',
+                                                                padding: 16,
+                                                                backgroundColor: creditCardId === cc.id ? '#f1f5f9' : 'transparent',
+                                                                borderRadius: 16,
+                                                                borderWidth: 1,
+                                                                borderColor: creditCardId === cc.id ? '#e2e8f0' : 'transparent',
+                                                                marginBottom: 8,
+                                                            }}
+                                                        >
+                                                            <MaterialIcons name="credit-card" size={22} color={creditCardId === cc.id ? '#9333ea' : '#94a3b8'} style={{ marginRight: 14 }} />
+                                                            <Text style={{ fontSize: 16, fontWeight: '700', color: creditCardId === cc.id ? '#9333ea' : '#475569', flex: 1 }}>{cc.name}</Text>
+                                                            {creditCardId === cc.id && <MaterialIcons name="check" size={20} color="#9333ea" />}
+                                                        </Pressable>
+                                                    ))}
+                                                </ScrollView>
+                                            </View>
+                                        </View>
+                                    </Modal>
+                                )}
+                            </View>
+                        )}
+
+                        {/* Conta de Destino */}
+                        {type === 'TRANSFER' && (
+                            <View style={styles.inputSection}>
+                                <Text style={styles.sectionLabel}>Conta de Destino</Text>
+                                <Pressable
+                                    onPress={() => { setIsDestinationAccountOpen(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    style={[styles.selectInput, isDestinationAccountOpen && styles.selectInputActive]}
+                                >
+                                    <View style={styles.selectInputContent}>
+                                        <View style={styles.selectInputLabelRow}>
+                                            <MaterialIcons
+                                                name="account-balance"
+                                                size={18}
+                                                color={destinationAccountId ? '#10b981' : '#94a3b8'}
+                                            />
+                                            <Text style={[styles.selectInputText, !destinationAccountId && styles.selectInputPlaceholder]}>
+                                                {destinationAccountId ? getSelectedDestinationAccountName() : 'Selecione a conta destino'}
+                                            </Text>
+                                        </View>
+                                        <MaterialIcons
+                                            name={isDestinationAccountOpen ? "expand-less" : "expand-more"}
+                                            size={24}
+                                            color="#64748b"
+                                        />
+                                    </View>
+                                </Pressable>
+                                {isDestinationAccountOpen && (
+                                    <Modal visible={isDestinationAccountOpen} transparent animationType="fade" onRequestClose={() => setIsDestinationAccountOpen(false)}>
+                                        <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 24 }}>
+                                            <View style={{ backgroundColor: 'white', borderRadius: 32, padding: 16, maxHeight: '80%' }}>
+                                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingHorizontal: 8 }}>
+                                                    <Text style={{ fontSize: 18, fontWeight: '900', color: '#1e293b' }}>Escolher Conta de Destino</Text>
+                                                    <Pressable onPress={() => setIsDestinationAccountOpen(false)} style={{ padding: 4 }}>
+                                                        <MaterialIcons name="close" size={24} color="#94a3b8" />
+                                                    </Pressable>
+                                                </View>
+                                                <ScrollView showsVerticalScrollIndicator={false}>
+                                                    {accounts.map(acc => (
+                                                        <Pressable
+                                                            key={acc.id}
+                                                            onPress={() => {
+                                                                setDestinationAccountId(acc.id === destinationAccountId ? '' : acc.id);
+                                                                setIsDestinationAccountOpen(false);
+                                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                                            }}
+                                                            style={{
+                                                                flexDirection: 'row',
+                                                                alignItems: 'center',
+                                                                padding: 16,
+                                                                backgroundColor: destinationAccountId === acc.id ? '#f1f5f9' : 'transparent',
+                                                                borderRadius: 16,
+                                                                borderWidth: 1,
+                                                                borderColor: destinationAccountId === acc.id ? '#e2e8f0' : 'transparent',
+                                                                marginBottom: 8,
+                                                            }}
+                                                        >
+                                                            <MaterialIcons
+                                                                name="account-balance"
+                                                                size={22}
+                                                                color={destinationAccountId === acc.id ? '#10b981' : '#94a3b8'}
+                                                                style={{ marginRight: 14 }}
+                                                            />
+                                                            <Text style={{ fontSize: 16, fontWeight: '700', color: destinationAccountId === acc.id ? '#10b981' : '#475569', flex: 1 }}>{acc.name}</Text>
+                                                            <Text style={{ fontSize: 12, fontWeight: '600', color: destinationAccountId === acc.id ? '#10b981' : '#94a3b8', marginRight: 8 }}>{ACCOUNT_TYPE_LABELS[acc.type as string] || acc.type}</Text>
+                                                            {destinationAccountId === acc.id && <MaterialIcons name="check" size={20} color="#10b981" />}
+                                                        </Pressable>
+                                                    ))}
+                                                </ScrollView>
+                                            </View>
+                                        </View>
+                                    </Modal>
+                                )}
+                            </View>
+                        )}
 
                         <View style={styles.fixedToggleWrapper}>
                             <Pressable

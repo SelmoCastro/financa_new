@@ -174,17 +174,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = React.useCallback(async () => {
         console.log('[AuthContext] Iniciando logout manual...');
-        try {
-            await api.post('/auth/logout');
-        } catch (e) {
-            console.warn('[AuthContext] Backend erro ao logar nativo, limpando store mesmo assim:', e);
-        }
-        await SecureStore.deleteItemAsync('token');
-        await SecureStore.deleteItemAsync('refreshToken');
-        await SecureStore.deleteItemAsync('userId');
+
+        // Clear state FIRST so React re-renders with null token immediately
         setToken(null);
         setUser(null);
+
+        // Navigate away immediately — don't wait for async operations
         router.replace('/');
+
+        // Clear SecureStore in the background (non-blocking)
+        SecureStore.deleteItemAsync('token').catch(() => {});
+        SecureStore.deleteItemAsync('refreshToken').catch(() => {});
+        SecureStore.deleteItemAsync('userId').catch(() => {});
+
+        // Fire-and-forget backend logout
+        api.post('/auth/logout').catch((e) => {
+            console.warn('[AuthContext] Backend erro ao logar nativo (esperado):', e?.message);
+        });
     }, []);
 
     const updateUserName = useCallback((name: string) => {

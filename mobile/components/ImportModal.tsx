@@ -7,6 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
+import { ACCOUNT_TYPE_LABELS } from '../types';
 import * as Haptics from 'expo-haptics';
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -417,7 +418,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
                                     <View style={styles.selectInputLabelRow}>
                                         <MaterialIcons name="account-balance" size={18} color={selectedAccountId ? '#4f46e5' : '#94a3b8'} />
                                         <Text style={[styles.selectInputText, !selectedAccountId && styles.selectInputPlaceholder]}>
-                                            {accounts.find(a => a.id === selectedAccountId)?.name || 'Selecione uma conta'}
+                                            {(() => { const a = accounts.find(a => a.id === selectedAccountId); return a ? `${a.name} (${ACCOUNT_TYPE_LABELS[a.type as string] || a.type})` : 'Selecione uma conta'; })()}
                                         </Text>
                                     </View>
                                     <MaterialIcons name={isAccountDropdownOpen ? "expand-less" : "expand-more"} size={20} color="#64748b" />
@@ -438,7 +439,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
                                                 }}
                                             >
                                                 <Text style={[styles.dropdownItemText, selectedAccountId === acc.id && styles.dropdownItemTextActive]}>
-                                                    {acc.name}
+                                                    {acc.name} ({ACCOUNT_TYPE_LABELS[acc.type as string] || acc.type})
                                                 </Text>
                                                 {selectedAccountId === acc.id && <MaterialIcons name="check" size={16} color="#4f46e5" />}
                                             </Pressable>

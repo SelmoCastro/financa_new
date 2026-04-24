@@ -1,7 +1,7 @@
 import { X, FileSpreadsheet, Camera, Info, Loader2, Sparkles, AlertTriangle, Inbox, Check, ChevronLeft, ChevronRight, ChevronDown, EyeOff, Eye, CheckSquare, UploadCloud, Image } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
-import { Account, CreditCard, Category } from '../types';
+import { Account, CreditCard, Category, ACCOUNT_TYPE_LABELS } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 
 interface ImportOverlayProps {
@@ -355,7 +355,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                 <div className="relative group">
                                     <select required value={accountId} onChange={e => setAccountId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none appearance-none cursor-pointer">
                                         <option value="" disabled>Selecione a Conta...</option>
-                                        {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
+                                        {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} ({ACCOUNT_TYPE_LABELS[acc.type] || acc.type})</option>)}
                                     </select>
                                     <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                         <ChevronDown className="w-4 h-4" />

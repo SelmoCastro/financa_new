@@ -288,7 +288,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
             {/* SAIR */}
             <View style={styles.divider} />
-            <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+            <TouchableOpacity style={styles.logoutButton} onPress={async () => { onClose(); await logout(); }}>
               <MaterialIcons name="logout" size={20} color="#ef4444" />
               <Text style={styles.logoutText}>Sair da Conta</Text>
             </TouchableOpacity>
