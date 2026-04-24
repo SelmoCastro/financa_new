@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const ANDROID_APK_URL = 'https://finanzaai.tech/downloads/';
+const ANDROID_APK_URL = 'https://finanzaai.tech/downloads/Financa_new.apk';
 
 export const SmartBanner: React.FC = () => {
   const [visible, setVisible] = useState(false);

@@ -92,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
           {isOpen && (
             <div className="mt-4 text-center space-y-4">
               <a
-                href="/Finanza_new.apk"
+                href="https://finanzaai.tech/downloads/Financa_new.apk"
                 download
                 className="w-full py-2.5 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded-xl text-[10px] font-bold transition-colors flex items-center justify-center gap-2 border border-indigo-500/20"
               >
