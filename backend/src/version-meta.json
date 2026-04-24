@@ -1,4 +1,4 @@
 {
-  "minRequiredVersion": "1.6.0",
-  "releaseNotes": "Correção de bug no upload de comprovantes e tipo de conta no formulário."
+  "minRequiredVersion": "1.7.0",
+  "releaseNotes": "Atualização automática do app com download direto\nVerificação periódica de novas versões ao voltar do background\nChangelog formatado no diálogo de atualização\nBarra de progresso ao baixar APK\nLembrete automático após 24h se update ignorado"
 }

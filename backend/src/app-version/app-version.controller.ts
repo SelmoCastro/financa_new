@@ -12,7 +12,7 @@ export class AppVersionController {
   getVersion() {
     let version = '0.0.0';
     let minRequiredVersion = '1.0.0';
-    let releaseNotes = '';
+    let releaseNotes: string | string[] = '';
 
     try {
       const pkgPath = path.resolve(__dirname, '..', '..', '..', 'package.json');
@@ -26,7 +26,13 @@ export class AppVersionController {
       const metaPath = path.resolve(__dirname, '..', '..', 'version-meta.json');
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
       minRequiredVersion = meta.minRequiredVersion || '1.0.0';
-      releaseNotes = meta.releaseNotes || '';
+
+      // Support both string (newline-separated) and array formats
+      if (Array.isArray(meta.releaseNotes)) {
+        releaseNotes = meta.releaseNotes;
+      } else if (typeof meta.releaseNotes === 'string') {
+        releaseNotes = meta.releaseNotes;
+      }
     } catch {
       // fallback to defaults
     }
