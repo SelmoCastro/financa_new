@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Platform, AppState, AppStateStatus, Linking, Alert } from 'react-native';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
+import * as IntentLauncher from 'expo-intent-launcher';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 
 // Use legacy API from expo-file-system (still available in v19)
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { documentDirectory, getInfoAsync, makeDirectoryAsync, createDownloadResumable } = require('expo-file-system');
+const { documentDirectory, getInfoAsync, makeDirectoryAsync, createDownloadResumable, getContentUriAsync } = require('expo-file-system');
 
 const DISMISS_KEY = '@finanza_update_dismissed_at';
+const DOWNLOADED_VERSION_KEY = '@finanza_downloaded_version';
 const RECHECK_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 const REAPPEAR_DELAY = 24 * 60 * 60 * 1000; // 24 hours after dismiss
 
@@ -19,6 +21,8 @@ interface VersionInfo {
     minRequiredVersion: string;
     releaseNotes: string;
 }
+
+type DownloadPhase = 'idle' | 'downloading' | 'ready' | 'installing' | 'error';
 
 interface UpdateStatus {
     hasUpdate: boolean;
@@ -30,9 +34,11 @@ interface UpdateStatus {
     dismissUpdate: () => void;
     showUpdate: () => void;
     dismissed: boolean;
-    openDownload: () => void;
-    downloading: boolean;
+    startDownload: () => void;
+    installUpdate: () => void;
+    downloadPhase: DownloadPhase;
     downloadProgress: number;
+    errorMessage: string;
 }
 
 /**
@@ -51,18 +57,35 @@ function compareVersions(a: string, b: string): number {
     return 0;
 }
 
+/**
+ * Get a content URI for a file using FileProvider.
+ * On Android 7+ (API 24+), you cannot use file:// URIs directly.
+ * This converts a file:// URI to a content:// URI that the system installer can use.
+ */
+async function getContentUri(fileUri: string): Promise<string> {
+    // getContentUriAsync is from expo-file-system legacy API, extracted via require above
+    // It converts file:// URI to content:// URI via FileProvider (required for Android 7+)
+    if (getContentUriAsync) {
+        return await getContentUriAsync(fileUri);
+    }
+    // Fallback: try the file URI directly (won't work on API 24+ but graceful degradation)
+    return fileUri;
+}
+
 export function useUpdateChecker(): UpdateStatus {
     const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
     const [checking, setChecking] = useState(false);
     const [dismissed, setDismissed] = useState(true); // start true, load async
-    const [downloading, setDownloading] = useState(false);
+    const [downloadPhase, setDownloadPhase] = useState<DownloadPhase>('idle');
     const [downloadProgress, setDownloadProgress] = useState(0);
+    const [errorMessage, setErrorMessage] = useState('');
     const lastCheckRef = useRef(0);
     const appStateRef = useRef(AppState.currentState);
+    const downloadedApkPathRef = useRef<string | null>(null);
 
     const currentVersion = Application.nativeApplicationVersion || Constants.expoConfig?.version || '0.0.0';
 
-    // Load dismiss timestamp from AsyncStorage
+    // Load dismiss timestamp and check for already-downloaded APK
     useEffect(() => {
         (async () => {
             try {
@@ -79,6 +102,25 @@ export function useUpdateChecker(): UpdateStatus {
         })();
     }, []);
 
+    // Check if a downloaded APK already exists for the latest version
+    const checkExistingDownload = useCallback(async (version: string, apkUrl: string) => {
+        try {
+            const apkFileName = `Financa_new_v${version}.apk`;
+            const downloadDir = `${documentDirectory}updates/`;
+            const downloadPath = `${downloadDir}${apkFileName}`;
+
+            const existingFile = await getInfoAsync(downloadPath);
+            if (existingFile.exists) {
+                downloadedApkPathRef.current = downloadPath;
+                setDownloadPhase('ready');
+                return true;
+            }
+        } catch {
+            // ignore
+        }
+        return false;
+    }, []);
+
     const checkForUpdate = useCallback(async (force = false) => {
         if (Platform.OS !== 'android') return;
 
@@ -92,12 +134,17 @@ export function useUpdateChecker(): UpdateStatus {
             const data = response.data?.data || response.data;
             console.log('[UpdateChecker] currentVersion:', currentVersion, 'serverVersion:', data?.version, 'hasUpdate:', data ? compareVersions(data.version, currentVersion) > 0 : 'no data');
             setVersionInfo(data);
+
+            // If update available, check if we already downloaded this version
+            if (data && compareVersions(data.version, currentVersion) > 0) {
+                await checkExistingDownload(data.version, data.apkUrl);
+            }
         } catch (error: any) {
             console.log('[UpdateChecker] Failed to check for updates:', error?.message || error);
         } finally {
             setChecking(false);
         }
-    }, [currentVersion]);
+    }, [currentVersion, checkExistingDownload]);
 
     // Initial check with 3s delay
     useEffect(() => {
@@ -151,12 +198,13 @@ export function useUpdateChecker(): UpdateStatus {
         AsyncStorage.removeItem(DISMISS_KEY).catch(() => {});
     }, []);
 
-    const openDownload = useCallback(async () => {
-        if (!versionInfo?.apkUrl) return;
+    const startDownload = useCallback(async () => {
+        if (!versionInfo?.apkUrl || downloadPhase === 'downloading') return;
 
         try {
-            setDownloading(true);
+            setDownloadPhase('downloading');
             setDownloadProgress(0);
+            setErrorMessage('');
 
             const apkFileName = `Financa_new_v${versionInfo.version}.apk`;
             const downloadDir = `${documentDirectory}updates/`;
@@ -171,15 +219,8 @@ export function useUpdateChecker(): UpdateStatus {
             // Check if already downloaded
             const existingFile = await getInfoAsync(downloadPath);
             if (existingFile.exists) {
-                setDownloading(false);
-                Alert.alert(
-                    'Atualização baixada',
-                    'O APK já foi baixado. Deseja abrir para instalar?',
-                    [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Instalar', onPress: () => Linking.openURL(downloadPath) },
-                    ]
-                );
+                downloadedApkPathRef.current = downloadPath;
+                setDownloadPhase('ready');
                 return;
             }
 
@@ -195,34 +236,50 @@ export function useUpdateChecker(): UpdateStatus {
             );
 
             const downloadResult = await downloadResumable.downloadAsync();
-            setDownloading(false);
 
             if (downloadResult?.uri) {
-                Alert.alert(
-                    'Download concluído!',
-                    `v${versionInfo.version} baixado. Toque para instalar.`,
-                    [
-                        { text: 'Depois', style: 'cancel' },
-                        { text: 'Instalar', onPress: () => Linking.openURL(downloadResult.uri) },
-                    ]
-                );
+                downloadedApkPathRef.current = downloadResult.uri;
+                setDownloadPhase('ready');
+            } else {
+                setDownloadPhase('error');
+                setErrorMessage('Falha ao baixar o APK.');
             }
         } catch (error: any) {
-            setDownloading(false);
             console.log('[UpdateChecker] Download failed:', error?.message || error);
-            // Fallback: open in browser
-            Alert.alert(
-                'Erro no download',
-                'Não foi possível baixar diretamente. Abrindo no navegador...',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => Linking.openURL(versionInfo.apkUrl),
-                    },
-                ]
-            );
+            setDownloadPhase('error');
+            setErrorMessage(error?.message || 'Erro desconhecido');
         }
-    }, [versionInfo]);
+    }, [versionInfo, downloadPhase]);
+
+    const installUpdate = useCallback(async () => {
+        const apkPath = downloadedApkPathRef.current;
+        if (!apkPath) {
+            setDownloadPhase('error');
+            setErrorMessage('APK não encontrado. Tente baixar novamente.');
+            return;
+        }
+
+        try {
+            setDownloadPhase('installing');
+
+            // Convert file:// URI to content:// URI for Android 7+ compatibility
+            const contentUri = await getContentUri(apkPath);
+
+            // Launch the system APK installer
+            await IntentLauncher.startActivityAsync(
+                'android.intent.action.VIEW',
+                {
+                    data: contentUri,
+                    flags: 1, // FLAG_ACTIVITY_NEW_TASK
+                    type: 'application/vnd.android.package-archive',
+                }
+            );
+        } catch (error: any) {
+            console.log('[UpdateChecker] Install failed:', error?.message || error);
+            setDownloadPhase('error');
+            setErrorMessage('Não foi possível iniciar a instalação. Tente novamente.');
+        }
+    }, []);
 
     return {
         hasUpdate,
@@ -234,8 +291,10 @@ export function useUpdateChecker(): UpdateStatus {
         dismissUpdate,
         showUpdate,
         dismissed,
-        openDownload,
-        downloading,
+        startDownload,
+        installUpdate,
+        downloadPhase,
         downloadProgress,
+        errorMessage,
     };
 }

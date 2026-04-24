@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Modal, Pressable, StyleSheet, Animated, Easing } from 'react-native';
-import { useUpdateChecker } from '../hooks/useUpdateChecker';
+import { useUpdateChecker, DownloadPhase } from '../hooks/useUpdateChecker';
 
 function ProgressBar({ progress }: { progress: number }) {
     const widthAnim = useState(new Animated.Value(0))[0];
@@ -29,6 +29,21 @@ function ProgressBar({ progress }: { progress: number }) {
     );
 }
 
+function PhaseIcon({ phase }: { phase: DownloadPhase }) {
+    switch (phase) {
+        case 'downloading':
+            return <Text style={styles.emoji}>📥</Text>;
+        case 'ready':
+            return <Text style={styles.emoji}>✅</Text>;
+        case 'installing':
+            return <Text style={styles.emoji}>⚙️</Text>;
+        case 'error':
+            return <Text style={styles.emoji}>❌</Text>;
+        default:
+            return <Text style={styles.emoji}>🚀</Text>;
+    }
+}
+
 export function UpdateDialog() {
     const {
         hasUpdate,
@@ -38,33 +53,42 @@ export function UpdateDialog() {
         dismissed,
         dismissUpdate,
         showUpdate,
-        openDownload,
-        downloading,
+        startDownload,
+        installUpdate,
+        downloadPhase,
         downloadProgress,
+        errorMessage,
     } = useUpdateChecker();
     const [showToast, setShowToast] = useState(false);
 
     // Subtle toast when returning from background with update available
     useEffect(() => {
-        if (hasUpdate && dismissed && !isRequired) {
+        if (hasUpdate && dismissed && !isRequired && downloadPhase === 'idle') {
             setShowToast(true);
             const timer = setTimeout(() => setShowToast(false), 5000);
             return () => clearTimeout(timer);
         }
         return undefined;
-    }, [hasUpdate, dismissed, isRequired]);
+    }, [hasUpdate, dismissed, isRequired, downloadPhase]);
+
+    // Auto-start download when dialog appears for required updates
+    useEffect(() => {
+        if (hasUpdate && !dismissed && isRequired && downloadPhase === 'idle') {
+            startDownload();
+        }
+    }, [hasUpdate, dismissed, isRequired, downloadPhase, startDownload]);
 
     // Don't show dialog if no update or explicitly dismissed (and not required)
-    if (!hasUpdate || (dismissed && !isRequired)) {
+    if (!hasUpdate || (dismissed && !isRequired && downloadPhase === 'idle')) {
         // Show subtle toast for dismissed optional updates
-        if (showToast && hasUpdate && !isRequired && versionInfo) {
+        if (showToast && hasUpdate && !isRequired && versionInfo && downloadPhase === 'idle') {
             return (
                 <View style={styles.toastContainer}>
                     <Pressable
                         style={styles.toast}
                         onPress={() => {
                             setShowToast(false);
-                            showUpdate(); // show the update dialog again
+                            showUpdate();
                         }}
                     >
                         <Text style={styles.toastEmoji}>📦</Text>
@@ -92,42 +116,108 @@ export function UpdateDialog() {
         ));
     };
 
-    return (
-        <Modal visible={true} transparent animationType="fade" statusBarTranslucent>
-            <View style={styles.overlay}>
-                <View style={styles.card}>
-                    <Text style={styles.emoji}>{isRequired ? '⚠️' : '🚀'}</Text>
-                    <Text style={styles.title}>
-                        {isRequired ? 'Atualização obrigatória' : 'Nova versão disponível!'}
-                    </Text>
-                    <Text style={styles.versionText}>
-                        v{currentVersion} → v{versionInfo?.version}
-                    </Text>
-                    {versionInfo?.releaseNotes ? (
-                        <View style={styles.notesContainer}>
-                            {renderReleaseNotes()}
-                        </View>
-                    ) : null}
+    const renderContent = () => {
+        switch (downloadPhase) {
+            case 'downloading':
+                return (
+                    <View style={styles.downloadSection}>
+                        <Text style={styles.downloadLabel}>
+                            Baixando atualização... {downloadProgress}%
+                        </Text>
+                        <ProgressBar progress={downloadProgress} />
+                    </View>
+                );
 
-                    {downloading ? (
-                        <View style={styles.downloadSection}>
-                            <Text style={styles.downloadLabel}>
-                                Baixando... {downloadProgress}%
-                            </Text>
-                            <ProgressBar progress={downloadProgress} />
-                        </View>
-                    ) : (
+            case 'ready':
+                return (
+                    <View style={styles.readySection}>
+                        <Text style={styles.readyText}>
+                            ✅ Download concluído!
+                        </Text>
+                        <Pressable
+                            style={[styles.button, styles.buttonInstall]}
+                            onPress={installUpdate}
+                        >
+                            <Text style={styles.buttonText}>Instalar agora</Text>
+                        </Pressable>
+                        <Text style={styles.hintText}>
+                            Você confirmará a instalação na próxima tela
+                        </Text>
+                    </View>
+                );
+
+            case 'installing':
+                return (
+                    <View style={styles.readySection}>
+                        <Text style={styles.readyText}>
+                            ⚙️ Abrindo instalador...
+                        </Text>
+                        <Text style={styles.hintText}>
+                            Confirme a instalação na tela do sistema
+                        </Text>
+                    </View>
+                );
+
+            case 'error':
+                return (
+                    <View style={styles.readySection}>
+                        <Text style={styles.errorText}>
+                            {errorMessage || 'Erro ao atualizar'}
+                        </Text>
+                        <Pressable
+                            style={[styles.button, styles.buttonOptional]}
+                            onPress={() => {
+                                // Reset and retry
+                                startDownload();
+                            }}
+                        >
+                            <Text style={styles.buttonText}>Tentar novamente</Text>
+                        </Pressable>
+                    </View>
+                );
+
+            default: // 'idle'
+                return (
+                    <>
+                        {versionInfo?.releaseNotes ? (
+                            <View style={styles.notesContainer}>
+                                {renderReleaseNotes()}
+                            </View>
+                        ) : null}
                         <Pressable
                             style={[styles.button, isRequired ? styles.buttonRequired : styles.buttonOptional]}
-                            onPress={openDownload}
+                            onPress={startDownload}
                         >
                             <Text style={styles.buttonText}>
                                 {isRequired ? 'Baixar agora' : 'Baixar atualização'}
                             </Text>
                         </Pressable>
-                    )}
+                    </>
+                );
+        }
+    };
 
-                    {!isRequired && !downloading && (
+    const getTitle = () => {
+        switch (downloadPhase) {
+            case 'downloading': return 'Baixando atualização...';
+            case 'ready': return 'Pronto para instalar!';
+            case 'installing': return 'Instalando...';
+            case 'error': return 'Erro na atualização';
+            default: return isRequired ? 'Atualização obrigatória' : 'Nova versão disponível!';
+        }
+    };
+
+    return (
+        <Modal visible={true} transparent animationType="fade" statusBarTranslucent>
+            <View style={styles.overlay}>
+                <View style={styles.card}>
+                    <PhaseIcon phase={downloadPhase} />
+                    <Text style={styles.title}>{getTitle()}</Text>
+                    <Text style={styles.versionText}>
+                        v{currentVersion} → v{versionInfo?.version}
+                    </Text>
+                    {renderContent()}
+                    {downloadPhase === 'idle' && !isRequired && (
                         <Pressable onPress={dismissUpdate} style={styles.skipButton}>
                             <Text style={styles.skipText}>Depois</Text>
                         </Pressable>
@@ -197,6 +287,9 @@ const styles = StyleSheet.create({
     buttonOptional: {
         backgroundColor: '#6366f1',
     },
+    buttonInstall: {
+        backgroundColor: '#22c55e',
+    },
     buttonText: {
         color: '#fff',
         fontSize: 16,
@@ -223,6 +316,29 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: '#6366f1',
         borderRadius: 4,
+    },
+    readySection: {
+        width: '100%',
+        alignItems: 'center',
+    },
+    readyText: {
+        color: '#4ade80',
+        fontSize: 15,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    hintText: {
+        color: '#64748b',
+        fontSize: 12,
+        textAlign: 'center',
+        marginTop: 8,
+    },
+    errorText: {
+        color: '#f87171',
+        fontSize: 14,
+        textAlign: 'center',
+        marginBottom: 12,
     },
     skipButton: {
         paddingVertical: 8,
