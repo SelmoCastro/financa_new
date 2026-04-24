@@ -204,7 +204,7 @@ export default function AccountsScreen() {
         );
     };
 
-    const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
+    const totalBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
 
     return (
         <>
