@@ -29,6 +29,7 @@ export class CsrfMiddleware implements NestMiddleware {
     '/auth/reset-password',
     '/auth/verify-email',
     '/auth/refresh',
+    '/errors/report', // Error reporter — must work even without auth
   ];
 
   private readonly safeMethods = ['GET', 'HEAD', 'OPTIONS'];
