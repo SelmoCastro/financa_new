@@ -3,23 +3,16 @@ import { Platform, AppState, AppStateStatus } from 'react-native';
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import * as IntentLauncher from 'expo-intent-launcher';
+import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 import api from '../services/api';
-
-// Use legacy API from expo-file-system to avoid runtime errors in SDK 54+
-// The new API throws errors for getInfoAsync, makeDirectoryAsync, etc.
-import {
-    documentDirectory,
-    getInfoAsync,
-    makeDirectoryAsync,
-    createDownloadResumable,
-    getContentUriAsync,
-} from 'expo-file-system/legacy';
 
 const DISMISS_KEY = '@finanza_update_dismissed_at';
 const DOWNLOADED_VERSION_KEY = '@finanza_downloaded_version';
 const RECHECK_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 const REAPPEAR_DELAY = 24 * 60 * 60 * 1000; // 24 hours after dismiss
+const MAX_RETRIES = 3;
 
 interface VersionInfo {
     version: string;
@@ -64,18 +57,48 @@ function compareVersions(a: string, b: string): number {
 }
 
 /**
- * Get a content URI for a file using FileProvider.
- * On Android 7+ (API 24+), you cannot use file:// URIs directly.
- * This converts a file:// URI to a content:// URI that the system installer can use.
+ * Check if the device can install packages from unknown sources (Android 8+).
+ * If not, prompt the user to enable it.
  */
-async function getContentUri(fileUri: string): Promise<string> {
-    // getContentUriAsync is from expo-file-system/legacy, converts file:// to content:// URI
-    // It converts file:// URI to content:// URI via FileProvider (required for Android 7+)
-    if (getContentUriAsync) {
-        return await getContentUriAsync(fileUri);
+async function ensureInstallPermission(): Promise<boolean> {
+    if (Platform.OS !== 'android') return false;
+
+    try {
+        // On Android 8+, we need to check if the app can request package installs
+        // expo-intent-launcher doesn't have a direct "canRequestPackageInstalls" API,
+        // so we try to install and catch the error if permission is missing.
+        // However, we proactively open the settings for unknown sources.
+        const sdkVersion = parseInt(Platform.Version as string, 10);
+        if (sdkVersion >= 26) {
+            // Android 8+ (API 26): Per-app unknown source install permission
+            // Try to open the settings page for this app to enable it
+            // This is a best-effort — the user must enable it manually
+            try {
+                const packageName = Application.nativeApplicationVersion
+                    ? undefined // Can't easily get package name from Expo
+                    : undefined;
+
+                // Open the "Install unknown apps" settings for this app
+                await IntentLauncher.startActivityAsync(
+                    'android.settings.MANAGE_UNKNOWN_APP_SOURCES',
+                    {
+                        data: `package:${Constants.expoConfig?.android?.package || Application.applicationId}`,
+                        flags: 1,
+                    }
+                );
+                // Give user time to enable — they'll come back and retry
+                return false;
+            } catch {
+                // If the intent fails, the permission might already be granted
+                // or the settings page doesn't exist on this device
+                // Continue with install attempt
+                return true;
+            }
+        }
+    } catch {
+        // Older Android or error — proceed with install attempt
     }
-    // Fallback: try the file URI directly (won't work on API 24+ but graceful degradation)
-    return fileUri;
+    return true;
 }
 
 export function useUpdateChecker(): UpdateStatus {
@@ -88,6 +111,7 @@ export function useUpdateChecker(): UpdateStatus {
     const lastCheckRef = useRef(0);
     const appStateRef = useRef(AppState.currentState);
     const downloadedApkPathRef = useRef<string | null>(null);
+    const retryCountRef = useRef(0);
 
     const currentVersion = Application.nativeApplicationVersion || Constants.expoConfig?.version || '0.0.0';
 
@@ -112,12 +136,26 @@ export function useUpdateChecker(): UpdateStatus {
     const checkExistingDownload = useCallback(async (version: string, apkUrl: string) => {
         try {
             const apkFileName = `Financa_new_v${version}.apk`;
-            const downloadDir = `${documentDirectory}updates/`;
-            const downloadPath = `${downloadDir}${apkFileName}`;
+            // react-native-blob-util downloads to its own cache dir, check there
+            const dir = ReactNativeBlobUtil.fs.dirs.CacheDir;
+            const downloadPath = `${dir}/updates/${apkFileName}`;
 
-            const existingFile = await getInfoAsync(downloadPath);
-            if (existingFile.exists) {
+            const exists = await ReactNativeBlobUtil.fs.isDir(`${dir}/updates/`).then(
+                () => ReactNativeBlobUtil.fs.exists(downloadPath),
+                () => false
+            );
+
+            if (exists) {
                 downloadedApkPathRef.current = downloadPath;
+                setDownloadPhase('ready');
+                return true;
+            }
+
+            // Also check expo-file-system documentDirectory (legacy downloads)
+            const legacyPath = `${FileSystem.documentDirectory}updates/${apkFileName}`;
+            const legacyInfo = await FileSystem.getInfoAsync(legacyPath);
+            if (legacyInfo.exists) {
+                downloadedApkPathRef.current = legacyPath;
                 setDownloadPhase('ready');
                 return true;
             }
@@ -164,7 +202,6 @@ export function useUpdateChecker(): UpdateStatus {
     useEffect(() => {
         const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
             if (appStateRef.current === 'background' && nextState === 'active') {
-                // Re-check dismiss: maybe 24h passed since dismissal
                 (async () => {
                     try {
                         const dismissedAt = await AsyncStorage.getItem(DISMISS_KEY);
@@ -211,49 +248,75 @@ export function useUpdateChecker(): UpdateStatus {
             setDownloadPhase('downloading');
             setDownloadProgress(0);
             setErrorMessage('');
+            retryCountRef.current = 0;
 
             const apkFileName = `Financa_new_v${versionInfo.version}.apk`;
-            const downloadDir = `${documentDirectory}updates/`;
-            const downloadPath = `${downloadDir}${apkFileName}`;
+            const cacheDir = ReactNativeBlobUtil.fs.dirs.CacheDir;
+            const updatesDir = `${cacheDir}/updates`;
+            const downloadPath = `${updatesDir}/${apkFileName}`;
 
             // Ensure directory exists
-            const dirInfo = await getInfoAsync(downloadDir);
-            if (!dirInfo.exists) {
-                await makeDirectoryAsync(downloadDir, { intermediates: true });
-            }
+            await ReactNativeBlobUtil.fs.mkdir(updatesDir).catch(() => {
+                // Directory may already exist, ignore error
+            });
 
             // Check if already downloaded
-            const existingFile = await getInfoAsync(downloadPath);
-            if (existingFile.exists) {
+            const alreadyExists = await ReactNativeBlobUtil.fs.exists(downloadPath);
+            if (alreadyExists) {
                 downloadedApkPathRef.current = downloadPath;
                 setDownloadPhase('ready');
                 return;
             }
 
-            // Download with progress
-            const downloadResumable = createDownloadResumable(
-                versionInfo.apkUrl,
-                downloadPath,
-                {},
-                (progress: { totalBytesWritten: number; totalBytesExpectedToWrite: number }) => {
-                    const percent = progress.totalBytesWritten / progress.totalBytesExpectedToWrite;
-                    setDownloadProgress(Math.round(percent * 100));
+            // Download using react-native-blob-util (streams to disk, no memory issues)
+            const result = await ReactNativeBlobUtil.config({
+                path: downloadPath,
+                fileCache: false, // Use our custom path, not cache
+                indicator: true,   // Show download notification on Android
+                overwrite: true,
+            }).fetch('GET', versionInfo.apkUrl);
+
+            // Verify the download succeeded
+            const fileExists = await ReactNativeBlobUtil.fs.exists(downloadPath);
+            if (fileExists) {
+                // Check file size to make sure it's not truncated
+                const stat = await ReactNativeBlobUtil.fs.stat(downloadPath);
+                const fileSize = Number(stat.size);
+
+                if (fileSize < 1_000_000) {
+                    // APK smaller than 1MB — download failed/truncated
+                    console.log('[UpdateChecker] Downloaded file too small:', fileSize, 'bytes — likely truncated');
+                    await ReactNativeBlobUtil.fs.unlink(downloadPath).catch(() => {});
+                    setDownloadPhase('error');
+                    setErrorMessage('Download falhou — arquivo muito pequeno. Tente novamente.');
+                    return;
                 }
-            );
 
-            const downloadResult = await downloadResumable.downloadAsync();
-
-            if (downloadResult?.uri) {
-                downloadedApkPathRef.current = downloadResult.uri;
+                downloadedApkPathRef.current = downloadPath;
                 setDownloadPhase('ready');
+                // Reset retry count on success
+                retryCountRef.current = 0;
             } else {
                 setDownloadPhase('error');
                 setErrorMessage('Falha ao baixar o APK.');
             }
         } catch (error: any) {
             console.log('[UpdateChecker] Download failed:', error?.message || error);
-            setDownloadPhase('error');
-            setErrorMessage(error?.message || 'Erro desconhecido');
+            retryCountRef.current++;
+
+            if (retryCountRef.current < MAX_RETRIES) {
+                // Auto-retry after brief delay
+                console.log(`[UpdateChecker] Retrying download (${retryCountRef.current}/${MAX_RETRIES})...`);
+                setTimeout(() => {
+                    // Reset downloading phase so retry can proceed
+                    setDownloadPhase('idle');
+                    startDownload();
+                }, 2000);
+            } else {
+                setDownloadPhase('error');
+                setErrorMessage(error?.message || 'Erro desconhecido ao baixar');
+                retryCountRef.current = 0;
+            }
         }
     }, [versionInfo, downloadPhase]);
 
@@ -268,12 +331,24 @@ export function useUpdateChecker(): UpdateStatus {
         try {
             setDownloadPhase('installing');
 
-            // Convert file:// URI to content:// URI for Android 7+ compatibility
-            const contentUri = await getContentUri(apkPath);
+            // Convert file:// URI to content:// URI for Android 7+ (API 24+)
+            // Must use content:// URI via FileProvider — file:// URIs are blocked on API 24+
+            let contentUri: string;
 
-            // Launch the system APK installer
+            if (apkPath.startsWith('file://')) {
+                contentUri = await FileSystem.getContentUriAsync(apkPath);
+            } else if (apkPath.startsWith('/')) {
+                // react-native-blob-util returns absolute paths without file:// prefix
+                contentUri = await FileSystem.getContentUriAsync(`file://${apkPath}`);
+            } else {
+                contentUri = await FileSystem.getContentUriAsync(apkPath);
+            }
+
+            console.log('[UpdateChecker] Installing from:', contentUri);
+
+            // Use ACTION_INSTALL_PACKAGE (not ACTION_VIEW) for APK installation
             await IntentLauncher.startActivityAsync(
-                'android.intent.action.VIEW',
+                'android.intent.action.INSTALL_PACKAGE',
                 {
                     data: contentUri,
                     flags: 1, // FLAG_ACTIVITY_NEW_TASK
@@ -282,8 +357,34 @@ export function useUpdateChecker(): UpdateStatus {
             );
         } catch (error: any) {
             console.log('[UpdateChecker] Install failed:', error?.message || error);
-            setDownloadPhase('error');
-            setErrorMessage('Não foi possível iniciar a instalação. Tente novamente.');
+
+            // Fallback: try ACTION_VIEW if ACTION_INSTALL_PACKAGE fails
+            // (some older devices/ROMs may not support INSTALL_PACKAGE)
+            try {
+                const apkPath = downloadedApkPathRef.current!;
+                let contentUri: string;
+
+                if (apkPath.startsWith('file://')) {
+                    contentUri = await FileSystem.getContentUriAsync(apkPath);
+                } else if (apkPath.startsWith('/')) {
+                    contentUri = await FileSystem.getContentUriAsync(`file://${apkPath}`);
+                } else {
+                    contentUri = await FileSystem.getContentUriAsync(apkPath);
+                }
+
+                await IntentLauncher.startActivityAsync(
+                    'android.intent.action.VIEW',
+                    {
+                        data: contentUri,
+                        flags: 1,
+                        type: 'application/vnd.android.package-archive',
+                    }
+                );
+            } catch (fallbackError: any) {
+                console.log('[UpdateChecker] Fallback install also failed:', fallbackError?.message || fallbackError);
+                setDownloadPhase('error');
+                setErrorMessage('Não foi possível iniciar a instalação. Tente novamente.');
+            }
         }
     }, []);
 

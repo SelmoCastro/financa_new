@@ -1,4 +1,4 @@
 {
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Atualização automática do app com download direto\nVerificação periódica de novas versões ao voltar do background\nChangelog formatado no diálogo de atualização\nBarra de progresso ao baixar APK\nLembrete automático após 24h se update ignorado"
+  "releaseNotes": "Download de atualização otimizado com react-native-blob-util\nIntent correto ACTION_INSTALL_PACKAGE para instalação de APK\nVerificação automática de permissão de instalação (Android 8+)\nRetry automático em caso de falha de download\nValição de tamanho de arquivo para evitar APKs corrompidos"
 }

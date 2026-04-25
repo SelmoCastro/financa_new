@@ -87,6 +87,9 @@ function withApkInstaller(config) {
     <files-path name="internal_files" path="." />
     <cache-path name="cache" path="." />
     <external-files-path name="external_files" path="." />
+    <external-cache-path name="external_cache" path="." />
+    <!-- React Native Blob Util downloads to CacheDir/updates/ -->
+    <cache-path name="rnblob_cache" path="updates/" />
 </paths>`;
 
     fs.writeFileSync(
