@@ -2,12 +2,15 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useSegments, router } from 'expo-router';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { LogBox, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CurrencyProvider } from '../context/CurrencyContext';
 import { UpdateDialog } from '../components/UpdateDialog';
 import '../global.css';
+
+// Suppress expo-file-system deprecation warnings (SDK 54+ legacy API)
+LogBox.ignoreLogs(['expo-file-system', 'Method .*Async imported from "expo-file-system" is deprecated']);
 
 export {
   // Catch any errors thrown by the Layout component.
