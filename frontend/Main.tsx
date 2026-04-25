@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import App from './App';
 import { Login } from './components/Login';
 import { ResetPassword } from './components/ResetPassword';
 import { VerifyEmail } from './components/VerifyEmail';
+import LandingView from './views/LandingView';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
     // Agora que o Token é gerido via Cookie HttpOnly,
@@ -27,6 +27,7 @@ const Main = () => {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="/" element={<LandingView />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
@@ -38,7 +39,6 @@ const Main = () => {
                         </PrivateRoute>
                     }
                 />
-                <Route path="/" element={<Navigate to="/dashboard" />} />
             </Routes>
         </BrowserRouter>
     );
