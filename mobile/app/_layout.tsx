@@ -1,21 +1,52 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useSegments, router } from 'expo-router';
-import { useEffect } from 'react';
+import * as ExpoRouter from 'expo-router';
+import { Component, useEffect, PropsWithChildren, ReactNode } from 'react';
 import { LogBox, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CurrencyProvider } from '../context/CurrencyContext';
 import { UpdateDialog } from '../components/UpdateDialog';
+import { initErrorReporter, reportReactError } from '../utils/errorReporter';
 import '../global.css';
 
 // Suppress expo-file-system deprecation warnings (SDK 54+ legacy API)
 LogBox.ignoreLogs(['expo-file-system', 'Method .*Async imported from "expo-file-system" is deprecated']);
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+// Initialize global JS error handler
+initErrorReporter();
+
+// Custom ErrorBoundary that wraps expo-router's and reports React errors
+class ErrorBoundary extends Component<
+  PropsWithChildren<{ error?: any }>,
+  { error: Error | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    reportReactError(error, { componentStack: errorInfo.componentStack });
+  }
+
+  render() {
+    if (this.state.error) {
+      // Delegate rendering to expo-router's built-in ErrorBoundary UI
+      const ExpoErrorBoundary = (ExpoRouter as any).ErrorBoundary;
+      if (ExpoErrorBoundary) {
+        return <ExpoErrorBoundary error={this.state.error} />;
+      }
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();

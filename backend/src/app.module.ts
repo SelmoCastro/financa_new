@@ -27,6 +27,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { AuditModule } from './audit/audit.module';
 import { AdminModule } from './admin/admin.module';
 import { AppVersionModule } from './app-version/app-version.module';
+import { ErrorsModule } from './errors/errors.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { AppVersionModule } from './app-version/app-version.module';
     AuditModule,
     AdminModule,
     AppVersionModule,
+    ErrorsModule,
   ],
   controllers: [AppController],
   providers: [

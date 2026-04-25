@@ -255,6 +255,21 @@ model AiRequestLog {
   @@index([userId, createdAt])
 }
 
+model ErrorReport {
+  id             Int      @id @default(autoincrement())
+  message        String
+  stack          String?
+  componentStack String?
+  platform       String?
+  appVersion     String?
+  deviceId       String?
+  userId         String?
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([platform])
+}
+
 model AuditLog {
   id         String   @id @default(uuid())
   userId     String
