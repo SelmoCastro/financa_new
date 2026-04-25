@@ -269,12 +269,21 @@ export function useUpdateChecker(): UpdateStatus {
             }
 
             // Download using react-native-blob-util (streams to disk, no memory issues)
-            const result = await ReactNativeBlobUtil.config({
+            // IMPORTANT: .progress() must be chained BEFORE .fetch() to receive callbacks
+            const task = ReactNativeBlobUtil.config({
                 path: downloadPath,
                 fileCache: false, // Use our custom path, not cache
                 indicator: true,   // Show download notification on Android
                 overwrite: true,
             }).fetch('GET', versionInfo.apkUrl);
+
+            // Wire up progress callback (must be before fetch resolves)
+            task.progress((received: number, total: number) => {
+                const percent = total > 0 ? Math.round((received / total) * 100) : 0;
+                setDownloadProgress(percent);
+            });
+
+            const result = await task;
 
             // Verify the download succeeded
             const fileExists = await ReactNativeBlobUtil.fs.exists(downloadPath);
