@@ -315,6 +315,9 @@ export class AuthService {
         email: true,
         isAdmin: true,
         isEmailVerified: true,
+        subscription: {
+          select: { plan: true, status: true, expiresAt: true },
+        },
       },
     });
 
@@ -322,7 +325,11 @@ export class AuthService {
       throw new NotFoundException('Usuário não encontrado');
     }
 
-    return user;
+    const { subscription, ...rest } = user;
+    return {
+      ...rest,
+      plan: subscription?.status === 'active' ? subscription.plan : 'free',
+    };
   }
 
   async changeName(userId: string, name: string) {
