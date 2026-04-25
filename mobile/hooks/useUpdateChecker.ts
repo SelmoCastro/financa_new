@@ -6,9 +6,15 @@ import * as IntentLauncher from 'expo-intent-launcher';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 
-// Use legacy API from expo-file-system to avoid deprecation warnings in SDK 54+
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { documentDirectory, getInfoAsync, makeDirectoryAsync, createDownloadResumable, getContentUriAsync } = require('expo-file-system/legacy');
+// Use legacy API from expo-file-system to avoid runtime errors in SDK 54+
+// The new API throws errors for getInfoAsync, makeDirectoryAsync, etc.
+import {
+    documentDirectory,
+    getInfoAsync,
+    makeDirectoryAsync,
+    createDownloadResumable,
+    getContentUriAsync,
+} from 'expo-file-system/legacy';
 
 const DISMISS_KEY = '@finanza_update_dismissed_at';
 const DOWNLOADED_VERSION_KEY = '@finanza_downloaded_version';
@@ -63,7 +69,7 @@ function compareVersions(a: string, b: string): number {
  * This converts a file:// URI to a content:// URI that the system installer can use.
  */
 async function getContentUri(fileUri: string): Promise<string> {
-    // getContentUriAsync is from expo-file-system legacy API, extracted via require above
+    // getContentUriAsync is from expo-file-system/legacy, converts file:// to content:// URI
     // It converts file:// URI to content:// URI via FileProvider (required for Android 7+)
     if (getContentUriAsync) {
         return await getContentUriAsync(fileUri);
