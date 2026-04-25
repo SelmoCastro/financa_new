@@ -6,7 +6,7 @@ const API_URL = 'https://api.finanzaai.tech/v1';
 
 const api = axios.create({
     baseURL: API_URL,
-    timeout: 60000,
+    timeout: 30000,
     headers: {
         'x-platform': 'mobile',
     },
@@ -46,7 +46,9 @@ api.interceptors.response.use(
     },
     async (error) => {
         const originalRequest = error.config;
-        const isAuthRoute = originalRequest?.url?.includes('/auth/');
+        const isAuthRoute = originalRequest?.url?.includes('/auth/login') ||
+                           originalRequest?.url?.includes('/auth/register') ||
+                           originalRequest?.url?.includes('/auth/refresh');
         const status = error.response?.status;
 
         // Only handle 401 for non-auth routes (auth route 401 = wrong credentials)
@@ -80,6 +82,7 @@ api.interceptors.response.use(
                     refreshToken
                 }, {
                     headers: { 'x-platform': 'mobile' },
+                    timeout: 10000,
                 });
 
                 const newAccess = refreshResponse.data?.access_token || refreshResponse.data?.data?.access_token;
@@ -96,27 +99,24 @@ api.interceptors.response.use(
 
                 // Notify AuthContext that token was refreshed so it can update state
                 DeviceEventEmitter.emit('auth:token-refreshed', newAccess);
-
                 processQueue(null, newAccess);
 
                 originalRequest.headers.Authorization = `Bearer ${newAccess}`;
                 return api(originalRequest);
 
             } catch (refreshError: any) {
-                console.log('[API] Refresh falhou. Limpando tokens...');
-                
-                // Only logout if refresh explicitly failed (not network error)
                 const refreshStatus = refreshError?.response?.status;
                 if (refreshStatus === 401 || refreshStatus === 403) {
                     // Refresh token is truly expired — must re-login
+                    console.log('[API] Refresh token expired. Triggering logout...');
                     await SecureStore.deleteItemAsync('token');
                     await SecureStore.deleteItemAsync('refreshToken');
                     await SecureStore.deleteItemAsync('userId');
                     DeviceEventEmitter.emit('auth:unauthorized');
                 }
-                // Network errors — don't logout, just reject. User stays on screen,
-                // can pull-to-refresh or retry later
-                
+                // Network errors during refresh — don't logout, just fail the request
+                // User stays on screen with whatever data they have
+
                 processQueue(refreshError, null);
                 return Promise.reject(refreshError);
             } finally {
