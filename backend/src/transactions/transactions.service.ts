@@ -234,23 +234,22 @@ export class TransactionsService {
       descriptionsToClassify.add(raw.description);
     }
 
-    // Camada IA: limpa nomes e classifica categorias
-    let aiClassifications = {};
-    let cleanNames: Record<string, string> = {};
+    // Camada IA: classifica categorias e limpa nomes (tudo em 1 chamada para economia)
+    let aiClassifications: Record<string, any> = {};
 
     if (descriptionsToClassify.size > 0) {
       const descriptionsArray = Array.from(descriptionsToClassify);
-      [aiClassifications, cleanNames] = await Promise.all([
-        this.aiService.classifyTransactions(descriptionsArray, categoryNames),
-        this.aiService.cleanDescriptions(descriptionsArray),
-      ]);
+      aiClassifications = await this.aiService.classifyTransactions(descriptionsArray, categoryNames);
     }
 
     const finalPreview = toReview.map((tx) => {
+      const suggestion = aiClassifications[tx.description];
+      // Extrai cleanName direto do resultado do CLASSIFIER (campo "n")
+      const cleanName = suggestion?.cleanName || suggestion?.n;
       return this.enrichTransactionWithAi(
         tx,
-        aiClassifications[tx.description],
-        cleanNames[tx.description],
+        suggestion,
+        cleanName,
         categoryNameToId,
       );
     });

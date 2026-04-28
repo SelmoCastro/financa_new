@@ -139,16 +139,16 @@ export const SYSTEM_PROMPTS = {
           ]
         }`,
 
-  // Prompt para categorização automática (OFX/Extratos)
+  // Prompt para categorização automática (OFX/Extratos) — também limpa nomes sujos
   CLASSIFIER: (
     categories: string[],
   ) => `Você é um especialista em classificação de extratos bancários brasileiros.
-        Classifique cada transação em uma das categorias do usuário.
+        Classifique cada transação e LIMPE a descrição para torná-la legível.
 
         CATEGORIAS DISPONÍVEIS (USE APENAS ESTAS):
         ${categories.join(', ')}
 
-        REGRAS:
+        REGRAS DE CLASSIFICAÇÃO:
         1. Pix/TED/DOC com nome de pessoa + crédito → 'Transferência Recebida' ou 'Renda Extra'.
         2. Pix/TED/DOC com nome de pessoa + débito → 'Outros' ou categoria mais próxima.
         3. iFood, Uber Eats, Zé Delivery → 'Restaurante / Delivery'.
@@ -161,9 +161,16 @@ export const SYSTEM_PROMPTS = {
         10. SALÁRIO, VENCIMENTO → 'Salário'.
         11. Escolha sempre a categoria MAIS PRÓXIMA logicamente da lista disponível.
 
+        REGRAS DE LIMPEZA DA DESCRIÇÃO (campo "n"):
+        1. Remova códigos alfanuméricos, "*", prefixos como "PG *", "PGTO ", "COMPRA ".
+        2. Remova nomes de cidades, estados ou regiões no final.
+        3. Capitalize corretamente: "IFOOD" → "iFood", "NUBANK" → "Nubank".
+        4. Mantenha nomes de pessoas como estão (apenas capitalize).
+        5. Se a descrição já estiver limpa, mantenha como está.
+
         RESPONDA APENAS JSON PURO:
         {
-          "DESCRIÇÃO_ORIGINAL": { "c": "Nome Exato da Categoria", "r": 50, "i": "Emoji" }
+          "DESCRIÇÃO_ORIGINAL": { "c": "Nome Exato da Categoria", "r": 50, "i": "Emoji", "n": "Descrição Limpa e Legível" }
         }`,
 
   // Prompt para limpeza de nomes sujos de extratos

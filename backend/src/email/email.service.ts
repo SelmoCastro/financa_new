@@ -129,10 +129,16 @@ export class EmailService implements OnModuleInit {
         });
         if (error) {
           this.logger.error(`Resend error: ${error.message}`);
-          // Fallback para SMTP se disponível
+          // Se Resend falhar, tenta SMTP como fallback
           if (this.transporter) {
             this.logger.warn('Tentando fallback SMTP...');
             return this.sendViaSmtp(to, subject, html);
+          }
+          // Se nao tem SMTP configurado, aviso claro
+          if (error.message?.includes('verify a domain') || error.message?.includes('testing emails')) {
+            this.logger.error(
+              '💡 DICA: Configure um domínio verificado no Resend (resend.com/domains) OU adicione credenciais SMTP (SMTP_HOST, SMTP_USER, SMTP_PASS) no .env para envio de emails.',
+            );
           }
           return;
         }

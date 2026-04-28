@@ -6,6 +6,7 @@ interface ClassificationResult {
   category: string;
   rule: number;
   icon: string;
+  cleanName?: string;
 }
 
 @Injectable()
@@ -85,6 +86,7 @@ export class AiService {
               ? value.r || value.rule
               : 30,
           icon: value.i || value.icon || '🏷️',
+          cleanName: value.n || value.cleanName || undefined,
         };
       }
 
@@ -128,7 +130,9 @@ export class AiService {
   }
 
   /**
-   * Limpa descrições de extratos bancários.
+   * @deprecated Use classifyTransactions() — it now returns cleanName in the result.
+   * This method is kept for backward compatibility but should not be called
+   * to avoid double API charges on OpenRouter.
    */
   async cleanDescriptions(
     descriptions: string[],
