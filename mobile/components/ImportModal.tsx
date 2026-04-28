@@ -81,7 +81,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
             .map(([name, items]) => ({ name, items }));
     };
 
-    useEffect(() => {
+  useEffect(() => {
         if (visible) {
             setStep(1);
             setTransactions([]);
@@ -95,6 +95,13 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
                 setSelectedAccountId(accounts[0].id);
             }
         }
+
+        // Cleanup: liberar memoria da imagem quando modal fecha
+        return () => {
+            setReceiptPreviewUri(null);
+            setFileInfo(null);
+            setTransactions([]);
+        };
     }, [visible, accounts]);
 
     const handlePickDocument = async () => {
@@ -125,8 +132,8 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
 
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: false,
-                quality: 0.7,
+                allowsEditing: true, // Permite cropar - ja reduz tamanho
+                quality: 0.6, // Compressao maior para evitar OOM no upload (antes 0.7)
             });
 
             if (result.canceled) return;
@@ -196,9 +203,27 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
 
             const endpoint = type === 'ofx' ? '/transactions/import/validate' : '/transactions/import/receipt';
 
-            const res = await api.post(endpoint, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+            // Timeout de 30s para receipt (IA pode demorar), 15s para OFX
+            const timeoutMs = type === 'receipt' ? 30000 : 15000;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+            let res;
+            try {
+                res = await api.post(endpoint, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    signal: controller.signal,
+                });
+            } catch (abortError: any) {
+                if (abortError.name === 'AbortError' || abortError.code === 'ERR_CANCELED') {
+                    Alert.alert('Tempo esgotado', 'O servidor demorou muito para responder. Tente novamente.');
+                    setFileInfo(null);
+                    return;
+                }
+                throw abortError;
+            } finally {
+                clearTimeout(timeoutId);
+            }
 
             const fetchedTx = res.data.preview || res.data.valid || [];
 

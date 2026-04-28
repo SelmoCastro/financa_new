@@ -26,14 +26,14 @@ export class AiService {
       this.openai = new OpenAI({
         apiKey: apiKey,
         baseURL: 'https://openrouter.ai/api/v1',
-        timeout: 9500, // 9.5 segundos (Limite Vercel Hobby é 10s)
+        timeout: 25000, // 25s — VPS propria, sem limite Vercel. Vision/receipt precisa de mais tempo.
         defaultHeaders: {
           'HTTP-Referer': 'https://finanzaai.tech',
           'X-Title': 'Finanza AI',
         },
       });
       this.logger.log(
-        `OpenRouter Service inicializado. Timeout: 8s. Models: ${this.TEXT_MODEL} | ${this.VISION_MODEL}`,
+        `OpenRouter Service inicializado. Timeout: 25s. Models: ${this.TEXT_MODEL} | ${this.VISION_MODEL}`,
       );
     } else {
       this.logger.warn(
