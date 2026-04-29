@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsUUID, Min, Max } from 'class-validator';
 
 export class UpdateBudgetDto {
   @IsOptional()
@@ -9,5 +9,7 @@ export class UpdateBudgetDto {
   @IsOptional()
   @IsNumber()
   @IsNotEmpty()
+  @Min(0.01)
+  @Max(99999999.99)
   amount?: number;
 }

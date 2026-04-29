@@ -351,8 +351,8 @@ export class AuthService {
       throw new BadRequestException('Senha atual incorreta');
     }
 
-    if (newPassword.length < 6) {
-      throw new BadRequestException('A nova senha deve ter pelo menos 6 caracteres');
+    if (newPassword.length < 8) {
+      throw new BadRequestException('A nova senha deve ter pelo menos 8 caracteres');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);

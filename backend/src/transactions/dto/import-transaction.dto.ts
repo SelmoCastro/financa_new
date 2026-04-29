@@ -8,14 +8,17 @@ import {
   Min,
   IsIn,
   Max,
+  MaxLength,
 } from 'class-validator';
 
 export class ImportValidateTransactionDto {
   @IsString()
+  @MaxLength(500)
   description: string;
 
   @IsNumber()
   @Min(0.01)
+  @Max(99999999.99)
   amount: number;
 
   @IsDateString()
@@ -36,11 +39,12 @@ export class ImportValidateTransactionDto {
 
 export class ImportConfirmTransactionDto {
   @IsString()
+  @MaxLength(500)
   description: string;
 
   @IsNumber()
   @Min(0.01)
-  @Max(9999999999999.99)
+  @Max(99999999.99)
   amount: number;
 
   @IsDateString()
@@ -64,6 +68,7 @@ export class ImportConfirmTransactionDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   categoryLegacy?: string;
 
   @IsNumber()

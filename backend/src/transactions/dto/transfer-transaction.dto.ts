@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   Min,
   Max,
+  MaxLength,
 } from 'class-validator';
 
 export class TransferTransactionDto {
@@ -27,5 +28,6 @@ export class TransferTransactionDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   description?: string;
 }

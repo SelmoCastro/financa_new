@@ -2,6 +2,7 @@ import { IsString, MinLength, IsEmail, IsOptional, MaxLength, Matches } from 'cl
 
 export class ChangePasswordDto {
   @IsString()
+  @MaxLength(72)
   currentPassword: string;
 
   @IsString()
@@ -16,12 +17,14 @@ export class ChangeEmailDto {
   newEmail: string;
 
   @IsString()
+  @MaxLength(72)
   password: string;
 }
 
 export class ChangeNameDto {
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   name?: string;
 }
 

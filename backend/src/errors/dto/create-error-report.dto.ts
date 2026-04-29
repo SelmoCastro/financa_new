@@ -1,28 +1,34 @@
-import { IsString, IsOptional, IsDateString, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsNotEmpty, MaxLength } from 'class-validator';
 
 export class CreateErrorReportDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(10000)
   message: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(20000)
   stack?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(20000)
   componentStack?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(50)
   platform?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(20)
   appVersion?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(200)
   deviceId?: string;
 
   @IsString()

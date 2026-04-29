@@ -11,6 +11,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { SocialService } from './social.service';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
+import { AcceptInviteDto } from './dto/accept-invite.dto';
 
 @Controller({
   path: 'social',
@@ -29,7 +30,7 @@ export class SocialController {
   @RequireVerifiedEmail()
   async acceptInvite(
     @Param('id') id: string,
-    @Body() body: { accountId: string; categoryId: string },
+    @Body() body: AcceptInviteDto,
     @Request() req,
   ) {
     return this.socialService.acceptInvite(

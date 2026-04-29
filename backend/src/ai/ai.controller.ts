@@ -12,6 +12,7 @@ import { AiService } from './ai.service';
 import { ReportsService } from '../reports/reports.service';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 import { AiRequestGuard } from '../subscription/ai-request.guard';
+import { AiChatDto } from './dto/ai-chat.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Controller({
@@ -50,8 +51,9 @@ export class AiController {
 
   @Post('chat')
   @RequireVerifiedEmail()
-  async postChat(@Request() req, @Body('message') message: string) {
+  async postChat(@Request() req, @Body() body: AiChatDto) {
     const userId = req.user.userId;
+    const { message } = body;
 
     // Contexto completo: metas, orçamentos e gastos
     const profile = await this.reportsService.getFinancialProfile(userId);

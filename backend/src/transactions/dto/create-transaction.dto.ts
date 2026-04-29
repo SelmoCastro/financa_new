@@ -10,6 +10,7 @@ import {
   Min,
   Max,
   IsEmail,
+  MaxLength,
 } from 'class-validator';
 
 export enum TransactionType {
@@ -21,6 +22,7 @@ export enum TransactionType {
 export class CreateTransactionDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(500)
   description: string;
 
   @IsNumber()
@@ -38,6 +40,7 @@ export class CreateTransactionDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   categoryLegacy?: string;
 
   @IsString()
