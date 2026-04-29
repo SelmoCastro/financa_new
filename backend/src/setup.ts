@@ -25,14 +25,14 @@ export function configureApp(app: INestApplication) {
   ];
 
   // CSP (Aceita Wildcard mas não Regex)
+  // Em produção, remover URLs de dev para não vazar infraestrutura
   const allowedOriginsCSP = [
     frontendUrl,
-    'http://localhost:5173',
-    'http://localhost:3000',
+    ...(!isProduction
+      ? ['http://localhost:5173', 'http://localhost:3000', 'http://192.168.*', 'exp://*']
+      : []),
     'https://*.vercel.app',
     'https://*.finanzaai.tech',
-    'exp://*',
-    'http://192.168.*',
   ];
 
   app.enableCors({

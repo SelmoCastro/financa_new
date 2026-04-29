@@ -28,7 +28,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     let errorBody: any;
     if (typeof exceptionResponse === 'string') {
-      errorBody = { message: exceptionResponse };
+      // Sanitize JSON parse errors — don't leak parser details
+      const sanitized = exceptionResponse.replace(/^Expected .+ in JSON at position \d+$/,
+        'Invalid request body');
+      errorBody = { message: sanitized };
     } else if (isProduction && status >= 500) {
       // In production, don't leak internal error details for 5xx errors
       errorBody = { message: 'Internal Server Error' };
