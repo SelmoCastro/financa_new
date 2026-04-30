@@ -13,6 +13,7 @@ export class AppVersionController {
   @Get('version')
   getVersion() {
     let version = '0.0.0';
+    let mobileVersion = '0.0.0';
     let minRequiredVersion = '1.0.0';
     let releaseNotes: string | string[] = '';
 
@@ -28,6 +29,8 @@ export class AppVersionController {
       const metaPath = path.resolve(__dirname, '..', '..', 'version-meta.json');
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
       minRequiredVersion = meta.minRequiredVersion || '1.0.0';
+      // Use mobileVersion from meta if set, otherwise fall back to package.json version
+      mobileVersion = meta.mobileVersion || version;
 
       if (Array.isArray(meta.releaseNotes)) {
         releaseNotes = meta.releaseNotes;
@@ -35,18 +38,21 @@ export class AppVersionController {
         releaseNotes = meta.releaseNotes;
       }
     } catch {
-      // fallback to defaults
+      // fallback to package.json version
+      mobileVersion = version;
     }
 
     // Verifica se o APK realmente existe no disco da VPS
-    const apkPath = `/var/www/finanzaai.tech/downloads/Financa_new_v${version}.apk`;
+    // Usa mobileVersion para o nome do arquivo (mobile tem ciclo de release separado)
+    const apkPath = `/var/www/finanzaai.tech/downloads/Financa_new_v${mobileVersion}.apk`;
     const apkAvailable = fs.existsSync(apkPath);
 
     return {
       version,
+      mobileVersion,
       apkAvailable,
       apkUrl: apkAvailable
-        ? `https://finanzaai.tech/downloads/Financa_new_v${version}.apk`
+        ? `https://finanzaai.tech/downloads/Financa_new_v${mobileVersion}.apk`
         : null,
       minRequiredVersion,
       releaseNotes,

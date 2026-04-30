@@ -51,16 +51,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    type RefreshResult = 'success' | 'unauthorized' | 'network_error';
+
     /**
      * Proactively refresh the access token using the stored refresh token.
-     * Returns true if refresh succeeded (new tokens stored), false otherwise.
-     * This avoids the 401 → interceptor flow which causes visible blank screens.
+     * Returns discriminated result so caller knows how to handle fallback.
      */
-    const proactiveRefresh = useCallback(async (): Promise<boolean> => {
+    const proactiveRefresh = useCallback(async (): Promise<RefreshResult> => {
         try {
             const refreshToken = await SecureStore.getItemAsync('refreshToken');
             const userId = await SecureStore.getItemAsync('userId');
-            if (!refreshToken || !userId) return false;
+            if (!refreshToken || !userId) return 'unauthorized';
 
             const axios = require('axios');
             const response = await axios.post(`${API_URL}/auth/refresh`, {
@@ -74,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const newAccess = response.data?.access_token || response.data?.data?.access_token;
             const newRefresh = response.data?.refreshToken || response.data?.data?.refreshToken;
 
-            if (!newAccess) return false;
+            if (!newAccess) return 'unauthorized';
 
             await SecureStore.setItemAsync('token', newAccess);
             if (newRefresh) {
@@ -82,17 +83,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             setToken(newAccess);
             console.log('[AuthContext] Proactive refresh succeeded');
-            return true;
+            return 'success';
         } catch (e: any) {
             const status = e?.response?.status;
-            // Only truly expired — logout
             if (status === 401 || status === 403) {
                 console.log('[AuthContext] Refresh token expired. Logging out.');
-                return false;
+                await SecureStore.deleteItemAsync('token');
+                await SecureStore.deleteItemAsync('refreshToken');
+                await SecureStore.deleteItemAsync('userId');
+                return 'unauthorized';
             }
-            // Network error — token might still be valid, just couldn't refresh
             console.warn('[AuthContext] Proactive refresh network error:', e?.message);
-            return false;
+            return 'network_error';
         }
     }, []);
 
@@ -109,29 +111,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     return;
                 }
 
-                // Always try to refresh the token on app start.
-                // This ensures we have a fresh token before making any API calls.
-                // If the access token is still valid, this just rotates it — harmless.
-                const refreshed = await proactiveRefresh();
+                const result = await proactiveRefresh();
 
                 if (!mounted) return;
 
-                if (refreshed) {
-                    // Refresh succeeded — profile will be fetched via token-refreshed event
-                    await fetchProfile();
-                } else {
-                    // Refresh failed — check if the existing token still works
-                    // (might be valid within its 15min window)
-                    setToken(storedToken);
-                    await fetchProfile();
+                switch (result) {
+                    case 'success':
+                        // Token refreshed — profile already set by proactiveRefresh
+                        await fetchProfile();
+                        break;
+                    case 'unauthorized':
+                        // Refresh token expired — SecureStore already cleaned up
+                        // Don't set token (it's invalid), let RootLayoutNav redirect to login
+                        setToken(null);
+                        break;
+                    case 'network_error':
+                        // Couldn't reach server — use stored token (might still be valid)
+                        setToken(storedToken);
+                        await fetchProfile().catch(() => {});
+                        break;
                 }
             } catch (e) {
                 console.error('[AuthContext] Init error:', e);
-                // Last resort — try with whatever token we have
+                // Last resort — try with whatever token we have (network error fallback)
                 const storedToken = await SecureStore.getItemAsync('token');
                 if (storedToken && mounted) {
                     setToken(storedToken);
-                    fetchProfile();
+                    fetchProfile().catch(() => {});
                 }
             } finally {
                 if (mounted) setIsLoading(false);

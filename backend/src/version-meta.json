@@ -1,5 +1,6 @@
 {
+  "version": "1.7.13",
+  "mobileVersion": "1.7.13",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Download de atualiza\u00e7\u00e3o otimizado com react-native-blob-util\nIntent correto ACTION_INSTALL_PACKAGE para instala\u00e7\u00e3o de APK\nVerifica\u00e7\u00e3o autom\u00e1tica de permiss\u00e3o de instala\u00e7\u00e3o (Android 8+)\nRetry autom\u00e1tico em caso de falha de download\nVali\u00e7\u00e3o de tamanho de arquivo para evitar APKs corrompidos",
-  "version": "1.7.13"
+  "releaseNotes": "Download de atualização otimizado com react-native-blob-util\nIntent correto ACTION_INSTALL_PACKAGE para instalação de APK\nVerificação automática de permissão de instalação (Android 8+)\nRetry automático em caso de falha de download\nValidação de tamanho de arquivo para evitar APKs corrompidos"
 }
