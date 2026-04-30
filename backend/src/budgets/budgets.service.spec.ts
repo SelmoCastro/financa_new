@@ -4,14 +4,26 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { BudgetsService } from './budgets.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 describe('BudgetsService', () => {
   let service: BudgetsService;
   let prisma: PrismaService;
 
+  const mockSubscriptionService = {
+    getPlan: jest.fn().mockResolvedValue('premium'), // premium = unlimited, so plan checks pass
+  };
+
   const mockPrismaService = {
     category: {
-      findUnique: jest.fn(),
+      findFirst: jest.fn().mockImplementation((args: any) => {
+        // Simulate DB filtering: return the pre-set value only if userId matches
+        const preset = mockCatPreset;
+        if (preset && args?.where?.userId && preset.userId !== args.where.userId) {
+          return Promise.resolve(null);
+        }
+        return Promise.resolve(preset);
+      }),
     },
     budget: {
       upsert: jest.fn(),
@@ -19,11 +31,14 @@ describe('BudgetsService', () => {
       updateMany: jest.fn(),
       findFirst: jest.fn(),
       deleteMany: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
     },
     transaction: {
       aggregate: jest.fn(),
     },
   };
+
+  let mockCatPreset: any = null;
 
   const userId = 'user-123';
   const categoryId = 'cat-456';
@@ -51,6 +66,7 @@ describe('BudgetsService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockCatPreset = null;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,16 +75,24 @@ describe('BudgetsService', () => {
           provide: PrismaService,
           useValue: mockPrismaService,
         },
+        {
+          provide: SubscriptionService,
+          useValue: mockSubscriptionService,
+        },
       ],
     }).compile();
 
     service = module.get<BudgetsService>(BudgetsService);
     prisma = module.get<PrismaService>(PrismaService);
 
-    // Wire mock functions onto the prisma instance so service calls hit mocks
-    prisma.category = mockPrismaService.category as any;
-    prisma.budget = mockPrismaService.budget as any;
-    prisma.transaction = mockPrismaService.transaction as any;
+    // Wire mock functions onto the prisma instance so service calls hit mocks.
+    // Use Object.assign to avoid "Cannot assign to read-only property" on CI runners
+    // with stricter TypeScript configs.
+    Object.assign(prisma, {
+      category: mockPrismaService.category,
+      budget: mockPrismaService.budget,
+      transaction: mockPrismaService.transaction,
+    });
   });
 
   it('should be defined', () => {
@@ -81,13 +105,13 @@ describe('BudgetsService', () => {
     const createBudgetDto = { categoryId, amount: 1500 };
 
     it('should create a new budget when category exists and belongs to user', async () => {
-      mockPrismaService.category.findUnique.mockResolvedValue(mockCategory);
+      mockCatPreset = mockCategory;
       mockPrismaService.budget.upsert.mockResolvedValue(mockBudget);
 
       const result = await service.create(createBudgetDto, userId);
 
-      expect(mockPrismaService.category.findUnique).toHaveBeenCalledWith({
-        where: { id: categoryId },
+      expect(mockPrismaService.category.findFirst).toHaveBeenCalledWith({
+        where: { id: categoryId, userId, deletedAt: null },
       });
       expect(mockPrismaService.budget.upsert).toHaveBeenCalledWith({
         where: {
@@ -104,7 +128,7 @@ describe('BudgetsService', () => {
     });
 
     it('should throw BadRequestException when category does not exist', async () => {
-      mockPrismaService.category.findUnique.mockResolvedValue(null);
+      mockCatPreset = null;
 
       await expect(service.create(createBudgetDto, userId)).rejects.toThrow(
         BadRequestException,
@@ -118,7 +142,7 @@ describe('BudgetsService', () => {
 
     it('should throw BadRequestException when category belongs to another user', async () => {
       const otherUserCategory = { ...mockCategory, userId: 'other-user-999' };
-      mockPrismaService.category.findUnique.mockResolvedValue(otherUserCategory);
+      mockCatPreset = otherUserCategory;
 
       await expect(service.create(createBudgetDto, userId)).rejects.toThrow(
         BadRequestException,
@@ -131,7 +155,7 @@ describe('BudgetsService', () => {
     });
 
     it('should convert amount string to number on create', async () => {
-      mockPrismaService.category.findUnique.mockResolvedValue(mockCategory);
+      mockCatPreset = mockCategory;
       mockPrismaService.budget.upsert.mockResolvedValue(mockBudget);
 
       const dtoWithStringAmount = { categoryId, amount: '2000' as any };
@@ -299,17 +323,14 @@ describe('BudgetsService', () => {
       const newCategoryId = 'cat-new-999';
       const updateBudgetDto = { categoryId: newCategoryId };
 
-      mockPrismaService.category.findUnique.mockResolvedValue({
-        ...mockCategory,
-        id: newCategoryId,
-      });
+      mockCatPreset = { ...mockCategory, id: newCategoryId };
       mockPrismaService.budget.updateMany.mockResolvedValue({ count: 1 });
       mockPrismaService.budget.findFirst.mockResolvedValue(mockBudget);
 
       const result = await service.update(budgetId, updateBudgetDto, userId);
 
-      expect(mockPrismaService.category.findUnique).toHaveBeenCalledWith({
-        where: { id: newCategoryId },
+      expect(mockPrismaService.category.findFirst).toHaveBeenCalledWith({
+        where: { id: newCategoryId, userId, deletedAt: null },
       });
       expect(result).toEqual(mockBudget);
     });
@@ -317,7 +338,7 @@ describe('BudgetsService', () => {
     it('should throw BadRequestException when updating to invalid categoryId', async () => {
       const updateBudgetDto = { categoryId: 'non-existent-cat' };
 
-      mockPrismaService.category.findUnique.mockResolvedValue(null);
+      mockCatPreset = null;
 
       await expect(
         service.update(budgetId, updateBudgetDto, userId),
@@ -329,11 +350,7 @@ describe('BudgetsService', () => {
     it('should throw BadRequestException when updating to categoryId belonging to another user', async () => {
       const updateBudgetDto = { categoryId: 'cat-other-user' };
 
-      mockPrismaService.category.findUnique.mockResolvedValue({
-        ...mockCategory,
-        id: 'cat-other-user',
-        userId: 'different-user',
-      });
+      mockCatPreset = { ...mockCategory, id: 'cat-other-user', userId: 'different-user' };
 
       await expect(
         service.update(budgetId, updateBudgetDto, userId),
@@ -368,7 +385,7 @@ describe('BudgetsService', () => {
 
       await service.update(budgetId, updateBudgetDto, userId);
 
-      expect(mockPrismaService.category.findUnique).not.toHaveBeenCalled();
+      expect(mockPrismaService.category.findFirst).not.toHaveBeenCalled();
     });
   });
 

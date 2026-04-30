@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 describe('AccountsService', () => {
   let service: AccountsService;
@@ -60,6 +61,7 @@ describe('AccountsService', () => {
       },
       transaction: {
         create: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
     };
@@ -71,7 +73,8 @@ describe('AccountsService', () => {
         findFirst: jest.fn(),
         findUnique: jest.fn(),
         updateMany: jest.fn(),
-      },
+        count: jest.fn().mockResolvedValue(0),
+      } as any,
       category: {
         findFirst: jest.fn(),
         create: jest.fn(),
@@ -86,6 +89,7 @@ describe('AccountsService', () => {
       providers: [
         AccountsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: SubscriptionService, useValue: { getPlan: jest.fn().mockResolvedValue('premium') } },
       ],
     }).compile();
 
@@ -387,7 +391,7 @@ describe('AccountsService', () => {
 
       const result = await service.update(accountId, updateDto, userId);
 
-      expect(result.name).toBe('Nubank Updated');
+      expect(result!.name).toBe('Nubank Updated');
       expect(prisma.account.findFirst).toHaveBeenCalledWith({
         where: { id: accountId, userId, deletedAt: null },
       });
