@@ -6,11 +6,13 @@ import {
   IsDateString,
   Min,
   Max,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateGoalDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   title: string;
 
   @IsNumber()

@@ -358,7 +358,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     await this.prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword },
+      data: { password: hashedPassword, hashedRefreshToken: null },
     });
 
     this.auditService.log(userId, AuditAction.PASSWORD_RESET, 'User', userId);
@@ -383,10 +383,10 @@ export class AuthService {
       throw new BadRequestException('Este e-mail já está em uso');
     }
 
-    // Update email and mark as unverified
+    // Update email and mark as unverified, revoke all sessions
     await this.prisma.user.update({
       where: { id: userId },
-      data: { email: newEmail, isEmailVerified: false },
+      data: { email: newEmail, isEmailVerified: false, hashedRefreshToken: null },
     });
 
     // Send verification email to the new address

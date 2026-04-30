@@ -39,7 +39,7 @@
                 },
                 {
                     "key": "Content-Security-Policy",
-                    "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; frame-ancestors 'none'; upgrade-insecure-requests;"
+                    "value": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.finanzaai.tech https://finanzaai.tech; img-src 'self' data: blob: https:; font-src 'self' data:; frame-ancestors 'none'; upgrade-insecure-requests;"
                 }
             ]
         }

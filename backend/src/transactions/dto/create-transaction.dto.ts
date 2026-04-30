@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Min,
   Max,
   IsEmail,
@@ -34,7 +35,7 @@ export class CreateTransactionDto {
   @IsDateString()
   date: string; // ISO string
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   categoryId?: string;
 
@@ -43,11 +44,11 @@ export class CreateTransactionDto {
   @MaxLength(100)
   categoryLegacy?: string;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   accountId?: string;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   creditCardId?: string;
 

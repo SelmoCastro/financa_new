@@ -23,7 +23,7 @@ export const VerifyEmail: React.FC = () => {
                 const response = await api.post('/auth/verify-email', { token });
                 setStatus('success');
                 setMessage(response.data.message || 'E-mail verificado com sucesso!');
-                localStorage.setItem('isEmailVerified', 'true');
+                // Não gravamos isEmailVerified em localStorage — /auth/me é source of truth
                 setTimeout(() => {
                     navigate('/dashboard');
                 }, 3000);
@@ -45,12 +45,6 @@ export const VerifyEmail: React.FC = () => {
     }, [resendCooldown]);
 
     const handleResend = async () => {
-        const userEmail = localStorage.getItem('userEmail');
-        if (!userEmail) {
-            setMessage('Email não encontrado. Faça login novamente.');
-            return;
-        }
-
         try {
             await api.post('/auth/resend-verification');
             setResendCooldown(60); // 60s cooldown

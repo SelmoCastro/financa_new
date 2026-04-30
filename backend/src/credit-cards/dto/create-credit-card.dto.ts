@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, Min, Max, MaxLength } from 'class-validator';
+import { IsString, IsUUID, IsNotEmpty, IsNumber, Min, Max, MaxLength } from 'class-validator';
 
 export class CreateCreditCardDto {
   @IsString()
@@ -24,7 +24,7 @@ export class CreateCreditCardDto {
   @Max(31)
   dueDay: number;
 
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   accountId: string;
 }

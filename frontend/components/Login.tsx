@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { LayoutDashboard, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../services/api';
@@ -43,18 +42,9 @@ export const Login: React.FC = () => {
 
                 const response = await api.post('/auth/register', { email, password, name });
 
-                // Salvar credenciais no Local Storage para auto-login e UI state
-                // O cookie HttpOnly é enviado automaticamente pelo browser, mas armazenamos
-                // o access_token como fallback para ambientes onde cookies third-party são bloqueados
+                // HttpOnly cookie já foi setado pelo backend.
+                // Dados do usuário serão obtidos via /auth/me no App.tsx.
                 if (response.data.user) {
-                    if (response.data.access_token) {
-                        localStorage.setItem('token', response.data.access_token);
-                    }
-                    localStorage.setItem('userId', response.data.user.id);
-                    localStorage.setItem('userName', response.data.user.name);
-                    localStorage.setItem('userEmail', response.data.user.email);
-                    localStorage.setItem('isAdmin', response.data.user.isAdmin ? 'true' : 'false');
-                    localStorage.setItem('isEmailVerified', response.data.user.isEmailVerified ? 'true' : 'false');
                     // Redireciona pra verificação se email não verificado
                     if (!response.data.user.isEmailVerified) {
                         navigate('/verify-email');
@@ -66,29 +56,16 @@ export const Login: React.FC = () => {
                     setIsRegister(false);
                 }
             } else {
-                const response = await api.post('/auth/login', { email, password });
-                // Cookie HttpOnly já foi setado pelo backend, mas armazenamos access_token
-                // como fallback Bearer para quando cookies cross-origin são bloqueados
-                if (response.data.access_token) {
-                    localStorage.setItem('token', response.data.access_token);
-                }
-                localStorage.setItem('userId', response.data.user.id);
-                localStorage.setItem('userName', response.data.user.name);
-                localStorage.setItem('userEmail', response.data.user.email);
-                localStorage.setItem('isAdmin', response.data.user.isAdmin ? 'true' : 'false');
-                localStorage.setItem('isEmailVerified', response.data.user.isEmailVerified ? 'true' : 'false');
-                // Redireciona pra verificação se email não verificado
-                if (!response.data.user.isEmailVerified) {
-                    navigate('/verify-email');
-                } else {
-                    navigate('/dashboard');
-                }
+                await api.post('/auth/login', { email, password });
+                // HttpOnly cookie já setado pelo backend.
+                // Dados do usuário serão buscados via /auth/me.
+                // Verifica se email está verificado via /auth/me após redirect
+                navigate('/dashboard');
             }
         } catch (err: any) {
             console.error(err);
             const msg = err.response?.data?.message || 'Erro ao realizar operação. Verifique sua conexão.';
             setError(msg);
-            alert(msg); // Fallback to ensure visibility
         } finally {
             setIsLoading(false);
         }

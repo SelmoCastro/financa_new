@@ -58,14 +58,12 @@ export function configureApp(app: INestApplication) {
           defaultSrc: ["'self'"],
           scriptSrc: [
             "'self'",
-            ...(process.env.NODE_ENV !== 'production' ? ["'unsafe-inline'"] : []),
-            'https://unpkg.com',
-            'https://esm.sh',
-          ], // Allow if needed for Swagger or frontend
+            // Swagger em dev precisa do unpkg/esm.sh, mas nunca unsafe-eval/unsafe-inline em produção
+            ...(process.env.NODE_ENV !== 'production' ? ['https://unpkg.com', 'https://esm.sh'] : []),
+          ],
           styleSrc: [
             "'self'",
-            ...(process.env.NODE_ENV !== 'production' ? ["'unsafe-inline'"] : []),
-            'https://fonts.googleapis.com',
+            ...(process.env.NODE_ENV !== 'production' ? ['https://fonts.googleapis.com'] : []),
           ],
           imgSrc: ["'self'", 'data:', 'https:'],
           connectSrc: ["'self'", ...allowedOriginsCSP],
@@ -73,7 +71,7 @@ export function configureApp(app: INestApplication) {
           objectSrc: ["'none'"],
           baseUri: ["'self'"],
           formAction: ["'self'"],
-          frameAncestors: ["'self'"],
+          frameAncestors: ["'none'"],
           scriptSrcAttr: ["'none'"],
           upgradeInsecureRequests: [],
         },

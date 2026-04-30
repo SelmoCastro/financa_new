@@ -1,5 +1,6 @@
 import {
   IsString,
+  IsUUID,
   IsNumber,
   IsDateString,
   IsOptional,
@@ -32,7 +33,7 @@ export class ImportValidateTransactionDto {
   @IsOptional()
   fitId?: string;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   accountId?: string;
 }
@@ -62,7 +63,7 @@ export class ImportConfirmTransactionDto {
   @IsOptional()
   isFixed?: boolean;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   categoryId?: string;
 
@@ -75,11 +76,11 @@ export class ImportConfirmTransactionDto {
   @IsOptional()
   classificationRule?: number;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   accountId?: string;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   creditCardId?: string;
 }

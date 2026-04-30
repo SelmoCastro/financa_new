@@ -1,5 +1,6 @@
 import {
   IsString,
+  IsUUID,
   IsNumber,
   IsDateString,
   IsOptional,
@@ -10,11 +11,11 @@ import {
 } from 'class-validator';
 
 export class TransferTransactionDto {
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   sourceAccountId: string;
 
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   destinationAccountId: string;
 

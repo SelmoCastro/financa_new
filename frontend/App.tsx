@@ -41,19 +41,18 @@ const AppContent: React.FC = () => {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [isEmailVerified, setIsEmailVerified] = useState(() => localStorage.getItem('isEmailVerified') === 'true');
-  const [showVerifyBanner, setShowVerifyBanner] = useState(() => {
-    if (localStorage.getItem('isEmailVerified') === 'true') return false;
-    return !sessionStorage.getItem('verifyBannerDismissed');
-  });
+  // Source of truth: /auth/me — sem localStorage para dados sensíveis
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [showVerifyBanner, setShowVerifyBanner] = useState(true);
   const [isResendingEmail, setIsResendingEmail] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Usuário');
-  const [userEmail, setUserEmail] = useState(localStorage.getItem('userEmail') || '');
-  const [isAdmin] = useState(localStorage.getItem('isAdmin') === 'true');
+  const [userName, setUserName] = useState('Usuário');
+  const [userEmail, setUserEmail] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false);
-  const [userPlan, setUserPlan] = useState(localStorage.getItem('userPlan') || 'free');
+  const [userPlan, setUserPlan] = useState('free');
+  // Theme é a única coisa que permanece em localStorage (preferência de UI, não segurança)
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches));
   
   const navigate = useNavigate();
@@ -70,27 +69,21 @@ const AppContent: React.FC = () => {
     }
   }, [isDarkMode]);
 
+  // Busca perfil via /auth/me — source of truth para isAdmin, email, isEmailVerified, etc.
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await api.get('/auth/me');
         if (res.data.user) {
-          setUserName(res.data.user.name);
-          setUserEmail(res.data.user.email);
-          localStorage.setItem('userName', res.data.user.name);
-          localStorage.setItem('userEmail', res.data.user.email);
+          setUserName(res.data.user.name || 'Usuário');
+          setUserEmail(res.data.user.email || '');
+          setIsAdmin(res.data.user.isAdmin || false);
+          setIsEmailVerified(res.data.user.isEmailVerified || false);
+          setUserPlan(res.data.user.plan || 'free');
         }
       } catch (err) {
         console.warn('Erro ao carregar perfil:', err);
-      }
-      try {
-        const sub = await api.get('/subscription');
-        if (sub.data) {
-          setUserPlan(sub.data.plan || 'free');
-          localStorage.setItem('userPlan', sub.data.plan || 'free');
-        }
-      } catch (err) {
-        // Silently fail - default to free
+        // Se /auth/me falhar com 401, o interceptor do api.ts já redireciona pra login
       }
     };
     fetchProfile();
@@ -140,12 +133,7 @@ const AppContent: React.FC = () => {
     } catch (e) {
       console.warn('Backend logout falhou, forçando fechamento local', e);
     }
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('isEmailVerified');
+    // Limpa apenas preferências de UI, não dados de auth (cookies são HttpOnly, backend já limpou)
     navigate('/login');
   };
 
@@ -210,7 +198,7 @@ const AppContent: React.FC = () => {
       case 'admin':
         return <AdminPanelView />;
       case 'settings':
-        return <SettingsView userName={userName} userEmail={userEmail} userPlan={userPlan} transactions={transactions} onLogout={handleLogout} onNameChange={(name) => { setUserName(name); localStorage.setItem('userName', name); }} onEmailChange={(email) => { setUserEmail(email); localStorage.setItem('userEmail', email); }} />;
+        return <SettingsView userName={userName} userEmail={userEmail} userPlan={userPlan} transactions={transactions} onLogout={handleLogout} onNameChange={(name) => setUserName(name)} onEmailChange={(email) => setUserEmail(email)} />;
       default:
         return null;
     }
@@ -295,7 +283,6 @@ const AppContent: React.FC = () => {
                 <button
                   onClick={() => {
                     setShowVerifyBanner(false);
-                    sessionStorage.setItem('verifyBannerDismissed', 'true');
                   }}
                   className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 text-lg font-bold leading-none p-1"
                   title="Dispensar"

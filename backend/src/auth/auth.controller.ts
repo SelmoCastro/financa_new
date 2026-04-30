@@ -213,14 +213,24 @@ export class AuthController {
 
   @Post('change-password')
   @UseGuards(AuthGuard('jwt'))
-  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
-    return this.authService.changePassword(req.user.userId, dto.currentPassword, dto.newPassword);
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto, @Res({ passthrough: true }) res: Response) {
+    await this.authService.changePassword(req.user.userId, dto.currentPassword, dto.newPassword);
+    // Revoga sessões em outros dispositivos — limpa cookies para forçar novo login
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.clearCookie('access_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
+    res.clearCookie('refresh_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
+    return { message: 'Senha alterada com sucesso' };
   }
 
   @Post('change-email')
   @UseGuards(AuthGuard('jwt'))
-  async changeEmail(@Request() req, @Body() dto: ChangeEmailDto) {
-    return this.authService.changeEmail(req.user.userId, dto.newEmail, dto.password);
+  async changeEmail(@Request() req, @Body() dto: ChangeEmailDto, @Res({ passthrough: true }) res: Response) {
+    await this.authService.changeEmail(req.user.userId, dto.newEmail, dto.password);
+    // Revoga sessões — limpa cookies para forçar novo login com novo email
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.clearCookie('access_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
+    res.clearCookie('refresh_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
+    return { message: 'E-mail alterado. Verifique seu novo endereço para confirmar.' };
   }
 
   @Delete('delete-account')
