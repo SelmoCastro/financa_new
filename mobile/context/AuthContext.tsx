@@ -185,13 +185,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!wasBackground || !becameActive || !token) return;
 
             console.log('[AuthContext] App came back from background. Refreshing token...');
-            const refreshed = await proactiveRefresh();
-            if (refreshed) {
-                // Token refreshed — re-fetch profile to get latest data (including plan)
+            const result = await proactiveRefresh();
+            if (result === 'success') {
                 await fetchProfile();
+            } else if (result === 'unauthorized') {
+                // Token expirado de vez — vai pra login
+                console.log('[AuthContext] Background refresh: token expired, logging out');
+                setToken(null);
+                setUser(null);
             }
-            // If refresh failed, the 401 interceptor will handle it on next request.
-            // Don't logout on network errors — user can still see cached data.
+            // network_error: keep current token, don't logout
         };
 
         const subscription = AppState.addEventListener('change', handleAppState);
