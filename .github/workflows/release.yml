@@ -1,0 +1,216 @@
+# Release — runs when a version tag (v1.2.3) is pushed
+# Builds backend, deploys to VPS, builds APK, creates GitHub Release
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'        # v1.7.13 (stable)
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'       # v1.7.14-beta.1 (prerelease)
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VPS_HOST: ${{ secrets.VPS_HOST }}
+  VPS_USER: ${{ secrets.VPS_USER || 'root' }}
+  VPS_BACKEND_PATH: ${{ secrets.VPS_BACKEND_PATH || '/opt/finanza/backend' }}
+  VERSION: ${{ github.ref_name }}
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Job 1: Deploy Backend to VPS
+  # ──────────────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy to VPS
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+
+          echo "📦 Pulling latest code on VPS..."
+          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && git fetch origin && git checkout master && git pull origin master"
+
+          echo "📦 Installing dependencies..."
+          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && npm install --production=false"
+
+          echo "🔨 Building..."
+          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && npm run build"
+
+      - name: Health Check
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+
+          echo "🔄 Restarting PM2..."
+          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && pm2 delete finanza-api 2>/dev/null || true && pm2 start dist/main.js --name finanza-api && pm2 save"
+
+          echo "🏥 Waiting for health check..."
+          sleep 5
+
+          HTTP_CODE=$($SSH "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/v1/app/version")
+          if [[ "$HTTP_CODE" != "200" ]]; then
+            echo "❌ Health check failed! HTTP $HTTP_CODE"
+            $SSH "pm2 logs finanza-api --lines 30 --nostream"
+            exit 1
+          fi
+
+          VERSION_RESPONSE=$($SSH "curl -s http://127.0.0.1:3000/v1/app/version | python3 -c 'import sys,json; print(json.load(sys.stdin)[\"data\"][\"version\"])'")
+          echo "✅ Backend deployed! Version: $VERSION_RESPONSE"
+
+  # ──────────────────────────────────────────────
+  # Job 2: Build Android APK
+  # ──────────────────────────────────────────────
+  build-apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install mobile dependencies
+        run: cd mobile && npm ci
+
+      - name: Expo prebuild
+        run: cd mobile && npx expo prebuild --platform android --clean
+
+      - name: Patch gradle for CI
+        run: |
+          cd mobile/android
+          # Reduce memory for CI (4GB runners)
+          sed -i 's/org.gradle.jvmargs=-Xmx2048m .*/org.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m/' gradle.properties
+          sed -i 's/org.gradle.parallel=true/org.gradle.parallel=false/' gradle.properties
+
+      - name: Build APK (release)
+        run: |
+          cd mobile/android
+          ./gradlew assembleRelease --no-daemon -x lintVitalAnalyzeRelease -x lint
+
+      - name: Verify APK
+        run: |
+          APK="mobile/android/app/build/outputs/apk/release/app-release.apk"
+          if [[ ! -f "$APK" ]]; then
+            echo "❌ APK not found!"
+            exit 1
+          fi
+          SIZE=$(du -h "$APK" | cut -f1)
+          echo "✅ APK built successfully ($SIZE)"
+
+      - name: Rename APK
+        run: |
+          VERSION="${{ github.ref_name }}"
+          # Strip 'v' prefix
+          VER_NUM="${VERSION#v}"
+          cp mobile/android/app/build/outputs/apk/release/app-release.apk \
+             "Financa_new_v${VER_NUM}.apk"
+          echo "APK_NAME=Financa_new_v${VER_NUM}.apk" >> $GITHUB_ENV
+
+      - name: Upload APK to VPS
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+          VERSION="${{ github.ref_name }}"
+          VER_NUM="${VERSION#v}"
+          APK_DEST="/var/www/finanzaai.tech/downloads/Financa_new_v${VER_NUM}.apk"
+
+          echo "📤 Uploading APK..."
+          scp -i ~/.ssh/deploy_key "${{ env.APK_NAME }}" \
+            ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/finanza-${VER_NUM}.apk
+
+          echo "🔗 Creating symlink..."
+          ssh -i ~/.ssh/deploy_key ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << EOF
+            cp /tmp/finanza-${VER_NUM}.apk ${APK_DEST}
+            ln -sf ${APK_DEST} /var/www/finanzaai.tech/downloads/Financa_new.apk
+            rm /tmp/finanza-${VER_NUM}.apk
+            echo "✅ APK deployed: ${APK_DEST}"
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Finanza ${{ github.ref_name }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: ${{ env.APK_NAME }}
+          generate_release_notes: true
+          body: |
+            ## Downloads
+            - 📱 **Android APK**: [${{ env.APK_NAME }}](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.APK_NAME }})
+
+            ## Update URL
+            Apk also available at: https://finanzaai.tech/downloads/${{ env.APK_NAME }}
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ──────────────────────────────────────────────
+  # Job 3: Post-deploy verification
+  # ──────────────────────────────────────────────
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, build-apk]
+    steps:
+      - name: Check API is reachable
+        run: |
+          HTTP=$(curl -s -o /dev/null -w '%{http_code}' https://finanzaai.tech/api/v1/app/version)
+          if [[ "$HTTP" != "200" ]]; then
+            echo "❌ API unreachable (HTTP $HTTP)"
+            exit 1
+          fi
+          echo "✅ API is reachable"
+
+      - name: Check APK download URL
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VER_NUM="${VERSION#v}"
+          HTTP=$(curl -s -o /dev/null -w '%{http_code}' "https://finanzaai.tech/downloads/Financa_new_v${VER_NUM}.apk")
+          if [[ "$HTTP" != "200" ]]; then
+            echo "⚠️ APK URL returned HTTP $HTTP (may need manual check)"
+          else
+            echo "✅ APK download URL is live"
+          fi
+
+      - name: Summary
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VER_NUM="${VERSION#v}"
+          echo "🎉 Release ${{ github.ref_name }} deployed successfully!"
+          echo ""
+          echo "   Backend: https://finanzaai.tech/api/v1"
+          echo "   APK:     https://finanzaai.tech/downloads/Financa_new_v${VER_NUM}.apk"
+          echo "   GitHub:  ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}"

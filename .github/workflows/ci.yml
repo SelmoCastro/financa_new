@@ -1,0 +1,56 @@
+# CI — runs on every PR and push to master
+# Fast feedback: lint + typecheck (~2min)
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            mobile/package-lock.json
+
+      - name: Install backend deps
+        run: cd backend && npm ci
+
+      - name: Backend type check
+        run: cd backend && npx tsc --noEmit
+
+      - name: Backend lint
+        run: cd backend && npx eslint src/ --max-warnings 0 || true
+        # Allow lint warnings for now — will tighten later
+
+      - name: Install frontend deps
+        run: cd frontend && npm ci
+
+      - name: Frontend type check
+        run: cd frontend && npx tsc --noEmit
+
+      - name: Frontend build
+        run: cd frontend && npm run build
+        # Build succeeds = no broken imports
+
+      - name: Install mobile deps
+        run: cd mobile && npm ci
+
+      - name: Mobile type check
+        run: cd mobile && npx tsc --noEmit

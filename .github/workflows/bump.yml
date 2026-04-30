@@ -1,0 +1,165 @@
+# Bump version — triggered manually or via workflow_dispatch
+# Creates a commit + tag with version bump across all files
+# Then pushes the tag which triggers the release workflow
+
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      release_notes:
+        description: 'Release notes (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    name: Bump Version & Tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get current version
+        id: current
+        run: |
+          CURRENT=$(node -p "require('./package.json').version")
+          echo "version=$CURRENT" >> $GITHUB_OUTPUT
+
+      - name: Calculate new version
+        id: next
+        run: |
+          CURRENT="${{ steps.current.outputs.version }}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          case "${{ github.event.inputs.bump_type }}" in
+            patch)  ((PATCH++)) ;;
+            minor)  ((MINOR++)); PATCH=0 ;;
+            major)  ((MAJOR++)); MINOR=0; PATCH=0 ;;
+          esac
+          NEW="$MAJOR.$MINOR.$PATCH"
+          echo "version=$NEW" >> $GITHUB_OUTPUT
+          echo "📦 Bumping $CURRENT → $NEW"
+
+      - name: Bump package.json files
+        run: |
+          NEW="${{ steps.next.outputs.version }}"
+          for PKG in package.json backend/package.json frontend/package.json mobile/package.json; do
+            if [[ -f "$PKG" ]]; then
+              node -e "
+                const fs = require('fs');
+                const d = JSON.parse(fs.readFileSync('$PKG', 'utf8'));
+                d.version = '$NEW';
+                fs.writeFileSync('$PKG', JSON.stringify(d, null, 2) + '\n');
+                console.log('  ✓ ' + '$PKG' + ' → $NEW');
+              "
+            fi
+          done
+
+      - name: Bump app.json (Expo version + versionCode)
+        run: |
+          NEW="${{ steps.next.outputs.version }}"
+          node -e "
+            const fs = require('fs');
+            const d = JSON.parse(fs.readFileSync('mobile/app.json', 'utf8'));
+            d.expo.version = '$NEW';
+            d.expo.android.versionCode += 1;
+            console.log('  ✓ mobile/app.json → ' + '$NEW' + ' (versionCode: ' + d.expo.android.versionCode + ')');
+            fs.writeFileSync('mobile/app.json', JSON.stringify(d, null, 2) + '\n');
+          "
+
+      - name: Bump version-meta.json
+        run: |
+          NEW="${{ steps.next.outputs.version }}"
+          NOTES="${{ github.event.inputs.release_notes }}"
+          node -e "
+            const fs = require('fs');
+            const d = JSON.parse(fs.readFileSync('backend/src/version-meta.json', 'utf8'));
+            d.version = '$NEW';
+            if ('$NOTES') d.releaseNotes = '$NOTES'.replace(/\\\\n/g, '\\n');
+            fs.writeFileSync('backend/src/version-meta.json', JSON.stringify(d, null, 2) + '\n');
+            console.log('  ✓ backend/src/version-meta.json → $NEW');
+          "
+
+      - name: Generate CHANGELOG
+        run: |
+          CURRENT="${{ steps.current.outputs.version }}"
+          NEW="${{ steps.next.outputs.version }}"
+          
+          COMMITS=$(git log "v${CURRENT}..HEAD" --oneline 2>/dev/null || git log -20 --oneline)
+          
+          node -e "
+            const fs = require('fs');
+            const commits = \`$COMMITS\`.trim().split('\n');
+            const categories = {
+              feat: { emoji: '✨', title: 'Features', items: [] },
+              fix: { emoji: '🐛', title: 'Bug Fixes', items: [] },
+              perf: { emoji: '⚡', title: 'Performance', items: [] },
+              refactor: { emoji: '♻️', title: 'Refactoring', items: [] },
+              docs: { emoji: '📝', title: 'Documentation', items: [] },
+              test: { emoji: '✅', title: 'Tests', items: [] },
+              build: { emoji: '📦', title: 'Build', items: [] },
+              ci: { emoji: '🔧', title: 'CI/CD', items: [] },
+              chore: { emoji: '🧹', title: 'Chores', items: [] },
+            };
+            const other = [];
+            commits.forEach(line => {
+              const m = line.match(/^[a-f0-9]+\\s+(feat|fix|perf|refactor|docs|test|build|ci|chore)(\\(.+?\\))?:\\s+(.+)/i);
+              if (m) { categories[m[1].toLowerCase()]?.items.push((m[2]||'') + ' ' + m[3]); }
+              else if (line.trim()) other.push(line);
+            });
+            let entry = '## [' + '$NEW' + '](https://github.com/SelmoCastro/financa_new/compare/v' + '$CURRENT' + '...v' + '$NEW' + ') (' + new Date().toISOString().split('T')[0] + ')\\n\\n';
+            Object.values(categories).forEach(c => {
+              if (c.items.length) {
+                entry += '### ' + c.emoji + ' ' + c.title + '\\n\\n';
+                c.items.forEach(i => entry += '* ' + i + '\\n');
+                entry += '\\n';
+              }
+            });
+            if (other.length) {
+              entry += '### Other Changes\\n\\n';
+              other.forEach(i => entry += '* ' + i + '\\n');
+              entry += '\\n';
+            }
+            let existing = fs.existsSync('CHANGELOG.md') ? fs.readFileSync('CHANGELOG.md', 'utf8') : '';
+            const header = '# Changelog\\n\\nAll notable changes to this project will be documented in this file.\\n\\n';
+            const body = existing.replace(/^# Changelog.*?\\n\\n/s, '');
+            fs.writeFileSync('CHANGELOG.md', header + entry + body);
+          "
+
+      - name: Commit & Tag
+        run: |
+          NEW="${{ steps.next.outputs.version }}"
+          git add -A
+          git commit -m "chore: release v${NEW} [skip ci]"
+          git tag "v${NEW}"
+          git push origin master --tags
+
+      - name: Summary
+        run: |
+          echo "🎉 Version ${{ steps.current.outputs.version }} → ${{ steps.next.outputs.version }} bumped!"
+          echo ""
+          echo "   Tag v${{ steps.next.outputs.version }} pushed — release workflow will trigger automatically."
+          echo "   Monitor: https://github.com/${{ github.repository }}/actions"
