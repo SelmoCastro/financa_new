@@ -16,7 +16,8 @@ const MAX_RETRIES = 3;
 
 interface VersionInfo {
     version: string;
-    apkUrl: string;
+    apkUrl: string | null;
+    apkAvailable: boolean;
     minRequiredVersion: string;
     releaseNotes: string;
 }
@@ -224,7 +225,7 @@ export function useUpdateChecker(): UpdateStatus {
     }, [checkForUpdate]);
 
     const hasUpdate = versionInfo
-        ? compareVersions(versionInfo.version, currentVersion) > 0
+        ? compareVersions(versionInfo.version, currentVersion) > 0 && versionInfo.apkAvailable !== false
         : false;
 
     const isRequired = versionInfo
