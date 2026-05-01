@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
@@ -147,6 +148,10 @@ export class AuthService {
   }
 
   async register(createUserDto: CreateUserDto) {
+    if (!createUserDto.termsAccepted) {
+      throw new ForbiddenException('Você deve aceitar os termos de uso para criar uma conta');
+    }
+
     const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
     const { email, name } = createUserDto;
     const user = await this.usersService.createWithEmailVerified({
@@ -154,6 +159,8 @@ export class AuthService {
       name: name || '',
       password: hashedPassword,
       isEmailVerified: false,
+      termsAccepted: true,
+      termsAcceptedAt: new Date(),
     });
 
     // Gerar token de verificação de email e enviar

@@ -17,7 +17,7 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   /** Versao de create() que permite setar isEmailVerified internamente (auth.service) */
-  async createWithEmailVerified(data: { email: string; name: string; password: string; isEmailVerified: boolean }) {
+  async createWithEmailVerified(data: { email: string; name: string; password: string; isEmailVerified: boolean; termsAccepted?: boolean; termsAcceptedAt?: Date }) {
     try {
       return await this.prisma.user.create({
         data,

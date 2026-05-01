@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert, Platform, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, Pressable, Alert, Platform, StyleSheet, ScrollView, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,7 @@ export default function SignupScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { login } = useAuth();
@@ -31,6 +32,11 @@ export default function SignupScreen() {
             return;
         }
 
+        if (!termsAccepted) {
+            Alert.alert('Erro', 'Você deve aceitar os Termos de Uso e a Política de Privacidade para criar uma conta');
+            return;
+        }
+
         const sanitizedEmail = email.trim().toLowerCase();
         const sanitizedPassword = password.trim();
         const sanitizedName = name.trim();
@@ -41,7 +47,8 @@ export default function SignupScreen() {
             await api.post('/auth/register', {
                 email: sanitizedEmail,
                 password: sanitizedPassword,
-                name: sanitizedName
+                name: sanitizedName,
+                termsAccepted: true,
             });
 
             // 2. Login automatically after registration
@@ -133,6 +140,33 @@ export default function SignupScreen() {
                                 onChangeText={setConfirmPassword}
                             />
                         </View>
+
+                        <Pressable
+                            style={styles.termsRow}
+                            onPress={() => setTermsAccepted(!termsAccepted)}
+                        >
+                            <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+                                {termsAccepted && (
+                                    <MaterialIcons name="check" size={16} color="white" />
+                                )}
+                            </View>
+                            <Text style={styles.termsText}>
+                                Eu li e aceito os{' '}
+                                <Text
+                                    style={styles.termsLink}
+                                    onPress={() => Linking.openURL('https://finanzaai.tech/legal/terms.html')}
+                                >
+                                    Termos de Uso
+                                </Text>{' '}
+                                e a{' '}
+                                <Text
+                                    style={styles.termsLink}
+                                    onPress={() => Linking.openURL('https://finanzaai.tech/legal/privacy.html')}
+                                >
+                                    Política de Privacidade
+                                </Text>
+                            </Text>
+                        </Pressable>
 
                         <View style={[styles.buttonContainer, loading && styles.buttonDisabled]}>
                             <Pressable
@@ -269,5 +303,36 @@ const styles = StyleSheet.create({
     loginLinkHighlight: {
         color: '#4f46e5',
         fontWeight: 'bold',
+    },
+    termsRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+        marginTop: 4,
+    },
+    checkbox: {
+        width: 20,
+        height: 20,
+        borderRadius: 4,
+        borderWidth: 2,
+        borderColor: '#cbd5e1',
+        backgroundColor: '#f8fafc',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 2,
+    },
+    checkboxChecked: {
+        backgroundColor: '#4f46e5',
+        borderColor: '#4f46e5',
+    },
+    termsText: {
+        fontSize: 13,
+        color: '#64748b',
+        lineHeight: 19,
+        flex: 1,
+    },
+    termsLink: {
+        color: '#4f46e5',
+        textDecorationLine: 'underline',
     },
 });

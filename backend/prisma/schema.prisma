@@ -20,6 +20,8 @@ model User {
   hashedRefreshToken  String?
   failedLoginAttempts Int                 @default(0)
   lockedUntil         DateTime?
+  termsAccepted      Boolean             @default(false)
+  termsAcceptedAt    DateTime?
   accounts            Account[]
   budgets             Budget[]
   categories          Category[]

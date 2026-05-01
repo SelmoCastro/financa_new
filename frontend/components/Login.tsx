@@ -10,6 +10,7 @@ export const Login: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState(''); // Only for register
+    const [termsAccepted, setTermsAccepted] = useState(false);
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -39,8 +40,13 @@ export const Login: React.FC = () => {
                     setIsLoading(false);
                     return;
                 }
+                if (!termsAccepted) {
+                    setError('Você deve aceitar os Termos de Uso e a Política de Privacidade para criar uma conta.');
+                    setIsLoading(false);
+                    return;
+                }
 
-                const response = await api.post('/auth/register', { email, password, name });
+                const response = await api.post('/auth/register', { email, password, name, termsAccepted });
 
                 // HttpOnly cookie já foi setado pelo backend.
                 // Dados do usuário serão obtidos via /auth/me no App.tsx.
@@ -160,6 +166,37 @@ export const Login: React.FC = () => {
                         </div>
                     )}
 
+                    {isRegister && !isForgotPassword && (
+                        <label className="flex items-start gap-3 cursor-pointer mt-2">
+                            <input
+                                type="checkbox"
+                                checked={termsAccepted}
+                                onChange={(e) => setTermsAccepted(e.target.checked)}
+                                className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                Eu li e aceito os{' '}
+                                <a
+                                    href="https://finanzaai.tech/legal/terms.html"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-700"
+                                >
+                                    Termos de Uso
+                                </a>{' '}
+                                e a{' '}
+                                <a
+                                    href="https://finanzaai.tech/legal/privacy.html"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-700"
+                                >
+                                    Política de Privacidade
+                                </a>
+                            </span>
+                        </label>
+                    )}
+
                     <button
                         type="submit"
                         disabled={isLoading}
@@ -184,7 +221,7 @@ export const Login: React.FC = () => {
                         </button>
                     ) : (
                         <button
-                            onClick={() => { setIsRegister(!isRegister); setError(''); setSuccessMsg(''); }}
+                            onClick={() => { setIsRegister(!isRegister); setError(''); setSuccessMsg(''); setTermsAccepted(false); }}
                             className="text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
                         >
                             {isRegister ? 'Já tem uma conta? Entrar' : 'Novo por aqui? Cadastre-se'}
