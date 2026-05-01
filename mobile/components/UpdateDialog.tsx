@@ -55,6 +55,7 @@ export function UpdateDialog() {
         showUpdate,
         startDownload,
         installUpdate,
+        resetDownload,
         downloadPhase,
         downloadProgress,
         errorMessage,
@@ -79,8 +80,8 @@ export function UpdateDialog() {
     }, [hasUpdate, dismissed, isRequired, downloadPhase, startDownload]);
 
     // Don't show dialog if no update or explicitly dismissed (and not required).
-    // Allow dismiss in ALL non-required phases (idle, ready, error) — prevents
-    // infinite loop when install fails and APK stays in cache.
+    // Allow dismiss in ALL phases (idle, ready, error) — prevents infinite loop
+    // when install fails. Dismissed state persists in AsyncStorage.
     if (!hasUpdate || (dismissed && !isRequired)) {
         // Show subtle toast for dismissed optional updates
         if (showToast && hasUpdate && !isRequired && versionInfo && downloadPhase === 'idle') {
@@ -169,8 +170,10 @@ export function UpdateDialog() {
                         <Pressable
                             style={[styles.button, styles.buttonOptional]}
                             onPress={() => {
-                                // Reset and retry
-                                startDownload();
+                                // Reset phase to idle first so startDownload can proceed
+                                resetDownload();
+                                // Small delay to let state settle, then retry
+                                setTimeout(() => startDownload(), 300);
                             }}
                         >
                             <Text style={styles.buttonText}>Tentar novamente</Text>
@@ -219,9 +222,19 @@ export function UpdateDialog() {
                         v{currentVersion} → v{versionInfo?.version}
                     </Text>
                     {renderContent()}
-                    {downloadPhase !== 'downloading' && !isRequired && (
-                        <Pressable onPress={dismissUpdate} style={styles.skipButton}>
-                            <Text style={styles.skipText}>Depois</Text>
+                    {/* Always show "Depois" button except during active download, even for required updates 
+                        so user can escape the dialog. On dismiss, reset any cached download. */}
+                    {downloadPhase !== 'downloading' && (
+                        <Pressable 
+                            onPress={() => {
+                                resetDownload();
+                                dismissUpdate();
+                            }} 
+                            style={styles.skipButton}
+                        >
+                            <Text style={styles.skipText}>
+                                {isRequired ? 'Lembrar mais tarde' : 'Depois'}
+                            </Text>
                         </Pressable>
                     )}
                 </View>

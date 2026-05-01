@@ -36,6 +36,7 @@ interface UpdateStatus {
     dismissed: boolean;
     startDownload: () => void;
     installUpdate: () => void;
+    resetDownload: () => void;
     downloadPhase: DownloadPhase;
     downloadProgress: number;
     errorMessage: string;
@@ -134,7 +135,12 @@ export function useUpdateChecker(): UpdateStatus {
     }, []);
 
     // Check if a downloaded APK already exists for the latest version
-    const checkExistingDownload = useCallback(async (version: string, apkUrl: string) => {
+    // Only auto-detect if the user hasn't dismissed the update — prevents loop
+    const checkExistingDownload = useCallback(async (version: string, apkUrl: string, skipIfDismissed = true) => {
+        // If user already dismissed, don't auto-restore the 'ready' state
+        // (prevents infinite loop where dismissed update keeps reappearing)
+        if (skipIfDismissed && dismissed) return false;
+
         try {
             const apkFileName = `Financa_new_v${version}.apk`;
             // react-native-blob-util downloads to its own cache dir, check there
@@ -164,7 +170,7 @@ export function useUpdateChecker(): UpdateStatus {
             // ignore
         }
         return false;
-    }, []);
+    }, [dismissed]);
 
     const checkForUpdate = useCallback(async (force = false) => {
         if (Platform.OS !== 'android') return;
@@ -394,26 +400,29 @@ export function useUpdateChecker(): UpdateStatus {
                 );
             } catch (fallbackError: any) {
                 console.log('[UpdateChecker] Fallback install also failed:', fallbackError?.message || fallbackError);
-                
-                // Delete the likely-corrupt APK from cache so we don't loop forever.
-                // If install fails, keeping the file means next launch auto-detects it
-                // as 'ready' and shows the dialog again with no escape hatch.
-                const badApkPath = downloadedApkPathRef.current;
-                if (badApkPath) {
-                    const toDelete = badApkPath.startsWith('/') && !badApkPath.startsWith('file://')
-                        ? `file://${badApkPath}`
-                        : badApkPath;
-                    await ReactNativeBlobUtil.fs.unlink(
-                        badApkPath.startsWith('/') && !badApkPath.startsWith('file://')
-                            ? badApkPath
-                            : badApkPath.replace('file://', '')
-                    ).catch(() => {});
-                }
+                // Don't auto-delete or reset to idle — that causes infinite download loop.
+                // Go to 'error' state so user sees the message and can choose to retry or dismiss.
                 downloadedApkPathRef.current = null;
-                setDownloadPhase('idle');
-                setErrorMessage('Falha na instalação. O APK será baixado novamente.');
+                setDownloadPhase('error');
+                setErrorMessage('Não foi possível iniciar a instalação. Toque em "Depois" para fechar e tente novamente mais tarde.');
             }
         }
+    }, []);
+
+    // Reset download state so user can dismiss and re-download later
+    const resetDownload = useCallback(() => {
+        // Delete cached APK if it exists
+        const apkPath = downloadedApkPathRef.current;
+        if (apkPath) {
+            const pathToDelete = apkPath.startsWith('/') && !apkPath.startsWith('file://')
+                ? apkPath
+                : apkPath.replace('file://', '');
+            ReactNativeBlobUtil.fs.unlink(pathToDelete).catch(() => {});
+            downloadedApkPathRef.current = null;
+        }
+        setDownloadPhase('idle');
+        setDownloadProgress(0);
+        setErrorMessage('');
     }, []);
 
     return {
@@ -428,6 +437,7 @@ export function useUpdateChecker(): UpdateStatus {
         dismissed,
         startDownload,
         installUpdate,
+        resetDownload,
         downloadPhase,
         downloadProgress,
         errorMessage,

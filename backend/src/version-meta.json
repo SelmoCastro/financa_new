@@ -1,6 +1,6 @@
 {
-  "version": "1.7.15",
-  "mobileVersion": "1.7.15",
+  "version": "1.7.16",
+  "mobileVersion": "1.7.16",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corre\u00e7\u00e3o: barra de progresso do download, tipos TypeScript, compatibilidade SDK 54"
+  "releaseNotes": "Corre\u00e7\u00e3o: loop infinito do dialog de atualiza\u00e7\u00e3o, bot\u00e3o Depois sempre vis\u00edvel, APK corrompido limpo ao fechar"
 }
