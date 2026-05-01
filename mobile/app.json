@@ -20,7 +20,8 @@
       "package": "com.selmo.financa",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#181a33"
+        "backgroundImage": "./assets/images/adaptive-icon-background.png",
+        "backgroundColor": "#4f46e5"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,

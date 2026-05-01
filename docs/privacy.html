@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidade — Finanza</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.7; padding: 2rem 1rem; }
+        .container { max-width: 720px; margin: 0 auto; background: #fff; border-radius: 1.5rem; padding: 3rem 2rem; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+        .logo { display: flex; align-items: center; gap: .75rem; margin-bottom: 2rem; }
+        .logo-icon { width: 40px; height: 40px; background: #4f46e5; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 900; }
+        .logo-text { font-size: 1.25rem; font-weight: 800; color: #1e293b; }
+        h1 { font-size: 1.75rem; font-weight: 900; color: #0f172a; margin-bottom: .5rem; }
+        .updated { font-size: .8rem; color: #94a3b8; font-weight: 600; margin-bottom: 2rem; }
+        h2 { font-size: 1.15rem; font-weight: 800; color: #1e293b; margin-top: 2rem; margin-bottom: .75rem; padding-bottom: .25rem; border-bottom: 2px solid #e2e8f0; }
+        p, li { font-size: .95rem; color: #334155; margin-bottom: .5rem; }
+        ul { padding-left: 1.5rem; margin-bottom: .75rem; }
+        li { margin-bottom: .35rem; }
+        .highlight { background: #fef3c7; border-left: 4px solid #f59e0b; padding: .75rem 1rem; border-radius: .5rem; margin: 1rem 0; font-size: .9rem; }
+        .contact-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 1rem; padding: 1.25rem; margin-top: 1.5rem; }
+        .contact-box strong { color: #1e40af; }
+        @media (max-width: 640px) { .container { padding: 2rem 1.25rem; border-radius: 1rem; } h1 { font-size: 1.4rem; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="logo">
+        <div class="logo-icon">F</div>
+        <span class="logo-text">Finanza</span>
+    </div>
+
+    <h1>Política de Privacidade</h1>
+    <p class="updated">Última atualização: 1 de maio de 2026</p>
+
+    <p>A Finanza ("nós", "nosso" ou "aplicativo") valoriza sua privacidade. Esta Política de Privacidade explica como coletamos, usamos, armazenamos e protegemos suas informações quando você utiliza nosso aplicativo e serviços.</p>
+
+    <h2>1. Informações que Coletamos</h2>
+
+    <p><strong>1.1 Informações fornecidas por você</strong></p>
+    <ul>
+        <li><strong>Conta:</strong> Nome, endereço de e-mail e senha (armazenada com hash bcrypt).</li>
+        <li><strong>Dados financeiros:</strong> Transações, saldos de contas bancárias, limites de cartões de crédito, orçamentos e metas financeiras que você registrar.</li>
+        <li><strong>Categorias personalizadas:</strong> Categorias de gastos/receitas criadas por você.</li>
+        <li><strong>Comprovantes:</strong> Fotos de recibos/comprovantes que você enviar para processamento via IA.</li>
+        <li><strong>Feedback:</strong> Mensagens e avaliações enviadas através do formulário de feedback do app.</li>
+    </ul>
+
+    <p><strong>1.2 Informações coletadas automaticamente</strong></p>
+    <ul>
+        <li><strong>Logs de uso de IA:</strong> Registrimos a data e o endpoint de cada requisição de IA para controle de limites do plano (não armazenamos o conteúdo das requisições).</li>
+        <li><strong>Logs de erros:</strong> Quando o app apresenta falhas, coletamos informações técnicas (tipo de erro, versão do app, sistema operacional) para correção de bugs.</li>
+        <li><strong>Logs de auditoria:</strong> Ações sensíveis (login, alteração de senha, exclusão de conta) são registradas para segurança.</li>
+    </ul>
+
+    <div class="highlight">
+        <strong>O que NÃO coletamos:</strong> Não coletamos localização GPS, contatos, histórico de navegação, identificadores de dispositivo (IMEI/IDFA) ou qualquer informação além das listadas acima.
+    </div>
+
+    <h2>2. Como Usamos suas Informações</h2>
+    <ul>
+        <li>Fornecer e manter o funcionamento do aplicativo Finanza.</li>
+        <li>Processar transações financeiras, orçamentos e metas que você criar.</li>
+        <li>Categorizar automaticamente transações e analisar comprovantes via IA (usando OpenRouter/GPT-4o-mini).</li>
+        <li>Aplicar limites do plano (gratuito ou premium) com base no uso de IA.</li>
+        <li>Enviar e-mails de verificação de conta e recuperação de senha.</li>
+        <li>Corrigir bugs e melhorar a estabilidade do app através de relatórios de erro.</li>
+        <li>Garantir a segurança da sua conta (detecção de acessos suspeitos).</li>
+    </ul>
+
+    <h2>3. Processamento de IA e Dados Sensíveis</h2>
+    <p>Quando você utiliza funcionalidades de IA (classificação automática, leitura de comprovantes):</p>
+    <ul>
+        <li>Os dados enviados (descrição da transação, imagem do comprovante) são transmitidos para a API do OpenRouter, que utiliza modelos da OpenAI.</li>
+        <li>A transmissão é feita via HTTPS (criptografia TLS 1.2+).</li>
+        <li>O OpenRouter/OpenAI não armazena os dados após o processamento (conforme política de retenção deles para API).</li>
+        <li>Não utilizamos seus dados para treinar modelos de IA.</li>
+    </ul>
+    <div class="highlight">
+        <strong>Importante:</strong> Ao usar funcionalidades de IA, você consente que seus dados sejam processados por terceiros (OpenRouter/OpenAI) conforme as políticas deles.
+    </div>
+
+    <h2>4. Armazenamento e Segurança</h2>
+    <ul>
+        <li><strong>Hospedagem:</strong> Seus dados são armazenados em servidor próprio (VPS Hostinger, localizada nos EUA).</li>
+        <li><strong>Banco de dados:</strong> PostgreSQL com criptografia em trânsito (TLS).</li>
+        <li><strong>Autenticação:</strong> JWT com access token (15 min) + refresh token (7 dias), armazenados de forma segura.</li>
+        <li><strong>Senha:</strong> Armazenada com hash bcrypt (cost 10). Nunca armazenamos senhas em texto plano.</li>
+        <li><strong>API:</strong> Todas as comunicações usam HTTPS.</li>
+    </ul>
+    <p>Adotamos medidas técnicas e organizacionais adequadas para proteger seus dados, mas nenhum sistema é 100% imune a violações. Em caso de incidente de segurança, notificaremos você por e-mail em até 72 horas.</p>
+
+    <h2>5. Compartilhamento de Dados</h2>
+    <p><strong>Nós NÃO vendemos, alugamos ou compartilhamos seus dados pessoais com terceiros para fins de marketing.</strong></p>
+    <p>Compartilhamos dados apenas com:</p>
+    <ul>
+        <li><strong>OpenRouter:</strong> Para processamento de requisições de IA (descrições e imagens de comprovantes).</li>
+        <li><strong>Resend:</strong> Para envio de e-mails de verificação e recuperação de senha (apenas endereço de e-mail de destino).</li>
+        <li><strong>Autoridades legais:</strong> Quando exigido por lei ou ordem judicial.</li>
+    </ul>
+
+    <h2>6. Retenção de Dados</h2>
+    <ul>
+        <li><strong>Dados da conta:</strong> Mantidos enquanto sua conta estiver ativa. Ao excluir a conta, todos os dados são permanentemente removidos em até 30 dias.</li>
+        <li><strong>Logs de IA:</strong> Mantidos por 90 dias para controle de limites do plano, depois excluídos automaticamente.</li>
+        <li><strong>Logs de auditoria:</strong> Mantidos por 1 ano para fins de segurança.</li>
+        <li><strong>Relatórios de erro:</strong> Mantidos por 90 dias.</li>
+    </ul>
+
+    <h2>7. Seus Direitos (LGPD)</h2>
+    <p>Como usuário no Brasil, você tem direito a:</p>
+    <ul>
+        <li><strong>Acesso:</strong> Solicitar cópia de todos os seus dados pessoais.</li>
+        <li><strong>Correção:</strong> Solicitar correção de dados incompletos ou incorretos.</li>
+        <li><strong>Exclusão:</strong> Solicitar exclusão de todos os seus dados ("direito ao esquecimento").</li>
+        <li><strong>Portabilidade:</strong> Exportar seus dados em formato estruturado (CSV). O app já oferece exportação nativa.</li>
+        <li><strong>Revogação de consentimento:</strong> Revogar o consentimento para processamento de dados por IA a qualquer momento (basta não usar funcionalidades de IA).</li>
+    </ul>
+    <p>Para exercer qualquer direito, entre em contato pelo e-mail abaixo.</p>
+
+    <h2>8. Crianças e Adolescentes</h2>
+    <p>O Finanza não é direcionado a menores de 18 anos. Não coletamos intencionalmente dados de menores. Se tomarmos conhecimento de que um menor de 18 anos utiliza o app, excluiremos seus dados imediatamente.</p>
+
+    <h2>9. Links Externos</h2>
+    <p>O app pode conter links para sites externos (ex: site do app). Não somos responsáveis pelas práticas de privacidade desses sites.</p>
+
+    <h2>10. Alterações nesta Política</h2>
+    <p>Podemos atualizar esta política periodicamente. A data da última atualização será sempre indicada no topo. Alterações significativas serão notificadas por e-mail ou no próprio app.</p>
+
+    <div class="contact-box">
+        <strong>Contato para questões de privacidade:</strong><br>
+        E-mail: s.elmo@live.com<br>
+        Responsável: Selmo Castro<br>
+        Aplicativo: Finanza — Controle Financeiro Inteligente
+    </div>
+</div>
+</body>
+</html>
