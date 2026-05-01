@@ -25,10 +25,13 @@ export class AccountsService {
       );
     }
     return this.prisma.$transaction(async (tx) => {
-      // 1. Create the account
+      // 1. Create the account — balance starts at 0; the increment below applies the initial balance.
+      // Using ...createAccountDto would set balance twice (once from DTO, once from increment).
+      const { balance: _dtoBalance, ...accountData } = createAccountDto;
       const account = await tx.account.create({
         data: {
-          ...createAccountDto,
+          ...accountData,
+          balance: 0,
           userId,
         },
       });

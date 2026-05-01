@@ -1,6 +1,6 @@
 {
-  "version": "1.7.18",
-  "mobileVersion": "1.7.18",
+  "version": "1.7.19",
+  "mobileVersion": "1.7.19",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corre\u00e7\u00e3o: releaseNotes agora aparece no update checker + APK install com 4 fallbacks"
+  "releaseNotes": "Corre\u00e7\u00e3o cr\u00edtica: saldo de conta nova dobrado ao criar com saldo inicial"
 }
