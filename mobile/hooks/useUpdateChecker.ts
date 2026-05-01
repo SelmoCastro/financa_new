@@ -3,7 +3,7 @@ import { Platform, AppState, AppStateStatus } from 'react-native';
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import * as IntentLauncher from 'expo-intent-launcher';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import api from '../services/api';
@@ -22,7 +22,7 @@ interface VersionInfo {
     releaseNotes: string;
 }
 
-type DownloadPhase = 'idle' | 'downloading' | 'ready' | 'installing' | 'error';
+export type DownloadPhase = 'idle' | 'downloading' | 'ready' | 'installing' | 'error';
 
 interface UpdateStatus {
     hasUpdate: boolean;
@@ -69,7 +69,7 @@ async function ensureInstallPermission(): Promise<boolean> {
         // expo-intent-launcher doesn't have a direct "canRequestPackageInstalls" API,
         // so we try to install and catch the error if permission is missing.
         // However, we proactively open the settings for unknown sources.
-        const sdkVersion = parseInt(Platform.Version as string, 10);
+        const sdkVersion = typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10);
         if (sdkVersion >= 26) {
             // Android 8+ (API 26): Per-app unknown source install permission
             // Try to open the settings page for this app to enable it
@@ -279,7 +279,9 @@ export function useUpdateChecker(): UpdateStatus {
             }).fetch('GET', versionInfo.apkUrl);
 
             // Wire up progress callback (must be before fetch resolves)
-            task.progress((received: number, total: number) => {
+            // Use the config overload: .progress({ count, interval }, callback) — callback receives numbers
+            // Without config, callback receives strings which would break the math below.
+            task.progress({ count: 10, interval: 250 }, (received: number, total: number) => {
                 const percent = total > 0 ? Math.round((received / total) * 100) : 0;
                 setDownloadProgress(percent);
             });

@@ -32,7 +32,7 @@ class ErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    reportReactError(error, { componentStack: errorInfo.componentStack });
+    reportReactError(error, { componentStack: errorInfo.componentStack ?? undefined });
   }
 
   render() {
