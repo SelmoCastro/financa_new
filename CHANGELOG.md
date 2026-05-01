@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.7.20](https://github.com/SelmoCastro/financa_new/compare/v1.7.19...v1.7.20) (2026-05-01)
+
+### Features
+* **subscription**: Free plan upgraded — 5 accounts, 5 budgets, 5 credit cards, 5 goals, 10 AI requests/day
+* **subscription**: Premium plan remains unlimited
+* **goals**: Added plan limit enforcement on goal creation (was missing)
+
+### Bug Fixes
+* **accounts**: Fixed balance doubled when creating account with initial balance
+
 ## [1.4.0](https://github.com/SelmoCastro/financa_new/compare/v1.3.0...v1.4.0) (2026-04-17)
 
 
