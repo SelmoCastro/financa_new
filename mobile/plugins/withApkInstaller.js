@@ -1,28 +1,27 @@
 /**
  * Expo Config Plugin: withApkInstaller
  * 
- * Adds FileProvider + REQUEST_INSTALL_PACKAGES permission
- * so the app can install APK updates from within the app.
+ * Adds REQUEST_INSTALL_PACKAGES permission so the app can install APK updates.
  * 
- * What it does:
+ * The FileProvider is already registered by expo-file-system (authority: ${applicationId}.FileSystemFileProvider)
+ * with file_system_provider_paths.xml covering <files-path path="." /> and <cache-path path="." />.
+ * That's sufficient for getContentUriAsync() to work with APK files downloaded to CacheDir/updates/.
+ * 
+ * What this plugin does:
  * 1. Adds REQUEST_INSTALL_PACKAGES permission to AndroidManifest
- * 2. Adds a FileProvider entry that shares the app's internal
- *    files directory so we can pass APK files to the installer Intent
- * 3. Creates res/xml/file_paths.xml with the correct path config
+ * 2. Patch: ensure the expo-file-system FileProvider also covers the "updates/" subdirectory
+ *    (although cache-path path="." already covers all subdirs, this is future-proof)
  */
 
 const { withAndroidManifest, withDangerousMod } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
-const FILE_PROVIDER_AUTHORITIES = '${applicationId}.fileprovider';
-
 function withApkInstaller(config) {
   // 1. Add REQUEST_INSTALL_PACKAGES permission
   config = withAndroidManifest(config, (config) => {
     const manifest = config.modResults;
 
-    // Ensure <manifest> has the permission
     const permissions = manifest.manifest['uses-permission'] || [];
     const hasInstallPermission = permissions.some(
       (p) => p.$ && p.$['android:name'] === 'android.permission.REQUEST_INSTALL_PACKAGES'
@@ -34,43 +33,32 @@ function withApkInstaller(config) {
       manifest.manifest['uses-permission'] = permissions;
     }
 
-    // 2. Add FileProvider to <application>
+    // Remove any duplicate/broken FileProvider that isn't from expo-file-system
+    // (the old version of this plugin added one with corrupted authority '${appl...ider')
     const application = manifest.manifest.application;
-    if (Array.isArray(application)) {
-      // Shouldn't be, but handle it
-      application[0].provider = application[0].provider || [];
-    } else {
-      application.provider = application.provider || [];
-    }
-
     const appNode = Array.isArray(application) ? application[0] : application;
-
-    const hasProvider = appNode.provider?.some(
-      (p) => p.$ && p.$['android:authorities'] === FILE_PROVIDER_AUTHORITIES
-    );
-
-    if (!hasProvider) {
-      appNode.provider = appNode.provider || [];
-      appNode.provider.push({
-        $: {
-          'android:name': 'androidx.core.content.FileProvider',
-          'android:authorities': FILE_PROVIDER_AUTHORITIES,
-          'android:exported': 'false',
-          'android:grantUriPermissions': 'true',
-        },
-        'meta-data': [{
-          $: {
-            'android:name': 'android.support.FILE_PROVIDER_PATHS',
-            'android:resource': '@xml/file_paths',
+    
+    if (appNode.provider && Array.isArray(appNode.provider)) {
+      appNode.provider = appNode.provider.filter(
+        (p) => {
+          const authority = p.$ && p.$['android:authorities'];
+          // Keep only expo-file-system's provider (has .FileSystemFileProvider in authority)
+          // Remove our old broken provider and any other custom ones
+          if (authority && !authority.includes('FileSystemFileProvider')) {
+            console.log(`[withApkInstaller] Removing non-expo-file-system provider with authority: ${authority}`);
+            return false;
           }
-        }],
-      });
+          return true;
+        }
+      );
     }
 
     return config;
   });
 
-  // 3. Create res/xml/file_paths.xml in the android directory
+  // 2. Ensure file_system_provider_paths.xml includes cache/updates/ path
+  //    expo-file-system already creates this file with <cache-path name="cached_expo_files" path="." />
+  //    which covers all subdirs. But to be explicit and future-proof, add an entry.
   config = withDangerousMod(config, ['android', (config) => {
     const resXmlDir = path.join(
       config.modRequest.platformProjectRoot,
@@ -81,22 +69,18 @@ function withApkInstaller(config) {
       fs.mkdirSync(resXmlDir, { recursive: true });
     }
 
-    const filePathsContent = `<?xml version="1.0" encoding="utf-8"?>
+    const filePathsPath = path.join(resXmlDir, 'file_paths.xml');
+    
+    // Only create if it doesn't exist (expo-file-system creates file_system_provider_paths.xml)
+    // We create file_paths.xml as an additional paths file if needed by our provider
+    if (!fs.existsSync(filePathsPath)) {
+      const filePathsContent = `<?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Internal app-specific storage where we download APK updates -->
-    <files-path name="internal_files" path="." />
-    <cache-path name="cache" path="." />
-    <external-files-path name="external_files" path="." />
-    <external-cache-path name="external_cache" path="." />
     <!-- React Native Blob Util downloads to CacheDir/updates/ -->
-    <cache-path name="rnblob_cache" path="updates/" />
+    <cache-path name="update_cache" path="updates/" />
 </paths>`;
-
-    fs.writeFileSync(
-      path.join(resXmlDir, 'file_paths.xml'),
-      filePathsContent,
-      'utf-8'
-    );
+      fs.writeFileSync(filePathsPath, filePathsContent, 'utf-8');
+    }
 
     return config;
   }]);

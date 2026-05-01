@@ -58,51 +58,6 @@ function compareVersions(a: string, b: string): number {
     return 0;
 }
 
-/**
- * Check if the device can install packages from unknown sources (Android 8+).
- * If not, prompt the user to enable it.
- */
-async function ensureInstallPermission(): Promise<boolean> {
-    if (Platform.OS !== 'android') return false;
-
-    try {
-        // On Android 8+, we need to check if the app can request package installs
-        // expo-intent-launcher doesn't have a direct "canRequestPackageInstalls" API,
-        // so we try to install and catch the error if permission is missing.
-        // However, we proactively open the settings for unknown sources.
-        const sdkVersion = typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10);
-        if (sdkVersion >= 26) {
-            // Android 8+ (API 26): Per-app unknown source install permission
-            // Try to open the settings page for this app to enable it
-            // This is a best-effort — the user must enable it manually
-            try {
-                const packageName = Application.nativeApplicationVersion
-                    ? undefined // Can't easily get package name from Expo
-                    : undefined;
-
-                // Open the "Install unknown apps" settings for this app
-                await IntentLauncher.startActivityAsync(
-                    'android.settings.MANAGE_UNKNOWN_APP_SOURCES',
-                    {
-                        data: `package:${Constants.expoConfig?.android?.package || Application.applicationId}`,
-                        flags: 1,
-                    }
-                );
-                // Give user time to enable — they'll come back and retry
-                return false;
-            } catch {
-                // If the intent fails, the permission might already be granted
-                // or the settings page doesn't exist on this device
-                // Continue with install attempt
-                return true;
-            }
-        }
-    } catch {
-        // Older Android or error — proceed with install attempt
-    }
-    return true;
-}
-
 export function useUpdateChecker(): UpdateStatus {
     const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
     const [checking, setChecking] = useState(false);
@@ -188,6 +143,13 @@ export function useUpdateChecker(): UpdateStatus {
 
             // If update available, check if we already downloaded this version
             if (data && compareVersions(data.version, currentVersion) > 0) {
+                // Save downloaded version info for potential resume
+                if (data.apkUrl) {
+                    await AsyncStorage.setItem(DOWNLOADED_VERSION_KEY, JSON.stringify({
+                        version: data.version,
+                        apkUrl: data.apkUrl,
+                    })).catch(() => {});
+                }
                 await checkExistingDownload(data.version, data.apkUrl);
             }
         } catch (error: any) {
@@ -338,6 +300,19 @@ export function useUpdateChecker(): UpdateStatus {
         }
     }, [versionInfo, downloadPhase]);
 
+    /**
+     * Install the downloaded APK.
+     * 
+     * Strategy:
+     * 1. Try getContentUriAsync() (uses expo-file-system's FileProvider) → ACTION_INSTALL_PACKAGE
+     * 2. If that fails, try direct file:// URI with ACTION_VIEW (works on some devices)
+     * 3. If that fails, open the APK URL in the browser as last resort
+     * 
+     * We do NOT call ensureInstallPermission() proactively because:
+     * - On Android 8+, opening the install-unknown-apps settings takes the user away from the app
+     * - The system will automatically prompt the user for permission when INSTALL_PACKAGE is used
+     * - This avoids the "open settings then come back" confusion
+     */
     const installUpdate = useCallback(async () => {
         const apkPath = downloadedApkPathRef.current;
         if (!apkPath) {
@@ -349,46 +324,43 @@ export function useUpdateChecker(): UpdateStatus {
         try {
             setDownloadPhase('installing');
 
-            // Convert file:// URI to content:// URI for Android 7+ (API 24+)
-            // Must use content:// URI via FileProvider — file:// URIs are blocked on API 24+
-            let contentUri: string;
-
-            if (apkPath.startsWith('file://')) {
-                contentUri = await FileSystem.getContentUriAsync(apkPath);
-            } else if (apkPath.startsWith('/')) {
-                // react-native-blob-util returns absolute paths without file:// prefix
-                contentUri = await FileSystem.getContentUriAsync(`file://${apkPath}`);
+            // Ensure the path starts with file:// for getContentUriAsync
+            let fileUri: string;
+            if (apkPath.startsWith('/')) {
+                fileUri = `file://${apkPath}`;
+            } else if (!apkPath.startsWith('file://')) {
+                fileUri = `file:///${apkPath}`;
             } else {
-                contentUri = await FileSystem.getContentUriAsync(apkPath);
+                fileUri = apkPath;
             }
 
-            console.log('[UpdateChecker] Installing from:', contentUri);
+            console.log('[UpdateChecker] Attempting install from:', fileUri);
 
-            // Use ACTION_INSTALL_PACKAGE (not ACTION_VIEW) for APK installation
-            await IntentLauncher.startActivityAsync(
-                'android.intent.action.INSTALL_PACKAGE',
-                {
-                    data: contentUri,
-                    flags: 1, // FLAG_ACTIVITY_NEW_TASK
-                    type: 'application/vnd.android.package-archive',
-                }
-            );
-        } catch (error: any) {
-            console.log('[UpdateChecker] Install failed:', error?.message || error);
-
-            // Fallback: try ACTION_VIEW if ACTION_INSTALL_PACKAGE fails
-            // (some older devices/ROMs may not support INSTALL_PACKAGE)
+            // Step 1: Use FileProvider via getContentUriAsync (correct way for Android 7+)
             try {
-                const apkPath = downloadedApkPathRef.current!;
-                let contentUri: string;
+                const contentUri = await FileSystem.getContentUriAsync(fileUri);
+                console.log('[UpdateChecker] Content URI:', contentUri);
 
-                if (apkPath.startsWith('file://')) {
-                    contentUri = await FileSystem.getContentUriAsync(apkPath);
-                } else if (apkPath.startsWith('/')) {
-                    contentUri = await FileSystem.getContentUriAsync(`file://${apkPath}`);
-                } else {
-                    contentUri = await FileSystem.getContentUriAsync(apkPath);
-                }
+                await IntentLauncher.startActivityAsync(
+                    'android.intent.action.INSTALL_PACKAGE',
+                    {
+                        data: contentUri,
+                        flags: 1, // FLAG_ACTIVITY_NEW_TASK
+                        type: 'application/vnd.android.package-archive',
+                    }
+                );
+                // Intent was started — install prompt should now be visible to user
+                // Don't reset state here; if user cancels install they'll see "ready" state
+                // and can tap "Instalar" again. If install succeeds, app will restart.
+                return;
+            } catch (contentError: any) {
+                console.log('[UpdateChecker] getContentUriAsync + INSTALL_PACKAGE failed:', contentError?.message || contentError);
+            }
+
+            // Step 2: Try ACTION_VIEW with content URI
+            try {
+                const contentUri = await FileSystem.getContentUriAsync(fileUri);
+                console.log('[UpdateChecker] Trying ACTION_VIEW with content URI:', contentUri);
 
                 await IntentLauncher.startActivityAsync(
                     'android.intent.action.VIEW',
@@ -398,16 +370,56 @@ export function useUpdateChecker(): UpdateStatus {
                         type: 'application/vnd.android.package-archive',
                     }
                 );
-            } catch (fallbackError: any) {
-                console.log('[UpdateChecker] Fallback install also failed:', fallbackError?.message || fallbackError);
-                // Don't auto-delete or reset to idle — that causes infinite download loop.
-                // Go to 'error' state so user sees the message and can choose to retry or dismiss.
-                downloadedApkPathRef.current = null;
-                setDownloadPhase('error');
-                setErrorMessage('Não foi possível iniciar a instalação. Toque em "Depois" para fechar e tente novamente mais tarde.');
+                return;
+            } catch (viewError: any) {
+                console.log('[UpdateChecker] ACTION_VIEW with content URI also failed:', viewError?.message || viewError);
             }
+
+            // Step 3: Try ACTION_VIEW with direct file URI (works on Android < 7 or rooted)
+            try {
+                console.log('[UpdateChecker] Trying ACTION_VIEW with file URI');
+                await IntentLauncher.startActivityAsync(
+                    'android.intent.action.VIEW',
+                    {
+                        data: fileUri,
+                        flags: 1,
+                        type: 'application/vnd.android.package-archive',
+                    }
+                );
+                return;
+            } catch (fileError: any) {
+                console.log('[UpdateChecker] ACTION_VIEW with file URI also failed:', fileError?.message || fileError);
+            }
+
+            // Step 4: Last resort — open the download URL in the device browser
+            // The user can download and install from the browser directly
+            try {
+                const savedVersionStr = await AsyncStorage.getItem(DOWNLOADED_VERSION_KEY);
+                const savedVersion = savedVersionStr ? JSON.parse(savedVersionStr) : null;
+                const apkUrl = versionInfo?.apkUrl || savedVersion?.apkUrl;
+                
+                if (apkUrl) {
+                    console.log('[UpdateChecker] Last resort: opening APK URL in browser');
+                    const { Linking } = require('react-native');
+                    await Linking.openURL(apkUrl);
+                    setDownloadPhase('error');
+                    setErrorMessage('Não foi possível instalar diretamente. O download foi aberto no navegador — abra o arquivo baixado para instalar.');
+                    return;
+                }
+            } catch (linkError: any) {
+                console.log('[UpdateChecker] Browser fallback also failed:', linkError?.message || linkError);
+            }
+
+            // All methods failed
+            setDownloadPhase('error');
+            setErrorMessage('Não foi possível iniciar a instalação. Toque em "Depois" para fechar e tente baixar pelo navegador em finanzaai.tech/downloads');
+
+        } catch (error: any) {
+            console.log('[UpdateChecker] Install failed with unexpected error:', error?.message || error);
+            setDownloadPhase('error');
+            setErrorMessage('Erro inesperado ao instalar. Tente novamente ou baixe pelo navegador.');
         }
-    }, []);
+    }, [versionInfo]);
 
     // Reset download state so user can dismiss and re-download later
     const resetDownload = useCallback(() => {
