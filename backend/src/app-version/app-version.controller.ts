@@ -26,7 +26,24 @@ export class AppVersionController {
     }
 
     try {
-      const metaPath = path.resolve(__dirname, '..', '..', 'version-meta.json');
+      // __dirname in compiled code is dist/app-version/
+      // version-meta.json is copied to dist/ during build (via nest-cli.json assets)
+      // but path.resolve(__dirname, '..', '..') resolves to project root, not dist/
+      // So try dist/ first, then fallback to src/ (for dev), then project root
+      const possiblePaths = [
+        path.resolve(__dirname, '..', 'version-meta.json'),     // dist/version-meta.json
+        path.resolve(__dirname, '..', '..', 'src', 'version-meta.json'),  // src/version-meta.json
+        path.resolve(__dirname, '..', '..', 'version-meta.json'),  // root version-meta.json
+      ];
+      
+      let metaPath = possiblePaths[0];
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          metaPath = p;
+          break;
+        }
+      }
+      
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
       minRequiredVersion = meta.minRequiredVersion || '1.0.0';
       // Use mobileVersion from meta if set, otherwise fall back to package.json version
