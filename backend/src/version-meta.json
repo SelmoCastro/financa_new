@@ -1,6 +1,6 @@
 {
-  "version": "1.7.14",
-  "mobileVersion": "1.7.14",
+  "version": "1.7.15",
+  "mobileVersion": "1.7.15",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Correção: loop infinito ao falhar instalação\nBotão 'Depois' em todos os estados do dialog\nAPK corrompido removido automaticamente"
+  "releaseNotes": "Corre\u00e7\u00e3o: barra de progresso do download, tipos TypeScript, compatibilidade SDK 54"
 }
