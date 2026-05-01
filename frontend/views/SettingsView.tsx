@@ -298,7 +298,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
                                         {isPremium
                                             ? 'IA ilimitada, contas e orçamentos sem limite'
-                                            : '3 pedidos de IA/dia, 3 contas, 3 orçamentos'}
+                                            : '10 pedidos de IA/dia, 5 contas, 5 orçamentos, 5 metas'}
                                     </p>
                                 </div>
                                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isPremium ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>

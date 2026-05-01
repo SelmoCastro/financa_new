@@ -239,7 +239,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                 <View style={styles.planInfo}>
                   <Text style={styles.planName}>{isPremium ? 'Premium' : 'Gratuito'}</Text>
                   <Text style={styles.planDesc}>
-                    {isPremium ? 'IA ilimitada, contas e orçamentos sem limite' : '3 pedidos de IA/dia, 3 contas, 3 orçamentos'}
+                    {isPremium ? 'IA ilimitada, contas e orçamentos sem limite' : '10 pedidos de IA/dia, 5 contas, 5 orçamentos, 5 metas'}
                   </Text>
                 </View>
                 <View style={[styles.planIcon, isPremium ? styles.planIconPremium : styles.planIconFree]}>

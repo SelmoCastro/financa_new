@@ -1,13 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
 
 @Injectable()
 export class GoalsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private subscriptionService: SubscriptionService,
+  ) {}
 
-  create(createGoalDto: CreateGoalDto, userId: string) {
+  async create(createGoalDto: CreateGoalDto, userId: string) {
+    // V16: Check goal limit based on plan
+    const plan = await this.subscriptionService.getPlan(userId);
+    const limits = PLAN_LIMITS[plan];
+    const currentCount = await this.prisma.goal.count({
+      where: { userId, deletedAt: null },
+    });
+    if (limits.maxGoals !== -1 && currentCount >= limits.maxGoals) {
+      throw new ForbiddenException(
+        `Limite de ${limits.maxGoals} metas atingido. Faça upgrade para Premium para metas ilimitadas.`,
+      );
+    }
+
     const { deadline, ...rest } = createGoalDto;
     return this.prisma.goal.create({
       data: {
