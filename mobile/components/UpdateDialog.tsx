@@ -78,8 +78,10 @@ export function UpdateDialog() {
         }
     }, [hasUpdate, dismissed, isRequired, downloadPhase, startDownload]);
 
-    // Don't show dialog if no update or explicitly dismissed (and not required)
-    if (!hasUpdate || (dismissed && !isRequired && downloadPhase === 'idle')) {
+    // Don't show dialog if no update or explicitly dismissed (and not required).
+    // Allow dismiss in ALL non-required phases (idle, ready, error) — prevents
+    // infinite loop when install fails and APK stays in cache.
+    if (!hasUpdate || (dismissed && !isRequired)) {
         // Show subtle toast for dismissed optional updates
         if (showToast && hasUpdate && !isRequired && versionInfo && downloadPhase === 'idle') {
             return (
@@ -217,7 +219,7 @@ export function UpdateDialog() {
                         v{currentVersion} → v{versionInfo?.version}
                     </Text>
                     {renderContent()}
-                    {downloadPhase === 'idle' && !isRequired && (
+                    {downloadPhase !== 'downloading' && !isRequired && (
                         <Pressable onPress={dismissUpdate} style={styles.skipButton}>
                             <Text style={styles.skipText}>Depois</Text>
                         </Pressable>

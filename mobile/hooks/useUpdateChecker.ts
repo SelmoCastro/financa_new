@@ -392,8 +392,24 @@ export function useUpdateChecker(): UpdateStatus {
                 );
             } catch (fallbackError: any) {
                 console.log('[UpdateChecker] Fallback install also failed:', fallbackError?.message || fallbackError);
-                setDownloadPhase('error');
-                setErrorMessage('Não foi possível iniciar a instalação. Tente novamente.');
+                
+                // Delete the likely-corrupt APK from cache so we don't loop forever.
+                // If install fails, keeping the file means next launch auto-detects it
+                // as 'ready' and shows the dialog again with no escape hatch.
+                const badApkPath = downloadedApkPathRef.current;
+                if (badApkPath) {
+                    const toDelete = badApkPath.startsWith('/') && !badApkPath.startsWith('file://')
+                        ? `file://${badApkPath}`
+                        : badApkPath;
+                    await ReactNativeBlobUtil.fs.unlink(
+                        badApkPath.startsWith('/') && !badApkPath.startsWith('file://')
+                            ? badApkPath
+                            : badApkPath.replace('file://', '')
+                    ).catch(() => {});
+                }
+                downloadedApkPathRef.current = null;
+                setDownloadPhase('idle');
+                setErrorMessage('Falha na instalação. O APK será baixado novamente.');
             }
         }
     }, []);
