@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Platform, AppState, AppStateStatus } from 'react-native';
+import { Platform, AppState, AppStateStatus, Linking } from 'react-native';
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
-import * as IntentLauncher from 'expo-intent-launcher';
-import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import api from '../services/api';
@@ -22,7 +20,7 @@ interface VersionInfo {
     releaseNotes: string;
 }
 
-export type DownloadPhase = 'idle' | 'downloading' | 'ready' | 'installing' | 'error';
+export type DownloadPhase = 'idle' | 'downloading' | 'ready' | 'error';
 
 interface UpdateStatus {
     hasUpdate: boolean;
@@ -91,14 +89,11 @@ export function useUpdateChecker(): UpdateStatus {
 
     // Check if a downloaded APK already exists for the latest version
     // Only auto-detect if the user hasn't dismissed the update — prevents loop
-    const checkExistingDownload = useCallback(async (version: string, apkUrl: string, skipIfDismissed = true) => {
-        // If user already dismissed, don't auto-restore the 'ready' state
-        // (prevents infinite loop where dismissed update keeps reappearing)
+    const checkExistingDownload = useCallback(async (version: string, _apkUrl: string, skipIfDismissed = true) => {
         if (skipIfDismissed && dismissed) return false;
 
         try {
             const apkFileName = `Financa_new_v${version}.apk`;
-            // react-native-blob-util downloads to its own cache dir, check there
             const dir = ReactNativeBlobUtil.fs.dirs.CacheDir;
             const downloadPath = `${dir}/updates/${apkFileName}`;
 
@@ -109,15 +104,6 @@ export function useUpdateChecker(): UpdateStatus {
 
             if (exists) {
                 downloadedApkPathRef.current = downloadPath;
-                setDownloadPhase('ready');
-                return true;
-            }
-
-            // Also check expo-file-system documentDirectory (legacy downloads)
-            const legacyPath = `${FileSystem.documentDirectory}updates/${apkFileName}`;
-            const legacyInfo = await FileSystem.getInfoAsync(legacyPath);
-            if (legacyInfo.exists) {
-                downloadedApkPathRef.current = legacyPath;
                 setDownloadPhase('ready');
                 return true;
             }
@@ -301,123 +287,27 @@ export function useUpdateChecker(): UpdateStatus {
     }, [versionInfo, downloadPhase]);
 
     /**
-     * Install the downloaded APK.
-     * 
-     * Strategy:
-     * 1. Try getContentUriAsync() (uses expo-file-system's FileProvider) → ACTION_INSTALL_PACKAGE
-     * 2. If that fails, try direct file:// URI with ACTION_VIEW (works on some devices)
-     * 3. If that fails, open the APK URL in the browser as last resort
-     * 
-     * We do NOT call ensureInstallPermission() proactively because:
-     * - On Android 8+, opening the install-unknown-apps settings takes the user away from the app
-     * - The system will automatically prompt the user for permission when INSTALL_PACKAGE is used
-     * - This avoids the "open settings then come back" confusion
+     * Open the APK download URL in the device browser.
+     * The user downloads and installs manually — simpler, more reliable,
+     * no REQUEST_INSTALL_PACKAGES permission needed.
      */
     const installUpdate = useCallback(async () => {
-        const apkPath = downloadedApkPathRef.current;
-        if (!apkPath) {
-            setDownloadPhase('error');
-            setErrorMessage('APK não encontrado. Tente baixar novamente.');
-            return;
-        }
-
         try {
-            setDownloadPhase('installing');
+            // Prefer the version info URL, fallback to saved version
+            const savedVersionStr = await AsyncStorage.getItem(DOWNLOADED_VERSION_KEY);
+            const savedVersion = savedVersionStr ? JSON.parse(savedVersionStr) : null;
+            const apkUrl = versionInfo?.apkUrl || savedVersion?.apkUrl;
 
-            // Ensure the path starts with file:// for getContentUriAsync
-            let fileUri: string;
-            if (apkPath.startsWith('/')) {
-                fileUri = `file://${apkPath}`;
-            } else if (!apkPath.startsWith('file://')) {
-                fileUri = `file:///${apkPath}`;
+            if (apkUrl) {
+                await Linking.openURL(apkUrl);
             } else {
-                fileUri = apkPath;
+                // Last resort: open the downloads page
+                await Linking.openURL('https://finanzaai.tech/downloads/');
             }
-
-            console.log('[UpdateChecker] Attempting install from:', fileUri);
-
-            // Step 1: Use FileProvider via getContentUriAsync (correct way for Android 7+)
-            try {
-                const contentUri = await FileSystem.getContentUriAsync(fileUri);
-                console.log('[UpdateChecker] Content URI:', contentUri);
-
-                await IntentLauncher.startActivityAsync(
-                    'android.intent.action.INSTALL_PACKAGE',
-                    {
-                        data: contentUri,
-                        flags: 1, // FLAG_ACTIVITY_NEW_TASK
-                        type: 'application/vnd.android.package-archive',
-                    }
-                );
-                // Intent was started — install prompt should now be visible to user
-                // Don't reset state here; if user cancels install they'll see "ready" state
-                // and can tap "Instalar" again. If install succeeds, app will restart.
-                return;
-            } catch (contentError: any) {
-                console.log('[UpdateChecker] getContentUriAsync + INSTALL_PACKAGE failed:', contentError?.message || contentError);
-            }
-
-            // Step 2: Try ACTION_VIEW with content URI
-            try {
-                const contentUri = await FileSystem.getContentUriAsync(fileUri);
-                console.log('[UpdateChecker] Trying ACTION_VIEW with content URI:', contentUri);
-
-                await IntentLauncher.startActivityAsync(
-                    'android.intent.action.VIEW',
-                    {
-                        data: contentUri,
-                        flags: 1,
-                        type: 'application/vnd.android.package-archive',
-                    }
-                );
-                return;
-            } catch (viewError: any) {
-                console.log('[UpdateChecker] ACTION_VIEW with content URI also failed:', viewError?.message || viewError);
-            }
-
-            // Step 3: Try ACTION_VIEW with direct file URI (works on Android < 7 or rooted)
-            try {
-                console.log('[UpdateChecker] Trying ACTION_VIEW with file URI');
-                await IntentLauncher.startActivityAsync(
-                    'android.intent.action.VIEW',
-                    {
-                        data: fileUri,
-                        flags: 1,
-                        type: 'application/vnd.android.package-archive',
-                    }
-                );
-                return;
-            } catch (fileError: any) {
-                console.log('[UpdateChecker] ACTION_VIEW with file URI also failed:', fileError?.message || fileError);
-            }
-
-            // Step 4: Last resort — open the download URL in the device browser
-            // The user can download and install from the browser directly
-            try {
-                const savedVersionStr = await AsyncStorage.getItem(DOWNLOADED_VERSION_KEY);
-                const savedVersion = savedVersionStr ? JSON.parse(savedVersionStr) : null;
-                const apkUrl = versionInfo?.apkUrl || savedVersion?.apkUrl;
-                
-                if (apkUrl) {
-                    console.log('[UpdateChecker] Last resort: opening APK URL in browser');
-                    const { Linking } = require('react-native');
-                    await Linking.openURL(apkUrl);
-                    setDownloadPhase('error');
-                    setErrorMessage('Não foi possível instalar diretamente. O download foi aberto no navegador — abra o arquivo baixado para instalar.');
-                    return;
-                }
-            } catch (linkError: any) {
-                console.log('[UpdateChecker] Browser fallback also failed:', linkError?.message || linkError);
-            }
-
-            // All methods failed
-            setDownloadPhase('error');
-            setErrorMessage('Não foi possível iniciar a instalação. Toque em "Depois" para fechar e tente baixar pelo navegador em finanzaai.tech/downloads');
-
         } catch (error: any) {
-            console.log('[UpdateChecker] Install failed with unexpected error:', error?.message || error);
+            console.log('[UpdateChecker] Failed to open URL:', error?.message || error);
             setDownloadPhase('error');
-            setErrorMessage('Erro inesperado ao instalar. Tente novamente ou baixe pelo navegador.');
+            setErrorMessage('Não foi possível abrir o link. Acesse finanzaai.tech/downloads manualmente.');
         }
     }, [versionInfo]);
 

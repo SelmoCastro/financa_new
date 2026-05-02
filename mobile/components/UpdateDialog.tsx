@@ -35,8 +35,6 @@ function PhaseIcon({ phase }: { phase: DownloadPhase }) {
             return <Text style={styles.emoji}>📥</Text>;
         case 'ready':
             return <Text style={styles.emoji}>✅</Text>;
-        case 'installing':
-            return <Text style={styles.emoji}>⚙️</Text>;
         case 'error':
             return <Text style={styles.emoji}>❌</Text>;
         default:
@@ -141,22 +139,10 @@ export function UpdateDialog() {
                             style={[styles.button, styles.buttonInstall]}
                             onPress={installUpdate}
                         >
-                            <Text style={styles.buttonText}>Instalar agora</Text>
+                            <Text style={styles.buttonText}>Baixar no navegador</Text>
                         </Pressable>
                         <Text style={styles.hintText}>
-                            Você confirmará a instalação na próxima tela
-                        </Text>
-                    </View>
-                );
-
-            case 'installing':
-                return (
-                    <View style={styles.readySection}>
-                        <Text style={styles.readyText}>
-                            ⚙️ Abrindo instalador...
-                        </Text>
-                        <Text style={styles.hintText}>
-                            Confirme a instalação na tela do sistema
+                            O APK será baixado pelo navegador. Abra o arquivo para instalar.
                         </Text>
                     </View>
                 );
@@ -170,9 +156,7 @@ export function UpdateDialog() {
                         <Pressable
                             style={[styles.button, styles.buttonOptional]}
                             onPress={() => {
-                                // Reset phase to idle first so startDownload can proceed
                                 resetDownload();
-                                // Small delay to let state settle, then retry
                                 setTimeout(() => startDownload(), 300);
                             }}
                         >
@@ -205,8 +189,7 @@ export function UpdateDialog() {
     const getTitle = () => {
         switch (downloadPhase) {
             case 'downloading': return 'Baixando atualização...';
-            case 'ready': return 'Pronto para instalar!';
-            case 'installing': return 'Instalando...';
+            case 'ready': return 'Pronto para atualizar!';
             case 'error': return 'Erro na atualização';
             default: return isRequired ? 'Atualização obrigatória' : 'Nova versão disponível!';
         }
