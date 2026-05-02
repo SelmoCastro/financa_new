@@ -1,6 +1,6 @@
 {
-  "version": "1.7.32",
-  "mobileVersion": "1.7.32",
+  "version": "1.7.33",
+  "mobileVersion": "1.7.33",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Restaurando o ícone original solicitado (Gemini Generated)."
+  "releaseNotes": "Ajustado ícone principal para preenchimento total (Square Crop) usando a imagem oficial."
 }
