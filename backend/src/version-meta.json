@@ -1,6 +1,6 @@
 {
-  "version": "1.7.26",
-  "mobileVersion": "1.7.26",
+  "version": "1.7.27",
+  "mobileVersion": "1.7.27",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Download direto pelo navegador (sem download duplo interno)\nRemovido react-native-blob-util e withApkInstaller"
+  "releaseNotes": "Novo design premium de ícones: hexágono shield com gradiente indigo-violeta\nBarras de crescimento financeiro com destaque dourado\nEfeito glass highlight e partículas sutis"
 }
