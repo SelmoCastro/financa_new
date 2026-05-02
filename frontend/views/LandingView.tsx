@@ -1,37 +1,36 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Sparkles, Smartphone, Target, CreditCard, Import } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
 
     const features = [
         {
-            icon: '📊',
+            icon: LayoutDashboard,
             title: 'Dashboard Inteligente',
             desc: 'Visualize receitas, despesas e saldo em tempo real com gráficos claros e objetivos.',
         },
         {
-            icon: '🤖',
+            icon: Sparkles,
             title: 'IA Financeira',
             desc: 'Assistente virtual que analisa seus gastos, sugere economias e responde suas dúvidas.',
         },
         {
-            icon: '📱',
+            icon: Smartphone,
             title: 'Android + Web',
             desc: 'Acesse de qualquer dispositivo. Dados sincronizados entre celular e computador.',
         },
         {
-            icon: '🎯',
+            icon: Target,
             title: 'Orçamentos & Metas',
             desc: 'Defina limites por categoria e crie metas de economia com acompanhamento visual.',
         },
         {
-            icon: '💳',
+            icon: CreditCard,
             title: 'Contas & Cartões',
             desc: 'Gerencie contas bancárias, cartões de crédito e faturas em um só lugar.',
         },
         {
-            icon: '📥',
+            icon: Import,
             title: 'Importação OFX',
             desc: 'Importe extratos bancários automaticamente com deduplicação inteligente.',
         },
@@ -67,13 +66,11 @@ const LandingPage: React.FC = () => {
 
             {/* Hero */}
             <section className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 via-purple-600/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/20 via-blue-600/10 to-transparent" />
                 <div className="max-w-6xl mx-auto px-6 pt-20 pb-16 relative">
                     <header className="flex items-center justify-between mb-16">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center font-black text-lg shadow-lg shadow-indigo-500/30">
-                                F
-                            </div>
+                            <img src="/logo.png" alt="Finanza AI" className="w-10 h-10 rounded-xl shadow-lg shadow-cyan-500/30 object-contain" />
                             <span className="font-bold text-xl tracking-tight">Finanza AI</span>
                         </div>
                         <button
@@ -85,13 +82,13 @@ const LandingPage: React.FC = () => {
                     </header>
 
                     <div className="text-center max-w-3xl mx-auto">
-                        <div className="inline-flex items-center gap-2 bg-indigo-500/10 text-indigo-400 px-4 py-2 rounded-full text-sm font-bold mb-6 border border-indigo-500/20">
+                        <div className="inline-flex items-center gap-2 bg-cyan-500/10 text-cyan-400 px-4 py-2 rounded-full text-sm font-bold mb-6 border border-cyan-500/20">
                             <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
                             Gestão financeira com inteligência artificial
                         </div>
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-[1.1]">
                             Suas finanças,{' '}
-                            <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                            <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
                                 simplificadas
                             </span>{' '}
                             por IA
@@ -104,7 +101,7 @@ const LandingPage: React.FC = () => {
                             <a
                                 href="/downloads/Financa_new.apk"
                                 download
-                                className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-sm tracking-wider shadow-2xl shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-3"
+                                className="px-8 py-4 bg-cyan-600 hover:bg-cyan-700 rounded-2xl font-black text-sm tracking-wider shadow-2xl shadow-cyan-600/30 transition-all active:scale-95 flex items-center gap-3"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M17.523 15.341a.997.997 0 0 0 0-1.994.997.997 0 0 0 0 1.994m-11.046 0a.997.997 0 0 0 0-1.994.997.997 0 0 0 0 1.994m11.405-6.02l1.996-3.46a.416.416 0 0 0-.152-.567.416.416 0 0 0-.567.152l-2.02 3.5C15.56 8.341 13.854 7.99 12 7.99s-3.56.351-5.14.976L4.84 5.466a.416.416 0 0 0-.567-.152.416.416 0 0 0-.152.567l1.997 3.46C3.024 11.462 1.2 14.097 1.2 17.1h21.6c0-3.003-1.824-5.638-4.918-7.779" />
@@ -131,7 +128,7 @@ const LandingPage: React.FC = () => {
                     <div className="text-center mb-14">
                         <h2 className="text-3xl font-black mb-4">
                             Tudo que você precisa para{' '}
-                            <span className="text-indigo-400">controlar seu dinheiro</span>
+                            <span className="text-cyan-400">controlar seu dinheiro</span>
                         </h2>
                         <p className="text-slate-400 max-w-lg mx-auto">
                             Ferramentas simples e poderosas para organizar receitas, despesas e planejar o futuro.
@@ -141,9 +138,11 @@ const LandingPage: React.FC = () => {
                         {features.map((f, i) => (
                             <div
                                 key={i}
-                                className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 hover:border-indigo-500/30 transition-colors"
+                                className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 hover:border-cyan-500/30 transition-colors"
                             >
-                                <div className="text-3xl mb-3">{f.icon}</div>
+                                <div className="p-3 bg-cyan-500/10 rounded-xl w-fit mb-4">
+                                    <f.icon className="w-8 h-8 text-cyan-400" />
+                                </div>
                                 <h3 className="font-bold text-lg mb-2">{f.title}</h3>
                                 <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
                             </div>
@@ -156,7 +155,7 @@ const LandingPage: React.FC = () => {
             <section className="py-20">
                 <div className="max-w-4xl mx-auto px-6">
                     <h2 className="text-3xl font-black text-center mb-14">
-                        Comece em <span className="text-indigo-400">3 passos</span>
+                        Comece em <span className="text-cyan-400">3 passos</span>
                     </h2>
                     {[
                         { step: '1', title: 'Crie sua conta', desc: 'Cadastro rápido com e-mail. Sem facebook, sem google.' },
@@ -164,7 +163,7 @@ const LandingPage: React.FC = () => {
                         { step: '3', title: 'Deixe a IA trabalhar', desc: 'O assistente analisa seus dados e sugere ações.' },
                     ].map((item, i) => (
                         <div key={i} className="flex items-start gap-6 mb-8 last:mb-0">
-                            <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 shadow-lg shadow-indigo-600/30">
+                            <div className="w-12 h-12 bg-cyan-600 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 shadow-lg shadow-cyan-600/30">
                                 {item.step}
                             </div>
                             <div>
@@ -180,7 +179,7 @@ const LandingPage: React.FC = () => {
             <section className="py-20 bg-slate-900/50">
                 <div className="max-w-4xl mx-auto px-6 text-center">
                     <h2 className="text-3xl font-black mb-4">
-                        Método <span className="text-indigo-400">50/30/20</span>
+                        Método <span className="text-cyan-400">50/30/20</span>
                     </h2>
                     <p className="text-slate-400 mb-10 max-w-lg mx-auto">
                         A regra financeira mais recomendada por especialistas. A Finanza AI aplica automaticamente:
@@ -196,8 +195,8 @@ const LandingPage: React.FC = () => {
                             <div className="font-bold mb-1">Desejos</div>
                             <div className="text-xs text-slate-400">Lazer, restaurantes, compras, assinaturas</div>
                         </div>
-                        <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-6">
-                            <div className="text-3xl font-black text-indigo-400 mb-1">20%</div>
+                        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-2xl p-6">
+                            <div className="text-3xl font-black text-cyan-400 mb-1">20%</div>
                             <div className="font-bold mb-1">Economia</div>
                             <div className="text-xs text-slate-400">Reserva, investimentos, metas financeiras</div>
                         </div>
@@ -216,7 +215,7 @@ const LandingPage: React.FC = () => {
                     </p>
                     <button
                         onClick={() => navigate('/login')}
-                        className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-sm tracking-wider shadow-2xl shadow-indigo-600/30 transition-all active:scale-95"
+                        className="px-10 py-4 bg-cyan-600 hover:bg-cyan-700 rounded-2xl font-black text-sm tracking-wider shadow-2xl shadow-cyan-600/30 transition-all active:scale-95"
                     >
                         Criar conta gratuita
                     </button>
@@ -227,9 +226,7 @@ const LandingPage: React.FC = () => {
             <footer className="border-t border-slate-800 py-10">
                 <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-black text-sm">
-                            F
-                        </div>
+                        <img src="/logo.png" alt="Finanza AI" className="w-8 h-8 rounded-lg object-contain" />
                         <span className="font-bold text-sm">Finanza AI</span>
                         <span className="text-slate-600 text-xs">© {new Date().getFullYear()}</span>
                     </div>

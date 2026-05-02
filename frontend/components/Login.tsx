@@ -83,11 +83,9 @@ export const Login: React.FC = () => {
             <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors duration-500">
             <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-500">
                 <div className="text-center mb-10">
-                    <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-indigo-600/40 group hover:scale-110 transition-transform duration-500 cursor-pointer">
-                        <LayoutDashboard className="text-white w-10 h-10" />
-                    </div>
+                    <img src="/logo.png" alt="Finanza AI" className="w-20 h-20 rounded-[2rem] mx-auto mb-6 shadow-2xl shadow-cyan-600/40 group hover:scale-110 transition-transform duration-500 cursor-pointer object-contain bg-slate-900" />
                     <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-[0.3em] mb-2">Finanza AI</p>
+                        <p className="text-[10px] font-black uppercase text-cyan-600 dark:text-cyan-400 tracking-[0.3em] mb-2">Finanza AI</p>
                         <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">
                             {isForgotPassword ? 'Recuperar Acesso' : isRegister ? 'Criar Nova Conta' : 'Bem-vindo de volta'}
                         </h2>
@@ -121,7 +119,7 @@ export const Login: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 block">Seu Nome</label>
                             <input
                                 type="text"
-                                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-bold text-slate-800 dark:text-white transition-all text-base placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none font-bold text-slate-800 dark:text-white transition-all text-base placeholder:text-slate-400 dark:placeholder:text-slate-600"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="Como quer ser chamado?"
@@ -133,7 +131,7 @@ export const Login: React.FC = () => {
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 block">Endereço de Email</label>
                         <input
                             type="email"
-                            className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-bold text-slate-800 dark:text-white transition-all text-base placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                            className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none font-bold text-slate-800 dark:text-white transition-all text-base placeholder:text-slate-400 dark:placeholder:text-slate-600"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="seu@email.com"
@@ -149,7 +147,7 @@ export const Login: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => { setIsForgotPassword(true); setError(''); setSuccessMsg(''); }}
-                                        className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 uppercase tracking-widest transition-colors"
+                                        className="text-[10px] font-black text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 uppercase tracking-widest transition-colors"
                                     >
                                         Esqueceu?
                                     </button>
@@ -157,7 +155,7 @@ export const Login: React.FC = () => {
                             </div>
                             <input
                                 type="password"
-                                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-bold text-slate-800 dark:text-white transition-all text-base placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none font-bold text-slate-800 dark:text-white transition-all text-base placeholder:text-slate-400 dark:placeholder:text-slate-600"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
@@ -172,7 +170,7 @@ export const Login: React.FC = () => {
                                 type="checkbox"
                                 checked={termsAccepted}
                                 onChange={(e) => setTermsAccepted(e.target.checked)}
-                                className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
                             />
                             <span className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                                 Eu li e aceito os{' '}
@@ -180,7 +178,7 @@ export const Login: React.FC = () => {
                                     href="https://finanzaai.tech/legal/terms.html"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-700"
+                                    className="text-cyan-600 dark:text-cyan-400 underline hover:text-cyan-700"
                                 >
                                     Termos de Uso
                                 </a>{' '}
@@ -189,7 +187,7 @@ export const Login: React.FC = () => {
                                     href="https://finanzaai.tech/legal/privacy.html"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-700"
+                                    className="text-cyan-600 dark:text-cyan-400 underline hover:text-cyan-700"
                                 >
                                     Política de Privacidade
                                 </a>
@@ -200,7 +198,7 @@ export const Login: React.FC = () => {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-5 rounded-2xl uppercase text-[10px] tracking-[0.2em] transition-all shadow-2xl shadow-indigo-600/30 active:scale-95 mt-6"
+                        className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-5 rounded-2xl uppercase text-[10px] tracking-[0.2em] transition-all shadow-2xl shadow-cyan-600/30 active:scale-95 mt-6"
                     >
                         {isLoading ? (
                             <div className="flex items-center justify-center gap-3">
@@ -222,7 +220,7 @@ export const Login: React.FC = () => {
                     ) : (
                         <button
                             onClick={() => { setIsRegister(!isRegister); setError(''); setSuccessMsg(''); setTermsAccepted(false); }}
-                            className="text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                            className="text-cyan-600 dark:text-cyan-400 text-xs font-black uppercase tracking-widest hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
                         >
                             {isRegister ? 'Já tem uma conta? Entrar' : 'Novo por aqui? Cadastre-se'}
                         </button>

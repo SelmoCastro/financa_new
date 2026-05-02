@@ -1,6 +1,6 @@
 {
-  "version": "1.7.35",
-  "mobileVersion": "1.7.35",
+  "version": "1.7.36",
+  "mobileVersion": "1.7.36",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Aplicando ícone EXATAMENTE como fornecido (RAW Image), sem efeitos extras."
+  "releaseNotes": "Aplica alterações manuais no Login e Landing Page do frontend."
 }
