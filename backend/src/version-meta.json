@@ -1,6 +1,6 @@
 {
-  "version": "1.7.37",
-  "mobileVersion": "1.7.37",
+  "version": "1.7.38",
+  "mobileVersion": "1.7.38",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Sincronização de ícones entre versões Mobile e Web usando os assets do diretório mobile."
+  "releaseNotes": "Novo design de ícone Financial AI aplicado em todas as plataformas (Web e Mobile)."
 }
