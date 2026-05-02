@@ -1,6 +1,6 @@
 {
-  "version": "1.7.33",
-  "mobileVersion": "1.7.33",
+  "version": "1.7.34",
+  "mobileVersion": "1.7.34",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Ajustado ícone principal para preenchimento total (Square Crop) usando a imagem oficial."
+  "releaseNotes": "Icon Remix v2: Design Premium 'Aurora Sparkle' baseado no original.\nMelhoria de contraste, moldura de vidro e brilho Aurora central."
 }
