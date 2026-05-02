@@ -1,6 +1,6 @@
 {
-  "version": "1.7.28",
-  "mobileVersion": "1.7.28",
+  "version": "1.7.29",
+  "mobileVersion": "1.7.29",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Design Elite Obsidian: Ícone CEO minimalista com fundo obsidian, textura de fibra de carbono e estilizado 'F' metálico em ouro e índigo com estrela de IA."
+  "releaseNotes": "Revertendo ícones para o design original (o simples que estava antes)."
 }

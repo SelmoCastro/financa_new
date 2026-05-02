@@ -1,6 +1,6 @@
 {
   "name": "finanza-ai",
-  "version": "1.7.28",
+  "version": "1.7.29",
   "private": true,
   "description": "Finanza AI — Dashboard Financeiro Inteligente",
   "scripts": {
