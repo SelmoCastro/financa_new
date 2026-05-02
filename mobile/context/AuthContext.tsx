@@ -51,54 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
-    type RefreshResult = 'success' | 'unauthorized' | 'network_error';
-
-    /**
-     * Proactively refresh the access token using the stored refresh token.
-     * Returns discriminated result so caller knows how to handle fallback.
-     */
-    const proactiveRefresh = useCallback(async (): Promise<RefreshResult> => {
-        try {
-            const refreshToken = await SecureStore.getItemAsync('refreshToken');
-            const userId = await SecureStore.getItemAsync('userId');
-            if (!refreshToken || !userId) return 'unauthorized';
-
-            const axios = require('axios');
-            const response = await axios.post(`${API_URL}/auth/refresh`, {
-                userId,
-                refreshToken,
-            }, {
-                headers: { 'x-platform': 'mobile' },
-                timeout: 10000,
-            });
-
-            const newAccess = response.data?.access_token || response.data?.data?.access_token;
-            const newRefresh = response.data?.refreshToken || response.data?.data?.refreshToken;
-
-            if (!newAccess) return 'unauthorized';
-
-            await SecureStore.setItemAsync('token', newAccess);
-            if (newRefresh) {
-                await SecureStore.setItemAsync('refreshToken', newRefresh);
-            }
-            setToken(newAccess);
-            console.log('[AuthContext] Proactive refresh succeeded');
-            return 'success';
-        } catch (e: any) {
-            const status = e?.response?.status;
-            if (status === 401 || status === 403) {
-                console.log('[AuthContext] Refresh token expired. Logging out.');
-                await SecureStore.deleteItemAsync('token');
-                await SecureStore.deleteItemAsync('refreshToken');
-                await SecureStore.deleteItemAsync('userId');
-                return 'unauthorized';
-            }
-            console.warn('[AuthContext] Proactive refresh network error:', e?.message);
-            return 'network_error';
-        }
-    }, []);
-
-    // Load stored token on mount — with proactive refresh if needed
+    // Load stored token on mount
     useEffect(() => {
         let mounted = true;
         let isLoggingOut = false;
@@ -111,34 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     return;
                 }
 
-                const result = await proactiveRefresh();
+                // Set token immediately so it's available for the poke request
+                setToken(storedToken);
 
-                if (!mounted) return;
-
-                switch (result) {
-                    case 'success':
-                        // Token refreshed — profile already set by proactiveRefresh
-                        await fetchProfile();
-                        break;
-                    case 'unauthorized':
-                        // Refresh token expired — SecureStore already cleaned up
-                        // Don't set token (it's invalid), let RootLayoutNav redirect to login
-                        setToken(null);
-                        break;
-                    case 'network_error':
-                        // Couldn't reach server — use stored token (might still be valid)
-                        setToken(storedToken);
-                        await fetchProfile().catch(() => {});
-                        break;
-                }
+                // Poke the API. If access token is expired (15m), the interceptor in api.ts
+                // will catch the 401, refresh using refreshToken (7d), and then resolve this call.
+                // if it fails (refresh token expired), interceptor triggers logout event.
+                await fetchProfile();
             } catch (e) {
-                console.error('[AuthContext] Init error:', e);
-                // Last resort — try with whatever token we have (network error fallback)
-                const storedToken = await SecureStore.getItemAsync('token');
-                if (storedToken && mounted) {
-                    setToken(storedToken);
-                    fetchProfile().catch(() => {});
-                }
+                console.warn('[AuthContext] Init profile fetch failed (expected if token expired):', e);
             } finally {
                 if (mounted) setIsLoading(false);
             }
@@ -164,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const tokenRefreshedSubscription = DeviceEventEmitter.addListener('auth:token-refreshed', (newToken: string) => {
             console.log('[AuthContext] Token refreshed via interceptor. Updating state...');
             setToken(newToken);
-            fetchProfile();
+            fetchProfile().catch(() => {});
         });
 
         return () => {
@@ -172,9 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             authSubscription.remove();
             tokenRefreshedSubscription.remove();
         };
-    }, [fetchProfile, proactiveRefresh]);
+    }, [fetchProfile]);
 
-    // Proactive token refresh when app comes back from background
+    // Refresh profile when app comes back from background (pokes the interceptor if needed)
     useEffect(() => {
         const handleAppState = async (nextState: AppStateStatus) => {
             const wasBackground = appStateRef.current === 'background' || appStateRef.current === 'inactive';
@@ -184,22 +118,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (!wasBackground || !becameActive || !token) return;
 
-            console.log('[AuthContext] App came back from background. Refreshing token...');
-            const result = await proactiveRefresh();
-            if (result === 'success') {
-                await fetchProfile();
-            } else if (result === 'unauthorized') {
-                // Token expirado de vez — vai pra login
-                console.log('[AuthContext] Background refresh: token expired, logging out');
-                setToken(null);
-                setUser(null);
-            }
-            // network_error: keep current token, don't logout
+            console.log('[AuthContext] App came back from background. Checking session...');
+            // Poke the API. Interceptor handles 401 -> refresh if needed.
+            await fetchProfile();
         };
 
         const subscription = AppState.addEventListener('change', handleAppState);
         return () => subscription.remove();
-    }, [token, proactiveRefresh, fetchProfile]);
+    }, [token, fetchProfile]);
 
     const login = React.useCallback(async (newToken: string, newRefreshToken: string, newUserId: string) => {
         console.log('[AuthContext] Logging in...');

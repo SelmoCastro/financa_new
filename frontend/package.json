@@ -1,7 +1,7 @@
 {
   "name": "finanza-ai---dashboard-financeiro-simplificado",
   "private": true,
-  "version": "1.7.22",
+  "version": "1.7.25",
   "type": "module",
   "scripts": {
     "dev": "vite",
