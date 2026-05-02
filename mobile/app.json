@@ -2,7 +2,7 @@
   "expo": {
     "name": "Financa New",
     "slug": "mobile",
-    "version": "1.7.30",
+    "version": "1.7.31",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
@@ -20,12 +20,11 @@
       "package": "com.selmo.financa",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundImage": "./assets/images/adaptive-icon-background.png",
-        "backgroundColor": "#4f46e5"
+        "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 30,
+      "versionCode": 31,
       "permissions": []
     },
     "web": {

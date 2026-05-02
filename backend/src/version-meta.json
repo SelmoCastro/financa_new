@@ -1,6 +1,6 @@
 {
-  "version": "1.7.30",
-  "mobileVersion": "1.7.30",
+  "version": "1.7.31",
+  "mobileVersion": "1.7.31",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Fluxo de atualização mais confiável: abre a página oficial de downloads no navegador."
+  "releaseNotes": "Restaurando os ícones originais do projeto (design clássico simples)."
 }

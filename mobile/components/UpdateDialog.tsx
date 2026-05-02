@@ -65,7 +65,7 @@ export function UpdateDialog() {
     };
 
     return (
-        <Modal visible={true} transparent animationType=\"fade\" statusBarTranslucent>
+<Modal visible={true} transparent animationType="fade" statusBarTranslucent>
             <View style={styles.overlay}>
                 <View style={styles.card}>
                     <Text style={styles.emoji}>🚀</Text>
