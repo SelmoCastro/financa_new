@@ -48,7 +48,7 @@ model Account {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime? // Soft delete
-  user         User          @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   creditCards  CreditCard[]
   transactions Transaction[]
 
@@ -66,8 +66,8 @@ model CreditCard {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime? // Soft delete
-  account      Account       @relation(fields: [accountId], references: [id])
-  user         User          @relation(fields: [userId], references: [id])
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
   @@index([userId])
@@ -83,7 +83,7 @@ model Category {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime? // Soft delete
-  user         User          @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
   budgets      Budget[]
 
@@ -111,10 +111,10 @@ model Transaction {
   classificationRule Int?        @map("classification_rule")
   fitId              String?
   sharedWithEmail    String?
-  account            Account?    @relation(fields: [accountId], references: [id])
-  category           Category?   @relation(fields: [categoryId], references: [id])
-  creditCard         CreditCard? @relation(fields: [creditCardId], references: [id])
-  user               User        @relation(fields: [userId], references: [id])
+  account            Account?    @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category           Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  creditCard         CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, fitId])
   @@index([userId])
@@ -134,8 +134,8 @@ model Budget {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime? // Soft delete
-  user        User      @relation(fields: [userId], references: [id])
-  categoryObj Category  @relation(fields: [categoryId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryObj Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([userId, categoryId])
   @@index([categoryId])
@@ -152,7 +152,7 @@ model Goal {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime? // Soft delete
-  user          User      @relation(fields: [userId], references: [id])
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, deletedAt])
@@ -165,7 +165,7 @@ model ImportedFitId {
   accountId  String?
   status     String
   importedAt DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, fitId])
   @@index([userId])
@@ -178,7 +178,7 @@ model Feedback {
   userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
@@ -210,8 +210,8 @@ model TransactionInvite {
   originalTransactionId String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-  recipient             User?    @relation("ReceivedInvites", fields: [recipientId], references: [id])
-  sender                User     @relation("SentInvites", fields: [senderId], references: [id])
+  recipient             User?    @relation("ReceivedInvites", fields: [recipientId], references: [id], onDelete: SetNull)
+  sender                User     @relation("SentInvites", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([senderId])
   @@index([recipientEmail])
@@ -228,7 +228,7 @@ model Notification {
   metadata  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isRead])
@@ -242,7 +242,7 @@ model Subscription {
   expiresAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -252,7 +252,7 @@ model AiRequestLog {
   userId    String
   endpoint  String
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
 }

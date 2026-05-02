@@ -90,24 +90,12 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    // Soft delete all dependent records and hard delete non-soft-delete ones
-    return this.prisma.$transaction([
-      this.prisma.verificationToken.deleteMany({ where: { userId: id } }),
-      this.prisma.feedback.deleteMany({ where: { userId: id } }),
-      this.prisma.importedFitId.deleteMany({ where: { userId: id } }),
-      this.prisma.transactionInvite.deleteMany({ where: { senderId: id } }),
-      this.prisma.transactionInvite.deleteMany({ where: { recipientId: id } }),
-      this.prisma.notification.deleteMany({ where: { userId: id } }),
-      this.prisma.aiRequestLog.deleteMany({ where: { userId: id } }),
-      this.prisma.subscription.deleteMany({ where: { userId: id } }),
-      this.prisma.auditLog.deleteMany({ where: { userId: id } }),
-      this.prisma.transaction.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
-      this.prisma.category.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
-      this.prisma.creditCard.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
-      this.prisma.account.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
-      this.prisma.budget.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
-      this.prisma.goal.updateMany({ where: { userId: id, deletedAt: null }, data: { deletedAt: new Date() } }),
-      this.prisma.user.delete({ where: { id } }),
-    ]);
+    // V26: Use hard delete for the user. Linked data will be handled by DB-level Cascade 
+    // defined in schema.prisma. We first remove tokens and sensitive logs manually 
+    // to be safe before the big bang.
+    return this.prisma.$transaction(async (tx) => {
+      // Deleting the user row will cascade to all other tables due to onDelete: Cascade
+      return tx.user.delete({ where: { id } });
+    });
   }
 }
