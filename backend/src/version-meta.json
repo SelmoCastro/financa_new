@@ -1,6 +1,6 @@
 {
   "version": "1.7.26",
-  "mobileVersion": "1.7.25",
+  "mobileVersion": "1.7.26",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "--notes"
+  "releaseNotes": "Download direto pelo navegador (sem download duplo interno)\nRemovido react-native-blob-util e withApkInstaller"
 }
