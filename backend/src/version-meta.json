@@ -1,6 +1,6 @@
 {
-  "version": "1.7.34",
-  "mobileVersion": "1.7.34",
+  "version": "1.7.35",
+  "mobileVersion": "1.7.35",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Icon Remix v2: Design Premium 'Aurora Sparkle' baseado no original.\nMelhoria de contraste, moldura de vidro e brilho Aurora central."
+  "releaseNotes": "Aplicando ícone EXATAMENTE como fornecido (RAW Image), sem efeitos extras."
 }

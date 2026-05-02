@@ -226,7 +226,7 @@ const AppContent: React.FC = () => {
                               'Configurações'}
               {userName && (
                 <div className="flex flex-col border-l border-slate-200 dark:border-slate-800 pl-3">
-                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold leading-tight">Olá, {userName}</span>
+                  <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold leading-tight">Olá, {userName}</span>
                   {userEmail && <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium lowercase leading-tight">{userEmail}</span>}
                 </div>
               )}
@@ -254,7 +254,7 @@ const AppContent: React.FC = () => {
             />
             <button
               onClick={handleOpenTransactionForm}
-              className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95 whitespace-nowrap group"
+              className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-cyan-600 text-white rounded-2xl hover:bg-cyan-700 font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-lg shadow-cyan-200 dark:shadow-none transition-all active:scale-95 whitespace-nowrap group"
             >
               <Plus className="w-4 h-4 sm:w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
               <span className="hidden sm:inline">Novo Lançamento</span>
@@ -347,9 +347,9 @@ const AppContent: React.FC = () => {
       {!isFormOpen && !isImportOpen && (
         <button
           onClick={handleOpenTransactionForm}
-          className="fixed lg:hidden bottom-[100px] sm:bottom-[100px] right-4 md:right-8 z-50 bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95 group"
+          className="fixed lg:hidden bottom-[100px] sm:bottom-[100px] right-4 md:right-8 z-50 bg-cyan-600 hover:bg-cyan-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95 group"
           title="Novo Lançamento"
-          style={{ boxShadow: '0 10px 25px -5px rgba(99, 102, 241, 0.4)' }}
+          style={{ boxShadow: '0 10px 25px -5px rgba(6, 182, 212, 0.4)' }}
         >
           <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
         </button>

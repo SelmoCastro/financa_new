@@ -35,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
       {/* Desktop Sidebar */}
       <aside className={`fixed left-0 top-0 h-full bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-xl border-r border-slate-800/50 text-white z-50 sidebar-transition hidden lg:flex flex-col ${isOpen ? 'w-64' : 'w-20'}`}>
         <div className="p-6 flex items-center gap-3 overflow-hidden border-b border-slate-800/50">
-          <div className="min-w-[40px] h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/20">F</div>
+          <img src="/logo.png" alt="Finanza AI" className="w-10 h-10 rounded-xl shadow-lg shadow-cyan-500/10 object-contain" />
           {isOpen && <span className="font-bold text-xl tracking-tight whitespace-nowrap">Finanza AI</span>}
         </div>
 
@@ -46,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
               onClick={() => setActiveTab(item.id)}
               title={!isOpen ? item.label : ''}
               className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 ${activeTab === item.id
-                ? 'bg-indigo-600/90 text-white shadow-lg shadow-indigo-600/20 translate-x-1 ring-1 ring-white/20'
+                ? 'bg-cyan-600/90 text-white shadow-lg shadow-cyan-600/20 translate-x-1 ring-1 ring-white/20'
                 : 'text-slate-400 hover:bg-slate-800/50 dark:hover:bg-slate-900/50 hover:text-slate-200'
                 }`}
             >
@@ -60,24 +60,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
           {isOpen ? (
             <div
               onClick={() => setActiveTab('settings')}
-              className={`bg-slate-800/50 dark:bg-slate-900/50 rounded-2xl p-4 mb-4 border border-slate-700/50 dark:border-slate-800/50 group cursor-pointer hover:bg-slate-800 dark:hover:bg-slate-900 transition-all ${activeTab === 'settings' ? 'ring-2 ring-indigo-500 border-indigo-500/50' : ''}`}
+              className={`bg-slate-800/50 dark:bg-slate-900/50 rounded-2xl p-4 mb-4 border border-slate-700/50 dark:border-slate-800/50 group cursor-pointer hover:bg-slate-800 dark:hover:bg-slate-900 transition-all ${activeTab === 'settings' ? 'ring-2 ring-cyan-500 border-cyan-500/50' : ''}`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 font-black">
+                <div className="w-10 h-10 bg-cyan-500/20 rounded-xl flex items-center justify-center text-cyan-400 font-black">
                   <User className="w-5 h-5" />
                 </div>
                 <div className="overflow-hidden">
                   <p className="text-xs font-bold text-white truncate">Usuário</p>
                   <p className="text-[10px] text-slate-500 font-medium">Configurações</p>
                 </div>
-                <Settings className={`w-4 h-4 text-slate-500 ml-auto group-hover:rotate-90 transition-transform ${activeTab === 'settings' ? 'text-indigo-400 rotate-90' : ''}`} />
+                <Settings className={`w-4 h-4 text-slate-500 ml-auto group-hover:rotate-90 transition-transform ${activeTab === 'settings' ? 'text-cyan-400 rotate-90' : ''}`} />
               </div>
             </div>
           ) : (
             <button
               onClick={() => setActiveTab('settings')}
               title="Configurações"
-              className={`w-full aspect-square bg-slate-800/50 dark:bg-slate-900/50 rounded-xl mb-4 flex items-center justify-center transition-colors ${activeTab === 'settings' ? 'text-indigo-400 bg-indigo-500/10' : 'text-slate-400 hover:text-white'}`}
+              className={`w-full aspect-square bg-slate-800/50 dark:bg-slate-900/50 rounded-xl mb-4 flex items-center justify-center transition-colors ${activeTab === 'settings' ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-400 hover:text-white'}`}
             >
               <Settings className="w-5 h-5" />
             </button>
@@ -94,7 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
               <a
                 href="https://finanzaai.tech/downloads/Financa_new.apk"
                 download
-                className="w-full py-2.5 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded-xl text-[10px] font-bold transition-colors flex items-center justify-center gap-2 border border-indigo-500/20"
+                className="w-full py-2.5 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 rounded-xl text-[10px] font-bold transition-colors flex items-center justify-center gap-2 border border-cyan-500/20"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0004.5511-.4482.9997-.9993.9997zm-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997zm11.4045-6.02l1.9973-3.4592c.1158-.201.0467-.4582-.1546-.574-.2013-.1158-.4586-.0467-.5743.1546l-2.0362 3.527c-1.4816-.6802-3.1611-1.0592-4.9458-1.077v-.004s-.0448-.0004-.0456-.0004c-.0011 0-.0456.0004-.0456.0004v.004c-1.7847.0178-3.4642.3968-4.9461 1.077L5.0945 5.4431c-.115-.2017-.3734-.2711-.574-.1553-.2013.1158-.2707.373-.1549.5744l1.9969 3.4588C2.6865 11.3855.2343 15.3524.0321 20.0006h23.9351c-.2018-4.6482-2.6541-8.6151-6.3297-10.6792z" />
@@ -103,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
               </a>
               <button
                 onClick={onOpenFeedback}
-                className="w-full py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
               >
                 <MessageSquareHeart className="w-4 h-4" />
                 Deixar Feedback
@@ -121,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center justify-center gap-1 transition-all px-2 flex-shrink-0 min-w-[64px] h-[56px] rounded-2xl active:scale-90 ${activeTab === item.id ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10' : 'text-slate-400'}`}
+              className={`flex flex-col items-center justify-center gap-1 transition-all px-2 flex-shrink-0 min-w-[64px] h-[56px] rounded-2xl active:scale-90 ${activeTab === item.id ? 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10' : 'text-slate-400'}`}
             >
               <item.icon className={`w-6 h-6 ${activeTab === item.id ? 'scale-110' : ''} transition-transform`} />
               <span className="text-[9px] font-black tracking-tight uppercase whitespace-nowrap leading-none">{item.label}</span>
