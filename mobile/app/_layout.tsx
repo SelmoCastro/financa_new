@@ -11,8 +11,8 @@ import { UpdateDialog } from '../components/UpdateDialog';
 import { initErrorReporter, reportReactError } from '../utils/errorReporter';
 import '../global.css';
 
-// Suppress expo-file-system deprecation warnings (SDK 54+ legacy API)
-LogBox.ignoreLogs(['expo-file-system', 'Method .*Async imported from "expo-file-system" is deprecated']);
+// Suppress expo-file-system deprecation warnings (SDK 54+ legacy API, used internally by expo)
+LogBox.ignoreLogs(['Method .*Async imported from "expo-file-system" is deprecated']);
 
 // Initialize global JS error handler
 initErrorReporter();

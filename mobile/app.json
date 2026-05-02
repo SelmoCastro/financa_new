@@ -2,7 +2,7 @@
   "expo": {
     "name": "Financa New",
     "slug": "mobile",
-    "version": "1.7.25",
+    "version": "1.7.26",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
@@ -25,7 +25,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 25,
+      "versionCode": 26,
       "permissions": []
     },
     "web": {
@@ -42,7 +42,7 @@
         "expo-image-picker",
         {
           "photosPermission": "O app precisa acessar suas fotos para importar comprovantes.",
-          "cameraPermission": "O app precisa acessar sua c\u00e2mera para tirar foto de comprovantes."
+          "cameraPermission": "O app precisa acessar sua câmera para tirar foto de comprovantes."
         }
       ]
     ],

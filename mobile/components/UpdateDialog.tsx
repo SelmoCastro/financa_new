@@ -1,46 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Modal, Pressable, StyleSheet, Animated, Easing } from 'react-native';
-import { useUpdateChecker, DownloadPhase } from '../hooks/useUpdateChecker';
-
-function ProgressBar({ progress }: { progress: number }) {
-    const widthAnim = useState(new Animated.Value(0))[0];
-
-    useEffect(() => {
-        Animated.timing(widthAnim, {
-            toValue: progress,
-            duration: 300,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: false,
-        }).start();
-    }, [progress]);
-
-    return (
-        <View style={styles.progressTrack}>
-            <Animated.View
-                style={[
-                    styles.progressFill,
-                    { width: widthAnim.interpolate({
-                        inputRange: [0, 100],
-                        outputRange: ['0%', '100%'],
-                    })},
-                ]}
-            />
-        </View>
-    );
-}
-
-function PhaseIcon({ phase }: { phase: DownloadPhase }) {
-    switch (phase) {
-        case 'downloading':
-            return <Text style={styles.emoji}>📥</Text>;
-        case 'ready':
-            return <Text style={styles.emoji}>✅</Text>;
-        case 'error':
-            return <Text style={styles.emoji}>❌</Text>;
-        default:
-            return <Text style={styles.emoji}>🚀</Text>;
-    }
-}
+import { View, Text, Modal, Pressable, StyleSheet } from 'react-native';
+import { useUpdateChecker } from '../hooks/useUpdateChecker';
 
 export function UpdateDialog() {
     const {
@@ -51,38 +11,25 @@ export function UpdateDialog() {
         dismissed,
         dismissUpdate,
         showUpdate,
-        startDownload,
-        installUpdate,
-        resetDownload,
-        downloadPhase,
-        downloadProgress,
+        downloadUpdate,
         errorMessage,
     } = useUpdateChecker();
     const [showToast, setShowToast] = useState(false);
 
     // Subtle toast when returning from background with update available
     useEffect(() => {
-        if (hasUpdate && dismissed && !isRequired && downloadPhase === 'idle') {
+        if (hasUpdate && dismissed && !isRequired) {
             setShowToast(true);
             const timer = setTimeout(() => setShowToast(false), 5000);
             return () => clearTimeout(timer);
         }
         return undefined;
-    }, [hasUpdate, dismissed, isRequired, downloadPhase]);
-
-    // Auto-start download when dialog appears for required updates
-    useEffect(() => {
-        if (hasUpdate && !dismissed && isRequired && downloadPhase === 'idle') {
-            startDownload();
-        }
-    }, [hasUpdate, dismissed, isRequired, downloadPhase, startDownload]);
+    }, [hasUpdate, dismissed, isRequired]);
 
     // Don't show dialog if no update or explicitly dismissed (and not required).
-    // Allow dismiss in ALL phases (idle, ready, error) — prevents infinite loop
-    // when install fails. Dismissed state persists in AsyncStorage.
     if (!hasUpdate || (dismissed && !isRequired)) {
         // Show subtle toast for dismissed optional updates
-        if (showToast && hasUpdate && !isRequired && versionInfo && downloadPhase === 'idle') {
+        if (showToast && hasUpdate && !isRequired && versionInfo) {
             return (
                 <View style={styles.toastContainer}>
                     <Pressable
@@ -117,109 +64,44 @@ export function UpdateDialog() {
         ));
     };
 
-    const renderContent = () => {
-        switch (downloadPhase) {
-            case 'downloading':
-                return (
-                    <View style={styles.downloadSection}>
-                        <Text style={styles.downloadLabel}>
-                            Baixando atualização... {downloadProgress}%
-                        </Text>
-                        <ProgressBar progress={downloadProgress} />
-                    </View>
-                );
-
-            case 'ready':
-                return (
-                    <View style={styles.readySection}>
-                        <Text style={styles.readyText}>
-                            ✅ Download concluído!
-                        </Text>
-                        <Pressable
-                            style={[styles.button, styles.buttonInstall]}
-                            onPress={installUpdate}
-                        >
-                            <Text style={styles.buttonText}>Baixar no navegador</Text>
-                        </Pressable>
-                        <Text style={styles.hintText}>
-                            O APK será baixado pelo navegador. Abra o arquivo para instalar.
-                        </Text>
-                    </View>
-                );
-
-            case 'error':
-                return (
-                    <View style={styles.readySection}>
-                        <Text style={styles.errorText}>
-                            {errorMessage || 'Erro ao atualizar'}
-                        </Text>
-                        <Pressable
-                            style={[styles.button, styles.buttonOptional]}
-                            onPress={() => {
-                                resetDownload();
-                                setTimeout(() => startDownload(), 300);
-                            }}
-                        >
-                            <Text style={styles.buttonText}>Tentar novamente</Text>
-                        </Pressable>
-                    </View>
-                );
-
-            default: // 'idle'
-                return (
-                    <>
-                        {versionInfo?.releaseNotes ? (
-                            <View style={styles.notesContainer}>
-                                {renderReleaseNotes()}
-                            </View>
-                        ) : null}
-                        <Pressable
-                            style={[styles.button, isRequired ? styles.buttonRequired : styles.buttonOptional]}
-                            onPress={startDownload}
-                        >
-                            <Text style={styles.buttonText}>
-                                {isRequired ? 'Baixar agora' : 'Baixar atualização'}
-                            </Text>
-                        </Pressable>
-                    </>
-                );
-        }
-    };
-
-    const getTitle = () => {
-        switch (downloadPhase) {
-            case 'downloading': return 'Baixando atualização...';
-            case 'ready': return 'Pronto para atualizar!';
-            case 'error': return 'Erro na atualização';
-            default: return isRequired ? 'Atualização obrigatória' : 'Nova versão disponível!';
-        }
-    };
-
     return (
         <Modal visible={true} transparent animationType="fade" statusBarTranslucent>
             <View style={styles.overlay}>
                 <View style={styles.card}>
-                    <PhaseIcon phase={downloadPhase} />
-                    <Text style={styles.title}>{getTitle()}</Text>
+                    <Text style={styles.emoji}>🚀</Text>
+                    <Text style={styles.title}>
+                        {isRequired ? 'Atualização obrigatória' : 'Nova versão disponível!'}
+                    </Text>
                     <Text style={styles.versionText}>
                         v{currentVersion} → v{versionInfo?.version}
                     </Text>
-                    {renderContent()}
-                    {/* Always show "Depois" button except during active download, even for required updates 
-                        so user can escape the dialog. On dismiss, reset any cached download. */}
-                    {downloadPhase !== 'downloading' && (
-                        <Pressable 
-                            onPress={() => {
-                                resetDownload();
-                                dismissUpdate();
-                            }} 
-                            style={styles.skipButton}
-                        >
-                            <Text style={styles.skipText}>
-                                {isRequired ? 'Lembrar mais tarde' : 'Depois'}
-                            </Text>
-                        </Pressable>
-                    )}
+                    {versionInfo?.releaseNotes ? (
+                        <View style={styles.notesContainer}>
+                            {renderReleaseNotes()}
+                        </View>
+                    ) : null}
+                    {errorMessage ? (
+                        <Text style={styles.errorText}>{errorMessage}</Text>
+                    ) : null}
+                    <Pressable
+                        style={[styles.button, isRequired ? styles.buttonRequired : styles.buttonOptional]}
+                        onPress={downloadUpdate}
+                    >
+                        <Text style={styles.buttonText}>
+                            {isRequired ? 'Baixar agora' : 'Baixar atualização'}
+                        </Text>
+                    </Pressable>
+                    <Text style={styles.hintText}>
+                        O APK será baixado pelo navegador. Abra o arquivo para instalar.
+                    </Text>
+                    <Pressable
+                        onPress={dismissUpdate}
+                        style={styles.skipButton}
+                    >
+                        <Text style={styles.skipText}>
+                            {isRequired ? 'Lembrar mais tarde' : 'Depois'}
+                        </Text>
+                    </Pressable>
                 </View>
             </View>
         </Modal>
@@ -285,52 +167,17 @@ const styles = StyleSheet.create({
     buttonOptional: {
         backgroundColor: '#6366f1',
     },
-    buttonInstall: {
-        backgroundColor: '#22c55e',
-    },
     buttonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
     },
-    downloadSection: {
-        width: '100%',
-        marginBottom: 8,
-    },
-    downloadLabel: {
-        color: '#a5b4fc',
-        fontSize: 13,
-        textAlign: 'center',
-        marginBottom: 8,
-    },
-    progressTrack: {
-        width: '100%',
-        height: 8,
-        backgroundColor: 'rgba(99,102,241,0.2)',
-        borderRadius: 4,
-        overflow: 'hidden',
-    },
-    progressFill: {
-        height: '100%',
-        backgroundColor: '#6366f1',
-        borderRadius: 4,
-    },
-    readySection: {
-        width: '100%',
-        alignItems: 'center',
-    },
-    readyText: {
-        color: '#4ade80',
-        fontSize: 15,
-        fontWeight: '600',
-        textAlign: 'center',
-        marginBottom: 12,
-    },
     hintText: {
         color: '#64748b',
         fontSize: 12,
         textAlign: 'center',
-        marginTop: 8,
+        marginTop: 4,
+        marginBottom: 12,
     },
     errorText: {
         color: '#f87171',

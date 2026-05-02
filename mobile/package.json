@@ -1,7 +1,7 @@
 {
   "name": "mobile",
   "main": "expo-router/entry",
-  "version": "1.7.25",
+  "version": "1.7.26",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -38,7 +38,6 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
-    "react-native-blob-util": "^0.24.7",
     "react-native-gifted-charts": "^1.4.76",
     "react-native-pager-view": "6.9.1",
     "react-native-reanimated": "~4.1.1",

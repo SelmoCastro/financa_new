@@ -1,5 +1,41 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+## [1.7.26](https://github.com/SelmoCastro/financa_new/compare/v1.7.25...v1.7.26) (2026-05-02)
+
+### ✨ Features
+
+* (auth) require terms acceptance on signup (web + mobile + backend)
+* (legal) add privacy policy + terms of service, fix adaptive icon, configure AAB
+* (subscription) free plan upgraded to 5/5/5/10 + goals limit
+
+### 🐛 Bug Fixes
+
+* (backend) use cascade delete for user records and simplify remove logic
+* (mobile) resolve token expiry race condition and improve session resilience
+* (mobile) remove auto-install, open APK in browser instead (simpler, no REQUEST_INSTALL_PACKAGES)
+* (backend) account balance doubled when creating account with initial balance
+* (backend) version-meta.json path resolution — controller now finds the file
+* (mobile) critical APK install failure — remove corrupted FileProvider + multi-fallback install
+* (mobile) break infinite update dialog loop + allow dismiss in all phases
+* (mobile) corrigir erros de TypeScript e bugs de runtime
+* (mobile) prevent infinite update loop on install failure
+* (mobile) corrije AppState handler para usar novo RefreshResult
+* (mobile) corrije fluxo de refresh token ao reabrir app apos 15min
+
+### 📝 Documentation
+
+* update CHANGELOG for v1.7.20
+
+### 🧹 Chores
+
+* bump version to 1.7.20
+* remove temp fix_balances script
+* bump version to 1.7.15 (versionCode 17)
+* fix package.json bump to 1.7.14
+* bump version 1.7.13 → 1.7.14
+
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
 ## [1.7.20](https://github.com/SelmoCastro/financa_new/compare/v1.7.19...v1.7.20) (2026-05-01)
