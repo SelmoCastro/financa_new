@@ -232,7 +232,7 @@ const LandingPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-6 text-xs text-slate-500">
                         <span>finanzaai.tech</span>
-                        <a href="mailto:contato@finanzaai.tech" className="hover:text-indigo-400 transition-colors">
+                        <a href="mailto:contato@finanzaai.tech" className="hover:text-cyan-400 transition-colors">
                             contato@finanzaai.tech
                         </a>
                     </div>

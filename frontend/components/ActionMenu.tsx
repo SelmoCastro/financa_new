@@ -60,8 +60,8 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                 onClick={() => { setIsDarkMode(!isDarkMode); setIsOpen(false); }}
                 className="w-full flex items-center gap-3 p-3 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors font-bold text-sm"
               >
-                <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
-                  {isDarkMode ? <Sun className="w-4 h-4 text-indigo-500" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+                <div className="p-2 bg-cyan-50 dark:bg-cyan-500/10 rounded-xl">
+                  {isDarkMode ? <Sun className="w-4 h-4 text-cyan-500" /> : <Moon className="w-4 h-4 text-cyan-500" />}
                 </div>
                 {isDarkMode ? 'Modo Claro' : 'Modo Escuro'}
               </button>

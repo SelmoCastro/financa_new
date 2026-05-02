@@ -199,7 +199,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                         setForm({ title: '', targetAmount: '', currentAmount: '', deadline: '' });
                         setIsModalOpen(true);
                     }}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-600/20 transition-all active:scale-95 flex items-center gap-3"
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-4 rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl shadow-cyan-600/20 transition-all active:scale-95 flex items-center gap-3"
                 >
                     <PlusCircle className="w-5 h-5" />
                     Nova Meta
@@ -236,12 +236,12 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                 )}
 
                                 <div className="flex justify-between items-start mb-10">
-                                    <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-[1.5rem] flex items-center justify-center shadow-sm">
+                                    <div className="w-16 h-16 bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded-[1.5rem] flex items-center justify-center shadow-sm">
                                         <Target className="w-8 h-8" />
                                     </div>
                                     <div className="flex gap-2">
                                         <div className="flex gap-2 bg-slate-50 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                            <button onClick={() => openEditModal(goal)} className="p-2.5 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm" title="Editar Meta">
+                                            <button onClick={() => openEditModal(goal)} className="p-2.5 text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm" title="Editar Meta">
                                                 <Edit3 className="w-5 h-5" />
                                             </button>
                                             <button onClick={() => handleDelete(goal)} className="p-2.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm" title="Excluir Meta">
@@ -255,7 +255,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                 </div>
 
                                 <div className="space-y-1 mb-8 min-w-0">
-                                    <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">{goal.title}</h3>
+                                    <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors truncate">{goal.title}</h3>
                                     <p className={`text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-[0.2em] ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
                                         Meta: {isPrivacyEnabled ? '•••' : formatCurrency(goal.targetAmount)}
                                     </p>
@@ -270,7 +270,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                             </span>
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
-                                            <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest ${isComplete ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'}`}>
+                                            <span className={`text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest ${isComplete ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400'}`}>
                                                 {progress.toFixed(0)}%
                                             </span>
                                         </div>
@@ -278,7 +278,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
                                     <div className="h-4 w-full bg-slate-100 dark:bg-slate-900/50 rounded-full overflow-hidden p-1 shadow-inner">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-1000 ease-out shadow-sm ${isComplete ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-600 to-indigo-400'}`}
+                                            className={`h-full rounded-full transition-all duration-1000 ease-out shadow-sm ${isComplete ? 'bg-emerald-500' : 'bg-gradient-to-r from-cyan-600 to-cyan-400'}`}
                                             style={{ width: `${progress}%` }}
                                         ></div>
                                     </div>
@@ -315,12 +315,12 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">O que você quer conquistar?</label>
                                 <div className="relative group">
-                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-cyan-500 transition-colors">
                                         <Tag className="w-5 h-5" />
                                     </div>
                                     <input
                                         autoFocus
-                                        className="w-full pl-16 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                                        className="w-full pl-16 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-slate-700 dark:text-white focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
                                         placeholder="Ex: Viagem Disney, Carro Novo..."
                                         value={form.title}
                                         onChange={e => setForm({ ...form, title: e.target.value })}
@@ -332,9 +332,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                 <div>
                                     <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Valor Alvo</label>
                                     <div className="relative group">
-                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
+                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs pointer-events-none group-focus-within:text-cyan-500 transition-colors">{currencySymbol}</span>
                                         <input
-                                            className="w-full pl-12 pr-4 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                                            className="w-full pl-12 pr-4 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
                                             placeholder="0,00"
                                             value={form.targetAmount}
                                             onChange={e => setForm({ ...form, targetAmount: formatInputCurrency(e.target.value) })}
@@ -344,9 +344,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                 <div>
                                     <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Já acumulado</label>
                                     <div className="relative group">
-                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
+                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs pointer-events-none group-focus-within:text-cyan-500 transition-colors">{currencySymbol}</span>
                                         <input
-                                            className="w-full pl-12 pr-4 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                                            className="w-full pl-12 pr-4 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
                                             placeholder="0,00"
                                             value={form.currentAmount}
                                             onChange={e => setForm({ ...form, currentAmount: formatInputCurrency(e.target.value) })}
@@ -358,12 +358,12 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Prazo Final (Opcional)</label>
                                 <div className="relative group">
-                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-cyan-500 transition-colors">
                                         <Calendar className="w-5 h-5" />
                                     </div>
                                     <input
                                         type="date"
-                                        className="w-full pl-16 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                                        className="w-full pl-16 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
                                         value={form.deadline}
                                         onChange={e => setForm({ ...form, deadline: e.target.value })}
                                     />
@@ -373,7 +373,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                             <div className="pt-4">
                                 <button
                                     type="submit"
-                                    className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 active:scale-95"
+                                    className="w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white bg-cyan-600 hover:bg-cyan-700 transition-all shadow-xl shadow-cyan-600/20 active:scale-95"
                                 >
                                     {editingGoal ? 'Atualizar Meta' : 'Criar Meta'}
                                 </button>
@@ -401,10 +401,10 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4 ml-1">Quanto você quer guardar hoje?</label>
                                 <div className="relative group">
-                                    <span className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 font-black text-2xl pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
+                                    <span className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 font-black text-2xl pointer-events-none group-focus-within:text-cyan-500 transition-colors">{currencySymbol}</span>
                                     <input
                                         autoFocus
-                                        className="w-full pl-18 pr-8 py-8 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2rem] font-black text-4xl text-slate-800 dark:text-white focus:ring-8 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tighter"
+                                        className="w-full pl-18 pr-8 py-8 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2rem] font-black text-4xl text-slate-800 dark:text-white focus:ring-8 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all placeholder:text-slate-200 dark:placeholder:text-slate-800 tracking-tighter"
                                         placeholder="0,00"
                                         value={depositAmount}
                                         onChange={e => setDepositAmount(formatInputCurrency(e.target.value))}

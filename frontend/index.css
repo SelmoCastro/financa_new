@@ -16,7 +16,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white/70 dark:bg-slate-900/50 backdrop-blur-2xl border border-white/40 dark:border-slate-800/40 shadow-[0_4px_24px_-1px_rgba(0,0,0,0.04)] dark:shadow-none transition-all duration-300 rounded-3xl hover:border-indigo-500/20 dark:hover:border-indigo-500/20;
+    @apply bg-white/70 dark:bg-slate-900/50 backdrop-blur-2xl border border-white/40 dark:border-slate-800/40 shadow-[0_4px_24px_-1px_rgba(0,0,0,0.04)] dark:shadow-none transition-all duration-300 rounded-3xl hover:border-cyan-500/20 dark:hover:border-cyan-500/20;
   }
 
   .glass-header {

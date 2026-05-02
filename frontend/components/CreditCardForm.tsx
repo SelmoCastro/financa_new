@@ -64,7 +64,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                     <div className="space-y-1">
                         <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">Pagamentos</p>
                         <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm">
+                            <div className="w-12 h-12 bg-cyan-100 dark:bg-cyan-500/10 rounded-2xl flex items-center justify-center text-cyan-600 dark:text-cyan-400 shadow-sm">
                                 <CreditCardIcon className="w-6 h-6" />
                             </div>
                             {cardToEdit ? 'Editar Cartão' : 'Novo Cartão'}
@@ -83,7 +83,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                             required
                             value={name}
                             onChange={e => setName(e.target.value)}
-                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
+                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all outline-none"
                             placeholder="Ex: Nubank, Itaú Black..."
                         />
                     </div>
@@ -91,14 +91,14 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                     <div className="space-y-3">
                         <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Limite do Cartão</label>
                         <div className="relative group">
-                            <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-black text-lg pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
+                            <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-black text-lg pointer-events-none group-focus-within:text-cyan-500 transition-colors">{currencySymbol}</span>
                             <input
                                 type="number"
                                 step="0.01"
                                 required
                                 value={limit}
                                 onChange={e => setLimit(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl pl-14 pr-6 py-5 text-slate-800 dark:text-white font-black text-2xl tracking-tighter focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl pl-14 pr-6 py-5 text-slate-800 dark:text-white font-black text-2xl tracking-tighter focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all outline-none"
                                 placeholder="0,00"
                             />
                         </div>
@@ -113,7 +113,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                                 required
                                 value={closingDay}
                                 onChange={e => setClosingDay(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all outline-none"
                                 placeholder="Dia"
                             />
                         </div>
@@ -125,7 +125,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                                 required
                                 value={dueDay}
                                 onChange={e => setDueDay(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all outline-none"
                                 placeholder="Dia"
                             />
                         </div>
@@ -138,7 +138,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                                 required
                                 value={accountId}
                                 onChange={e => setAccountId(e.target.value)}
-                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none appearance-none transition-all cursor-pointer"
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none appearance-none transition-all cursor-pointer"
                             >
                                 <option value="" disabled>Selecione uma conta...</option>
                                 {accounts.map(acc => (
@@ -162,7 +162,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="flex-1 px-6 py-5 text-white font-black uppercase tracking-widest text-[10px] bg-indigo-600 hover:bg-indigo-700 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-6 py-5 text-white font-black uppercase tracking-widest text-[10px] bg-cyan-600 hover:bg-cyan-700 rounded-2xl shadow-xl shadow-cyan-600/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? 'Salvando...' : 'Salvar Cartão'}
                         </button>

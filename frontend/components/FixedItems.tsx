@@ -85,8 +85,8 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                         <h3 className="text-lg font-bold text-slate-800 dark:text-white">Recorrentes</h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">Gerencie seus valores recorrentes</p>
                     </div>
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg">
-                        <Anchor className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <div className="p-2 bg-cyan-50 dark:bg-cyan-500/10 rounded-lg">
+                        <Anchor className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                     </div>
                 </div>
 
@@ -99,7 +99,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                     ) : (
                         <div className="grid gap-4">
                             {items.map((item, idx) => (
-                                <div key={`${item.name}-${idx}`} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 transition-all hover:bg-white dark:hover:bg-slate-750 hover:shadow-md hover:border-indigo-100 dark:hover:border-indigo-500/20 group">
+                                <div key={`${item.name}-${idx}`} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 transition-all hover:bg-white dark:hover:bg-slate-750 hover:shadow-md hover:border-cyan-100 dark:hover:border-cyan-500/20 group">
                                     {editingId === item.lastTransactionId ? (
                                         <div className="flex flex-col md:flex-row gap-4 items-end md:items-center w-full">
                                             <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-12 gap-3">
@@ -109,7 +109,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                                                         type="text"
                                                         value={editForm.name}
                                                         onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                                        className="w-full px-3 py-2 text-slate-700 dark:text-white bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        className="w-full px-3 py-2 text-slate-700 dark:text-white bg-white dark:bg-slate-900 border border-cyan-200 dark:border-cyan-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                                         placeholder="Nome"
                                                     />
                                                 </div>
@@ -120,7 +120,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                                                         min="1" max="31"
                                                         value={editForm.day}
                                                         onChange={(e) => setEditForm({ ...editForm, day: e.target.value })}
-                                                        className="w-full px-3 py-2 text-center text-slate-700 dark:text-white bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        className="w-full px-3 py-2 text-center text-slate-700 dark:text-white bg-white dark:bg-slate-900 border border-cyan-200 dark:border-cyan-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                                     />
                                                 </div>
                                                 <div className="md:col-span-4">
@@ -129,7 +129,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                                                         type="number"
                                                         value={editForm.amount}
                                                         onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
-                                                        className="w-full px-3 py-2 text-right font-bold text-slate-700 dark:text-white bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        className="w-full px-3 py-2 text-right font-bold text-slate-700 dark:text-white bg-white dark:bg-slate-900 border border-cyan-200 dark:border-cyan-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                                     />
                                                 </div>
                                             </div>
@@ -162,7 +162,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={() => handleEditClick(item)}
-                                                        className="px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 rounded-lg transition-colors border border-indigo-200 dark:border-indigo-500/20"
+                                                        className="px-3 py-1.5 text-xs font-semibold text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 rounded-lg transition-colors border border-cyan-200 dark:border-cyan-500/20"
                                                     >
                                                         ✏️ Editar
                                                     </button>
@@ -182,10 +182,10 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                     )}
                 </div>
 
-                <div className="mt-8 p-4 bg-indigo-50/50 dark:bg-indigo-500/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/20">
+                <div className="mt-8 p-4 bg-cyan-50/50 dark:bg-cyan-500/10 rounded-2xl border border-cyan-100/50 dark:border-cyan-500/20">
                     <div className="flex gap-3">
-                        <Info className="w-5 h-5 text-indigo-500 dark:text-indigo-400 shrink-0 mt-0.5" />
-                        <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed">
+                        <Info className="w-5 h-5 text-cyan-500 dark:text-cyan-400 shrink-0 mt-0.5" />
+                        <p className="text-xs text-cyan-700 dark:text-cyan-300 leading-relaxed">
                             <strong>Controle Total:</strong> Aqui você edita o lançamento mais recente de cada despesa ou receita recorrente.
                             Alterar o <strong>Nome</strong>, <strong>Dia</strong> ou <strong>Valor</strong> refletirá imediatamente nas suas projeções.
                             Ao <strong>Excluir</strong>, você remove o lançamento atual e o sistema deixará de considerá-lo nas previsões futuras até que apareça novamente.

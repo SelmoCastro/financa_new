@@ -30,12 +30,12 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
     return (
         <div className="max-w-4xl mx-auto space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="text-center space-y-3">
-                <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-[0.3em] mb-1">Jornada Temporal</p>
+                <p className="text-[10px] font-black uppercase text-cyan-600 dark:text-cyan-400 tracking-[0.3em] mb-1">Jornada Temporal</p>
                 <h3 className="text-3xl md:text-4xl font-black text-slate-800 dark:text-white tracking-tight">Caminho Financeiro</h3>
                 <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium px-4">Sua história detalhada dia após dia</p>
             </div>
             <div className="relative px-2 md:px-0">
-                <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 via-violet-500 to-slate-200 dark:to-slate-800 -translate-x-1/2 rounded-full hidden md:block"></div>
+                <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 via-blue-500 to-slate-200 dark:to-slate-800 -translate-x-1/2 rounded-full hidden md:block"></div>
                 <div className="space-y-16 md:space-y-24">
                     {transactionsGroupedByDate.map((group, groupIdx) => {
                         const dateObj = new Date(group.date + 'T12:00:00');
@@ -57,9 +57,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
                                                         <div className="space-y-2 overflow-hidden">
                                                             <div className="flex items-center gap-3">
                                                                 <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest bg-slate-50 dark:bg-slate-900 px-3 py-1 rounded-lg truncate">{tx.category?.name || tx.categoryLegacy || 'Outros'}</span>
-                                                                {tx.isFixed && <Repeat className="w-4 h-4 text-indigo-400" />}
+                                                                {tx.isFixed && <Repeat className="w-4 h-4 text-cyan-400" />}
                                                             </div>
-                                                            <h4 className="font-black text-slate-800 dark:text-white text-lg md:text-xl tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">{tx.description}</h4>
+                                                            <h4 className="font-black text-slate-800 dark:text-white text-lg md:text-xl tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors truncate">{tx.description}</h4>
                                                         </div>
                                                         <p className={`font-black text-lg md:text-xl tracking-tighter whitespace-nowrap ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'}`}>
                                                             {tx.type === 'INCOME' ? '+' : '-'} {formatCurrency(Number(tx.amount))}
@@ -67,7 +67,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="absolute left-8 md:left-1/2 w-4 h-4 md:w-6 md:h-6 rounded-full bg-white dark:bg-slate-900 border-4 md:border-8 border-indigo-500 -translate-x-1/2 z-0 hidden md:block shadow-lg"></div>
+                                            <div className="absolute left-8 md:left-1/2 w-4 h-4 md:w-6 md:h-6 rounded-full bg-white dark:bg-slate-900 border-4 md:border-8 border-cyan-500 -translate-x-1/2 z-0 hidden md:block shadow-lg"></div>
                                             <div className="hidden md:block w-1/2"></div>
                                         </div>
                                     ))}

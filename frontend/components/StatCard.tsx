@@ -12,7 +12,7 @@ interface StatCardProps {
 
 export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, trendUp, color, isVisible = true }) => {
   return (
-    <div className="group relative glass-card p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+    <div className="group relative glass-card p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] hover:shadow-xl hover:shadow-cyan-500/5 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/0 dark:from-white/5 dark:to-transparent rounded-[1.5rem] sm:rounded-[2rem] pointer-events-none" />
       <div className="relative flex flex-col justify-between h-full space-y-4">
         <div className="flex justify-between items-start">

@@ -64,7 +64,7 @@ export const VerifyEmail: React.FC = () => {
                             ? 'bg-rose-600 shadow-rose-600/40 text-white' 
                             : status === 'pending'
                                 ? 'bg-amber-500 shadow-amber-500/40 text-white'
-                                : 'bg-indigo-600 shadow-indigo-600/40 text-white'
+                                : 'bg-cyan-600 shadow-cyan-600/40 text-white'
                 }`}>
                     {status === 'loading' && <span className="text-5xl animate-spin">⏳</span>}
                     {status === 'success' && <span className="text-5xl">✅</span>}
@@ -77,7 +77,7 @@ export const VerifyEmail: React.FC = () => {
                         status === 'success' ? 'text-emerald-600 dark:text-emerald-400' 
                         : status === 'error' ? 'text-rose-600 dark:text-rose-400' 
                         : status === 'pending' ? 'text-amber-600 dark:text-amber-400'
-                        : 'text-indigo-600 dark:text-indigo-400'
+                        : 'text-cyan-600 dark:text-cyan-400'
                     }`}>
                         Autenticação
                     </p>
@@ -121,7 +121,7 @@ export const VerifyEmail: React.FC = () => {
                             className={`w-full py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 shadow-2xl ${
                                 status === 'success' 
                                     ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30 text-white' 
-                                    : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30 text-white'
+                                    : 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-600/30 text-white'
                             }`}
                         >
                             {status === 'success' ? 'Acessar Minha Conta' : 'Voltar para Login'}

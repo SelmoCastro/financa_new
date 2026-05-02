@@ -47,7 +47,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ onClose }) => {
                     <div className="space-y-1">
                         <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">Comunicação</p>
                         <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm">
+                            <div className="w-12 h-12 bg-cyan-100 dark:bg-cyan-500/10 rounded-2xl flex items-center justify-center text-cyan-600 dark:text-cyan-400 shadow-sm">
                                 <MessageSquareHeart className="w-6 h-6" />
                             </div>
                             Feedback
@@ -66,7 +66,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ onClose }) => {
                             rows={6}
                             value={content}
                             onChange={e => setContent(e.target.value)}
-                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-5 text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none resize-none text-base leading-relaxed placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-5 text-slate-800 dark:text-white font-bold focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all outline-none resize-none text-base leading-relaxed placeholder:text-slate-400 dark:placeholder:text-slate-600"
                             placeholder="Escreva aqui sua ideia, elogio ou relato de algum bug..."
                         />
                     </div>
@@ -82,7 +82,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ onClose }) => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="flex-1 px-6 py-5 text-white font-black uppercase tracking-widest text-[10px] bg-indigo-600 hover:bg-indigo-700 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="flex-1 px-6 py-5 text-white font-black uppercase tracking-widest text-[10px] bg-cyan-600 hover:bg-cyan-700 rounded-2xl shadow-xl shadow-cyan-600/20 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {isLoading ? 'Enviando...' : 'Enviar Feedback'}
                         </button>

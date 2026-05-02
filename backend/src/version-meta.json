@@ -1,6 +1,6 @@
 {
-  "version": "1.7.36",
-  "mobileVersion": "1.7.36",
+  "version": "1.7.37",
+  "mobileVersion": "1.7.37",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Aplica alterações manuais no Login e Landing Page do frontend."
+  "releaseNotes": "Sincronização de ícones entre versões Mobile e Web usando os assets do diretório mobile."
 }

@@ -193,7 +193,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             <div className="relative group">
               <input
                 autoFocus
-                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-700"
                 placeholder="Ex: Aluguel, Academia, Salário..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -205,11 +205,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Valor</label>
               <div className="relative group">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 font-black text-sm pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 font-black text-sm pointer-events-none group-focus-within:text-cyan-500 transition-colors">{currencySymbol}</span>
                 <input
                   type="text"
                   inputMode="numeric"
-                  className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 dark:text-white"
+                  className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-black text-slate-800 dark:text-white"
                   value={displayAmount}
                   placeholder="0,00"
                   onChange={handleAmountChange}
@@ -220,7 +220,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
               <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Data</label>
               <input
                 type="date"
-                className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-700 dark:text-white"
+                className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-black text-slate-700 dark:text-white"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
@@ -233,7 +233,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 ml-1">Categoria</label>
                 <div className="relative group">
                   <select
-                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
                   >
@@ -277,7 +277,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       </>
                     )}
                   </select>
-                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-cyan-500 transition-colors">
                     <ChevronDown className="w-5 h-5" />
                   </div>
                 </div>
@@ -290,7 +290,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 <div className="relative group">
                   <select
                     required
-                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
+                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
                     value={accountId}
                     onChange={(e) => setAccountId(e.target.value)}
                   >
@@ -299,7 +299,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       <option key={acc.id} value={acc.id}>{acc.name} ({ACCOUNT_TYPE_LABELS[acc.type] || acc.type})</option>
                     ))}
                   </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-cyan-500 transition-colors">
                     <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
@@ -313,7 +313,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   {type === 'TRANSFER' ? (
                     <select
                       required
-                      className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
+                      className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
                       value={destinationAccountId}
                       onChange={(e) => setDestinationAccountId(e.target.value)}
                     >
@@ -324,7 +324,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     </select>
                   ) : (
                     <select
-                      className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
+                      className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 dark:text-white appearance-none cursor-pointer"
                       value={creditCardId}
                       onChange={(e) => {
                         setCreditCardId(e.target.value);
@@ -342,7 +342,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                       ))}
                     </select>
                   )}
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-cyan-500 transition-colors">
                     <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
@@ -351,28 +351,28 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           </div>
 
           <div className="space-y-2 pt-2">
-            <label className="block text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-              <span className="w-2 h-2 bg-indigo-500 dark:bg-indigo-400 rounded-full animate-pulse shadow-lg shadow-indigo-500/50"></span>
+            <label className="block text-[10px] font-black text-cyan-500 dark:text-cyan-400 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+              <span className="w-2 h-2 bg-cyan-500 dark:bg-cyan-400 rounded-full animate-pulse shadow-lg shadow-cyan-500/50"></span>
               Compartilhar (Email Amigo)
             </label>
             <input
               type="email"
-              className="w-full px-6 py-4 bg-indigo-50/20 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-950 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-300 dark:placeholder:text-indigo-900/30"
+              className="w-full px-6 py-4 bg-cyan-50/20 dark:bg-cyan-500/5 border border-cyan-100 dark:border-cyan-950 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-300 dark:placeholder:text-cyan-900/30"
               placeholder="email@amigo.com"
               value={sharedWithEmail}
               onChange={(e) => setSharedWithEmail(e.target.value)}
             />
           </div>
 
-          <div className={`flex items-center gap-4 p-5 rounded-[1.5rem] border group cursor-pointer transition-all hover:bg-slate-100 dark:hover:bg-slate-900 ${isFixed ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30' : 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800'}`} onClick={() => setIsFixed(!isFixed)}>
-            <div className={`w-7 h-7 rounded-xl flex items-center justify-center border-2 transition-all shadow-sm ${isFixed ? 'bg-indigo-600 border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'}`}>
+          <div className={`flex items-center gap-4 p-5 rounded-[1.5rem] border group cursor-pointer transition-all hover:bg-slate-100 dark:hover:bg-slate-900 ${isFixed ? 'bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/30' : 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800'}`} onClick={() => setIsFixed(!isFixed)}>
+            <div className={`w-7 h-7 rounded-xl flex items-center justify-center border-2 transition-all shadow-sm ${isFixed ? 'bg-cyan-600 border-cyan-600 dark:bg-cyan-500 dark:border-cyan-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'}`}>
               {isFixed && <Check className="w-5 h-5 text-white" />}
             </div>
             <div className="flex-1">
               <span className="text-sm font-black text-slate-700 dark:text-slate-200 tracking-tight">Lançamento Recorrente</span>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-0.5">{isFixed ? 'Ativado — repete todo mês' : 'Repetir todos os meses'}</p>
             </div>
-            {isFixed && <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-500/20 px-3 py-1 rounded-full">Ativo</span>}
+            {isFixed && <span className="text-[10px] font-black uppercase tracking-widest text-cyan-600 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-500/20 px-3 py-1 rounded-full">Ativo</span>}
           </div>
 
           <button

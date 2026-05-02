@@ -68,7 +68,7 @@ export const FeedbackAdminView: React.FC = () => {
             <section>
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-3">
-                        <span className="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
+                        <span className="p-2 bg-cyan-100 text-cyan-600 rounded-xl">
                             <MessageSquare className="w-5 h-5" />
                         </span>
                         Feedback dos Usuários
@@ -122,7 +122,7 @@ export const FeedbackAdminView: React.FC = () => {
                                     <div className="flex justify-center mt-2">
                                         <button
                                             onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                                            className="text-xs font-bold text-indigo-500 flex items-center gap-1"
+                                            className="text-xs font-bold text-cyan-500 flex items-center gap-1"
                                         >
                                             {expandedId === item.id ? <><ChevronUp className="w-3 h-3" /> Menos</> : <><ChevronDown className="w-3 h-3" /> Ler mais</>}
                                         </button>

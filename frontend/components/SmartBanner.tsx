@@ -24,7 +24,7 @@ export const SmartBanner: React.FC = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg h-[52px]">
+    <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-cyan-600 to-cyan-700 text-white shadow-lg h-[52px]">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 h-full gap-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           {/* Android icon */}
@@ -35,12 +35,12 @@ export const SmartBanner: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-black tracking-wide truncate">Finanza AI para Android</p>
-            <p className="text-[10px] text-indigo-200 font-medium truncate">Melhor experiência no app nativo</p>
+            <p className="text-[10px] text-cyan-200 font-medium truncate">Melhor experiência no app nativo</p>
           </div>
         </div>
         <a
           href={ANDROID_APK_URL}
-          className="flex-shrink-0 bg-white text-indigo-700 font-black text-[10px] uppercase tracking-widest px-5 py-2 rounded-xl hover:bg-indigo-50 transition-all active:scale-95 shadow-md"
+          className="flex-shrink-0 bg-white text-cyan-700 font-black text-[10px] uppercase tracking-widest px-5 py-2 rounded-xl hover:bg-cyan-50 transition-all active:scale-95 shadow-md"
         >
           Baixar App
         </a>

@@ -50,8 +50,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                 </div>
                                 <div className="min-w-0 space-y-1">
                                     <div className="flex items-center gap-2">
-                                        <p className="font-black text-slate-800 dark:text-white text-base group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate tracking-tight">{tx.description}</p>
-                                        {tx.isFixed && <Repeat className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />}
+                                        <p className="font-black text-slate-800 dark:text-white text-base group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors truncate tracking-tight">{tx.description}</p>
+                                        {tx.isFixed && <Repeat className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[8px] uppercase font-black tracking-widest text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg truncate">{tx.category?.name || tx.categoryLegacy || 'Outros'}</span>
@@ -64,7 +64,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                     {isPrivacyEnabled ? '•••••••' : `${tx.type === 'INCOME' ? '+' : '-'} ${formatCurrency(Number(tx.amount))}`}
                                 </p>
                                 <div className="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <button onClick={() => onEdit(tx)} className="p-2 text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all shadow-sm"><Edit3 className="w-4 h-4" /></button>
+                                    <button onClick={() => onEdit(tx)} className="p-2 text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all shadow-sm"><Edit3 className="w-4 h-4" /></button>
                                     <button onClick={() => onDelete(tx.id)} className="p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all shadow-sm"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                             </div>
@@ -83,17 +83,17 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                         </div>
                         <div className="flex gap-2 p-1.5 bg-slate-100 dark:bg-slate-950 rounded-[1.5rem] border border-slate-200/50 dark:border-slate-800/50">
                             {['ALL', 'INCOME', 'EXPENSE'].map((type) => (
-                                <button key={type} onClick={() => setFilterType(type as any)} className={`px-8 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 ${filterType === type ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xl shadow-indigo-600/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
+                                <button key={type} onClick={() => setFilterType(type as any)} className={`px-8 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 ${filterType === type ? 'bg-white dark:bg-slate-900 text-cyan-600 dark:text-cyan-400 shadow-xl shadow-cyan-600/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
                                     {type === 'ALL' ? 'Todos' : type === 'INCOME' ? 'Ganhos' : 'Gastos'}
                                 </button>
                             ))}
                         </div>
                     </div>
                     <div className="relative group">
-                        <div className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors">
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 group-focus-within:text-cyan-500 transition-colors">
                             <Search className="w-5 h-5" />
                         </div>
-                        <input type="text" placeholder="Pesquise por descrição ou categoria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-16 pr-8 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600" />
+                        <input type="text" placeholder="Pesquise por descrição ou categoria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-16 pr-8 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                     </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -109,12 +109,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {filteredHistory.map((tx) => (
-                                <tr key={tx.id} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-colors group">
+                                <tr key={tx.id} className="hover:bg-cyan-50/30 dark:hover:bg-cyan-500/5 transition-colors group">
                                     <td className="px-10 py-6">
                                         <div className="flex items-center gap-4">
                                             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${tx.type === 'INCOME' ? 'bg-emerald-400' : 'bg-rose-400'}`}></div>
                                             <div className="min-w-0">
-                                                <span className="font-black text-slate-800 dark:text-white text-base tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors block truncate">{tx.description}</span>
+                                                <span className="font-black text-slate-800 dark:text-white text-base tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors block truncate">{tx.description}</span>
                                             </div>
                                         </div>
                                     </td>
@@ -129,7 +129,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                     </td>
                                     <td className="px-10 py-6 text-right">
                                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                            <button onClick={() => onEdit(tx)} className="p-3 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700"><Edit3 className="w-4 h-4" /></button>
+                                            <button onClick={() => onEdit(tx)} className="p-3 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700"><Edit3 className="w-4 h-4" /></button>
                                             <button onClick={() => onDelete(tx.id)} className="p-3 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700"><Trash2 className="w-4 h-4" /></button>
                                         </div>
                                     </td>

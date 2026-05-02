@@ -5,88 +5,88 @@ import { PrismaService } from '../prisma/prisma.service';
 
 const STANDARD_CATEGORIES = [
   // Entradas (Rendas)
-  { name: 'Salário', type: 'INCOME', color: '#10b981', icon: '💰' },
-  { name: 'Renda Extra', type: 'INCOME', color: '#059669', icon: '📈' },
+  { name: 'Salário', type: 'INCOME', color: '#10b981', icon: 'Banknote' },
+  { name: 'Renda Extra', type: 'INCOME', color: '#059669', icon: 'TrendingUp' },
   {
     name: 'Rendimento de Investimentos',
     type: 'INCOME',
     color: '#34d399',
-    icon: '🏦',
+    icon: 'Building2',
   },
   {
     name: 'Transferência Recebida',
     type: 'TRANSFER',
     color: '#6ee7b7',
-    icon: '🔄',
+    icon: 'RefreshCw',
   },
-  { name: 'Empréstimo Recebido', type: 'INCOME', color: '#a7f3d0', icon: '🤝' },
+  { name: 'Empréstimo Recebido', type: 'INCOME', color: '#a7f3d0', icon: 'Handshake' },
 
   // Necessidades (Essencial)
-  { name: 'Moradia', type: 'EXPENSE', color: '#ef4444', icon: '🏠' },
+  { name: 'Moradia', type: 'EXPENSE', color: '#ef4444', icon: 'Home' },
   {
     name: 'Contas Residenciais',
     type: 'EXPENSE',
     color: '#dc2626',
-    icon: '💡',
+    icon: 'Lightbulb',
   },
-  { name: 'Mercado / Padaria', type: 'EXPENSE', color: '#f87171', icon: '🛒' },
-  { name: 'Transporte Fixo', type: 'EXPENSE', color: '#b91c1c', icon: '🚌' },
+  { name: 'Mercado / Padaria', type: 'EXPENSE', color: '#f87171', icon: 'ShoppingCart' },
+  { name: 'Transporte Fixo', type: 'EXPENSE', color: '#b91c1c', icon: 'Bus' },
   {
     name: 'Combustível / Gasolina',
     type: 'EXPENSE',
     color: '#ea580c',
-    icon: '⛽',
+    icon: 'Fuel',
   },
-  { name: 'Saúde e Farmácia', type: 'EXPENSE', color: '#fca5a5', icon: '⚕️' },
-  { name: 'Educação', type: 'EXPENSE', color: '#991b1b', icon: '📚' },
+  { name: 'Saúde e Farmácia', type: 'EXPENSE', color: '#fca5a5', icon: 'Stethoscope' },
+  { name: 'Educação', type: 'EXPENSE', color: '#991b1b', icon: 'GraduationCap' },
   {
     name: 'Impostos Anuais e Seguros',
     type: 'EXPENSE',
     color: '#7f1d1d',
-    icon: '🛡️',
+    icon: 'Shield',
   },
-  { name: 'Impostos Mensais', type: 'EXPENSE', color: '#fecaca', icon: '📄' },
+  { name: 'Impostos Mensais', type: 'EXPENSE', color: '#fecaca', icon: 'FileText' },
 
   // Desejos (Estilo de Vida)
   {
     name: 'Restaurante / Delivery',
     type: 'EXPENSE',
     color: '#f59e0b',
-    icon: '🍔',
+    icon: 'Utensils',
   },
-  { name: 'Transporte App', type: 'EXPENSE', color: '#d97706', icon: '🚕' },
+  { name: 'Transporte App', type: 'EXPENSE', color: '#d97706', icon: 'Car' },
   {
     name: 'Lazer / Assinaturas',
     type: 'EXPENSE',
     color: '#fbbf24',
-    icon: '🎬',
+    icon: 'Clapperboard',
   },
   {
     name: 'Compras / Vestuário',
     type: 'EXPENSE',
     color: '#b45309',
-    icon: '🛍️',
+    icon: 'ShoppingBag',
   },
-  { name: 'Cuidados Pessoais', type: 'EXPENSE', color: '#fcd34d', icon: '💅' },
-  { name: 'Cuidados com Pets', type: 'EXPENSE', color: '#fb923c', icon: '🐾' },
-  { name: 'Viagens', type: 'EXPENSE', color: '#78350f', icon: '✈️' },
+  { name: 'Cuidados Pessoais', type: 'EXPENSE', color: '#fcd34d', icon: 'Sparkles' },
+  { name: 'Cuidados com Pets', type: 'EXPENSE', color: '#fb923c', icon: 'Dog' },
+  { name: 'Viagens', type: 'EXPENSE', color: '#78350f', icon: 'Plane' },
 
   // Objetivos (Quitação e Reserva)
   {
     name: 'Aplicações / Poupança',
     type: 'EXPENSE',
     color: '#3b82f6',
-    icon: '🐷',
+    icon: 'PiggyBank',
   },
   {
     name: 'Pagamento de Dívidas',
     type: 'EXPENSE',
     color: '#2563eb',
-    icon: '💳',
+    icon: 'CreditCard',
   },
 
   // Sistema
-  { name: 'Saldo Inicial', type: 'INCOME', color: '#6366f1', icon: '💰' },
+  { name: 'Saldo Inicial', type: 'INCOME', color: '#06b6d4', icon: 'Banknote' },
 ];
 
 @Injectable()

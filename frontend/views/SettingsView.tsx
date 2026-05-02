@@ -157,14 +157,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                 type="text"
                                 value={nameValue}
                                 onChange={(e) => { setNameValue(e.target.value); if (!editingName) setEditingName(true); }}
-                                className={`flex-1 px-5 py-4 bg-slate-50 dark:bg-slate-950 border rounded-2xl font-black text-slate-700 dark:text-white outline-none transition-all ${editingName ? 'border-indigo-500 ring-4 ring-indigo-500/10' : 'border-slate-200 dark:border-slate-800'}`}
+                                className={`flex-1 px-5 py-4 bg-slate-50 dark:bg-slate-950 border rounded-2xl font-black text-slate-700 dark:text-white outline-none transition-all ${editingName ? 'border-cyan-500 ring-4 ring-cyan-500/10' : 'border-slate-200 dark:border-slate-800'}`}
                                 placeholder="Seu nome"
                             />
                             {editingName && (
                                 <button
                                     onClick={handleSaveName}
                                     disabled={nameSaving}
-                                    className="px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                                    className="px-6 py-4 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
                                 >
                                     {nameSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                     Salvar
@@ -193,24 +193,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
 
                         {/* Change email form */}
                         {showChangeEmail && (
-                            <div className="mt-4 p-6 bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl space-y-4">
+                            <div className="mt-4 p-6 bg-cyan-50/50 dark:bg-cyan-500/5 border border-cyan-100 dark:border-cyan-500/20 rounded-2xl space-y-4">
                                 <input
                                     type="email"
                                     value={newEmail}
                                     onChange={(e) => setNewEmail(e.target.value)}
-                                    className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500"
+                                    className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
                                     placeholder="Novo e-mail"
                                 />
                                 <input
                                     type="password"
                                     value={emailPass}
                                     onChange={(e) => setEmailPass(e.target.value)}
-                                    className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500"
+                                    className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
                                     placeholder="Confirme sua senha"
                                 />
                                 <div className="flex gap-3">
                                     <button onClick={handleChangeEmail} disabled={emailSaving || !newEmail || !emailPass}
-                                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2">
+                                        className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2">
                                         {emailSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                         Confirmar Alteração
                                     </button>
@@ -239,26 +239,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                         </div>
 
                         {showChangePassword && (
-                            <div className="mt-4 p-6 bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl space-y-4">
+                            <div className="mt-4 p-6 bg-cyan-50/50 dark:bg-cyan-500/5 border border-cyan-100 dark:border-cyan-500/20 rounded-2xl space-y-4">
                                 <input
                                     type="password"
                                     value={currentPass}
                                     onChange={(e) => setCurrentPass(e.target.value)}
-                                    className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500"
+                                    className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
                                     placeholder="Senha atual"
                                 />
                                 <input
                                     type="password"
                                     value={newPass}
                                     onChange={(e) => setNewPass(e.target.value)}
-                                    className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500"
+                                    className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
                                     placeholder="Nova senha (mín. 8 caracteres, letras e números)"
                                 />
                                 <input
                                     type="password"
                                     value={confirmPass}
                                     onChange={(e) => setConfirmPass(e.target.value)}
-                                    className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500"
+                                    className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
                                     placeholder="Confirmar nova senha"
                                 />
                                 {newPass && confirmPass && newPass !== confirmPass && (
@@ -266,7 +266,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                 )}
                                 <div className="flex gap-3">
                                     <button onClick={handleChangePassword} disabled={passSaving || !currentPass || !newPass || newPass !== confirmPass}
-                                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2">
+                                        className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2">
                                         {passSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                         Alterar Senha
                                     </button>
@@ -284,11 +284,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
                             <Crown className="w-3 h-3" /> Plano Atual
                         </label>
-                        <div className="mt-3 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-500/10 dark:to-purple-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-2xl">
+                        <div className="mt-3 p-6 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-500/10 dark:to-blue-500/10 border border-cyan-100 dark:border-cyan-500/20 rounded-2xl">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-lg font-black text-indigo-600 dark:text-indigo-400">
+                                        <span className="text-lg font-black text-cyan-600 dark:text-cyan-400">
                                             {isPremium ? 'Premium' : 'Gratuito'}
                                         </span>
                                         {isPremium && (
@@ -301,7 +301,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                             : '10 pedidos de IA/dia, 5 contas, 5 orçamentos, 5 metas'}
                                     </p>
                                 </div>
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isPremium ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isPremium ? 'bg-cyan-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
                                     <Crown className="w-7 h-7" />
                                 </div>
                             </div>
@@ -385,7 +385,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                             onClick={handleExportData}
                             className="flex items-center gap-6 p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group shadow-sm active:scale-95 w-full"
                         >
-                            <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                            <div className="w-14 h-14 bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             </div>
                             <div className="text-left">

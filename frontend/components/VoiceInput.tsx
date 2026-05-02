@@ -69,7 +69,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onResult, isProcessing =
             disabled={isProcessing}
             className={`p-3 rounded-full transition-all duration-300 flex items-center justify-center shadow-lg ${isListening
                     ? 'bg-rose-500 text-white animate-pulse ring-4 ring-rose-200'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105'
+                    : 'bg-cyan-600 text-white hover:bg-cyan-700 hover:scale-105'
                 }`}
             title={isListening ? 'Ouvindo... (Toque para parar)' : 'Falar Transação'}
         >

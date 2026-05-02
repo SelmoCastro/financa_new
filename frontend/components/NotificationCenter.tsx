@@ -95,7 +95,7 @@ export const NotificationCenter: React.FC = () => {
         <div className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 md:p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all active:scale-95 shadow-sm"
+                className="relative p-2 md:p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all active:scale-95 shadow-sm"
             >
                 <Bell className="w-4 h-4 md:w-5 h-5" />
                 {invites.length > 0 && (
@@ -110,11 +110,11 @@ export const NotificationCenter: React.FC = () => {
                             <X className="w-5 h-5" />
                         </button>
                         
-                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-indigo-50/50 dark:bg-slate-950/50 text-center relative shrink-0">
-                           <div className="w-20 h-20 bg-white dark:bg-slate-900 shadow-xl shadow-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-[2rem] flex items-center justify-center mx-auto mb-6 relative z-10 border border-indigo-100 dark:border-indigo-500/20">
+                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-cyan-50/50 dark:bg-slate-950/50 text-center relative shrink-0">
+                           <div className="w-20 h-20 bg-white dark:bg-slate-900 shadow-xl shadow-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded-[2rem] flex items-center justify-center mx-auto mb-6 relative z-10 border border-cyan-100 dark:border-cyan-500/20">
                                <Bell className="w-10 h-10 animate-bounce" />
                            </div>
-                           <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-[0.3em] mb-2 relative z-10">Central de Ações</p>
+                           <p className="text-[10px] font-black uppercase text-cyan-600 dark:text-cyan-400 tracking-[0.3em] mb-2 relative z-10">Central de Ações</p>
                            <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight relative z-10">Notificações</h2>
                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium relative z-10 mt-2">Você tem {invites.length} {invites.length === 1 ? 'pendência' : 'pendências'} para revisar</p>
                         </div>
@@ -129,7 +129,7 @@ export const NotificationCenter: React.FC = () => {
                                 </div>
                             ) : (
                                 invites.map((invite) => (
-                                    <div key={invite.id} className="p-6 border border-slate-100 dark:border-slate-800 rounded-[2rem] bg-white dark:bg-slate-950/50 shadow-sm hover:border-indigo-100 dark:hover:border-indigo-500/30 transition-all duration-300">
+                                    <div key={invite.id} className="p-6 border border-slate-100 dark:border-slate-800 rounded-[2rem] bg-white dark:bg-slate-950/50 shadow-sm hover:border-cyan-100 dark:hover:border-cyan-500/30 transition-all duration-300">
                                         <div className="flex items-start gap-4 mb-6">
                                             <div className={`p-3.5 rounded-2xl shadow-sm ${invite.type === 'EXPENSE' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
                                                 {invite.type === 'EXPENSE' ? <ArrowDownLeft className="w-6 h-6" /> : <ArrowUpRight className="w-6 h-6" />}
@@ -155,7 +155,7 @@ export const NotificationCenter: React.FC = () => {
                                                     </div>
                                                     <div className="relative group">
                                                         <select
-                                                            className="w-full text-sm p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all cursor-pointer font-bold text-slate-700 dark:text-white appearance-none"
+                                                            className="w-full text-sm p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer font-bold text-slate-700 dark:text-white appearance-none"
                                                             value={selectedAccount}
                                                             onChange={(e) => setSelectedAccount(e.target.value)}
                                                         >
@@ -175,7 +175,7 @@ export const NotificationCenter: React.FC = () => {
                                                     </div>
                                                     <div className="relative group">
                                                         <select
-                                                            className="w-full text-sm p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all cursor-pointer font-bold text-slate-700 dark:text-white appearance-none"
+                                                            className="w-full text-sm p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer font-bold text-slate-700 dark:text-white appearance-none"
                                                             value={selectedCategory}
                                                             onChange={(e) => setSelectedCategory(e.target.value)}
                                                         >
@@ -199,7 +199,7 @@ export const NotificationCenter: React.FC = () => {
                                                     <button
                                                         onClick={() => handleAccept(invite.id)}
                                                         disabled={loading}
-                                                        className="flex-[2] py-3 text-[10px] font-black uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 active:scale-95"
+                                                        className="flex-[2] py-3 text-[10px] font-black uppercase tracking-widest bg-cyan-600 text-white hover:bg-cyan-700 rounded-xl shadow-lg shadow-cyan-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 active:scale-95"
                                                     >
                                                         {loading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
                                                         Confirmar
@@ -210,7 +210,7 @@ export const NotificationCenter: React.FC = () => {
                                             <div className="flex gap-3">
                                                 <button
                                                     onClick={() => setAcceptingId(invite.id)}
-                                                    className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/20"
+                                                    className="flex-1 py-4 bg-cyan-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-700 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-cyan-600/20"
                                                 >
                                                     <Check className="w-4 h-4" /> ACEITAR
                                                 </button>

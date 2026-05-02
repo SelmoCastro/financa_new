@@ -22,7 +22,7 @@ interface DashboardViewProps {
     onAddBudget?: () => void;
 }
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+const COLORS = ['#06b6d4', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#f97316', '#8b5cf6'];
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false, onAddAccount, onAddTransaction, onAddBudget }) => {
     const { formatCurrency } = useCurrency();
@@ -111,7 +111,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                         <StatCard 
                             title="Disponível (Mês)" 
                             value={formatCurrency(availableReal)} 
-                            color={availableReal < 0 ? "bg-rose-600 text-white" : "bg-indigo-600 text-indigo-50"} 
+                            color={availableReal < 0 ? "bg-rose-600 text-white" : "bg-cyan-600 text-cyan-50"} 
                             icon={availableReal < 0 ? <AlertCircle className="text-white animate-pulse" /> : <Banknote className="text-white" />} 
                             isVisible={!isPrivacyEnabled} 
                         />
@@ -137,7 +137,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                     transition={{ duration: 0.5 }}
                     className="lg:col-span-12"
                 >
-                    <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] p-6 md:p-8 text-white shadow-xl shadow-indigo-100 dark:shadow-none flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group animate-float">
+                    <div className="bg-gradient-to-br from-cyan-600 to-blue-700 rounded-[2.5rem] p-6 md:p-8 text-white shadow-xl shadow-cyan-100 dark:shadow-none flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group animate-float">
                         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
 
                         <div className="flex-1 space-y-4 relative z-10">
@@ -159,14 +159,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     <ul className="grid grid-cols-1 md:grid-cols-1 gap-2 list-none p-0 m-0">
                                         {insights.split('\n').filter(line => line.trim()).map((line, i) => (
                                             <li key={i} className="flex items-start gap-3 text-sm font-bold leading-relaxed bg-white/5 p-3 rounded-2xl border border-white/10 backdrop-blur-sm">
-                                                <div className="w-2 h-2 mt-2 bg-indigo-300 rounded-full flex-shrink-0" />
+                                                <div className="w-2 h-2 mt-2 bg-cyan-300 rounded-full flex-shrink-0" />
                                                 {line.replace(/^[-\d.]\s*/, '')}
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
                             ) : (
-                                <p className="text-indigo-100 text-sm font-medium">
+                                <p className="text-cyan-100 text-sm font-medium">
                                     Peça para a nossa IA analisar seus gastos desse mês e te dar dicas personalizadas.
                                 </p>
                             )}
@@ -175,7 +175,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                         <button
                             onClick={fetchInsights}
                             disabled={isFetchingInsights}
-                            className={`relative z-10 flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-lg ${!insights && !isFetchingInsights ? 'animate-pulse hover:animate-none' : ''}`}
+                            className={`relative z-10 flex items-center gap-2 bg-white text-cyan-600 px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-cyan-50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-lg ${!insights && !isFetchingInsights ? 'animate-pulse hover:animate-none' : ''}`}
                         >
                             {isFetchingInsights ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                             {insights ? 'Atualizar Dicas' : 'Analisar meu Mês'}
@@ -227,7 +227,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         <>
                                             <h4 className="text-slate-700 dark:text-slate-200 font-black mb-1">Nenhum lançamento neste mês</h4>
                                             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-4 font-medium">Que tal começar a organizar suas finanças registrando sua primeira movimentação?</p>
-                                            <p className="text-[10px] text-indigo-500 font-black bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 uppercase tracking-widest">
+                                            <p className="text-[10px] text-cyan-500 font-black bg-cyan-50 dark:bg-cyan-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 uppercase tracking-widest">
                                                 <Sparkles className="w-3 h-3" />
                                                 Comece pelo botão "Novo Lançamento"
                                             </p>
@@ -252,7 +252,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-4">Fixos Pendentes</h3>
                                     <div className="space-y-3">
                                         {forecast.missingFixed.map((item, idx) => (
-                                            <div key={idx} className="flex justify-between items-center p-4 bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800 transition-colors hover:border-indigo-200 dark:hover:border-indigo-900/50 group">
+                                            <div key={idx} className="flex justify-between items-center p-4 bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800 transition-colors hover:border-cyan-200 dark:hover:border-cyan-900/50 group">
                                                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.description}</span>
                                                 <span className={`text-sm font-black ${isPrivacyEnabled ? 'blur-sm select-none' : (item.type === 'INCOME' ? 'text-emerald-500' : 'text-rose-500')}`}>
                                                     {isPrivacyEnabled ? '••••' : `${item.type === 'INCOME' ? '+' : '-'} ${formatCurrency(item.amount)}`}
@@ -298,7 +298,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             <div className="glass-card p-6 rounded-[2.5rem]">
                                 <div className="flex justify-between items-center mb-2">
                                     <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Comprometimento</h3>
-                                    <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${forecast.fixedRatio > 60 ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20' : 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20'}`}>
+                                    <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${forecast.fixedRatio > 60 ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20' : 'bg-cyan-100 text-cyan-600 dark:bg-cyan-500/20'}`}>
                                         {forecast.fixedRatio.toFixed(0)}%
                                     </span>
                                 </div>
@@ -306,7 +306,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
 
                                 <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
                                     <div
-                                        className="h-full bg-slate-800 dark:bg-indigo-500"
+                                        className="h-full bg-slate-800 dark:bg-cyan-500"
                                         style={{ width: `${forecast.fixedRatio}%` }}
                                         title="Custos Fixos"
                                     ></div>
@@ -330,8 +330,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 <h3 className="text-lg font-black text-slate-800 dark:text-white">Regra 50/30/20</h3>
                                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Saúde Financeira</p>
                             </div>
-                            <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
-                                <PieChartIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                            <div className="p-2 bg-cyan-50 dark:bg-cyan-500/10 rounded-xl">
+                                <PieChartIcon className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                             </div>
                         </div>
 
@@ -346,7 +346,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </div>
                                 <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-1000 ${rule503020.needs.percent > 55 ? 'bg-rose-600 animate-pulse' : rule503020.needs.percent > 50 ? 'bg-rose-500' : 'bg-indigo-500'}`}
+                                        className={`h-full rounded-full transition-all duration-1000 ${rule503020.needs.percent > 55 ? 'bg-rose-600 animate-pulse' : rule503020.needs.percent > 50 ? 'bg-rose-500' : 'bg-cyan-500'}`}
                                         style={{ width: `${Math.min(rule503020.needs.percent, 100)}%` }}
                                     />
                                 </div>

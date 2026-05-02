@@ -106,7 +106,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                         </div>
                         <button
                             onClick={() => setIsAccountFormOpen(true)}
-                            className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/10 bg-indigo-50 dark:bg-slate-900 px-6 py-3 rounded-2xl transition-all active:scale-95 border border-indigo-100 dark:border-indigo-500/20"
+                            className="text-[10px] font-black uppercase tracking-widest text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/10 bg-cyan-50 dark:bg-slate-900 px-6 py-3 rounded-2xl transition-all active:scale-95 border border-cyan-100 dark:border-cyan-500/20"
                         >
                             + Adicionar Conta
                         </button>
@@ -114,9 +114,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                         {/* Card Total */}
-                        <div className="bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-[2.5rem] p-8 shadow-xl shadow-indigo-600/20 relative overflow-hidden group">
+                        <div className="bg-gradient-to-br from-cyan-600 to-blue-700 text-white rounded-[2.5rem] p-8 shadow-xl shadow-cyan-600/20 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full -mt-20 -mr-20 blur-3xl group-hover:opacity-20 transition-all duration-700"></div>
-                            <p className="text-indigo-100 font-black uppercase tracking-[0.2em] text-[10px] mb-4 relative z-10">Saldo Consolidado</p>
+                            <p className="text-cyan-100 font-black uppercase tracking-[0.2em] text-[10px] mb-4 relative z-10">Saldo Consolidado</p>
                             <h4 className="text-4xl font-black tracking-tighter relative z-10">
                                 {isPrivacyEnabled ? '•••••' : formatCurrency(totalBalance)}
                             </h4>
@@ -124,21 +124,21 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                 <div className="p-2 bg-white/20 rounded-xl">
                                     <Wallet className="w-4 h-4 text-white" />
                                 </div>
-                                <span className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest">{accounts.length} contas ativas</span>
+                                <span className="text-[10px] font-bold text-cyan-100 uppercase tracking-widest">{accounts.length} contas ativas</span>
                             </div>
                         </div>
 
                         {/* Lista de Contas (Cards) */}
                         {accounts.length === 0 ? (
-                            <div className="md:col-span-1 lg:col-span-2 flex flex-col items-center justify-center p-8 glass-card border-dashed border-indigo-200 dark:border-indigo-500/30 rounded-[2.5rem] text-center">
-                                <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-6">
-                                    <Sparkles className="w-8 h-8 text-indigo-400" />
+                            <div className="md:col-span-1 lg:col-span-2 flex flex-col items-center justify-center p-8 glass-card border-dashed border-cyan-200 dark:border-cyan-500/30 rounded-[2.5rem] text-center">
+                                <div className="w-16 h-16 bg-cyan-50 dark:bg-cyan-500/10 rounded-2xl flex items-center justify-center mb-6">
+                                    <Sparkles className="w-8 h-8 text-cyan-400" />
                                 </div>
                                 <h4 className="text-lg font-black text-slate-800 dark:text-white mb-2">Sua primeira Conta!</h4>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-8 font-medium leading-relaxed">Você precisa adicionar pelo menos uma conta bancária ou carteira para conseguir registrar seus primeiros lançamentos.</p>
                                 <button
                                     onClick={() => setIsAccountFormOpen(true)}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center gap-2"
+                                    className="bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-cyan-600/20 active:scale-95 flex items-center gap-2"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Criar Conta Agora
@@ -154,7 +154,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                         <div className="relative z-40">
                                             <button
                                                 onClick={() => setOpenMenuId(openMenuId === acc.id ? null : acc.id)}
-                                                className="text-slate-400 dark:text-slate-500 hover:text-indigo-500 transition-all p-2 bg-slate-50 dark:bg-slate-900 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                className="text-slate-400 dark:text-slate-500 hover:text-cyan-500 transition-all p-2 bg-slate-50 dark:bg-slate-900 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
                                             >
                                                 <MoreVertical className="w-5 h-5" />
                                             </button>
@@ -167,7 +167,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                                             setIsAccountFormOpen(true);
                                                             setOpenMenuId(null);
                                                         }}
-                                                        className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex items-center gap-3 rounded-xl"
+                                                        className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all flex items-center gap-3 rounded-xl"
                                                     >
                                                         <Edit3 className="w-4 h-4" />
                                                         Editar Conta
@@ -259,7 +259,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                                                 setIsCardFormOpen(true);
                                                                 setOpenCardMenuId(null);
                                                             }}
-                                                            className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex items-center gap-3 rounded-xl"
+                                                            className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all flex items-center gap-3 rounded-xl"
                                                         >
                                                             <Edit3 className="w-4 h-4" />
                                                             Editar Cartão

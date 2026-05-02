@@ -64,11 +64,11 @@ export const ResetPassword: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors duration-500">
             <div className="bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-500">
                 <div className="text-center mb-10">
-                    <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-indigo-600/40">
+                    <div className="w-20 h-20 bg-cyan-600 rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-cyan-600/40">
                         <Key className="text-white w-10 h-10" />
                     </div>
                     <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-[0.3em] mb-2">Segurança</p>
+                        <p className="text-[10px] font-black uppercase text-cyan-600 dark:text-cyan-400 tracking-[0.3em] mb-2">Segurança</p>
                         <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">Nova Senha</h2>
                         <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-2">Crie uma nova credencial de acesso segura para sua conta</p>
                     </div>
@@ -94,7 +94,7 @@ export const ResetPassword: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 block">Nova Senha</label>
                             <input
                                 type="password"
-                                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-bold text-slate-800 dark:text-white transition-all text-base placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none font-bold text-slate-800 dark:text-white transition-all text-base placeholder:text-slate-400 dark:placeholder:text-slate-600"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
@@ -105,7 +105,7 @@ export const ResetPassword: React.FC = () => {
                             <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 block">Confirmar Senha</label>
                             <input
                                 type="password"
-                                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-bold text-slate-800 dark:text-white transition-all text-base placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none font-bold text-slate-800 dark:text-white transition-all text-base placeholder:text-slate-400 dark:placeholder:text-slate-600"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 placeholder="••••••••"
@@ -116,7 +116,7 @@ export const ResetPassword: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-5 rounded-2xl uppercase text-[10px] tracking-[0.2em] transition-all shadow-2xl shadow-indigo-600/30 active:scale-95 mt-6"
+                            className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-5 rounded-2xl uppercase text-[10px] tracking-[0.2em] transition-all shadow-2xl shadow-cyan-600/30 active:scale-95 mt-6"
                         >
                             {isLoading ? 'Salvando...' : 'Redefinir Senha'}
                         </button>

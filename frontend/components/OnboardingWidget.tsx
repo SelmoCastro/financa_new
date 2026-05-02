@@ -56,10 +56,10 @@ export const OnboardingWidget: React.FC<OnboardingWidgetProps> = ({ onAddAccount
                     <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Complete estas tarefas para dominar suas finanças.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{Math.round(progress)}%</span>
+                    <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400">{Math.round(progress)}%</span>
                     <div className="w-24 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-indigo-500 transition-all duration-500 rounded-full"
+                            className="h-full bg-cyan-500 transition-all duration-500 rounded-full"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
@@ -72,7 +72,7 @@ export const OnboardingWidget: React.FC<OnboardingWidgetProps> = ({ onAddAccount
                         key={step.id}
                         className={`p-4 md:p-5 rounded-2xl border transition-all ${step.completed
                                 ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20'
-                                : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-500/30'
+                                : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-cyan-200 dark:hover:border-cyan-500/30'
                             }`}
                     >
                         <div className="flex items-start gap-3">
@@ -91,7 +91,7 @@ export const OnboardingWidget: React.FC<OnboardingWidgetProps> = ({ onAddAccount
                         {!step.completed && step.action && (
                             <button
                                 onClick={step.action}
-                                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm shadow-indigo-600/20 transition-all active:scale-95"
+                                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-sm shadow-cyan-600/20 transition-all active:scale-95"
                             >
                                 <Plus className="w-3.5 h-3.5" />
                                 {step.actionLabel}

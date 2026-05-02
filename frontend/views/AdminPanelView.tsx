@@ -241,11 +241,11 @@ export const AdminPanelView: React.FC = () => {
   const statCards = [
     { label: 'Usuários', value: stats.users.total, sub: `${stats.users.verified} verificados`, icon: <Users className="w-5 h-5" />, color: 'bg-blue-500' },
     { label: 'Transações', value: stats.transactions, icon: <Receipt className="w-5 h-5" />, color: 'bg-emerald-500' },
-    { label: 'Contas', value: stats.accounts, icon: <CreditCard className="w-5 h-5" />, color: 'bg-purple-500' },
+    { label: 'Contas', value: stats.accounts, icon: <CreditCard className="w-5 h-5" />, color: 'bg-blue-500' },
     { label: 'Orçamentos', value: stats.budgets, icon: <BarChart3 className="w-5 h-5" />, color: 'bg-amber-500' },
     { label: 'Metas', value: stats.goals, icon: <Target className="w-5 h-5" />, color: 'bg-pink-500' },
     { label: 'Categorias', value: stats.categories, icon: <Tag className="w-5 h-5" />, color: 'bg-cyan-500' },
-    { label: 'Req. IA', value: stats.aiRequests, icon: <Bot className="w-5 h-5" />, color: 'bg-violet-500' },
+    { label: 'Req. IA', value: stats.aiRequests, icon: <Bot className="w-5 h-5" />, color: 'bg-blue-500' },
     { label: 'Feedbacks', value: stats.feedbacks, icon: <MessagesSquare className="w-5 h-5" />, color: 'bg-orange-500' },
   ];
 
@@ -254,7 +254,7 @@ export const AdminPanelView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
+          <div className="p-2.5 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded-xl">
             <Shield className="w-6 h-6" />
           </div>
           <div>
@@ -264,7 +264,7 @@ export const AdminPanelView: React.FC = () => {
         </div>
         <button
           onClick={loadAll}
-          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-cyan-300 dark:hover:border-cyan-600 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Atualizar
@@ -279,8 +279,8 @@ export const AdminPanelView: React.FC = () => {
             onClick={() => setActiveSection(s.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
               activeSection === s.id
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none'
-                : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600'
+                ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-200 dark:shadow-none'
+                : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-cyan-300 dark:hover:border-cyan-600'
             }`}
           >
             {s.icon} {s.label}
@@ -344,9 +344,9 @@ export const AdminPanelView: React.FC = () => {
                     <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{activity.last30Days.newTransactions}</p>
                     <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Transactions</p>
                   </div>
-                  <div className="text-center p-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl">
-                    <p className="text-2xl font-black text-violet-600 dark:text-violet-400">{activity.last30Days.aiRequestCount}</p>
-                    <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider">Req. IA</p>
+                  <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                    <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{activity.last30Days.aiRequestCount}</p>
+                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Req. IA</p>
                   </div>
                 </div>
               </div>
@@ -368,7 +368,7 @@ export const AdminPanelView: React.FC = () => {
                 value={userSearch}
                 onChange={e => { setUserSearch(e.target.value); setUserPage(1); }}
                 placeholder="Buscar por nome ou email..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-sm font-medium text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-sm font-medium text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-cyan-500 outline-none"
               />
             </div>
 
@@ -389,7 +389,7 @@ export const AdminPanelView: React.FC = () => {
                   onClick={() => { setUserPlanFilter(chip.id); setUserPage(1); }}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
                     userPlanFilter === chip.id
-                      ? 'bg-indigo-600 text-white shadow-md'
+                      ? 'bg-cyan-600 text-white shadow-md'
                       : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
                   }`}
                 >
@@ -463,7 +463,7 @@ export const AdminPanelView: React.FC = () => {
                     className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-sm">
                         {(user.name || user.email)[0].toUpperCase()}
                       </div>
                       <div className="text-left">
@@ -526,9 +526,9 @@ export const AdminPanelView: React.FC = () => {
                       </div>
 
                       {/* Plan Editor */}
-                      <div className="mt-4 p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-800/30">
+                      <div className="mt-4 p-4 bg-cyan-50/50 dark:bg-cyan-900/10 rounded-xl border border-cyan-100 dark:border-cyan-800/30">
                         <div className="flex items-center justify-between mb-3">
-                          <p className="text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <p className="text-xs font-black text-cyan-700 dark:text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
                             <CreditCard className="w-3.5 h-3.5" /> Gerenciar Plano
                           </p>
                           {planEditing !== user.id ? (
@@ -537,7 +537,7 @@ export const AdminPanelView: React.FC = () => {
                                 setPlanEditing(user.id);
                                 setPlanForm({ plan: userPlan, duration: isLifetime ? 'lifetime' : '30d' });
                               }}
-                              className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                              className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 hover:underline"
                             >
                               Alterar Plano
                             </button>
@@ -559,7 +559,7 @@ export const AdminPanelView: React.FC = () => {
                                 <select
                                   value={planForm.plan}
                                   onChange={e => setPlanForm({ ...planForm, plan: e.target.value })}
-                                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-cyan-500 outline-none"
                                 >
                                   <option value="free">Free</option>
                                   <option value="premium">Premium</option>
@@ -570,7 +570,7 @@ export const AdminPanelView: React.FC = () => {
                                 <select
                                   value={planForm.duration}
                                   onChange={e => setPlanForm({ ...planForm, duration: e.target.value })}
-                                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-cyan-500 outline-none"
                                 >
                                   <option value="lifetime">Vitalicio</option>
                                   <option value="30d">30 dias</option>
@@ -583,7 +583,7 @@ export const AdminPanelView: React.FC = () => {
                             <button
                               onClick={() => handleSavePlan(user.id)}
                               disabled={isSavingPlan || planForm.plan === 'free' && planForm.duration !== 'lifetime'}
-                              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {isSavingPlan ? 'Salvando...' : 'Salvar Alteracao'}
                             </button>
@@ -625,7 +625,7 @@ export const AdminPanelView: React.FC = () => {
                         onClick={() => setUserPage(p)}
                         className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
                           userPage === p
-                            ? 'bg-indigo-600 text-white shadow-md'
+                            ? 'bg-cyan-600 text-white shadow-md'
                             : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                         }`}
                       >
@@ -709,7 +709,7 @@ export const AdminPanelView: React.FC = () => {
           {/* Top AI Users */}
           <div className="bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl p-5 shadow-lg shadow-slate-100/50 dark:shadow-none">
             <div className="flex items-center gap-2 mb-4">
-              <Zap className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Top Usuarios IA (30d)</h3>
             </div>
             {activity.topAiUsers.length === 0 ? (
@@ -719,7 +719,7 @@ export const AdminPanelView: React.FC = () => {
                 {activity.topAiUsers.map((u, i) => (
                   <div key={u.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 flex items-center justify-center text-xs font-black">
+                      <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-black">
                         {i + 1}
                       </span>
                       <div>
@@ -727,7 +727,7 @@ export const AdminPanelView: React.FC = () => {
                         <p className="text-[10px] text-slate-400">{u.email}</p>
                       </div>
                     </div>
-                    <span className="px-3 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded-lg text-xs font-black">
+                    <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-xs font-black">
                       {u.requestCount} req
                     </span>
                   </div>
@@ -839,7 +839,7 @@ export const AdminPanelView: React.FC = () => {
               ].map(item => (
                 <div key={item.label} className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
                   <span className="text-slate-500 dark:text-slate-400 font-sans font-bold text-[10px] uppercase tracking-wider">{item.label}</span>
-                  <code className="text-indigo-600 dark:text-indigo-400 text-[11px]">{item.cmd}</code>
+                  <code className="text-cyan-600 dark:text-cyan-400 text-[11px]">{item.cmd}</code>
                 </div>
               ))}
             </div>

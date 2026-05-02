@@ -137,7 +137,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                         setForm({ categoryId: '', amount: '' });
                         setIsModalOpen(true);
                     }}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all active:scale-95 flex items-center gap-2"
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-cyan-600/20 transition-all active:scale-95 flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
                     Definir Teto
@@ -172,7 +172,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => openEditModal(budget)}
-                                            className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all"
+                                            className="p-2 text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-xl transition-all"
                                             title="Editar Orçamento"
                                         >
                                             <Edit3 className="w-4 h-4" />
@@ -187,7 +187,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest mb-0.5">Teto Mensal</p>
-                                        <p className={`text-xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+                                        <p className={`text-xl font-black text-cyan-600 dark:text-cyan-400 tracking-tight ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
                                             {isPrivacyEnabled ? '••••' : formatCurrency(budget.amount)}
                                         </p>
                                     </div>
@@ -239,7 +239,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                             const selectedId = e.target.value;
                                             setForm({ ...form, categoryId: selectedId });
                                         }}
-                                        className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-slate-700 dark:text-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none appearance-none cursor-pointer transition-all"
+                                        className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-slate-700 dark:text-white focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none appearance-none cursor-pointer transition-all"
                                     >
                                         <option value="">Selecione uma categoria...</option>
 
@@ -284,7 +284,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Limite Mensal Desejado</label>
                                 <div className="relative group">
-                                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-black text-lg pointer-events-none group-focus-within:text-indigo-500 transition-colors">{currencySymbol}</span>
+                                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-black text-lg pointer-events-none group-focus-within:text-cyan-500 transition-colors">{currencySymbol}</span>
                                     <input
                                         type="text"
                                         inputMode="numeric"
@@ -302,12 +302,12 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                             });
                                             setForm({ ...form, amount: formatted });
                                         }}
-                                        className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 dark:text-white text-2xl tracking-tight"
+                                        className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-black text-slate-800 dark:text-white text-2xl tracking-tight"
                                         placeholder="0,00"
                                     />
                                 </div>
                             </div>
-                            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-xs py-5 rounded-2xl mt-4 transition-all active:scale-95 shadow-xl shadow-indigo-600/20">
+                            <button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-black uppercase tracking-widest text-xs py-5 rounded-2xl mt-4 transition-all active:scale-95 shadow-xl shadow-cyan-600/20">
                                 {editingBudget ? 'Atualizar Orçamento' : 'Salvar Orçamento'}
                             </button>
                         </form>

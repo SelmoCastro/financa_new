@@ -310,7 +310,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                     <div className="space-y-1">
                         <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">Processamento</p>
                         <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${step === 2 ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'}`}>
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${step === 2 ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-cyan-100 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400'}`}>
                                 {step === 2 ? <CheckSquare className="w-6 h-6" /> : <UploadCloud className="w-6 h-6" />}
                             </div>
                             {step === 1 ? 'Importar Extrato' : 'Revisar & Confirmar'}
@@ -329,7 +329,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             <button
                                 onClick={() => switchMode('ofx')}
                                 className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${importMode === 'ofx'
-                                    ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xl shadow-indigo-600/10'
+                                    ? 'bg-white dark:bg-slate-900 text-cyan-600 dark:text-cyan-400 shadow-xl shadow-cyan-600/10'
                                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                                     }`}
                             >
@@ -339,7 +339,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             <button
                                 onClick={() => switchMode('receipt')}
                                 className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${importMode === 'receipt'
-                                    ? 'bg-white dark:bg-slate-900 text-violet-600 dark:text-violet-400 shadow-xl shadow-violet-600/10'
+                                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xl shadow-blue-600/10'
                                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                                     }`}
                             >
@@ -353,7 +353,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             <div className="space-y-3">
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Conta de Destino</label>
                                 <div className="relative group">
-                                    <select required value={accountId} onChange={e => setAccountId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none appearance-none cursor-pointer">
+                                    <select required value={accountId} onChange={e => setAccountId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all outline-none appearance-none cursor-pointer">
                                         <option value="" disabled>Selecione a Conta...</option>
                                         {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name} ({ACCOUNT_TYPE_LABELS[acc.type] || acc.type})</option>)}
                                     </select>
@@ -365,7 +365,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             <div className="space-y-3">
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Cartão (Opcional)</label>
                                 <div className="relative group">
-                                    <select value={creditCardId} onChange={e => setCreditCardId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none appearance-none cursor-pointer">
+                                    <select value={creditCardId} onChange={e => setCreditCardId(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 text-slate-700 dark:text-white font-bold focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none appearance-none cursor-pointer">
                                         <option value="">Nenhum Cartão</option>
                                         {creditCards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
@@ -378,9 +378,9 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
 
                         {/* Dica contextual */}
                         {importMode === 'receipt' && (
-                            <div className="flex items-start gap-4 p-5 bg-violet-50 dark:bg-violet-500/10 rounded-2xl border border-violet-100 dark:border-violet-500/20">
-                                <Sparkles className="w-5 h-5 text-violet-500 mt-0.5 shrink-0 animate-pulse" />
-                                <p className="text-xs text-violet-700 dark:text-violet-300 font-bold leading-relaxed">
+                            <div className="flex items-start gap-4 p-5 bg-blue-50 dark:bg-blue-500/10 rounded-2xl border border-blue-100 dark:border-blue-500/20">
+                                <Sparkles className="w-5 h-5 text-blue-500 mt-0.5 shrink-0 animate-pulse" />
+                                <p className="text-xs text-blue-700 dark:text-blue-300 font-bold leading-relaxed">
                                     Envie fotos de comprovantes de PIX, TED, DOC ou recibos de mercado. Nossa IA extrairá os dados e sugerirá a melhor categoria automaticamente.
                                 </p>
                             </div>
@@ -389,7 +389,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                         {/* Área de upload */}
                         <div
                             className={`border-4 border-dashed rounded-[2rem] p-10 text-center transition-all cursor-pointer group hover:scale-[1.01] active:scale-[0.99] ${file
-                                ? (importMode === 'receipt' ? 'border-violet-500 bg-violet-50/50 dark:bg-violet-500/5' : 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-500/5')
+                                ? (importMode === 'receipt' ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/5' : 'border-cyan-500 bg-cyan-50/50 dark:bg-cyan-500/5')
                                 : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950/50'
                                 }`}
                             onClick={() => fileInputRef.current?.click()} onDragOver={handleDragOver} onDrop={handleDrop}
@@ -403,7 +403,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             />
                             {file ? (
                                 <div className="space-y-3">
-                                    <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center shadow-lg ${importMode === 'receipt' ? 'bg-violet-600 text-white' : 'bg-indigo-600 text-white'}`}>
+                                    <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center shadow-lg ${importMode === 'receipt' ? 'bg-blue-600 text-white' : 'bg-cyan-600 text-white'}`}>
                                         <Check className="w-8 h-8" />
                                     </div>
                                     <p className="font-black text-slate-800 dark:text-white text-lg tracking-tight truncate max-w-xs mx-auto">{file.name}</p>
@@ -411,8 +411,8 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto transition-colors group-hover:bg-indigo-50 dark:group-hover:bg-indigo-500/10">
-                                        {importMode === 'receipt' ? <Image className="w-8 h-8 text-slate-400 group-hover:text-violet-500 transition-colors" /> : <FileSpreadsheet className="w-8 h-8 text-slate-400 group-hover:text-indigo-500 transition-colors" />}
+                                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto transition-colors group-hover:bg-cyan-50 dark:group-hover:bg-cyan-500/10">
+                                        {importMode === 'receipt' ? <Image className="w-8 h-8 text-slate-400 group-hover:text-blue-500 transition-colors" /> : <FileSpreadsheet className="w-8 h-8 text-slate-400 group-hover:text-cyan-500 transition-colors" />}
                                     </div>
                                     <div className="space-y-1">
                                         <p className="font-black text-slate-800 dark:text-white text-lg tracking-tight">
@@ -435,8 +435,8 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                     onClick={processFile}
                                     disabled={!file || !accountId || isLoading}
                                     className={`flex-1 flex gap-3 items-center justify-center px-6 py-5 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl disabled:opacity-50 transition-all active:scale-95 ${importMode === 'receipt'
-                                        ? 'bg-violet-600 hover:bg-violet-700 shadow-violet-600/20'
-                                        : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
+                                        ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'
+                                        : 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-600/20'
                                         }`}
                                 >
                                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
@@ -445,8 +445,8 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             </div>
 
                             {aiStatus && (
-                                <div className="text-center p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100/50 dark:border-indigo-500/20">
-                                    <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] animate-pulse">{aiStatus}</p>
+                                <div className="text-center p-4 rounded-2xl bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-100/50 dark:border-cyan-500/20">
+                                    <p className="text-[10px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-[0.2em] animate-pulse">{aiStatus}</p>
                                 </div>
                             )}
                         </div>
@@ -488,8 +488,8 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                             key={f}
                                             onClick={() => setFilterMode(f)}
                                             className={`text-[10px] font-black uppercase tracking-widest px-5 py-3 rounded-xl transition-all active:scale-95 border ${isActive
-                                                ? (f === 'rejected' ? 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20' : 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/20')
-                                                : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-indigo-500'
+                                                ? (f === 'rejected' ? 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20' : 'bg-cyan-600 text-white border-cyan-600 shadow-lg shadow-cyan-600/20')
+                                                : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-cyan-500'
                                                 }`}
                                         >
                                             {labels[f]}
@@ -501,7 +501,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                             {filteredTxs.length > 0 && (
                                 <button
                                     onClick={handleSelectAll}
-                                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
                                 >
                                     {filteredTxs.every(t => t.selected) ? (
                                         <>
@@ -529,7 +529,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                         ? 'border-red-200 dark:border-red-500/30 bg-red-50/20 dark:bg-red-500/5'
                                         : tx.isPotentialDuplicate
                                             ? 'border-orange-200 dark:border-orange-500/30 bg-orange-50/40 dark:bg-orange-500/5'
-                                            : tx.selected ? 'bg-white dark:bg-slate-900 border-indigo-200 dark:border-indigo-500/30 shadow-xl shadow-indigo-500/5' : 'bg-slate-100/50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 opacity-60'
+                                            : tx.selected ? 'bg-white dark:bg-slate-900 border-cyan-200 dark:border-cyan-500/30 shadow-xl shadow-cyan-500/5' : 'bg-slate-100/50 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800 opacity-60'
                                         }`}>
                                         <div className="flex items-center gap-6 w-full sm:w-auto">
                                             <div className="relative">
@@ -538,7 +538,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                     id={`tx-${tx.id}`}
                                                     checked={tx.selected}
                                                     onChange={() => toggleSelect(tx.id)}
-                                                    className="w-6 h-6 rounded-lg border-2 border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-4 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                                                    className="w-6 h-6 rounded-lg border-2 border-slate-300 dark:border-slate-700 text-cyan-600 focus:ring-4 focus:ring-cyan-500/20 transition-all cursor-pointer"
                                                 />
                                             </div>
                                         <div className="w-36 shrink-0">
@@ -548,7 +548,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                     type="text"
                                                     value={tx.amount.toFixed(2)}
                                                     onChange={e => updateAmount(tx.id, e.target.value)}
-                                                    className={`w-full bg-transparent text-xl font-black tracking-tighter focus:outline-none border-b-2 border-transparent focus:border-indigo-500 transition-all ${
+                                                    className={`w-full bg-transparent text-xl font-black tracking-tighter focus:outline-none border-b-2 border-transparent focus:border-cyan-500 transition-all ${
                                                         tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'
                                                     }`}
                                                 />
@@ -564,12 +564,12 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                     type="text"
                                                     value={tx.description}
                                                     onChange={e => setParsedTxs(prev => prev.map(t => t.id === tx.id ? { ...t, description: e.target.value } : t))}
-                                                    className="w-full bg-transparent text-lg font-black text-slate-800 dark:text-white focus:outline-none border-b-2 border-transparent focus:border-indigo-500 transition-all tracking-tight"
+                                                    className="w-full bg-transparent text-lg font-black text-slate-800 dark:text-white focus:outline-none border-b-2 border-transparent focus:border-cyan-500 transition-all tracking-tight"
                                                 />
                                             </div>
                                             <div className="flex flex-wrap items-center gap-2">
                                                 {tx.suggestedCategory && (
-                                                    <span className="text-[9px] px-3 py-1 rounded-lg border-2 border-indigo-100 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 flex items-center gap-2 font-black uppercase tracking-widest">
+                                                    <span className="text-[9px] px-3 py-1 rounded-lg border-2 border-cyan-100 dark:border-cyan-500/20 bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 flex items-center gap-2 font-black uppercase tracking-widest">
                                                         <span>{tx.suggestedIcon}</span>
                                                         {tx.suggestedCategory}
                                                     </span>
@@ -597,7 +597,7 @@ export const ImportOverlay: React.FC<ImportOverlayProps> = ({ onImportSuccess, o
                                                 <select
                                                     value={tx.categoryId || ''}
                                                     onChange={(e) => updateCategory(tx.id, e.target.value)}
-                                                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-xs font-black text-slate-600 dark:text-slate-300 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all appearance-none cursor-pointer"
+                                                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-xs font-black text-slate-600 dark:text-slate-300 focus:ring-4 focus:ring-cyan-500/10 outline-none transition-all appearance-none cursor-pointer"
                                                 >
                                                     <option value="" disabled>Selecione a categoria...</option>
 
