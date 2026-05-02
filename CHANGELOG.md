@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.28](https://github.com/SelmoCastro/financa_new/compare/v1.7.27...v1.7.28) (2026-05-02)
+
+All notable changes to this project will be documented in this file.
+
 ## [1.7.27](https://github.com/SelmoCastro/financa_new/compare/v1.7.26...v1.7.27) (2026-05-02)
 
 ### 🐛 Bug Fixes
