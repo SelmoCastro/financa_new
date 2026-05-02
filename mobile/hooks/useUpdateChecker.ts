@@ -27,7 +27,7 @@ interface UpdateStatus {
     dismissUpdate: () => void;
     showUpdate: () => void;
     dismissed: boolean;
-    downloadUpdate: () => void;
+    goToDownloadPage: () => void;
     errorMessage: string;
 }
 
@@ -146,24 +146,18 @@ export function useUpdateChecker(): UpdateStatus {
     }, []);
 
     /**
-     * Open the APK download URL in the device browser.
-     * The user downloads and installs manually — simples e confiável.
+     * Redirect to the central downloads page.
+     * This avoids automatic double-downloads in the background.
      */
-    const downloadUpdate = useCallback(async () => {
+    const goToDownloadPage = useCallback(async () => {
+        const url = 'https://finanzaai.tech/downloads/';
         try {
-            const apkUrl = versionInfo?.apkUrl;
-
-            if (apkUrl) {
-                await Linking.openURL(apkUrl);
-            } else {
-                // Last resort: open the downloads page
-                await Linking.openURL('https://finanzaai.tech/downloads/');
-            }
+            await Linking.openURL(url);
         } catch (error: any) {
             console.log('[UpdateChecker] Failed to open URL:', error?.message || error);
-            setErrorMessage('Não foi possível abrir o link. Acesse finanzaai.tech/downloads manualmente.');
+            setErrorMessage('Não foi possível abrir a página de download. Acesse finanzaai.tech/downloads manualmente.');
         }
-    }, [versionInfo]);
+    }, []);
 
     return {
         hasUpdate,
@@ -175,7 +169,7 @@ export function useUpdateChecker(): UpdateStatus {
         dismissUpdate,
         showUpdate,
         dismissed,
-        downloadUpdate,
+        goToDownloadPage,
         errorMessage,
     };
 }

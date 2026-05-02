@@ -11,7 +11,7 @@ export function UpdateDialog() {
         dismissed,
         dismissUpdate,
         showUpdate,
-        downloadUpdate,
+        goToDownloadPage,
         errorMessage,
     } = useUpdateChecker();
     const [showToast, setShowToast] = useState(false);
@@ -65,7 +65,7 @@ export function UpdateDialog() {
     };
 
     return (
-        <Modal visible={true} transparent animationType="fade" statusBarTranslucent>
+        <Modal visible={true} transparent animationType=\"fade\" statusBarTranslucent>
             <View style={styles.overlay}>
                 <View style={styles.card}>
                     <Text style={styles.emoji}>🚀</Text>
@@ -85,14 +85,14 @@ export function UpdateDialog() {
                     ) : null}
                     <Pressable
                         style={[styles.button, isRequired ? styles.buttonRequired : styles.buttonOptional]}
-                        onPress={downloadUpdate}
+                        onPress={goToDownloadPage}
                     >
                         <Text style={styles.buttonText}>
-                            {isRequired ? 'Baixar agora' : 'Baixar atualização'}
+                            {isRequired ? 'Atualizar agora' : 'Ver atualização'}
                         </Text>
                     </Pressable>
                     <Text style={styles.hintText}>
-                        O APK será baixado pelo navegador. Abra o arquivo para instalar.
+                        A página de download abrirá no seu navegador.
                     </Text>
                     <Pressable
                         onPress={dismissUpdate}
