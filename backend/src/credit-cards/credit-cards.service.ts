@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { CreateCreditCardDto } from './dto/create-credit-card.dto';
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto';
+import { CreateInstallmentDto } from './dto/create-installment.dto';
+import { UpdateInstallmentDto } from './dto/update-installment.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
 
@@ -89,6 +91,66 @@ export class CreditCardsService {
       data: { deletedAt: new Date() },
     });
     if (result.count === 0) throw new NotFoundException('Cartão de crédito não encontrado');
+    return { deleted: true };
+  }
+
+  // ─── Installment Methods ───
+
+  async createInstallment(creditCardId: string, dto: CreateInstallmentDto, userId: string) {
+    // Validate card belongs to user
+    await this.findOne(creditCardId, userId);
+
+    const amountPerMonth = Number(dto.totalAmount) / dto.installmentCount;
+
+    return this.prisma.creditCardInstallment.create({
+      data: {
+        description: dto.description,
+        totalAmount: dto.totalAmount,
+        installmentCount: dto.installmentCount,
+        amountPerMonth: Math.round(amountPerMonth * 100) / 100,
+        startDate: new Date(),
+        dueDay: dto.dueDay,
+        accountId: dto.accountId,
+        categoryId: dto.categoryId,
+        creditCardId,
+        userId,
+      },
+      include: { category: true, account: true, creditCard: true },
+    });
+  }
+
+  async getInstallments(userId: string, creditCardId?: string) {
+    const where: any = { userId };
+    if (creditCardId) where.creditCardId = creditCardId;
+    
+    return this.prisma.creditCardInstallment.findMany({
+      where,
+      include: { category: true, account: true, creditCard: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findOneInstallment(id: string, userId: string) {
+    const inst = await this.prisma.creditCardInstallment.findFirst({
+      where: { id, userId },
+      include: { category: true, account: true, creditCard: true },
+    });
+    if (!inst) throw new NotFoundException('Parcela não encontrada');
+    return inst;
+  }
+
+  async updateInstallment(id: string, dto: UpdateInstallmentDto, userId: string) {
+    await this.findOneInstallment(id, userId);
+    return this.prisma.creditCardInstallment.update({
+      where: { id },
+      data: dto,
+      include: { category: true, account: true, creditCard: true },
+    });
+  }
+
+  async deleteInstallment(id: string, userId: string) {
+    await this.findOneInstallment(id, userId);
+    await this.prisma.creditCardInstallment.delete({ where: { id } });
     return { deleted: true };
   }
 }

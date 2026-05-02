@@ -9,83 +9,91 @@ datasource db {
 }
 
 model User {
-  id                  String              @id @default(uuid())
-  email               String              @unique
-  password            String
-  name                String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  isAdmin             Boolean             @default(false)
-  isEmailVerified     Boolean             @default(false)
-  hashedRefreshToken  String?
-  failedLoginAttempts Int                 @default(0)
-  lockedUntil         DateTime?
-  termsAccepted      Boolean             @default(false)
-  termsAcceptedAt    DateTime?
-  accounts            Account[]
-  budgets             Budget[]
-  categories          Category[]
-  creditCards         CreditCard[]
-  feedbacks           Feedback[]
-  goals               Goal[]
-  importedFitIds      ImportedFitId[]
-  notifications       Notification[]
-  transactions        Transaction[]
-  receivedInvites     TransactionInvite[] @relation("ReceivedInvites")
-  sentInvites         TransactionInvite[] @relation("SentInvites")
-  verificationTokens  VerificationToken[]
-  subscription        Subscription?
-  aiRequestLogs       AiRequestLog[]
-  auditLogs           AuditLog[]
+  id                     String                  @id @default(uuid())
+  email                  String                  @unique
+  password               String
+  name                   String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  isAdmin                Boolean                 @default(false)
+  isEmailVerified        Boolean                 @default(false)
+  hashedRefreshToken     String?
+  failedLoginAttempts    Int                     @default(0)
+  lockedUntil            DateTime?
+  termsAccepted          Boolean                 @default(false)
+  termsAcceptedAt        DateTime?
+  accounts               Account[]
+  budgets                Budget[]
+  categories             Category[]
+  creditCards            CreditCard[]
+  feedbacks              Feedback[]
+  goals                  Goal[]
+  importedFitIds         ImportedFitId[]
+  notifications          Notification[]
+  transactions           Transaction[]
+  receivedInvites        TransactionInvite[]     @relation("ReceivedInvites")
+  sentInvites            TransactionInvite[]     @relation("SentInvites")
+  verificationTokens     VerificationToken[]
+  subscription           Subscription?
+  aiRequestLogs          AiRequestLog[]
+  auditLogs              AuditLog[]
+  recurringTransactions  RecurringTransaction[]
+  creditCardInstallments CreditCardInstallment[]
 }
 
 model Account {
-  id           String        @id @default(uuid())
-  name         String
-  type         String
-  balance      Decimal       @default(0) @db.Decimal(15, 2)
-  userId       String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime? // Soft delete
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  creditCards  CreditCard[]
-  transactions Transaction[]
+  id                     String                  @id @default(uuid())
+  name                   String
+  type                   String
+  balance                Decimal                 @default(0) @db.Decimal(15, 2)
+  userId                 String
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime? // Soft delete
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCards            CreditCard[]
+  transactions           Transaction[]
+  recurringTransactions  RecurringTransaction[]
+  creditCardInstallments CreditCardInstallment[]
 
   @@index([userId])
 }
 
 model CreditCard {
-  id           String        @id @default(uuid())
-  name         String
-  limit        Decimal       @db.Decimal(15, 2)
-  closingDay   Int
-  dueDay       Int
-  accountId    String
-  userId       String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime? // Soft delete
-  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  id                   String                  @id @default(uuid())
+  name                 String
+  limit                Decimal                 @db.Decimal(15, 2)
+  closingDay           Int
+  dueDay               Int
+  accountId            String
+  userId               String
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  deletedAt            DateTime? // Soft delete
+  account              Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user                 User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions         Transaction[]
+  installments         CreditCardInstallment[]
+  RecurringTransaction RecurringTransaction[]
 
   @@index([userId])
 }
 
 model Category {
-  id           String        @id @default(uuid())
-  name         String
-  color        String?
-  icon         String?
-  type         String
-  userId       String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime? // Soft delete
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-  budgets      Budget[]
+  id                     String                  @id @default(uuid())
+  name                   String
+  color                  String?
+  icon                   String?
+  type                   String
+  userId                 String
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime? // Soft delete
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions           Transaction[]
+  budgets                Budget[]
+  recurringTransactions  RecurringTransaction[]
+  creditCardInstallments CreditCardInstallment[]
 
   @@index([userId])
 }
@@ -286,4 +294,56 @@ model AuditLog {
   @@index([userId])
   @@index([resource])
   @@index([createdAt])
+}
+
+model RecurringTransaction {
+  id           String   @id @default(uuid())
+  description  String
+  amount       Decimal  @db.Decimal(15, 2)
+  type         String // INCOME, EXPENSE
+  categoryId   String?
+  accountId    String?
+  creditCardId String?
+  dueDay       Int // 1-31
+  startMonth   Int      @default(1)
+  endMonth     Int? // null = indefinido
+  isActive     Boolean  @default(true)
+  userId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  account    Account?    @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  creditCard CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, isActive])
+}
+
+model CreditCardInstallment {
+  id                 String   @id @default(uuid())
+  description        String
+  totalAmount        Decimal  @db.Decimal(15, 2)
+  installmentCount   Int
+  currentInstallment Int      @default(0)
+  amountPerMonth     Decimal  @db.Decimal(15, 2)
+  startDate          DateTime
+  dueDay             Int // 1-31
+  isActive           Boolean  @default(true)
+  accountId          String? // conta que será debitada
+  creditCardId       String
+  categoryId         String?
+  userId             String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCard CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  account    Account?   @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category   Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([creditCardId])
+  @@index([isActive])
 }

@@ -12,6 +12,8 @@ import {
 import { CreditCardsService } from './credit-cards.service';
 import { CreateCreditCardDto } from './dto/create-credit-card.dto';
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto';
+import { CreateInstallmentDto } from './dto/create-installment.dto';
+import { UpdateInstallmentDto } from './dto/update-installment.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 
@@ -57,5 +59,46 @@ export class CreditCardsController {
   @RequireVerifiedEmail()
   remove(@Param('id') id: string, @Request() req) {
     return this.creditCardsService.remove(id, req.user.userId);
+  }
+
+  // ─── Installment Endpoints ───
+
+  @Post(':cardId/installments')
+  @RequireVerifiedEmail()
+  createInstallment(
+    @Param('cardId') cardId: string,
+    @Body() dto: CreateInstallmentDto,
+    @Request() req,
+  ) {
+    return this.creditCardsService.createInstallment(cardId, dto, req.user.userId);
+  }
+
+  @Get(':cardId/installments')
+  getInstallments(
+    @Param('cardId') cardId: string,
+    @Request() req,
+  ) {
+    return this.creditCardsService.getInstallments(req.user.userId, cardId);
+  }
+
+  @Get('installments/all')
+  getAllInstallments(@Request() req) {
+    return this.creditCardsService.getInstallments(req.user.userId);
+  }
+
+  @Patch('installments/:id')
+  @RequireVerifiedEmail()
+  updateInstallment(
+    @Param('id') id: string,
+    @Body() dto: UpdateInstallmentDto,
+    @Request() req,
+  ) {
+    return this.creditCardsService.updateInstallment(id, dto, req.user.userId);
+  }
+
+  @Delete('installments/:id')
+  @RequireVerifiedEmail()
+  deleteInstallment(@Param('id') id: string, @Request() req) {
+    return this.creditCardsService.deleteInstallment(id, req.user.userId);
   }
 }

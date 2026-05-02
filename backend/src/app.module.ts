@@ -28,6 +28,9 @@ import { AuditModule } from './audit/audit.module';
 import { AdminModule } from './admin/admin.module';
 import { AppVersionModule } from './app-version/app-version.module';
 import { ErrorsModule } from './errors/errors.module';
+import { RecurringTransactionsModule } from './recurring-transactions/recurring-transactions.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { AutoTransactionScheduler } from './scheduler/auto-transaction.scheduler';
 
 @Module({
   imports: [
@@ -58,12 +61,15 @@ import { ErrorsModule } from './errors/errors.module';
     AdminModule,
     AppVersionModule,
     ErrorsModule,
+    RecurringTransactionsModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [
     AppService,
     PrismaService,
     AdminGuard,
+    AutoTransactionScheduler,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

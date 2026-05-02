@@ -1,6 +1,6 @@
 {
-  "version": "1.7.38",
-  "mobileVersion": "1.7.38",
+  "version": "1.7.39",
+  "mobileVersion": "1.7.39",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Novo design de ícone Financial AI aplicado em todas as plataformas (Web e Mobile)."
+  "releaseNotes": "Transações Recorrentes com peso financeiro e Parcelas de Cartão com auto-lançamento diário."
 }
