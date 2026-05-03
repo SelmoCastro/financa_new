@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
-import { FixedItems } from './components/FixedItems';
 import { useNavigate } from 'react-router-dom';
-import { useFixedTransactions } from './hooks/useFixedTransactions';
 import { DashboardView } from './views/DashboardView';
 import { BudgetsView } from './views/BudgetsView';
 import { GoalsView } from './views/GoalsView';
 import { TimelineView } from './views/TimelineView';
 import { HistoryView } from './views/HistoryView';
+import { RecurringView } from './views/RecurringView';
 import { SettingsView } from './views/SettingsView';
 import { AccountsView } from './views/AccountsView';
 import { FeedbackAdminView } from './views/FeedbackAdminView';
@@ -108,8 +107,6 @@ const AppContent: React.FC = () => {
     });
   }, [transactions, selectedDate]);
 
-  const forecast = useFixedTransactions(transactions, totals, selectedDate);
-
   const handleAddTransaction = async (newTx: Omit<Transaction, 'id'>) => {
     await addTransaction(newTx);
     setIsFormOpen(false);
@@ -176,14 +173,7 @@ const AppContent: React.FC = () => {
       case 'timeline':
         return <TimelineView transactions={transactions} />;
       case 'fixed':
-        return (
-          <FixedItems
-            items={forecast.fixedItems}
-            onUpdateTransaction={handleUpdateTransaction}
-            onDeleteTransaction={handleDeleteTransaction}
-            transactions={transactions}
-          />
-        );
+        return <RecurringView />;
       case 'history':
         return (
           <HistoryView

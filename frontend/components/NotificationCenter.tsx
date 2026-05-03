@@ -8,6 +8,7 @@ import { useCurrency } from '../context/CurrencyContext';
 
 export const NotificationCenter: React.FC = () => {
     const [invites, setInvites] = useState<any[]>([]);
+    const [actionNotifs, setActionNotifs] = useState<any[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const { refreshData, accounts, categories } = useData();
@@ -18,6 +19,9 @@ export const NotificationCenter: React.FC = () => {
     const [acceptingId, setAcceptingId] = useState<string | null>(null);
     const [selectedAccount, setSelectedAccount] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
+    
+    // Action notification processing state
+    const [actioningId, setActioningId] = useState<string | null>(null);
     
     const knownInviteIds = useRef<Set<string>>(new Set());
 
@@ -44,9 +48,26 @@ export const NotificationCenter: React.FC = () => {
         }
     };
 
+    const fetchActionNotifications = async () => {
+        try {
+            const res = await api.get('/notifications');
+            const allNotifs: any[] = res.data || [];
+            const filtered = allNotifs.filter(
+                (n: any) => !n.isRead && (n.type === 'ACTION_RECURRING' || n.type === 'ACTION_INSTALLMENT')
+            );
+            setActionNotifs(filtered);
+        } catch (err) {
+            console.error('Failed to fetch action notifications', err);
+        }
+    };
+
     useEffect(() => {
         fetchInvites();
-        const interval = setInterval(fetchInvites, 60000); // 1 minute polling
+        fetchActionNotifications();
+        const interval = setInterval(() => {
+            fetchInvites();
+            fetchActionNotifications();
+        }, 60000); // 1 minute polling
         return () => clearInterval(interval);
     }, []);
 
@@ -67,7 +88,7 @@ export const NotificationCenter: React.FC = () => {
             setAcceptingId(null);
             refreshData();
             
-            if (invites.length <= 1) {
+            if (invites.length <= 1 && actionNotifs.length === 0) {
                 setIsOpen(false);
             }
         } catch (err) {
@@ -83,12 +104,83 @@ export const NotificationCenter: React.FC = () => {
             setInvites(invites.filter(i => i.id !== inviteId));
             addToast('Convite recusado', 'info');
             
-            if (invites.length <= 1) {
+            if (invites.length <= 1 && actionNotifs.length === 0) {
                 setIsOpen(false);
             }
         } catch (err) {
             addToast('Falha ao recusar', 'error');
         }
+    };
+
+    const handleNotifAction = async (notifId: string, action: 'confirm' | 'postpone') => {
+        setActioningId(notifId);
+        try {
+            await api.post(`/notifications/${notifId}/action`, { action });
+            if (action === 'confirm') {
+                addToast('Pagamento confirmado com sucesso!', 'success');
+            } else {
+                addToast('Pagamento adiado', 'info');
+            }
+            setActionNotifs(actionNotifs.filter(n => n.id !== notifId));
+            refreshData();
+            
+            if (actionNotifs.length <= 1 && invites.length === 0) {
+                setIsOpen(false);
+            }
+        } catch (err) {
+            addToast('Falha ao processar ação', 'error');
+        } finally {
+            setActioningId(null);
+        }
+    };
+
+    const totalCount = invites.length + actionNotifs.length;
+
+    const renderActionNotificationCard = (notif: any) => {
+        const isRecurring = notif.type === 'ACTION_RECURRING';
+        const icon = isRecurring ? '💰' : '💳';
+        const label = isRecurring ? 'Recorrente' : 'Parcelamento';
+        const isProcessing = actioningId === notif.id;
+
+        return (
+            <div key={notif.id} className="p-6 border border-slate-100 dark:border-slate-800 rounded-[2rem] bg-white dark:bg-slate-950/50 shadow-sm hover:border-cyan-100 dark:hover:border-cyan-500/30 transition-all duration-300">
+                <div className="flex items-start gap-4 mb-6">
+                    <div className="p-3.5 rounded-2xl shadow-sm bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-2xl flex items-center justify-center">
+                        {icon}
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1">
+                        <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                            {label}
+                        </p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-white leading-tight">
+                            {notif.message || 'Pagamento pendente'}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => handleNotifAction(notif.id, 'confirm')}
+                        disabled={isProcessing}
+                        className="flex-1 py-4 bg-cyan-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-700 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-cyan-600/20 disabled:opacity-70"
+                    >
+                        {isProcessing ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            '✅'
+                        )}{' '}
+                        Confirmar Pagamento
+                    </button>
+                    <button
+                        onClick={() => handleNotifAction(notif.id, 'postpone')}
+                        disabled={isProcessing}
+                        className="px-6 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 flex items-center justify-center disabled:opacity-70"
+                    >
+                        ⏰ Adiar
+                    </button>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -98,7 +190,7 @@ export const NotificationCenter: React.FC = () => {
                 className="relative p-2 md:p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all active:scale-95 shadow-sm"
             >
                 <Bell className="w-4 h-4 md:w-5 h-5" />
-                {invites.length > 0 && (
+                {totalCount > 0 && (
                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
                 )}
             </button>
@@ -116,11 +208,13 @@ export const NotificationCenter: React.FC = () => {
                            </div>
                            <p className="text-[10px] font-black uppercase text-cyan-600 dark:text-cyan-400 tracking-[0.3em] mb-2 relative z-10">Central de Ações</p>
                            <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight relative z-10">Notificações</h2>
-                           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium relative z-10 mt-2">Você tem {invites.length} {invites.length === 1 ? 'pendência' : 'pendências'} para revisar</p>
+                           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium relative z-10 mt-2">
+                               Você tem {totalCount} {totalCount === 1 ? 'pendência' : 'pendências'} para revisar
+                           </p>
                         </div>
 
                         <div className="overflow-y-auto p-6 space-y-6">
-                            {invites.length === 0 ? (
+                            {totalCount === 0 ? (
                                 <div className="py-12 text-center text-slate-400 space-y-4">
                                     <div className="w-16 h-16 bg-slate-50 dark:bg-slate-950 rounded-2xl flex items-center justify-center mx-auto opacity-50">
                                         <Bell className="w-8 h-8" />
@@ -128,102 +222,108 @@ export const NotificationCenter: React.FC = () => {
                                     <p className="text-sm font-black uppercase tracking-widest opacity-60">Tudo limpo por aqui!</p>
                                 </div>
                             ) : (
-                                invites.map((invite) => (
-                                    <div key={invite.id} className="p-6 border border-slate-100 dark:border-slate-800 rounded-[2rem] bg-white dark:bg-slate-950/50 shadow-sm hover:border-cyan-100 dark:hover:border-cyan-500/30 transition-all duration-300">
-                                        <div className="flex items-start gap-4 mb-6">
-                                            <div className={`p-3.5 rounded-2xl shadow-sm ${invite.type === 'EXPENSE' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
-                                                {invite.type === 'EXPENSE' ? <ArrowDownLeft className="w-6 h-6" /> : <ArrowUpRight className="w-6 h-6" />}
+                                <>
+                                    {/* Social Invites Section */}
+                                    {invites.map((invite) => (
+                                        <div key={invite.id} className="p-6 border border-slate-100 dark:border-slate-800 rounded-[2rem] bg-white dark:bg-slate-950/50 shadow-sm hover:border-cyan-100 dark:hover:border-cyan-500/30 transition-all duration-300">
+                                            <div className="flex items-start gap-4 mb-6">
+                                                <div className={`p-3.5 rounded-2xl shadow-sm ${invite.type === 'EXPENSE' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
+                                                    {invite.type === 'EXPENSE' ? <ArrowDownLeft className="w-6 h-6" /> : <ArrowUpRight className="w-6 h-6" />}
+                                                </div>
+                                                <div className="flex-1 min-w-0 space-y-1">
+                                                    <p className="text-sm font-black text-slate-800 dark:text-white leading-tight tracking-tight">
+                                                        {invite.sender?.name || invite.sender?.email}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                                        {invite.description}
+                                                    </p>
+                                                    <p className="font-black text-slate-900 dark:text-white mt-2 text-xl tracking-tighter">
+                                                        {formatCurrency(invite.amount)}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="flex-1 min-w-0 space-y-1">
-                                                <p className="text-sm font-black text-slate-800 dark:text-white leading-tight tracking-tight">
-                                                    {invite.sender?.name || invite.sender?.email}
-                                                </p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                                    {invite.description}
-                                                </p>
-                                                <p className="font-black text-slate-900 dark:text-white mt-2 text-xl tracking-tighter">
-                                                    {formatCurrency(invite.amount)}
-                                                </p>
-                                            </div>
-                                        </div>
 
-                                        {acceptingId === invite.id ? (
-                                            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 space-y-4 border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top-2">
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">
-                                                        <Wallet className="w-3 h-3" /> Conta de Destino
-                                                    </div>
-                                                    <div className="relative group">
-                                                        <select
-                                                            className="w-full text-sm p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer font-bold text-slate-700 dark:text-white appearance-none"
-                                                            value={selectedAccount}
-                                                            onChange={(e) => setSelectedAccount(e.target.value)}
-                                                        >
-                                                            <option value="">Selecione...</option>
-                                                            {accounts.map(acc => (
-                                                                <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                                            ))}
-                                                        </select>
-                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                            <ChevronDown className="w-3 h-3" />
+                                            {acceptingId === invite.id ? (
+                                                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 space-y-4 border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-top-2">
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">
+                                                            <Wallet className="w-3 h-3" /> Conta de Destino
+                                                        </div>
+                                                        <div className="relative group">
+                                                            <select
+                                                                className="w-full text-sm p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer font-bold text-slate-700 dark:text-white appearance-none"
+                                                                value={selectedAccount}
+                                                                onChange={(e) => setSelectedAccount(e.target.value)}
+                                                            >
+                                                                <option value="">Selecione...</option>
+                                                                {accounts.map(acc => (
+                                                                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                                                ))}
+                                                            </select>
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                                                <ChevronDown className="w-3 h-3" />
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">
-                                                        <Tag className="w-3 h-3" /> Categoria Sugerida
-                                                    </div>
-                                                    <div className="relative group">
-                                                        <select
-                                                            className="w-full text-sm p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer font-bold text-slate-700 dark:text-white appearance-none"
-                                                            value={selectedCategory}
-                                                            onChange={(e) => setSelectedCategory(e.target.value)}
-                                                        >
-                                                            <option value="">Selecione...</option>
-                                                            {categories.filter(c => c.type === invite.type).map(cat => (
-                                                                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
-                                                            ))}
-                                                        </select>
-                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                            <ChevronDown className="w-3 h-3" />
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">
+                                                            <Tag className="w-3 h-3" /> Categoria Sugerida
+                                                        </div>
+                                                        <div className="relative group">
+                                                            <select
+                                                                className="w-full text-sm p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer font-bold text-slate-700 dark:text-white appearance-none"
+                                                                value={selectedCategory}
+                                                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                                            >
+                                                                <option value="">Selecione...</option>
+                                                                {categories.filter(c => c.type === invite.type).map(cat => (
+                                                                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                                                                ))}
+                                                            </select>
+                                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                                                <ChevronDown className="w-3 h-3" />
+                                                            </div>
                                                         </div>
                                                     </div>
+                                                    <div className="flex gap-3 pt-2">
+                                                        <button
+                                                            onClick={() => setAcceptingId(null)}
+                                                            className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all border border-slate-200 dark:border-slate-700 active:scale-95"
+                                                        >
+                                                            Voltar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleAccept(invite.id)}
+                                                            disabled={loading}
+                                                            className="flex-[2] py-3 text-[10px] font-black uppercase tracking-widest bg-cyan-600 text-white hover:bg-cyan-700 rounded-xl shadow-lg shadow-cyan-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 active:scale-95"
+                                                        >
+                                                            {loading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
+                                                            Confirmar
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex gap-3 pt-2">
+                                            ) : (
+                                                <div className="flex gap-3">
                                                     <button
-                                                        onClick={() => setAcceptingId(null)}
-                                                        className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all border border-slate-200 dark:border-slate-700 active:scale-95"
+                                                        onClick={() => setAcceptingId(invite.id)}
+                                                        className="flex-1 py-4 bg-cyan-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-700 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-cyan-600/20"
                                                     >
-                                                        Voltar
+                                                        <Check className="w-4 h-4" /> ACEITAR
                                                     </button>
                                                     <button
-                                                        onClick={() => handleAccept(invite.id)}
-                                                        disabled={loading}
-                                                        className="flex-[2] py-3 text-[10px] font-black uppercase tracking-widest bg-cyan-600 text-white hover:bg-cyan-700 rounded-xl shadow-lg shadow-cyan-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 active:scale-95"
+                                                        onClick={() => handleReject(invite.id)}
+                                                        className="px-6 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 dark:hover:bg-rose-500 hover:text-white transition-all active:scale-95 flex items-center justify-center"
                                                     >
-                                                        {loading ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
-                                                        Confirmar
+                                                        <X className="w-4 h-4" /> RECUSAR
                                                     </button>
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex gap-3">
-                                                <button
-                                                    onClick={() => setAcceptingId(invite.id)}
-                                                    className="flex-1 py-4 bg-cyan-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-700 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-cyan-600/20"
-                                                >
-                                                    <Check className="w-4 h-4" /> ACEITAR
-                                                </button>
-                                                <button
-                                                    onClick={() => handleReject(invite.id)}
-                                                    className="px-6 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 dark:hover:bg-rose-500 hover:text-white transition-all active:scale-95 flex items-center justify-center"
-                                                >
-                                                    <X className="w-4 h-4" /> RECUSAR
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    {/* Action Notifications Section */}
+                                    {actionNotifs.map((notif) => renderActionNotificationCard(notif))}
+                                </>
                             )}
                         </div>
                     </div>

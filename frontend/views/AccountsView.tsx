@@ -7,7 +7,8 @@ import { AccountForm } from '../components/AccountForm';
 import { BankIcon } from '../components/BankIcon';
 import { useData } from '../context/DataProvider';
 import { useCurrency } from '../context/CurrencyContext';
-import { Wallet, Sparkles, Plus, MoreVertical, Edit3, Trash2, CreditCard as CreditCardIcon, Nfc } from 'lucide-react';
+import { Wallet, Sparkles, Plus, MoreVertical, Edit3, Trash2, CreditCard as CreditCardIcon, Nfc, ShoppingBag } from 'lucide-react';
+import { creditCardService, CreditCardInstallmentDTO } from '../services/creditCardService';
 
 interface AccountsViewProps {
     isPrivacyEnabled: boolean;
@@ -20,6 +21,10 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
     const [openCardMenuId, setOpenCardMenuId] = useState<string | null>(null);
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
     const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
+    const [cardInstallments, setCardInstallments] = useState<Record<string, CreditCardInstallmentDTO[]>>({});
+    const [isInstallFormOpen, setIsInstallFormOpen] = useState(false);
+    const [installFormCardId, setInstallFormCardId] = useState('');
+    const [installForm, setInstallForm] = useState({ description: '', totalAmount: '', installmentCount: '1', dueDay: '1', accountId: '', categoryId: '' });
     const { addToast } = useToast();
     const { accounts, creditCards, isLoading, refreshData } = useData();
     const { formatCurrency } = useCurrency();
@@ -42,6 +47,63 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
     }, [openMenuId, openCardMenuId]);
 
     const totalBalance = useMemo(() => accounts.reduce((acc, curr) => acc + Number(curr.balance), 0), [accounts]);
+
+    // Fetch installments for all cards
+    const fetchInstallments = async () => {
+      try {
+        const res = await creditCardService.getInstallments();
+        const data: CreditCardInstallmentDTO[] = res.data;
+        const grouped: Record<string, CreditCardInstallmentDTO[]> = {};
+        data.forEach(i => {
+          if (!grouped[i.creditCardId]) grouped[i.creditCardId] = [];
+          grouped[i.creditCardId].push(i);
+        });
+        setCardInstallments(grouped);
+      } catch (e) { /* silent */ }
+    };
+
+    useEffect(() => { fetchInstallments(); }, [creditCards]);
+
+    const openInstallModal = (cardId: string) => {
+      setInstallFormCardId(cardId);
+      setInstallForm({ description: '', totalAmount: '', installmentCount: '1', dueDay: '1', accountId: '', categoryId: '' });
+      setIsInstallFormOpen(true);
+    };
+
+    const handleInstallSubmit = async () => {
+      if (!installForm.description || !installForm.totalAmount) {
+        addToast('Preencha descrição e valor total', 'error');
+        return;
+      }
+      try {
+        await creditCardService.createInstallment(installFormCardId, {
+          description: installForm.description,
+          totalAmount: Number(installForm.totalAmount),
+          installmentCount: Number(installForm.installmentCount),
+          dueDay: Number(installForm.dueDay),
+          accountId: installForm.accountId || null,
+          categoryId: installForm.categoryId || null,
+        });
+        addToast('Compra parcelada adicionada!', 'success');
+        setIsInstallFormOpen(false);
+        fetchInstallments();
+        refreshData();
+      } catch (err: any) {
+        addToast(err?.response?.data?.message || 'Erro ao adicionar parcela', 'error');
+      }
+    };
+
+    const handleDeleteInstallment = async (id: string) => {
+      if (!confirm('Remover esta compra parcelada?')) return;
+      try {
+        await creditCardService.deleteInstallment(id);
+        addToast('Parcela removida', 'info');
+        fetchInstallments();
+        refreshData();
+      } catch (e: any) {
+        addToast('Erro ao remover', 'error');
+      }
+    };
 
 
     // Removed local fetch favor of global DataProvider refreshData
@@ -292,15 +354,64 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                         </div>
                                     </div>
                                     
-                                    <div className="mt-8 pt-6 border-t border-white/5 flex justify-between relative z-10">
-                                        <div className="flex -space-x-2">
-                                            {[1, 2, 3].map(i => (
-                                                <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-800 bg-slate-700"></div>
-                                            ))}
-                                        </div>
-                                        <Nfc className="w-6 h-6 text-white/20" />
+                                <div className="mt-8 pt-6 border-t border-white/5 flex justify-between relative z-10">
+                                    <div className="flex -space-x-2">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-800 bg-slate-700"></div>
+                                        ))}
                                     </div>
+                                    <Nfc className="w-6 h-6 text-white/20" />
                                 </div>
+
+                                {/* ── Installments Section ── */}
+                                <div className="mt-6 pt-6 border-t border-white/10 relative z-10">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-white/40 flex items-center gap-1.5">
+                                      <ShoppingBag className="w-3 h-3" /> Compras Parceladas
+                                    </p>
+                                    <button
+                                      onClick={() => openInstallModal(card.id)}
+                                      className="text-[8px] font-black uppercase tracking-wider text-cyan-400 hover:text-cyan-300 bg-white/10 hover:bg-white/20 px-2 py-1 rounded-lg transition-all"
+                                    >
+                                      + Nova
+                                    </button>
+                                  </div>
+
+                                  {(!cardInstallments[card.id] || cardInstallments[card.id].length === 0) ? (
+                                    <p className="text-[10px] text-white/30 italic">Nenhuma compra parcelada</p>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      {cardInstallments[card.id].map(inst => (
+                                        <div key={inst.id} className="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2 group/inst">
+                                          <div className="min-w-0 flex-1">
+                                            <p className="text-[11px] font-bold text-white truncate">{inst.description}</p>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                              <span className="text-[10px] font-black text-cyan-300">
+                                                {isPrivacyEnabled ? '•••••' : formatCurrency(Number(inst.amountPerMonth))}
+                                              </span>
+                                              <span className="text-[9px] text-white/40">
+                                                {inst.currentInstallment}/{inst.installmentCount}
+                                              </span>
+                                              <div className="flex-1 h-1 bg-white/10 rounded-full max-w-[60px]">
+                                                <div
+                                                  className="h-full bg-cyan-500/60 rounded-full transition-all"
+                                                  style={{ width: `${(inst.currentInstallment / inst.installmentCount) * 100}%` }}
+                                                />
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <button
+                                            onClick={() => handleDeleteInstallment(inst.id)}
+                                            className="opacity-0 group-hover/inst:opacity-100 p-1 text-white/30 hover:text-rose-400 transition-all"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                            </div>
                             ))}
                         </div>
                     )}
@@ -328,6 +439,32 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                         setEditingAccount(null);
                     }}
                 />
+            )}
+
+            {/* Installment Form Modal */}
+            {isInstallFormOpen && (
+              <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md">
+                <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95">
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-cyan-50/50 dark:bg-slate-950/50 flex items-center justify-between">
+                    <h2 className="text-lg font-black text-slate-900 dark:text-white">Nova Compra Parcelada</h2>
+                    <button onClick={() => setIsInstallFormOpen(false)} className="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <input className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="Descrição" value={installForm.description} onChange={e => setInstallForm({...installForm, description: e.target.value})} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="Valor total" value={installForm.totalAmount} onChange={e => setInstallForm({...installForm, totalAmount: e.target.value})} />
+                      <input type="number" min="1" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="N° parcelas" value={installForm.installmentCount} onChange={e => setInstallForm({...installForm, installmentCount: e.target.value})} />
+                    </div>
+                    <input type="number" min="1" max="31" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="Dia do vencimento" value={installForm.dueDay} onChange={e => setInstallForm({...installForm, dueDay: e.target.value})} />
+                    <div className="flex gap-3 pt-2">
+                      <button onClick={() => setIsInstallFormOpen(false)} className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 rounded-xl">Cancelar</button>
+                      <button onClick={handleInstallSubmit} className="flex-[2] py-3 text-[10px] font-black uppercase tracking-widest bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-600/20">Adicionar</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
         </>
     );
