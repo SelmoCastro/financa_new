@@ -3,9 +3,11 @@ import {
   Get,
   Post,
   Patch,
+  Body,
   Request,
   UseGuards,
   Param,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { NotificationsService } from './notifications.service';
@@ -37,5 +39,21 @@ export class NotificationsController {
   @Post('read-all')
   async markAllAsRead(@Request() req) {
     return this.notificationsService.markAllAsRead(req.user.userId);
+  }
+
+  @Post(':id/action')
+  async handleAction(
+    @Param('id') id: string,
+    @Body() body: { action: string },
+    @Request() req,
+  ) {
+    if (!['confirm', 'postpone'].includes(body.action)) {
+      throw new BadRequestException('Ação inválida. Use: confirm ou postpone');
+    }
+    return this.notificationsService.handleAction(
+      id,
+      body.action,
+      req.user.userId,
+    );
   }
 }

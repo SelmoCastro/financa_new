@@ -1,57 +1,57 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AutoTransactionScheduler {
   private readonly logger = new Logger(AutoTransactionScheduler.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Runs daily at 2 AM Brasília time (5 AM UTC).
-   * Processes both recurring transactions and credit card installments.
+   * Generates interactive notifications instead of auto-creating transactions.
    */
   @Cron('0 5 * * *')
   async handleAutoTransactions() {
-    this.logger.log('🔁 Starting auto-transaction processing...');
+    this.logger.log('🔔 Starting auto-notification processing...');
 
     await this.processRecurringTransactions();
     await this.processInstallments();
 
-    this.logger.log('✅ Auto-transaction processing complete.');
+    this.logger.log('✅ Auto-notification processing complete.');
   }
 
   /**
-   * Creates transactions for active recurring items that are due today.
+   * Creates ACTION_RECURRING notifications for active recurring items due today.
+   * User confirms payment via notification action.
    */
   private async processRecurringTransactions() {
     const today = new Date();
     const dueDay = today.getDate();
-    const currentMonth = today.getMonth() + 1; // 1-12
+    const currentMonth = today.getMonth() + 1;
 
-    // Only process if current month is within startMonth..endMonth range
     const recorrentes = await this.prisma.recurringTransaction.findMany({
       where: {
         isActive: true,
         dueDay,
         startMonth: { lte: currentMonth },
-        OR: [
-          { endMonth: null },
-          { endMonth: { gte: currentMonth } },
-        ],
+        OR: [{ endMonth: null }, { endMonth: { gte: currentMonth } }],
       },
-      include: { category: true },
     });
 
-    let created = 0;
+    let notified = 0;
     for (const r of recorrentes) {
-      // Check if already created this month
-      const existing = await this.prisma.transaction.findFirst({
+      // Check if already notified this month
+      const existing = await this.prisma.notification.findFirst({
         where: {
           userId: r.userId,
-          description: r.description,
-          date: {
+          type: 'ACTION_RECURRING',
+          createdAt: {
             gte: new Date(today.getFullYear(), today.getMonth(), 1),
             lt: new Date(today.getFullYear(), today.getMonth() + 1, 1),
           },
@@ -59,49 +59,40 @@ export class AutoTransactionScheduler {
       });
 
       if (existing) {
-        this.logger.debug(`  ⏭️ Skipping "${r.description}" — already exists this month`);
+        this.logger.debug(
+          `  ⏭️ Skipping "${r.description}" — already notified this month`,
+        );
         continue;
       }
 
-      await this.prisma.transaction.create({
-        data: {
+      await this.notificationsService.create(r.userId, {
+        title: '💰 Despesa Recorrente',
+        message: `"${r.description}" de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(r.amount))} vence hoje. Já foi pago?`,
+        type: 'ACTION_RECURRING',
+        actionType: 'CONFIRM_PAYMENT',
+        actionMeta: {
+          recurringTransactionId: r.id,
           description: r.description,
-          amount: r.amount,
-          date: today,
-          type: r.type,
-          categoryId: r.categoryId,
+          amount: Number(r.amount),
           accountId: r.accountId,
+          categoryId: r.categoryId,
           creditCardId: r.creditCardId,
-          userId: r.userId,
-          isFixed: true,
         },
       });
 
-      // Update account balance if accountId is set
-      if (r.accountId) {
-        const amount = Number(r.amount);
-        await this.prisma.account.update({
-          where: { id: r.accountId },
-          data: {
-            balance: {
-              [r.type === 'INCOME' ? 'increment' : 'decrement']: amount,
-            },
-          },
-        });
-      }
-
-      this.logger.log(`  ✅ Created "${r.description}" — R$ ${Number(r.amount).toFixed(2)}`);
-      created++;
+      this.logger.log(
+        `  🔔 Notified: "${r.description}" — R$ ${Number(r.amount).toFixed(2)}`,
+      );
+      notified++;
     }
 
-    if (created > 0) {
-      this.logger.log(`📋 Processed ${created} recurring transaction(s)`);
+    if (notified > 0) {
+      this.logger.log(`📋 Generated ${notified} recurring notification(s)`);
     }
   }
 
   /**
-   * Creates transactions for active credit card installments due today.
-   * Increments the currentInstallment counter.
+   * Creates ACTION_INSTALLMENT notifications for active credit card installments due today.
    */
   private async processInstallments() {
     const today = new Date();
@@ -113,17 +104,19 @@ export class AutoTransactionScheduler {
         dueDay,
         currentInstallment: { lt: this.prisma.creditCardInstallment.fields.installmentCount },
       },
-      include: { creditCard: true, category: true },
+      include: { creditCard: true },
     });
 
-    let created = 0;
+    let notified = 0;
     for (const inst of installments) {
-      // Check if already posted this month
-      const existing = await this.prisma.transaction.findFirst({
+      const nextInstallment = inst.currentInstallment + 1;
+
+      // Check if already notified this month
+      const existing = await this.prisma.notification.findFirst({
         where: {
           userId: inst.userId,
-          description: inst.description + ` (${inst.currentInstallment + 1}/${inst.installmentCount})`,
-          date: {
+          type: 'ACTION_INSTALLMENT',
+          createdAt: {
             gte: new Date(today.getFullYear(), today.getMonth(), 1),
             lt: new Date(today.getFullYear(), today.getMonth() + 1, 1),
           },
@@ -131,57 +124,35 @@ export class AutoTransactionScheduler {
       });
 
       if (existing) {
-        this.logger.debug(`  ⏭️ Skipping installment "${inst.description}" — already posted`);
+        this.logger.debug(
+          `  ⏭️ Skipping installment "${inst.description}" — already notified`,
+        );
         continue;
       }
 
-      // Create transaction (always EXPENSE for installments)
-      await this.prisma.transaction.create({
-        data: {
-          description: inst.description + ` (${inst.currentInstallment + 1}/${inst.installmentCount})`,
-          amount: inst.amountPerMonth,
-          date: today,
-          type: 'EXPENSE',
-          categoryId: inst.categoryId,
+      await this.notificationsService.create(inst.userId, {
+        title: '💳 Parcela Cartão de Crédito',
+        message: `Parcela ${nextInstallment}/${inst.installmentCount} de "${inst.description}" — ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(inst.amountPerMonth))} no cartão ${inst.creditCard.name}. Já pagou?`,
+        type: 'ACTION_INSTALLMENT',
+        actionType: 'CONFIRM_PAYMENT',
+        actionMeta: {
+          installmentId: inst.id,
+          description: `${inst.description} (${nextInstallment}/${inst.installmentCount})`,
+          amount: Number(inst.amountPerMonth),
           accountId: inst.accountId,
+          categoryId: inst.categoryId,
           creditCardId: inst.creditCardId,
-          userId: inst.userId,
-          currentInstallment: inst.currentInstallment + 1,
-          installmentCount: inst.installmentCount,
-          isFixed: true,
-        },
-      });
-
-      // Debit account if set
-      if (inst.accountId) {
-        await this.prisma.account.update({
-          where: { id: inst.accountId },
-          data: {
-            balance: {
-              decrement: Number(inst.amountPerMonth),
-            },
-          },
-        });
-      }
-
-      // Increment currentInstallment
-      const next = inst.currentInstallment + 1;
-      await this.prisma.creditCardInstallment.update({
-        where: { id: inst.id },
-        data: {
-          currentInstallment: next,
-          isActive: next < inst.installmentCount,
         },
       });
 
       this.logger.log(
-        `  💳 Parcela ${next}/${inst.installmentCount} "${inst.description}" — R$ ${Number(inst.amountPerMonth).toFixed(2)}`,
+        `  💳 Parcela ${nextInstallment}/${inst.installmentCount} "${inst.description}" — R$ ${Number(inst.amountPerMonth).toFixed(2)}`,
       );
-      created++;
+      notified++;
     }
 
-    if (created > 0) {
-      this.logger.log(`📋 Processed ${created} installment(s)`);
+    if (notified > 0) {
+      this.logger.log(`📋 Generated ${notified} installment notification(s)`);
     }
   }
 }

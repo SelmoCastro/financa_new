@@ -227,16 +227,18 @@ model TransactionInvite {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  title     String
-  message   String
-  type      String
-  isRead    Boolean  @default(false)
-  userId    String
-  metadata  Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  title      String
+  message    String
+  type       String
+  isRead     Boolean  @default(false)
+  userId     String
+  metadata   Json?
+  actionType String?  // CONFIRM_PAYMENT, POSTPONE — for interactive notifications
+  actionMeta Json?    // { recurringTransactionId, installmentId, amount, description, accountId, categoryId, creditCardId }
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isRead])
