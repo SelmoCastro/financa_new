@@ -1,6 +1,6 @@
 {
-  "version": "1.7.39",
-  "mobileVersion": "1.7.39",
+  "version": "1.8.0",
+  "mobileVersion": "1.8.0",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Transações Recorrentes com peso financeiro e Parcelas de Cartão com auto-lançamento diário."
+  "releaseNotes": "Interface de Recorrentes com peso + Parcelas de Cartão + Notificações interativas de vencimento."
 }
