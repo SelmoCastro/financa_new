@@ -321,6 +321,17 @@ export default function AccountsScreen() {
                                     <Text style={styles.btnDeleteText}>Excluir</Text>
                                 </Pressable>
                             </View>
+
+                            {/* Parcelas */}
+                            <View className="mt-3 pt-3 border-t border-slate-100">
+                              <View className="flex-row items-center justify-between mb-2">
+                                <Text className="text-xs font-black text-slate-400 uppercase">Compras Parceladas</Text>
+                                <Pressable onPress={() => {/* openInstallModal */}} hitSlop={8}>
+                                  <MaterialIcons name="add-circle" size={18} color="#0891b2" />
+                                </Pressable>
+                              </View>
+                              <Text className="text-xs text-slate-300 italic">Em breve...</Text>
+                            </View>
                         </View>
                     ))}
                 </View>

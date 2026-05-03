@@ -28,6 +28,7 @@ export default function TabLayout() {
           <Tabs.Screen name="budgets" options={{ title: 'Orçamentos', tabBarIcon: ({ color }) => <MaterialIcons name="pie-chart" size={24} color={color} /> }} />
           <Tabs.Screen name="goals" options={{ title: 'Metas', tabBarIcon: ({ color }) => <MaterialIcons name="track-changes" size={24} color={color} /> }} />
           <Tabs.Screen name="fixed" options={{ title: 'Fixos', tabBarIcon: ({ color }) => <MaterialIcons name="event-repeat" size={24} color={color} /> }} />
+          <Tabs.Screen name="recurring" options={{ title: 'Recorrentes', tabBarIcon: ({ color }) => <MaterialIcons name="loop" size={24} color={color} /> }} />
           <Tabs.Screen name="reports" options={{ title: 'Relatórios', tabBarIcon: ({ color }) => <MaterialIcons name="bar-chart" size={24} color={color} /> }} />
         </Tabs>
       </TransactionsProvider>
