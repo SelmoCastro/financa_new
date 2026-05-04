@@ -1,6 +1,6 @@
 {
-  "version": "1.8.4",
-  "mobileVersion": "1.8.4",
+  "version": "1.8.5",
+  "mobileVersion": "1.8.5",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Parcelas: labels nos campos do formulário, valor de entrada, visualização expandida com datas e valores individuais."
+  "releaseNotes": "Adicionado painel de Resumo Mensal de Parcelas - vis\u00e3o agregada por m\u00eas"
 }

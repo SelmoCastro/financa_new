@@ -65,6 +65,84 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
 
     useEffect(() => { fetchInstallments(); }, [creditCards]);
 
+    // Monthly summary of installments
+    const monthlySummary = useMemo(() => {
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1; // 1-12
+      const currentYear = now.getFullYear();
+      
+      // Flatten all installments from all cards
+      const allInstallments: CreditCardInstallmentDTO[] = Object.values(cardInstallments).flat();
+      
+      // Group by month/year
+      const groupedByMonth: Record<string, {
+        key: string;
+        month: number;
+        year: number;
+        total: number;
+        items: Array<{
+          description: string;
+          amount: number;
+          cardName: string;
+          installmentNumber: number;
+        }>
+      }> = {};
+      
+      allInstallments.forEach(inst => {
+        // Skip if not active
+        if (!inst.isActive) return;
+        
+        // Compute schedule for this installment
+        const schedule = computeSchedule({
+          installmentCount: inst.installmentCount,
+          totalAmount: inst.totalAmount,
+          amountPerMonth: inst.amountPerMonth,
+          entryAmount: inst.entryAmount,
+          startDate: inst.startDate,
+          dueDay: inst.dueDay
+        });
+        
+        // Add only future installments (not yet paid)
+        schedule.forEach(schedItem => {
+          // Check if this installment is in the future or current month
+          const installmentDate = new Date(schedItem.year, schedItem.month - 1, 1);
+          const currentMonthDate = new Date(currentYear, currentMonth - 1, 1);
+          
+          // Only include if installment is >= current month AND installment number > currentInstallment (not paid yet)
+          if (installmentDate >= currentMonthDate && schedItem.installmentNumber > inst.currentInstallment) {
+            const monthKey = `${schedItem.month}/${schedItem.year}`;
+            
+            if (!groupedByMonth[monthKey]) {
+              groupedByMonth[monthKey] = {
+                key: monthKey,
+                month: schedItem.month,
+                year: schedItem.year,
+                total: 0,
+                items: []
+              };
+            }
+            
+            groupedByMonth[monthKey].total += schedItem.amount;
+            groupedByMonth[monthKey].items.push({
+              description: inst.description,
+              amount: schedItem.amount,
+              cardName: inst.creditCard?.name || 'Cartão Desconhecido',
+              installmentNumber: schedItem.installmentNumber
+            });
+          }
+        });
+      });
+      
+      // Convert to array and sort by date
+      const summaryArray = Object.values(groupedByMonth)
+        .sort((a, b) => {
+          if (a.year !== b.year) return a.year - b.year;
+          return a.month - b.month;
+        });
+      
+      return summaryArray;
+    }, [cardInstallments]);
+
     const openInstallModal = (cardId: string) => {
       setInstallFormCardId(cardId);
       setInstallForm({ description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: '1', accountId: '', categoryId: '' });
@@ -410,7 +488,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                               className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-white/5 transition-all"
                                             >
                                               <div className="min-w-0 flex-1">
-                                                <p className="text-[11px] font-bold text-white truncate">{inst.description}</p>
+                                                <p className="text-[11px] font-bold text-slate-700 dark:text-white truncate">{inst.description}</p>
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                   <span className="text-[10px] font-black text-cyan-300">
                                                     {isPrivacyEnabled ? '•••••' : formatCurrency(hasEntry ? entryAmount : Number(inst.amountPerMonth))}
@@ -488,6 +566,101 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                         </div>
                     )}
                 </section>
+
+            {/* Resumo Mensal de Parcelas */}
+            <section className="pt-12 border-t border-slate-200 dark:border-slate-800">
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                 <div>
+                     <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">Planejamento</p>
+                     <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
+                         Resumo Mensal
+                     </h3>
+                 </div>
+             </div>
+
+             {monthlySummary.length === 0 ? (
+                 <div className="glass-card border-dashed border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-16 text-center">
+                     <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 mx-auto rounded-[2rem] flex items-center justify-center shadow-sm mb-8 border border-slate-100 dark:border-slate-800">
+                         <ShoppingBag className="w-10 h-10 text-slate-300 dark:text-slate-600" />
+                     </div>
+                     <h4 className="text-xl font-black text-slate-800 dark:text-white mb-2">Nenhuma parcela pendente</h4>
+                     <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-medium leading-relaxed">Todas as suas parcelas estão em dia ou não há compras parceladas agendadas para o futuro.</p>
+                 </div>
+             ) : (
+                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                     {monthlySummary.map(month => {
+                         const monthName = formatMonth(month.month);
+                         const isCurrentMonth = month.month === new Date().getMonth() + 1 && month.year === new Date().getFullYear();
+                         
+                         return (
+                             <div key={month.key} className="glass-card rounded-[2rem] p-6 hover:translate-y-[-2px] transition-all duration-300 group border border-slate-200 dark:border-white/10">
+                                 <div className="flex items-center justify-between mb-4">
+                                     <div className="flex items-center gap-2">
+                                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isCurrentMonth ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400' : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/40'}`}>
+                                             <span className="text-[10px] font-black uppercase tracking-widest">{monthName}</span>
+                                         </div>
+                                         <h4 className="text-lg font-black text-slate-800 dark:text-white">
+                                             {monthName} {month.year}
+                                         </h4>
+                                     </div>
+                                      <span className={`text-[10px] font-bold uppercase tracking-widest ${isCurrentMonth ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 dark:text-white/50'}`}>
+                                         {isCurrentMonth ? 'Mês Atual' : 'Futuro'}
+                                     </span>
+                                 </div>
+                                 
+                                 <div className="mt-4">
+                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">Total do Mês</p>
+                                     <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                         {isPrivacyEnabled ? '•••••' : formatCurrency(month.total)}
+                                     </p>
+                                 </div>
+                                 
+                                 {/* Expandable items list */}
+                                 <div className="mt-4">
+                                      <button
+                                          onClick={() => setExpandedInstallId(`month-${month.key}`)}
+                                          className="w-full flex items-center justify-between px-4 py-3 text-left bg-slate-50 dark:bg-white/10 rounded-xl hover:bg-slate-100 dark:hover:bg-white/20 transition-all"
+                                      >
+                                         <div className="flex-1">
+                                            <p className="text-[11px] font-bold text-slate-700 dark:text-white truncate">
+                                                Ver {month.items.length} parcela{month.items.length !== 1 ? 's' : ''} deste mês
+                                             </p>
+                                         </div>
+                                         <div className="flex items-center gap-1">
+                                              {expandedInstallId === `month-${month.key}` ? (
+                                                  <ChevronUp className="w-3.5 h-3.5 text-slate-400 dark:text-white/30" />
+                                              ) : (
+                                                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-white/30" />
+                                              )}
+                                         </div>
+                                     </button>
+                                     
+                                     {expandedInstallId === `month-${month.key}` && (
+                                         <div className="mt-3 space-y-2">
+                                              {month.items.map(item => (
+                                                  <div key={`${month.key}-${item.installmentNumber}`} className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-white/5 rounded-xl">
+                                                      <div className="flex-1">
+                                                          <p className="text-[11px] font-bold text-slate-800 dark:text-white truncate max-w-[200px]">
+                                                              {item.description}
+                                                          </p>
+                                                          <p className="text-[9px] text-slate-500 dark:text-white/50 truncate">
+                                                              {item.cardName} - {item.installmentNumber}x
+                                                          </p>
+                                                      </div>
+                                                      <span className="font-bold text-slate-900 dark:text-white">
+                                                          {isPrivacyEnabled ? '•••••' : formatCurrency(item.amount)}
+                                                      </span>
+                                                  </div>
+                                              ))}
+                                         </div>
+                                     )}
+                                 </div>
+                             </div>
+                         );
+                     })}
+                 </div>
+            )}
+            </section>
             </div>
 
             {isCardFormOpen && (
