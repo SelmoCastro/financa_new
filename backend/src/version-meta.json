@@ -1,6 +1,6 @@
 {
-  "version": "1.8.7",
-  "mobileVersion": "1.8.7",
+  "version": "1.8.8",
+  "mobileVersion": "1.8.8",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Correcao: edicao de conta agora funciona corretamente. Campo de saldo e somente leitura ao editar (saldo atualiza via transacoes)."
+  "releaseNotes": "Correcao: editar conta agora permite corrigir o saldo"
 }

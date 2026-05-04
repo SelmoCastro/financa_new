@@ -59,6 +59,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                 await api.patch(`/accounts/${accountToEdit.id}`, {
                     name,
                     type,
+                    balance: parsedBalance,
                 });
             } else {
                 await api.post('/accounts', {
@@ -133,8 +134,6 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                         </div>
                     </div>
 
-                    {/* Balance field only shown when creating a new account */}
-                    {!accountToEdit && (
                     <div className="space-y-3">
                         <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Saldo Atual</label>
                         <div className="relative group">
@@ -149,22 +148,10 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                                 placeholder="0,00"
                             />
                         </div>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2 ml-1 font-medium uppercase tracking-tight">Insira o saldo real disponível nesta conta agora.</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2 ml-1 font-medium uppercase tracking-tight">
+                            {accountToEdit ? 'Corrija o saldo se digitou errado' : 'Insira o saldo real disponível nesta conta agora.'}
+                        </p>
                     </div>
-                    )}
-
-                    {/* When editing, show current balance as read-only info */}
-                    {accountToEdit && (
-                    <div className="space-y-3">
-                        <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Saldo Atual</label>
-                        <div className="bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4">
-                            <p className="text-2xl font-black text-slate-800 dark:text-white tracking-tighter">
-                                {currencySymbol} {accountToEdit.balance !== undefined ? Number(accountToEdit.balance).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
-                            </p>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium uppercase tracking-tight">O saldo é atualizado automaticamente via transações</p>
-                        </div>
-                    </div>
-                    )}
 
                     <div className="pt-6 flex gap-4">
                         <button
