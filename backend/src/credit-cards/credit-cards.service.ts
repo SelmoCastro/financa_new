@@ -173,9 +173,9 @@ export class CreditCardsService {
    */
   getInstallmentSchedule(inst: {
     installmentCount: number;
-    totalAmount: number;
-    amountPerMonth: number;
-    entryAmount: number | null;
+    totalAmount: any; // Prisma Decimal
+    amountPerMonth: any; // Prisma Decimal
+    entryAmount: any; // Prisma Decimal | null
     startDate: Date;
     dueDay: number;
   }) {
