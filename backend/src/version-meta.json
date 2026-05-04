@@ -1,6 +1,6 @@
 {
-  "version": "1.8.6",
-  "mobileVersion": "1.8.6",
+  "version": "1.8.7",
+  "mobileVersion": "1.8.7",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Correcao: erro ao editar conta existente (400 Bad Request). Adicionado painel de Resumo Mensal de Parcelas."
+  "releaseNotes": "Correcao: edicao de conta agora funciona corretamente. Campo de saldo e somente leitura ao editar (saldo atualiza via transacoes)."
 }

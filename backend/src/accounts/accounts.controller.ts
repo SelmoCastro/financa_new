@@ -57,7 +57,6 @@ export class AccountsController {
     @Body() updateAccountDto: UpdateAccountDto,
     @Request() req,
   ) {
-    console.log('[ACCOUNTS] PATCH:', JSON.stringify({ id, body: updateAccountDto, userId: req.user.userId }));
     return this.accountsService.update(id, updateAccountDto, req.user.userId);
   }
 
