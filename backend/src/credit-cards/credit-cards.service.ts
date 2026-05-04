@@ -100,14 +100,27 @@ export class CreditCardsService {
     // Validate card belongs to user
     await this.findOne(creditCardId, userId);
 
-    const amountPerMonth = Number(dto.totalAmount) / dto.installmentCount;
+    const entryAmount = dto.entryAmount ? Number(dto.entryAmount) : 0;
+    const totalAmount = Number(dto.totalAmount);
+    const installmentCount = dto.installmentCount;
+
+    // Calculate amount per month considering entry
+    // Entry (1st installment) = entryAmount (or equal share if no entry specified)
+    // Remaining installments = (totalAmount - entryAmount) / (installmentCount - 1)
+    let amountPerMonth: number;
+    if (entryAmount > 0 && installmentCount > 1) {
+      amountPerMonth = Math.round(((totalAmount - entryAmount) / (installmentCount - 1)) * 100) / 100;
+    } else {
+      amountPerMonth = Math.round((totalAmount / installmentCount) * 100) / 100;
+    }
 
     return this.prisma.creditCardInstallment.create({
       data: {
         description: dto.description,
         totalAmount: dto.totalAmount,
         installmentCount: dto.installmentCount,
-        amountPerMonth: Math.round(amountPerMonth * 100) / 100,
+        amountPerMonth,
+        entryAmount: dto.entryAmount ?? null,
         startDate: new Date(),
         dueDay: dto.dueDay,
         accountId: dto.accountId,
@@ -152,5 +165,46 @@ export class CreditCardsService {
     await this.findOneInstallment(id, userId);
     await this.prisma.creditCardInstallment.delete({ where: { id } });
     return { deleted: true };
+  }
+
+  /**
+   * Returns the payment schedule for an installment:
+   * list of { month, year, dueDate, amount } for each installment
+   */
+  getInstallmentSchedule(inst: {
+    installmentCount: number;
+    totalAmount: number;
+    amountPerMonth: number;
+    entryAmount: number | null;
+    startDate: Date;
+    dueDay: number;
+  }) {
+    const entryAmount = inst.entryAmount ? Number(inst.entryAmount) : 0;
+    const schedule: { installmentNumber: number; month: number; year: number; dueDate: string; amount: number }[] = [];
+    const start = new Date(inst.startDate);
+
+    for (let i = 1; i <= inst.installmentCount; i++) {
+      // Calculate month offset: 1st installment starts at startDate month
+      const monthOffset = i - 1;
+      const dueDate = new Date(start.getFullYear(), start.getMonth() + monthOffset, inst.dueDay);
+      // Clamp day if month has fewer days (e.g. dueDay=31 in Feb → Feb 28)
+      // JS Date already handles this by rolling over, but we want the last day instead
+      const expectedMonth = (start.getMonth() + monthOffset) % 12;
+      if (dueDate.getMonth() !== expectedMonth) {
+        // Rolled over — use last day of the expected month
+        dueDate.setDate(0); // goes to last day of previous month (which is the expected month)
+      }
+
+      const amount = (entryAmount > 0 && i === 1) ? entryAmount : Number(inst.amountPerMonth);
+
+      schedule.push({
+        installmentNumber: i,
+        month: dueDate.getMonth() + 1,
+        year: dueDate.getFullYear(),
+        dueDate: dueDate.toISOString().split('T')[0],
+        amount,
+      });
+    }
+    return schedule;
   }
 }

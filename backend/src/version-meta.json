@@ -1,6 +1,6 @@
 {
-  "version": "1.8.2",
-  "mobileVersion": "1.8.2",
+  "version": "1.8.3",
+  "mobileVersion": "1.8.3",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Fix: tela em branco ao acessar parcelas de cartão (importe do icone X faltando)."
+  "releaseNotes": "Parcelas: valor de entrada diferente, visualização expandida com datas e valores individuais de cada parcela."
 }

@@ -17,6 +17,11 @@ export class CreateInstallmentDto {
   installmentCount: number;
 
   @IsNumber()
+  @IsOptional()
+  @Min(0.01)
+  entryAmount?: number; // valor da entrada (pagamento à vista)
+
+  @IsNumber()
   @IsNotEmpty()
   @Min(1)
   @Max(31)

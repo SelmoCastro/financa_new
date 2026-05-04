@@ -86,6 +86,13 @@ export class CreditCardsController {
     return this.creditCardsService.getInstallments(req.user.userId);
   }
 
+  @Get('installments/:id/schedule')
+  getInstallmentSchedule(@Param('id') id: string, @Request() req) {
+    return this.creditCardsService.findOneInstallment(id, req.user.userId).then(inst => {
+      return this.creditCardsService.getInstallmentSchedule(inst);
+    });
+  }
+
   @Patch('installments/:id')
   @RequireVerifiedEmail()
   updateInstallment(

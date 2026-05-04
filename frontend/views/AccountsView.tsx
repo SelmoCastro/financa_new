@@ -7,8 +7,8 @@ import { AccountForm } from '../components/AccountForm';
 import { BankIcon } from '../components/BankIcon';
 import { useData } from '../context/DataProvider';
 import { useCurrency } from '../context/CurrencyContext';
-import { Wallet, Sparkles, Plus, MoreVertical, Edit3, Trash2, CreditCard as CreditCardIcon, Nfc, ShoppingBag, X } from 'lucide-react';
-import { creditCardService, CreditCardInstallmentDTO } from '../services/creditCardService';
+import { Wallet, Sparkles, Plus, MoreVertical, Edit3, Trash2, CreditCard as CreditCardIcon, Nfc, ShoppingBag, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { creditCardService, CreditCardInstallmentDTO, computeSchedule, formatMonth } from '../services/creditCardService';
 
 interface AccountsViewProps {
     isPrivacyEnabled: boolean;
@@ -24,7 +24,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
     const [cardInstallments, setCardInstallments] = useState<Record<string, CreditCardInstallmentDTO[]>>({});
     const [isInstallFormOpen, setIsInstallFormOpen] = useState(false);
     const [installFormCardId, setInstallFormCardId] = useState('');
-    const [installForm, setInstallForm] = useState({ description: '', totalAmount: '', installmentCount: '1', dueDay: '1', accountId: '', categoryId: '' });
+    const [installForm, setInstallForm] = useState({ description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: '1', accountId: '', categoryId: '' });
+    const [expandedInstallId, setExpandedInstallId] = useState<string | null>(null);
     const { addToast } = useToast();
     const { accounts, creditCards, isLoading, refreshData } = useData();
     const { formatCurrency } = useCurrency();
@@ -66,9 +67,21 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
 
     const openInstallModal = (cardId: string) => {
       setInstallFormCardId(cardId);
-      setInstallForm({ description: '', totalAmount: '', installmentCount: '1', dueDay: '1', accountId: '', categoryId: '' });
+      setInstallForm({ description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: '1', accountId: '', categoryId: '' });
       setIsInstallFormOpen(true);
     };
+
+    // Preview of installment values while typing
+    const installmentPreview = useMemo(() => {
+      const total = Number(installForm.totalAmount) || 0;
+      const count = Number(installForm.installmentCount) || 1;
+      const entry = Number(installForm.entryAmount) || 0;
+      if (total <= 0 || count < 1) return null;
+      const perMonth = entry > 0 && count > 1
+        ? Math.round(((total - entry) / (count - 1)) * 100) / 100
+        : Math.round((total / count) * 100) / 100;
+      return { entry, perMonth, count, total };
+    }, [installForm.totalAmount, installForm.installmentCount, installForm.entryAmount]);
 
     const handleInstallSubmit = async () => {
       if (!installForm.description || !installForm.totalAmount) {
@@ -80,6 +93,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
           description: installForm.description,
           totalAmount: Number(installForm.totalAmount),
           installmentCount: Number(installForm.installmentCount),
+          entryAmount: installForm.entryAmount ? Number(installForm.entryAmount) : null,
           dueDay: Number(installForm.dueDay),
           accountId: installForm.accountId || null,
           categoryId: installForm.categoryId || null,
@@ -98,6 +112,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
       try {
         await creditCardService.deleteInstallment(id);
         addToast('Parcela removida', 'info');
+        setExpandedInstallId(null);
         fetchInstallments();
         refreshData();
       } catch (e: any) {
@@ -381,33 +396,90 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                     <p className="text-[10px] text-white/30 italic">Nenhuma compra parcelada</p>
                                   ) : (
                                     <div className="space-y-2">
-                                      {cardInstallments[card.id].map(inst => (
-                                        <div key={inst.id} className="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2 group/inst">
-                                          <div className="min-w-0 flex-1">
-                                            <p className="text-[11px] font-bold text-white truncate">{inst.description}</p>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                              <span className="text-[10px] font-black text-cyan-300">
-                                                {isPrivacyEnabled ? '•••••' : formatCurrency(Number(inst.amountPerMonth))}
-                                              </span>
-                                              <span className="text-[9px] text-white/40">
-                                                {inst.currentInstallment}/{inst.installmentCount}
-                                              </span>
-                                              <div className="flex-1 h-1 bg-white/10 rounded-full max-w-[60px]">
-                                                <div
-                                                  className="h-full bg-cyan-500/60 rounded-full transition-all"
-                                                  style={{ width: `${(inst.currentInstallment / inst.installmentCount) * 100}%` }}
-                                                />
+                                      {cardInstallments[card.id].map(inst => {
+                                        const isExpanded = expandedInstallId === inst.id;
+                                        const schedule = computeSchedule(inst);
+                                        const entryAmount = inst.entryAmount ? Number(inst.entryAmount) : 0;
+                                        const hasEntry = entryAmount > 0;
+
+                                        return (
+                                          <div key={inst.id} className="bg-white/5 rounded-xl overflow-hidden">
+                                            {/* Header row - click to expand */}
+                                            <button
+                                              onClick={() => setExpandedInstallId(isExpanded ? null : inst.id)}
+                                              className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-white/5 transition-all"
+                                            >
+                                              <div className="min-w-0 flex-1">
+                                                <p className="text-[11px] font-bold text-white truncate">{inst.description}</p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                  <span className="text-[10px] font-black text-cyan-300">
+                                                    {isPrivacyEnabled ? '•••••' : formatCurrency(hasEntry ? entryAmount : Number(inst.amountPerMonth))}
+                                                  </span>
+                                                  {hasEntry && (
+                                                    <span className="text-[8px] font-bold text-amber-300/70 bg-amber-400/10 px-1.5 py-0.5 rounded">
+                                                      entrada
+                                                    </span>
+                                                  )}
+                                                  <span className="text-[9px] text-white/40">
+                                                    {inst.currentInstallment}/{inst.installmentCount}
+                                                  </span>
+                                                  <div className="flex-1 h-1 bg-white/10 rounded-full max-w-[60px]">
+                                                    <div
+                                                      className="h-full bg-cyan-500/60 rounded-full transition-all"
+                                                      style={{ width: `${(inst.currentInstallment / inst.installmentCount) * 100}%` }}
+                                                    />
+                                                  </div>
+                                                </div>
                                               </div>
-                                            </div>
+                                              <div className="flex items-center gap-1 ml-2">
+                                                <button
+                                                  onClick={(e) => { e.stopPropagation(); handleDeleteInstallment(inst.id); }}
+                                                  className="p-1 text-white/30 hover:text-rose-400 transition-all"
+                                                >
+                                                  <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                                {isExpanded
+                                                  ? <ChevronUp className="w-3.5 h-3.5 text-white/30" />
+                                                  : <ChevronDown className="w-3.5 h-3.5 text-white/30" />
+                                                }
+                                              </div>
+                                            </button>
+
+                                            {/* Expanded: installment schedule */}
+                                            {isExpanded && schedule.length > 0 && (
+                                              <div className="px-3 pb-2 border-t border-white/5 pt-2">
+                                                <div className="space-y-1">
+                                                  {schedule.map(s => {
+                                                    const isPaid = s.installmentNumber <= inst.currentInstallment;
+                                                    return (
+                                                      <div key={s.installmentNumber} className="flex items-center justify-between text-[10px] py-1 px-1">
+                                                        <div className="flex items-center gap-2">
+                                                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black ${isPaid ? 'bg-cyan-500/30 text-cyan-300' : 'bg-white/5 text-white/40'}`}>
+                                                            {s.installmentNumber}
+                                                          </span>
+                                                          <span className={`font-medium ${isPaid ? 'text-white/50 line-through' : 'text-white/70'}`}>
+                                                            {formatMonth(s.month)}/{s.year.toString().slice(2)}
+                                                          </span>
+                                                        </div>
+                                                        <span className={`font-bold ${isPaid ? 'text-white/30 line-through' : s.installmentNumber === 1 && hasEntry ? 'text-amber-300' : 'text-cyan-300'}`}>
+                                                          {isPrivacyEnabled ? '•••••' : formatCurrency(s.amount)}
+                                                        </span>
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                                {/* Total */}
+                                                <div className="flex items-center justify-between text-[10px] mt-2 pt-2 border-t border-white/10 px-1">
+                                                  <span className="font-bold text-white/50">Total</span>
+                                                  <span className="font-black text-white">
+                                                    {isPrivacyEnabled ? '•••••' : formatCurrency(Number(inst.totalAmount))}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            )}
                                           </div>
-                                          <button
-                                            onClick={() => handleDeleteInstallment(inst.id)}
-                                            className="opacity-0 group-hover/inst:opacity-100 p-1 text-white/30 hover:text-rose-400 transition-all"
-                                          >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                          </button>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>
@@ -452,12 +524,40 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                     </button>
                   </div>
                   <div className="p-6 space-y-4">
-                    <input className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="Descrição" value={installForm.description} onChange={e => setInstallForm({...installForm, description: e.target.value})} />
+                    <input className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="Descrição (ex: Notebook, Geladeira)" value={installForm.description} onChange={e => setInstallForm({...installForm, description: e.target.value})} />
                     <div className="grid grid-cols-2 gap-3">
-                      <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="Valor total" value={installForm.totalAmount} onChange={e => setInstallForm({...installForm, totalAmount: e.target.value})} />
-                      <input type="number" min="1" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="N° parcelas" value={installForm.installmentCount} onChange={e => setInstallForm({...installForm, installmentCount: e.target.value})} />
+                      <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Valor total" value={installForm.totalAmount} onChange={e => setInstallForm({...installForm, totalAmount: e.target.value})} />
+                      <input type="number" min="1" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="N° parcelas" value={installForm.installmentCount} onChange={e => setInstallForm({...installForm, installmentCount: e.target.value})} />
                     </div>
-                    <input type="number" min="1" max="31" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="Dia do vencimento" value={installForm.dueDay} onChange={e => setInstallForm({...installForm, dueDay: e.target.value})} />
+                    {/* Entry amount field */}
+                    <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Valor da entrada (opcional)" value={installForm.entryAmount} onChange={e => setInstallForm({...installForm, entryAmount: e.target.value})} />
+                    <input type="number" min="1" max="31" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Dia do vencimento" value={installForm.dueDay} onChange={e => setInstallForm({...installForm, dueDay: e.target.value})} />
+
+                    {/* Live preview of installment values */}
+                    {installmentPreview && (
+                      <div className="bg-cyan-50 dark:bg-cyan-500/10 rounded-xl p-3 space-y-1.5 border border-cyan-100 dark:border-cyan-500/20">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-cyan-600 dark:text-cyan-400 mb-1">Prévia das parcelas</p>
+                        {installmentPreview.entry > 0 && (
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">Entrada</span>
+                            <span className="font-black text-amber-700 dark:text-amber-300">{formatCurrency(installmentPreview.entry)}</span>
+                          </div>
+                        )}
+                        {installmentPreview.count > (installmentPreview.entry > 0 ? 1 : 0) && (
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-slate-600 dark:text-slate-300 font-bold">
+                              {installmentPreview.entry > 0 ? `${installmentPreview.count - 1}x de` : `${installmentPreview.count}x de`}
+                            </span>
+                            <span className="font-black text-cyan-700 dark:text-cyan-300">{formatCurrency(installmentPreview.perMonth)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-[11px] pt-1.5 border-t border-cyan-200 dark:border-cyan-500/20">
+                          <span className="font-bold text-slate-600 dark:text-slate-300">Total</span>
+                          <span className="font-black text-slate-800 dark:text-white">{formatCurrency(installmentPreview.total)}</span>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex gap-3 pt-2">
                       <button onClick={() => setIsInstallFormOpen(false)} className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 rounded-xl">Cancelar</button>
                       <button onClick={handleInstallSubmit} className="flex-[2] py-3 text-[10px] font-black uppercase tracking-widest bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-600/20">Adicionar</button>

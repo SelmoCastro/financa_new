@@ -330,6 +330,7 @@ model CreditCardInstallment {
   installmentCount   Int
   currentInstallment Int      @default(0)
   amountPerMonth     Decimal  @db.Decimal(15, 2)
+  entryAmount        Decimal? @db.Decimal(15, 2) // valor da entrada (null = sem entrada)
   startDate          DateTime
   dueDay             Int // 1-31
   isActive           Boolean  @default(true)
