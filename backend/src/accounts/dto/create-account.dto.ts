@@ -6,10 +6,10 @@ export class CreateAccountDto {
   @MaxLength(100)
   name: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @IsIn(['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH', 'OTHER'])
-  type: string;
+   @IsString()
+   @IsNotEmpty()
+   @IsIn(['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH', 'WALLET', 'OTHER'])
+   type: string;
 
   @IsNumber()
   @IsOptional()

@@ -41,7 +41,7 @@ export const BankIcon: React.FC<BankIconProps> = ({ name, type = 'CHECKING', cla
     }
 
     // Fallbacks por tipo
-    const DefaultIcon = type === 'WALLET' ? Banknote : type === 'SAVINGS' ? PiggyBank : Landmark;
+    const DefaultIcon = (type === 'WALLET' || type === 'CASH') ? Banknote : type === 'SAVINGS' ? PiggyBank : Landmark;
 
     return (
         <div className={`${className} bg-slate-50 text-slate-400 flex items-center justify-center border border-slate-100 flex-shrink-0 select-none`}>

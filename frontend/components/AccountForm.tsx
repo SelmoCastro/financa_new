@@ -59,7 +59,6 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                 await api.patch(`/accounts/${accountToEdit.id}`, {
                     name,
                     type,
-                    balance: parsedBalance,
                 });
             } else {
                 await api.post('/accounts', {
@@ -126,7 +125,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                                 <option value="CHECKING">Conta Corrente</option>
                                 <option value="SAVINGS">Conta Poupança</option>
                                 <option value="INVESTMENT">Corretora / Investimentos</option>
-                                <option value="WALLET">Carteira (Dinheiro Físico)</option>
+                                 <option value="CASH">Carteira (Dinheiro Físico)</option>
                             </select>
                             <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                 <ChevronDown className="w-4 h-4" />

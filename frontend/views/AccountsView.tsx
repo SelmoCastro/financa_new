@@ -341,9 +341,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                                     <div className="space-y-1 mb-6">
                                         <h5 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">{acc.name}</h5>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{
-                                            acc.type === 'CHECKING' ? 'Conta Corrente' :
-                                                acc.type === 'SAVINGS' ? 'Conta Poupança' :
-                                                    acc.type === 'WALLET' ? 'Carteira (Dinheiro)' : 'Corretora'
+                                             acc.type === 'CHECKING' ? 'Conta Corrente' :
+                                                 acc.type === 'SAVINGS' ? 'Conta Poupança' :
+                                                     (acc.type === 'WALLET' || acc.type === 'CASH') ? 'Carteira (Dinheiro)' : 'Corretora'
                                         }</p>
                                     </div>
                                     <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
