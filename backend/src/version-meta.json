@@ -1,6 +1,6 @@
 {
-  "version": "1.8.0",
-  "mobileVersion": "1.8.0",
+  "version": "1.8.2",
+  "mobileVersion": "1.8.2",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Interface de Recorrentes com peso + Parcelas de Cartão + Notificações interativas de vencimento."
+  "releaseNotes": "Fix: tela em branco ao acessar parcelas de cartão (importe do icone X faltando)."
 }

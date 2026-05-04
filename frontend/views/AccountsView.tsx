@@ -7,7 +7,7 @@ import { AccountForm } from '../components/AccountForm';
 import { BankIcon } from '../components/BankIcon';
 import { useData } from '../context/DataProvider';
 import { useCurrency } from '../context/CurrencyContext';
-import { Wallet, Sparkles, Plus, MoreVertical, Edit3, Trash2, CreditCard as CreditCardIcon, Nfc, ShoppingBag } from 'lucide-react';
+import { Wallet, Sparkles, Plus, MoreVertical, Edit3, Trash2, CreditCard as CreditCardIcon, Nfc, ShoppingBag, X } from 'lucide-react';
 import { creditCardService, CreditCardInstallmentDTO } from '../services/creditCardService';
 
 interface AccountsViewProps {
