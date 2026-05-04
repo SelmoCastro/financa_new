@@ -1,6 +1,6 @@
 {
-  "version": "1.8.3",
-  "mobileVersion": "1.8.3",
+  "version": "1.8.4",
+  "mobileVersion": "1.8.4",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Parcelas: valor de entrada diferente, visualização expandida com datas e valores individuais de cada parcela."
+  "releaseNotes": "Parcelas: labels nos campos do formulário, valor de entrada, visualização expandida com datas e valores individuais."
 }

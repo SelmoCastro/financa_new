@@ -513,25 +513,39 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                 />
             )}
 
-            {/* Installment Form Modal */}
-            {isInstallFormOpen && (
-              <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md">
-                <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95">
-                  <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-cyan-50/50 dark:bg-slate-950/50 flex items-center justify-between">
-                    <h2 className="text-lg font-black text-slate-900 dark:text-white">Nova Compra Parcelada</h2>
-                    <button onClick={() => setIsInstallFormOpen(false)} className="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="p-6 space-y-4">
-                    <input className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="Descrição (ex: Notebook, Geladeira)" value={installForm.description} onChange={e => setInstallForm({...installForm, description: e.target.value})} />
-                    <div className="grid grid-cols-2 gap-3">
-                      <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Valor total" value={installForm.totalAmount} onChange={e => setInstallForm({...installForm, totalAmount: e.target.value})} />
-                      <input type="number" min="1" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="N° parcelas" value={installForm.installmentCount} onChange={e => setInstallForm({...installForm, installmentCount: e.target.value})} />
-                    </div>
-                    {/* Entry amount field */}
-                    <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Valor da entrada (opcional)" value={installForm.entryAmount} onChange={e => setInstallForm({...installForm, entryAmount: e.target.value})} />
-                    <input type="number" min="1" max="31" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Dia do vencimento" value={installForm.dueDay} onChange={e => setInstallForm({...installForm, dueDay: e.target.value})} />
+                    {/* Installment Form Modal */}
+                    {isInstallFormOpen && (
+                      <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md">
+                        <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95">
+                          <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-cyan-50/50 dark:bg-slate-950/50 flex items-center justify-between">
+                            <h2 className="text-lg font-black text-slate-900 dark:text-white">Nova Compra Parcelada</h2>
+                            <button onClick={() => setIsInstallFormOpen(false)} className="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                          <div className="p-6 space-y-4">
+                            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Descrição</label>
+                            <input className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="Descrição (ex: Notebook, Geladeira)" value={installForm.description} onChange={e => setInstallForm({...installForm, description: e.target.value})} />
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Valor total (R$)</label>
+                                <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Valor total" value={installForm.totalAmount} onChange={e => setInstallForm({...installForm, totalAmount: e.target.value})} />
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Número de parcelas</label>
+                                <input type="number" min="1" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="N° parcelas" value={installForm.installmentCount} onChange={e => setInstallForm({...installForm, installmentCount: e.target.value})} />
+                              </div>
+                            </div>
+                            {/* Entry amount field */}
+                            <div>
+                              <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Valor da entrada (opcional)</label>
+                              <p className="text-[9px] text-slate-500 dark:text-slate-400 mb-2">Primeira parcela (deixa 0 se não houver entrada)</p>
+                              <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Valor da entrada (opcional)" value={installForm.entryAmount} onChange={e => setInstallForm({...installForm, entryAmount: e.target.value})} />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Dia do vencimento</label>
+                              <input type="number" min="1" max="31" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Dia do vencimento" value={installForm.dueDay} onChange={e => setInstallForm({...installForm, dueDay: e.target.value})} />
+                            </div>
 
                     {/* Live preview of installment values */}
                     {installmentPreview && (
