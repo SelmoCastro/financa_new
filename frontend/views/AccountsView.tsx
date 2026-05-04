@@ -290,7 +290,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ isPrivacyEnabled }) 
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {creditCards.map(card => (
-                                <div key={card.id} className="relative bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl shadow-slate-900/40 overflow-hidden group hover:translate-y-[-4px] transition-all duration-300 border border-white/5">
+                                <div key={card.id} className="relative bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl shadow-slate-900/40 overflow-hidden group hover:translate-y-[-4px] transition-all duration-300 border border-white/5" style={{ overflow: 'visible' }}>
                                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mt-20 -mr-20 blur-3xl group-hover:bg-white/10 transition-all duration-700"></div>
 
                                     <div className="flex justify-between items-start mb-16 relative z-10">

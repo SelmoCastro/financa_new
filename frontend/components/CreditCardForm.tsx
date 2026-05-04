@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, CreditCard as CreditCardIcon, ChevronDown } from 'lucide-react';
-import { Account, CreditCard } from '../types';
+import { Account, CreditCard, ACCOUNT_TYPE_LABELS } from '../types';
 import api from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -13,12 +13,33 @@ interface CreditCardFormProps {
 
 export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardToEdit, onSave, onClose }) => {
     const [name, setName] = useState(cardToEdit?.name || '');
-    const [limit, setLimit] = useState(cardToEdit?.limit ? String(cardToEdit.limit) : '');
+    const [displayLimit, setDisplayLimit] = useState(() => {
+        if (cardToEdit?.limit !== undefined && cardToEdit.limit !== null) {
+            const val = (Number(cardToEdit.limit) * 100).toFixed(0);
+            const amount = parseInt(val) / 100;
+            return amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        return '';
+    });
     const [closingDay, setClosingDay] = useState(cardToEdit?.closingDay ? String(cardToEdit.closingDay) : '');
     const [dueDay, setDueDay] = useState(cardToEdit?.dueDay ? String(cardToEdit.dueDay) : '');
     const [accountId, setAccountId] = useState(cardToEdit?.accountId || '');
     const [isLoading, setIsLoading] = useState(false);
-    const { currencySymbol } = useCurrency();
+    const { currencySymbol, locale } = useCurrency();
+
+    const formatCurrency = (value: string) => {
+        const digits = value.replace(/\D/g, '');
+        if (!digits) return '';
+        const amount = parseInt(digits) / 100;
+        return amount.toLocaleString(locale, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    };
+
+    const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDisplayLimit(formatCurrency(e.target.value));
+    };
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -35,9 +56,10 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
         setIsLoading(true);
 
         try {
+            const parsedLimit = displayLimit ? parseFloat(displayLimit.replace(/\./g, '').replace(',', '.')) : 0;
             const dataPayload = {
                 name,
-                limit: Number(limit),
+                limit: parsedLimit,
                 closingDay: Number(closingDay),
                 dueDay: Number(dueDay),
                 accountId
@@ -93,11 +115,11 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                         <div className="relative group">
                             <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-black text-lg pointer-events-none group-focus-within:text-cyan-500 transition-colors">{currencySymbol}</span>
                             <input
-                                type="number"
-                                step="0.01"
+                                type="text"
+                                inputMode="numeric"
                                 required
-                                value={limit}
-                                onChange={e => setLimit(e.target.value)}
+                                value={displayLimit}
+                                onChange={handleLimitChange}
                                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl pl-14 pr-6 py-5 text-slate-800 dark:text-white font-black text-2xl tracking-tighter focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all outline-none"
                                 placeholder="0,00"
                             />
@@ -142,7 +164,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                             >
                                 <option value="" disabled>Selecione uma conta...</option>
                                 {accounts.map(acc => (
-                                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                    <option key={acc.id} value={acc.id}>{acc.name} ({ACCOUNT_TYPE_LABELS[acc.type] || acc.type})</option>
                                 ))}
                             </select>
                             <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
