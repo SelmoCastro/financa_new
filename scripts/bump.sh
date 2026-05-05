@@ -9,7 +9,19 @@ cd "$ROOT_DIR"
 
 # --- Parse args ---
 BUMP_TYPE="${1:-patch}"
-NOTES="${2:-}"
+shift || true
+NOTES=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --notes)
+      NOTES="$2"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
 
 if [[ "$BUMP_TYPE" != patch && "$BUMP_TYPE" != minor && "$BUMP_TYPE" != major ]]; then
   echo "Usage: $0 [patch|minor|major] [--notes \"Release notes\"]"
@@ -30,6 +42,13 @@ esac
 NEW_VERSION="$MAJOR.$MINOR.$PATCH"
 echo "New version: $NEW_VERSION"
 
+# --- Write NOTES to temp file (avoids shell escaping issues in node) ---
+NOTES_FILE=""
+if [[ -n "$NOTES" ]]; then
+  NOTES_FILE="$(mktemp)"
+  echo "$NOTES" > "$NOTES_FILE"
+fi
+
 # --- Bump all package.json files ---
 for PKG in package.json backend/package.json frontend/package.json mobile/package.json; do
   if [[ -f "$PKG" ]]; then
@@ -38,7 +57,7 @@ for PKG in package.json backend/package.json frontend/package.json mobile/packag
       const p = '$PKG';
       const d = JSON.parse(fs.readFileSync(p, 'utf8'));
       d.version = '$NEW_VERSION';
-      fs.writeFileSync(p, JSON.stringify(d, null, 2) + '\n');
+      fs.writeFileSync(p, JSON.stringify(d, null, 2) + '\\n');
       console.log('  ✓ ' + p + ' → $NEW_VERSION');
     "
   fi
@@ -54,7 +73,7 @@ if [[ -f mobile/app.json ]]; then
       d.expo.android.versionCode += 1;
       console.log('  ✓ mobile/app.json → $NEW_VERSION (versionCode: ' + d.expo.android.versionCode + ')');
     }
-    fs.writeFileSync('mobile/app.json', JSON.stringify(d, null, 2) + '\n');
+    fs.writeFileSync('mobile/app.json', JSON.stringify(d, null, 2) + '\\n');
   "
 fi
 
@@ -65,15 +84,21 @@ if [[ -f "$META_FILE" ]]; then
     const fs = require('fs');
     const d = JSON.parse(fs.readFileSync('$META_FILE', 'utf8'));
     d.version = '$NEW_VERSION';
-    if ('$NOTES') {
-      d.releaseNotes = '$NOTES'.replace(/\\\\n/g, '\\n');
+    d.mobileVersion = '$NEW_VERSION';
+    const notesFile = '$NOTES_FILE';
+    if (notesFile && notesFile !== '' && fs.existsSync(notesFile)) {
+      d.releaseNotes = fs.readFileSync(notesFile, 'utf8').trim();
     } else {
-      // Auto-generate from recent conventional commits
       d.releaseNotes = 'Versão $NEW_VERSION';
     }
-    fs.writeFileSync('$META_FILE', JSON.stringify(d, null, 2) + '\n');
+    fs.writeFileSync('$META_FILE', JSON.stringify(d, null, 2) + '\\n');
     console.log('  ✓ $META_FILE → $NEW_VERSION');
   "
+fi
+
+# Clean up temp file
+if [[ -n "$NOTES_FILE" && -f "$NOTES_FILE" ]]; then
+  rm -f "$NOTES_FILE"
 fi
 
 # --- Update versionCode in build.gradle (for local builds) ---
@@ -82,10 +107,9 @@ if [[ -f "$GRADLE_FILE" ]]; then
   node -e "
     const fs = require('fs');
     let content = fs.readFileSync('$GRADLE_FILE', 'utf8');
-    // Read current versionCode from app.json
     const appJson = JSON.parse(fs.readFileSync('mobile/app.json', 'utf8'));
     const vc = appJson.expo.android.versionCode;
-    content = content.replace(/versionCode\s+\d+/, 'versionCode ' + vc);
+    content = content.replace(/versionCode\\s+\\d+/, 'versionCode ' + vc);
     fs.writeFileSync('$GRADLE_FILE', content);
     console.log('  ✓ build.gradle versionCode → ' + vc);
   "
@@ -97,9 +121,8 @@ COMMITS=$(git log "v${CURRENT}..HEAD" --oneline 2>/dev/null || git log -20 --one
 
 node -e "
   const fs = require('fs');
-  const commits = \`$COMMITS\`.trim().split('\n');
+  const commits = \`$COMMITS\`.trim().split('\\n');
   
-  // Categorize by conventional commit type
   const categories = {
     'feat': { emoji: '✨', title: 'Features', items: [] },
     'fix': { emoji: '🐛', title: 'Bug Fixes', items: [] },
@@ -114,7 +137,7 @@ node -e "
   const other = [];
   
   commits.forEach(line => {
-    const match = line.match(/^[a-f0-9]+\s+(feat|fix|perf|refactor|docs|test|build|ci|chore)(\(.+?\))?:\s+(.+)/i);
+    const match = line.match(/^[a-f0-9]+\\s+(feat|fix|perf|refactor|docs|test|build|ci|chore)(\\(.+?\\))?:\\s+(.+)/i);
     if (match) {
       const type = match[1].toLowerCase();
       const scope = match[2] || '';
@@ -129,31 +152,30 @@ node -e "
     }
   });
   
-  let entry = '## [$NEW_VERSION](https://github.com/SelmoCastro/financa_new/compare/v${CURRENT}...v${NEW_VERSION}) ($(date +%Y-%m-%d))\n\n';
+  let entry = '## [$NEW_VERSION](https://github.com/SelmoCastro/financa_new/compare/v${CURRENT}...v${NEW_VERSION}) ($(date +%Y-%m-%d))\\n\\n';
   
   Object.values(categories).forEach(cat => {
     if (cat.items.length > 0) {
-      entry += '### ' + cat.emoji + ' ' + cat.title + '\n\n';
+      entry += '### ' + cat.emoji + ' ' + cat.title + '\\n\\n';
       cat.items.forEach(item => {
-        entry += '* ' + item + '\n';
+        entry += '* ' + item + '\\n';
       });
-      entry += '\n';
+      entry += '\\n';
     }
   });
   
   if (other.length > 0) {
-    entry += '### Other Changes\n\n';
-    other.forEach(item => { entry += '* ' + item + '\n'; });
-    entry += '\n';
+    entry += '### Other Changes\\n\\n';
+    other.forEach(item => { entry += '* ' + item + '\\n'; });
+    entry += '\\n';
   }
   
-  // Prepend to existing changelog
   let existing = '';
   if (fs.existsSync('$CHANGELOG_FILE')) {
     existing = fs.readFileSync('$CHANGELOG_FILE', 'utf8');
   }
-  const header = '# Changelog\n\nAll notable changes to this project will be documented in this file.\n\n';
-  const body = existing.replace(/^# Changelog.*?\n\n/s, '');
+  const header = '# Changelog\\n\\nAll notable changes to this project will be documented in this file.\\n\\n';
+  const body = existing.replace(/^# Changelog.*?\\n\\n/s, '');
   fs.writeFileSync('$CHANGELOG_FILE', header + entry + body);
   console.log('  ✓ CHANGELOG.md updated');
 "

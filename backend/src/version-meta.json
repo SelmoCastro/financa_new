@@ -1,6 +1,6 @@
 {
-  "version": "1.8.8",
-  "mobileVersion": "1.8.8",
+  "version": "1.8.9",
+  "mobileVersion": "1.8.9",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Correcao: editar conta agora permite corrigir o saldo"
+  "releaseNotes": "Corre\u00e7\u00f5es de engenharia: @nestjs/schedule no package.json, auth no error reports, bump.sh corrigido"
 }
