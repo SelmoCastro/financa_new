@@ -11,7 +11,7 @@ import { SettingsView } from './views/SettingsView';
 import { AccountsView } from './views/accounts/AccountsView';
 import { FeedbackAdminView } from './views/FeedbackAdminView';
 import { AdminPanelView } from './views/admin/AdminView';
-import { ImportOverlay } from './components/ImportOverlay';
+import { ImportOverlay } from './components/import/ImportOverlay';
 import { FeedbackModal } from './components/FeedbackModal';
 import { ActionMenu } from './components/ActionMenu';
 import { ToastProvider, useToast } from './context/ToastContext';
