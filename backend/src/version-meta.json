@@ -1,6 +1,6 @@
 {
-  "version": "1.8.10",
-  "mobileVersion": "1.8.10",
+  "version": "1.8.11",
+  "mobileVersion": "1.8.11",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Fix: página de parcelas em branco (importmap removido, rota /schedule), IDOR fixes, Prisma Decimal serialization, TypeScript strict mode, composite indexes, auth service fix"
+  "releaseNotes": "Limpeza do repo: removidos arquivos nao essenciais do git"
 }
