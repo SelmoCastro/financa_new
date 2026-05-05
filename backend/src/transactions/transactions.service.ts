@@ -137,7 +137,7 @@ export class TransactionsService {
       userCategories.map((c) => [c.name.toLowerCase().trim(), c.id]),
     );
 
-    const fitIds = transactionsData.map((t) => t.fitId).filter(Boolean);
+    const fitIds = transactionsData.map((t) => t.fitId).filter(Boolean) as string[];
     const targetAccountId = transactionsData[0]?.accountId;
 
     // 1. Silent Skip: FITIDs já confirmados no banco (transação salva)
@@ -517,7 +517,7 @@ export class TransactionsService {
     tx?: Prisma.TransactionClient, // Prisma transaction client
   ) {
     const client = tx || this.prisma;
-    const upserts: Promise<{ id: string; fitId: string; userId: string; status: string; createdAt: Date }>[] = [];
+    const upserts: Promise<unknown>[] = [];
 
     for (const fitId of acceptedFitIds) {
       upserts.push(

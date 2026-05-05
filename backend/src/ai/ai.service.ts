@@ -320,7 +320,7 @@ export class AiService {
             role: 'system',
             content: SYSTEM_PROMPTS.VISION_EXTRACTOR(categories),
           },
-          { role: 'user', content: contentParts as OpenAI.ChatCompletionContentPart[] },
+          { role: 'user', content: contentParts as unknown as OpenAI.ChatCompletionContentPart[] },
         ],
         response_format: { type: 'json_object' },
         max_tokens: 4096,
