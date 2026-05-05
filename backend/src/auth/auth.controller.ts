@@ -36,7 +36,7 @@ export class AuthController {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 Dias (em ms)
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 Dias (em ms)
     });
   }
 
@@ -139,8 +139,14 @@ export class AuthController {
     );
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
 
+    // V1: Use x-platform header for reliable mobile detection.
+    // Web: refreshToken stays in HttpOnly cookie only (never in body).
+    // Mobile: refreshToken in body because SecureStore can't access cookies.
+    const isMobile = request.headers['x-platform'] === 'mobile' ||
+                     request.headers['x-platform'] === 'react-native';
     return {
       access_token: responseData.access_token,
+      ...(isMobile && { refreshToken: responseData.refreshToken }),
     };
   }
 

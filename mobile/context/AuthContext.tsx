@@ -80,16 +80,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         initialize();
 
-        const authSubscription = DeviceEventEmitter.addListener('auth:unauthorized', async () => {
+        const authSubscription = DeviceEventEmitter.addListener('auth:unauthorized', () => {
             if (isLoggingOut) return;
             isLoggingOut = true;
             console.log('[AuthContext] Session expired. Logging out...');
-            await SecureStore.deleteItemAsync('token');
-            await SecureStore.deleteItemAsync('refreshToken');
-            await SecureStore.deleteItemAsync('userId');
             setToken(null);
             setUser(null);
             router.replace('/');
+
+            SecureStore.deleteItemAsync('token').catch(() => {});
+            SecureStore.deleteItemAsync('refreshToken').catch(() => {});
+            SecureStore.deleteItemAsync('userId').catch(() => {});
 
             setTimeout(() => { isLoggingOut = false; }, 1000);
         });

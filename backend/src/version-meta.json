@@ -1,6 +1,6 @@
 {
-  "version": "1.8.11",
-  "mobileVersion": "1.8.11",
+  "version": "1.8.12",
+  "mobileVersion": "1.8.12",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Limpeza do repo: removidos arquivos nao essenciais do git"
+  "releaseNotes": "Corre\u00e7\u00e3o critica: app mobile agora mant\u00e9m sess\u00e3o permanente (refresh token de 30 dias, renova\u00e7\u00e3o autom\u00e1tica). Logout instant\u00e2neo nas configura\u00e7\u00f5es."
 }

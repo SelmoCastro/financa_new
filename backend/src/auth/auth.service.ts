@@ -77,7 +77,7 @@ export class AuthService {
 
     // Build separate tokens
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '30d' });
 
     // Store a hashed version of the refresh token in the database to allow remote invalidation
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 12);
