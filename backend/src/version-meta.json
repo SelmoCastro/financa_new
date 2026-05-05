@@ -1,6 +1,6 @@
 {
-  "version": "1.8.9",
-  "mobileVersion": "1.8.9",
+  "version": "1.8.10",
+  "mobileVersion": "1.8.10",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corre\u00e7\u00f5es de engenharia: @nestjs/schedule no package.json, auth no error reports, bump.sh corrigido"
+  "releaseNotes": "Fix: página de parcelas em branco (importmap removido, rota /schedule), IDOR fixes, Prisma Decimal serialization, TypeScript strict mode, composite indexes, auth service fix"
 }

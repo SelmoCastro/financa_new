@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.10](https://github.com/SelmoCastro/financa_new/compare/v1.8.9...v1.8.10) (2026-05-04)
+
+### ✨ Features
+
+* (accounts) add monthly installment summary panel - aggregate view per month
+* (cards) installment entry amount + expanded schedule view
+
+### 🐛 Bug Fixes
+
+* remove importmap from index.html causing blank page in production
+* correct installment schedule API route from /schema to /schedule
+* cast types for fitIds arrays and Prisma upserts
+* resolve remaining TypeScript strict mode errors
+* resolve TypeScript strict mode errors across services
+* (security) IDOR fixes, Prisma Decimal serialization, remove all 'any' types, add composite indexes
+* (deps) restore resend (used by email.service.ts)
+* (deps) correct @nestjs/schedule version to ^6.1.3 (compatible with @nestjs/common@11)
+* (accounts) allow editing balance when updating account
+* (accounts) edit account form now works correctly
+* (accounts) fix 400 error when editing existing account
+* (ui) add labels to installment form fields for better UX
+* (cards) use Prisma Decimal types in getInstallmentSchedule
+* (accounts) import missing X icon causing blank page on installments view
+* (web) credit card form - currency formatting + account type label + delete dropdown overflow
+
+### 🧹 Chores
+
+* add Prisma migration for composite indexes
+* engineering audit phase 1 — stabilize
+
+### Other Changes
+
+* 6f952d1 debug: add PATCH account logging
+
+All notable changes to this project will be documented in this file.
+
 ## [1.7.39](https://github.com/SelmoCastro/financa_new/compare/v1.7.38...v1.7.39) (2026-05-02)
 
 All notable changes to this project will be documented in this file.
