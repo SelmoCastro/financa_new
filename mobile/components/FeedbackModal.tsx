@@ -22,7 +22,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }
         try {
             await api.post('/feedback', {
                 content: content.trim(),
-                platform: 'MOBILE'
+                platform: 'mobile'
             });
             Alert.alert('Sucesso', 'Feedback enviado com sucesso! Obrigado.');
             setContent('');

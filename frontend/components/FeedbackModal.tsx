@@ -28,7 +28,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ onClose }) => {
         try {
             await api.post('/feedback', {
                 content: content.trim(),
-                platform: 'WEB'
+                platform: 'web'
             });
             addToast('Feedback enviado com sucesso! Muito obrigado.', 'success');
             onClose();
