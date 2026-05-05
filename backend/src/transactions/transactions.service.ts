@@ -373,9 +373,9 @@ export class TransactionsService {
     }
 
     // Validate FK ownership for all imported transactions
-    const uniqueAccountIds = [...new Set(transactionsData.map((t) => t.accountId).filter(Boolean))];
-    const uniqueCategoryIds = [...new Set(transactionsData.map((t) => t.categoryId).filter(Boolean))];
-    const uniqueCreditCardIds = [...new Set(transactionsData.map((t) => t.creditCardId).filter(Boolean))];
+    const uniqueAccountIds = [...new Set(transactionsData.map((t) => t.accountId).filter(Boolean))] as string[];
+    const uniqueCategoryIds = [...new Set(transactionsData.map((t) => t.categoryId).filter(Boolean))] as string[];
+    const uniqueCreditCardIds = [...new Set(transactionsData.map((t) => t.creditCardId).filter(Boolean))] as string[];
 
     if (uniqueAccountIds.length > 0) {
       const ownedAccounts = await this.prisma.account.findMany({
@@ -415,7 +415,7 @@ export class TransactionsService {
 
     return this.prisma.$transaction(async (tx) => {
       // Verificação final de FITIDs duplicados antes de inserir
-      const fitIds = transactionsData.map((t) => t.fitId).filter(Boolean);
+      const fitIds = transactionsData.map((t) => t.fitId).filter(Boolean) as string[];
       let existingFitIds = new Set<string>();
       if (fitIds.length > 0) {
         const existing = await tx.transaction.findMany({
@@ -517,7 +517,7 @@ export class TransactionsService {
     tx?: Prisma.TransactionClient, // Prisma transaction client
   ) {
     const client = tx || this.prisma;
-    const upserts: Promise<Prisma.ImportedFitId>[] = [];
+    const upserts: Promise<{ id: string; fitId: string; userId: string; status: string; createdAt: Date }>[] = [];
 
     for (const fitId of acceptedFitIds) {
       upserts.push(

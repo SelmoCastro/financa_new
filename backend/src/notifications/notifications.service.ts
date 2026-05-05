@@ -23,9 +23,9 @@ export class NotificationsService {
         title: data.title,
         message: data.message,
         type: data.type,
-        metadata: data.metadata || {},
+        metadata: data.metadata ? JSON.parse(JSON.stringify(data.metadata)) : {},
         actionType: data.actionType,
-        actionMeta: data.actionMeta,
+        actionMeta: data.actionMeta ? JSON.parse(JSON.stringify(data.actionMeta)) : undefined,
       },
     });
   }
@@ -114,7 +114,7 @@ export class NotificationsService {
           );
         }
 
-        const [transaction] = await this.prisma.$transaction(operations);
+        const [transaction] = await this.prisma.$transaction(operations) as [{ id: string; description: string }, ...unknown[]];
 
         // Se for parcela, incrementar o installment
         if (meta.installmentId) {

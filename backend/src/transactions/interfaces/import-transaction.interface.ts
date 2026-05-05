@@ -1,7 +1,7 @@
 export interface ImportTransactionData {
   description: string;
   amount: number;
-  date: string;
+  date: string | Date;
   type: string;
   fitId?: string;
   accountId?: string;

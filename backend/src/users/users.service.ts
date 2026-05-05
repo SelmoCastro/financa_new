@@ -24,7 +24,7 @@ export class UsersService {
         select: excludePassword,
       });
     } catch (error: unknown) {
-      if (error.code === 'P2002') {
+      if (error instanceof Error && 'code' in error && (error as { code: string }).code === 'P2002') {
         throw new ForbiddenException(
           'Este e-mail já está cadastrado em nossa base.',
         );

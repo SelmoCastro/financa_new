@@ -92,7 +92,7 @@ export class AuthService {
     };
   }
 
-  async login(user: { id: string; email: string; password: string; name?: string | null; isEmailVerified: boolean; isAdmin: boolean }) {
+  async login(user: { id: string; email: string; password?: string; name?: string | null; isEmailVerified: boolean; isAdmin: boolean }) {
     const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified, user.isAdmin);
 
     return {

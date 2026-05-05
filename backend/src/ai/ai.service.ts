@@ -290,7 +290,7 @@ export class AiService {
       );
 
       const isPdf = mimeType === 'application/pdf';
-      const contentParts: OpenAI.ChatCompletionContentPart[] = [
+      const contentParts: Array<Record<string, unknown>> = [
         {
           type: 'text',
           text: 'Extraia os dados de todas as transações encontradas neste documento:',
@@ -320,7 +320,7 @@ export class AiService {
             role: 'system',
             content: SYSTEM_PROMPTS.VISION_EXTRACTOR(categories),
           },
-          { role: 'user', content: contentParts },
+          { role: 'user', content: contentParts as OpenAI.ChatCompletionContentPart[] },
         ],
         response_format: { type: 'json_object' },
         max_tokens: 4096,
