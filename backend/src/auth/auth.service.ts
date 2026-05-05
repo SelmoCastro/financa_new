@@ -92,7 +92,7 @@ export class AuthService {
     };
   }
 
-  async login(user: { id: string; email: string; password: string }) {
+  async login(user: { id: string; email: string; password: string; name?: string | null; isEmailVerified: boolean; isAdmin: boolean }) {
     const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified, user.isAdmin);
 
     return {
@@ -309,7 +309,7 @@ export class AuthService {
   }
 
   /** V2: Verify JWT signature instead of just decoding (prevents token forgery) */
-  decodeJwt(token: string): Record<string, unknown> {
+  decodeJwt(token: string): { sub: string; email: string; [key: string]: unknown } {
     return this.jwtService.verify(token, { ignoreExpiration: true });
   }
 

@@ -4,9 +4,14 @@ import { SYSTEM_PROMPTS } from './prompts';
 
 interface ClassificationResult {
   category: string;
+  c?: string; // AI short form
   rule: number;
+  r?: number; // AI short form
   icon: string;
+  i?: string; // AI short form
   cleanName?: string;
+  n?: string; // AI short form for cleanName
+  confidence?: number;
 }
 
 @Injectable()
@@ -103,7 +108,7 @@ export class AiService {
   /**
    * Gera insights financeiros baseados no resumo do mês.
    */
-  async getFinancialInsights(summary: Record<string, unknown>): Promise<string> {
+  async getFinancialInsights(summary: Record<string, unknown> | unknown[]): Promise<string> {
     if (!this.openai) {
       return 'Serviço AI não disponível no momento.';
     }
@@ -166,7 +171,7 @@ export class AiService {
   /**
    * Chat financeiro interativo que recebe contexto profundo do perfil.
    */
-  async chat(message: string, profile: Record<string, unknown>): Promise<string> {
+  async chat(message: string, profile: Record<string, unknown> | unknown[]): Promise<string> {
     if (!this.openai) {
       return 'Serviço de chat não disponível.';
     }
@@ -201,7 +206,7 @@ export class AiService {
    * Análise Preditiva - Com base no histórico de gastos recentes,
    * prevê como o mês atual vai terminar e destaca riscos.
    */
-  async getSpendingForecast(historicalData: Record<string, unknown>): Promise<string> {
+  async getSpendingForecast(historicalData: Record<string, unknown> | unknown[]): Promise<string> {
     if (!this.openai) {
       return 'Serviço de previsão AI não disponível no momento.';
     }
@@ -235,7 +240,7 @@ export class AiService {
    * Análise Preditiva - Identifica possíveis assinaturas pagas
    * ou serviços esquecidos recorrentes nos últimos meses.
    */
-  async findRecurringSubscriptions(recentTransactions: Record<string, unknown>): Promise<string> {
+  async findRecurringSubscriptions(recentTransactions: Record<string, unknown> | unknown[]): Promise<string> {
     if (!this.openai) {
       return 'Scanner de assinaturas não disponível no momento.';
     }
@@ -285,7 +290,7 @@ export class AiService {
       );
 
       const isPdf = mimeType === 'application/pdf';
-      const contentParts: Array<{type: string; text?: string; image_url?: {url: string}; file_url?: {url: string}}> = [
+      const contentParts: OpenAI.ChatCompletionContentPart[] = [
         {
           type: 'text',
           text: 'Extraia os dados de todas as transações encontradas neste documento:',

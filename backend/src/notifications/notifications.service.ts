@@ -12,9 +12,9 @@ export class NotificationsService {
       title: string;
       message: string;
       type: string;
-      metadata?: Record<string, unknown>;
+      metadata?: Record<string, unknown> | null;
       actionType?: string;
-      actionMeta?: Record<string, unknown>;
+      actionMeta?: Record<string, unknown> | null;
     },
   ) {
     return this.prisma.notification.create({

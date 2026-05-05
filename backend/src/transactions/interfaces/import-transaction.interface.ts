@@ -20,21 +20,23 @@ export interface ImportTransactionData {
   suggestedRule?: number;
   suggestedIcon?: string;
   confidence?: number;
+  // Receipt extraction fields
+  cnpj?: string;
 }
 
-export interface AiClassificationSuggestion {
+export interface AiSuggestion {
   category?: string;
-  c?: string; // short form from AI
+  c?: string;
   cleanName?: string;
-  n?: string; // short form from AI
+  n?: string;
   rule?: number;
-  r?: number; // short form from AI
+  r?: number;
   icon?: string;
-  i?: string; // short form from AI
+  i?: string;
   confidence?: number;
 }
 
-export interface RawAccountRow {
+export interface AccountLockRow {
   id: string;
   userId: string;
   balance: number;

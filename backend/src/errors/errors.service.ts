@@ -15,6 +15,7 @@ export class ErrorsService {
       appVersion?: string;
       deviceId?: string;
       userId?: string;
+      createdAt?: Date;
     } = {
       message: dto.message,
       platform: dto.platform || 'unknown',

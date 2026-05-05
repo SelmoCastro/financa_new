@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { SocialService } from '../social/social.service';
 import { AuditService, AuditAction } from '../audit/audit.service';
-import { ImportTransactionData, AiClassificationSuggestion, RawAccountRow } from './interfaces/import-transaction.interface';
+import { ImportTransactionData, AiSuggestion, AccountLockRow } from './interfaces/import-transaction.interface';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
