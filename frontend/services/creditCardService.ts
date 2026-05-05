@@ -34,7 +34,7 @@ export const creditCardService = {
       : api.get('/credit-cards/installments/all'),
 
   getInstallmentSchedule: (id: string) =>
-    api.get(`/credit-cards/installments/${id}/schema`).catch(() => {
+    api.get(`/credit-cards/installments/${id}/schedule`).catch(() => {
       // fallback: compute schedule on client side if endpoint not available
       return null;
     }),
