@@ -1,34 +1,24 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sidebar } from './components/Sidebar';
 import { useNavigate } from 'react-router-dom';
-import { DashboardView } from './views/DashboardView';
-import { BudgetsView } from './views/BudgetsView';
-import { GoalsView } from './views/GoalsView';
-import { TimelineView } from './views/TimelineView';
-import { HistoryView } from './views/HistoryView';
-import { RecurringView } from './views/RecurringView';
-import { SettingsView } from './views/SettingsView';
-import { AccountsView } from './views/accounts/AccountsView';
-import { FeedbackAdminView } from './views/FeedbackAdminView';
-import { AdminPanelView } from './views/admin/AdminView';
+import { Sidebar } from './components/Sidebar';
+import { MonthSelector } from './components/MonthSelector';
+import { TransactionForm } from './components/TransactionForm';
+import { NotificationCenter } from './components/NotificationCenter';
+import { ActionMenu } from './components/ActionMenu';
 import { ImportOverlay } from './components/import/ImportOverlay';
 import { FeedbackModal } from './components/FeedbackModal';
-import { ActionMenu } from './components/ActionMenu';
+import { SmartBanner } from './components/SmartBanner';
+import { AppProviders } from './components/AppProviders';
+import { ViewRouter } from './components/ViewRouter';
 import { ToastProvider, useToast } from './context/ToastContext';
 import { MonthProvider, useMonth } from './context/MonthContext';
 import { DataProvider, useData } from './context/DataProvider';
 import { CurrencyProvider } from './context/CurrencyContext';
-import { MonthSelector } from './components/MonthSelector';
 import { Transaction } from './types';
-import { TransactionForm } from './components/TransactionForm';
-import { NotificationCenter } from './components/NotificationCenter';
-import { motion, AnimatePresence } from 'framer-motion';
-
 import { getYearMonth } from './utils/dateUtils';
-import { Plus } from 'lucide-react';
 import api from './services/api';
-import { Mail } from 'lucide-react';
-import { SmartBanner } from './components/SmartBanner';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Mail } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const {
@@ -40,7 +30,6 @@ const AppContent: React.FC = () => {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  // Source of truth: /auth/me — sem localStorage para dados sensíveis
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showVerifyBanner, setShowVerifyBanner] = useState(true);
   const [isResendingEmail, setIsResendingEmail] = useState(false);
@@ -51,9 +40,8 @@ const AppContent: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false);
   const [userPlan, setUserPlan] = useState('free');
-  // Theme é a única coisa que permanece em localStorage (preferência de UI, não segurança)
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches));
-  
+
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { selectedDate } = useMonth();
@@ -68,7 +56,6 @@ const AppContent: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  // Busca perfil via /auth/me — source of truth para isAdmin, email, isEmailVerified, etc.
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -82,7 +69,6 @@ const AppContent: React.FC = () => {
         }
       } catch (err) {
         console.warn('Erro ao carregar perfil:', err);
-        // Se /auth/me falhar com 401, o interceptor do api.ts já redireciona pra login
       }
     };
     fetchProfile();
@@ -95,7 +81,7 @@ const AppContent: React.FC = () => {
     currentIncome: dashboardSummary?.currentMonth?.income || 0,
     currentExpense: dashboardSummary?.currentMonth?.expense || 0,
     incomeTrend: dashboardSummary?.currentMonth?.incomeTrend || 0,
-    expenseTrend: dashboardSummary?.currentMonth?.expenseTrend || 0
+    expenseTrend: dashboardSummary?.currentMonth?.expenseTrend || 0,
   }), [dashboardSummary]);
 
   const monthFilteredTransactions = useMemo(() => {
@@ -125,12 +111,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch (e) {
-      console.warn('Backend logout falhou, forçando fechamento local', e);
-    }
-    // Limpa apenas preferências de UI, não dados de auth (cookies são HttpOnly, backend já limpou)
+    try { await api.post('/auth/logout'); } catch (e) { console.warn('Backend logout falhou', e); }
     navigate('/login');
   };
 
@@ -141,57 +122,14 @@ const AppContent: React.FC = () => {
       addToast('E-mail de verificação reenviado! Verifique sua caixa de entrada.', 'success');
     } catch (err: any) {
       addToast(err.response?.data?.message || 'Erro ao reenviar e-mail.', 'error');
-    } finally {
-      setIsResendingEmail(false);
-    }
-  };
-
-  const openEditForm = (tx: Transaction) => {
-    setEditingTransaction(tx);
-    setIsFormOpen(true);
+    } finally { setIsResendingEmail(false); }
   };
 
   const handleOpenTransactionForm = () => {
     if (accounts.length === 0) {
       addToast('Crie primeiro uma Conta para poder realizar lançamentos financeiros!', 'error');
       setActiveTab('accounts');
-    } else {
-      setIsFormOpen(true);
-    }
-  };
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <DashboardView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} onAddAccount={() => setActiveTab('accounts')} onAddTransaction={handleOpenTransactionForm} onAddBudget={() => setActiveTab('budgets')} />;
-      case 'accounts':
-        return <AccountsView isPrivacyEnabled={isPrivacyEnabled} />;
-      case 'budgets':
-        return <BudgetsView isPrivacyEnabled={isPrivacyEnabled} />;
-      case 'goals':
-        return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
-      case 'timeline':
-        return <TimelineView transactions={transactions} />;
-      case 'fixed':
-        return <RecurringView />;
-      case 'history':
-        return (
-          <HistoryView
-            transactions={monthFilteredTransactions}
-            isPrivacyEnabled={isPrivacyEnabled}
-            onEdit={openEditForm}
-            onDelete={handleDeleteTransaction}
-          />
-        );
-      case 'feedbacks':
-        return <FeedbackAdminView />;
-      case 'admin':
-        return <AdminPanelView />;
-      case 'settings':
-        return <SettingsView userName={userName} userEmail={userEmail} userPlan={userPlan} transactions={transactions} onLogout={handleLogout} onNameChange={(name) => setUserName(name)} onEmailChange={(email) => setUserEmail(email)} />;
-      default:
-        return null;
-    }
+    } else { setIsFormOpen(true); }
   };
 
   return (
@@ -235,12 +173,12 @@ const AppContent: React.FC = () => {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <NotificationCenter />
-            <ActionMenu 
-              isDarkMode={isDarkMode} 
-              setIsDarkMode={setIsDarkMode} 
-              isPrivacyEnabled={isPrivacyEnabled} 
-              setIsPrivacyEnabled={setIsPrivacyEnabled} 
-              onOpenImport={() => setIsImportOpen(true)} 
+            <ActionMenu
+              isDarkMode={isDarkMode}
+              setIsDarkMode={setIsDarkMode}
+              isPrivacyEnabled={isPrivacyEnabled}
+              setIsPrivacyEnabled={setIsPrivacyEnabled}
+              onOpenImport={() => setIsImportOpen(true)}
             />
             <button
               onClick={handleOpenTransactionForm}
@@ -263,22 +201,12 @@ const AppContent: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={handleResendVerification}
-                  disabled={isResendingEmail}
-                  className="text-xs font-bold uppercase tracking-wider bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                >
+                <button onClick={handleResendVerification} disabled={isResendingEmail}
+                  className="text-xs font-bold uppercase tracking-wider bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-all active:scale-95 disabled:opacity-50">
                   {isResendingEmail ? 'Enviando...' : 'Reenviar E-mail'}
                 </button>
-                <button
-                  onClick={() => {
-                    setShowVerifyBanner(false);
-                  }}
-                  className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 text-lg font-bold leading-none p-1"
-                  title="Dispensar"
-                >
-                  &times;
-                </button>
+                <button onClick={() => setShowVerifyBanner(false)}
+                  className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 text-lg font-bold leading-none p-1" title="Dispensar">&times;</button>
               </div>
             </div>
           </div>
@@ -286,14 +214,23 @@ const AppContent: React.FC = () => {
 
         <main className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 md:py-10 overflow-hidden">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            >
-              {renderContent()}
+            <motion.div key={activeTab} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}>
+              <ViewRouter
+                activeTab={activeTab}
+                transactions={transactions}
+                monthFilteredTransactions={monthFilteredTransactions}
+                isPrivacyEnabled={isPrivacyEnabled}
+                isLoading={isLoading}
+                userName={userName} userEmail={userEmail} userPlan={userPlan}
+                onAddAccount={() => setActiveTab('accounts')}
+                onAddTransaction={handleOpenTransactionForm}
+                onAddBudget={() => setActiveTab('budgets')}
+                onEditTransaction={(tx) => { setEditingTransaction(tx); setIsFormOpen(true); }}
+                onDeleteTransaction={handleDeleteTransaction}
+                onLogout={handleLogout}
+                onUserNameChange={(name) => setUserName(name)}
+                onUserEmailChange={(email) => setUserEmail(email)}
+              />
             </motion.div>
           </AnimatePresence>
         </main>
@@ -303,10 +240,7 @@ const AppContent: React.FC = () => {
         <TransactionForm
           onAdd={handleAddTransaction}
           onUpdate={handleUpdateTransaction}
-          onClose={() => {
-            setIsFormOpen(false);
-            setEditingTransaction(null);
-          }}
+          onClose={() => { setIsFormOpen(false); setEditingTransaction(null); }}
           existingCategories={Array.isArray(transactions) ? Array.from(new Set(transactions.map(t => typeof t.category === 'object' && t.category !== null ? t.category.name : t.categoryLegacy || 'Outros'))).filter(Boolean) : []}
           editingTransaction={editingTransaction}
           accounts={accounts}
@@ -351,15 +285,9 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <ToastProvider>
-      <MonthProvider>
-        <CurrencyProvider>
-          <DataProvider>
-            <AppContent />
-          </DataProvider>
-        </CurrencyProvider>
-      </MonthProvider>
-    </ToastProvider>
+    <AppProviders>
+      <AppContent />
+    </AppProviders>
   );
 };
 
