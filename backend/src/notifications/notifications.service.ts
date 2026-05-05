@@ -1,9 +1,6 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaPromise } from '@prisma/client';
 
 @Injectable()
 export class NotificationsService {
@@ -15,9 +12,9 @@ export class NotificationsService {
       title: string;
       message: string;
       type: string;
-      metadata?: any;
+      metadata?: Record<string, unknown>;
       actionType?: string;
-      actionMeta?: any;
+      actionMeta?: Record<string, unknown>;
     },
   ) {
     return this.prisma.notification.create({
@@ -82,7 +79,7 @@ export class NotificationsService {
         const amount = meta.amount;
 
         // Criar transação + atualizar saldo atomicamente
-        const operations: any[] = [
+        const operations: PrismaPromise<unknown>[] = [
           this.prisma.transaction.create({
             data: {
               description: meta.description,
@@ -98,8 +95,15 @@ export class NotificationsService {
           }),
         ];
 
-        // Atualizar saldo da conta se tiver accountId
+        // Atualizar saldo da conta se tiver accountId (validando ownership)
         if (meta.accountId) {
+          // Verify account belongs to user before updating balance
+          const account = await this.prisma.account.findFirst({
+            where: { id: meta.accountId, userId },
+          });
+          if (!account) {
+            throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+          }
           operations.push(
             this.prisma.account.update({
               where: { id: meta.accountId },

@@ -101,7 +101,7 @@ export class BudgetsService {
   }
 
   async update(id: string, updateBudgetDto: UpdateBudgetDto, userId: string) {
-    const data: any = { ...updateBudgetDto };
+    const data: Record<string, unknown> = { ...updateBudgetDto };
 
     if (data.amount) {
       data.amount = Number(data.amount);

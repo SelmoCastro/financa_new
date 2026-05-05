@@ -7,7 +7,15 @@ export class ErrorsService {
   constructor(private prisma: PrismaService) {}
 
   async createReport(dto: CreateErrorReportDto) {
-    const data: any = {
+    const data: {
+      message: string;
+      platform: string;
+      stack?: string;
+      componentStack?: string;
+      appVersion?: string;
+      deviceId?: string;
+      userId?: string;
+    } = {
       message: dto.message,
       platform: dto.platform || 'unknown',
     };

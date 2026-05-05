@@ -57,6 +57,7 @@ model Account {
   creditCardInstallments CreditCardInstallment[]
 
   @@index([userId])
+  @@index([userId, deletedAt])
 }
 
 model CreditCard {
@@ -77,6 +78,8 @@ model CreditCard {
   RecurringTransaction RecurringTransaction[]
 
   @@index([userId])
+  @@index([userId, deletedAt])
+  @@index([accountId])
 }
 
 model Category {
@@ -96,6 +99,7 @@ model Category {
   creditCardInstallments CreditCardInstallment[]
 
   @@index([userId])
+  @@index([userId, deletedAt])
 }
 
 model Transaction {
@@ -130,6 +134,7 @@ model Transaction {
   @@index([userId, date])
   @@index([userId, type, date])
   @@index([userId, categoryId, date])
+  @@index([userId, deletedAt])
   @@index([accountId])
   @@index([creditCardId])
 }
@@ -148,6 +153,7 @@ model Budget {
   @@unique([userId, categoryId])
   @@index([categoryId])
   @@index([userId])
+  @@index([userId, deletedAt])
 }
 
 model Goal {

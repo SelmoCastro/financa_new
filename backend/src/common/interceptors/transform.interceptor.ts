@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { serializeDecimal } from '../utils/serialize-decimal.util';
 
 export interface Response<T> {
   statusCode: number;
@@ -28,7 +29,7 @@ export class TransformInterceptor<T> implements NestInterceptor<
     return next.handle().pipe(
       map((data) => ({
         statusCode: response.statusCode,
-        data,
+        data: serializeDecimal(data),
         timestamp: new Date().toISOString(),
       })),
     );

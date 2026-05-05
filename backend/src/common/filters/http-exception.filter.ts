@@ -26,7 +26,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const isProduction = process.env.NODE_ENV === 'production';
 
-    let errorBody: any;
+    let errorBody: Record<string, unknown>;
     if (typeof exceptionResponse === 'string') {
       // Sanitize JSON parse errors — don't leak parser details
       const sanitized = exceptionResponse.replace(/^Expected .+ in JSON at position \d+$/,

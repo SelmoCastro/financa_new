@@ -66,7 +66,7 @@ export class AdminService {
       aiRequests: totalAiRequests,
       notifications: totalNotifications,
       invites: totalInvites,
-      dbSizeBytes: Number((dbSize as any)[0]?.size ?? 0),
+      dbSizeBytes: Number((dbSize as Array<{ size: number }>)[0]?.size ?? 0),
     };
   }
 
@@ -191,8 +191,8 @@ export class AdminService {
     return {
       database: {
         status: 'up',
-        activeConnections: Number((dbActiveConnections as any)[0]?.count ?? 0),
-        uptimeSeconds: Number((dbUptime as any)[0]?.uptime_seconds ?? 0),
+        activeConnections: Number((dbActiveConnections as Array<{ count: number }>)[0]?.count ?? 0),
+        uptimeSeconds: Number((dbUptime as Array<{ uptime_seconds: number }>)[0]?.uptime_seconds ?? 0),
         activeUsers30d,
       },
     };

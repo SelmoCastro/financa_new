@@ -48,7 +48,7 @@ export class AuditService {
     resource?: string,
     action?: string,
   ) {
-    const where: any = { userId };
+    const where: { userId: string; action?: string; resource?: string } = { userId };
     if (resource) where.resource = resource;
     if (action) where.action = action;
 
@@ -66,7 +66,7 @@ export class AuditService {
   }
 
   async findAll(page = 1, limit = 50, resource?: string, action?: string) {
-    const where: any = {};
+    const where: { resource?: string; action?: string } = {};
     if (resource) where.resource = resource;
     if (action) where.action = action;
 

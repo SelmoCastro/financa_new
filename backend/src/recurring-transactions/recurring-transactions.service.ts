@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRecurringTransactionDto } from './dto/create-recurring-transaction.dto';
 import { UpdateRecurringTransactionDto } from './dto/update-recurring-transaction.dto';
@@ -8,6 +8,26 @@ export class RecurringTransactionsService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateRecurringTransactionDto, userId: string) {
+    // Validate FK ownership
+    if (dto.accountId) {
+      const account = await this.prisma.account.findFirst({
+        where: { id: dto.accountId, userId, deletedAt: null },
+      });
+      if (!account) throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+    }
+    if (dto.categoryId) {
+      const category = await this.prisma.category.findFirst({
+        where: { id: dto.categoryId, userId, deletedAt: null },
+      });
+      if (!category) throw new BadRequestException('Categoria não encontrada ou não pertence a este usuário');
+    }
+    if (dto.creditCardId) {
+      const card = await this.prisma.creditCard.findFirst({
+        where: { id: dto.creditCardId, userId, deletedAt: null },
+      });
+      if (!card) throw new BadRequestException('Cartão não encontrado ou não pertence a este usuário');
+    }
+
     return this.prisma.recurringTransaction.create({
       data: {
         ...dto,

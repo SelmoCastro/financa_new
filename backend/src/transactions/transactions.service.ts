@@ -6,6 +6,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { SocialService } from '../social/social.service';
 import { AuditService, AuditAction } from '../audit/audit.service';
+import { ImportTransactionData, AiClassificationSuggestion, RawAccountRow } from './interfaces/import-transaction.interface';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TransactionsService {
@@ -47,7 +49,7 @@ export class TransactionsService {
     return this.prisma.$transaction(async (tx) => {
       // CRITICAL: Balance check + row lock before EXPENSE to prevent overdraft
       if (type === 'EXPENSE' && accountId) {
-        const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+        const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
         const account = rows[0];
         if (!account) throw new NotFoundException('Account not found');
         if (Number(account.balance) < amount) {
@@ -102,7 +104,7 @@ export class TransactionsService {
     });
   }
 
-  async validateImport(transactionsData: any[], userId: string) {
+  async validateImport(transactionsData: ImportTransactionData[], userId: string) {
     if (!transactionsData || transactionsData.length === 0)
       return { valid: [], duplicateFitIds: [] };
 
@@ -197,7 +199,7 @@ export class TransactionsService {
         .map((t) => `${t.date.toISOString().split('T')[0]}_${t.amount}`),
     );
 
-    const toReview: any[] = [];
+    const toReview: ImportTransactionData[] = [];
     const descriptionsToClassify = new Set<string>();
 
     for (const raw of transactionsData) {
@@ -235,7 +237,7 @@ export class TransactionsService {
     }
 
     // Camada IA: classifica categorias e limpa nomes (tudo em 1 chamada para economia)
-    let aiClassifications: Record<string, any> = {};
+    let aiClassifications: Record<string, AiSuggestion> = {};
 
     if (descriptionsToClassify.size > 0) {
       const descriptionsArray = Array.from(descriptionsToClassify);
@@ -264,8 +266,8 @@ export class TransactionsService {
    * Helper para enriquecer uma transação com sugestões da IA e fallbacks de match
    */
   enrichTransactionWithAi(
-    tx: any,
-    suggestion: any,
+    tx: ImportTransactionData,
+    suggestion: AiSuggestion | undefined,
     cleanedName: string | undefined,
     categoryNameToId: Map<string, string>,
   ) {
@@ -334,7 +336,7 @@ export class TransactionsService {
   }
 
   async confirmImport(
-    transactionsData: any[],
+    transactionsData: ImportTransactionData[],
     userId: string,
     rejectedFitIds: string[] = [],
   ) {
@@ -512,10 +514,10 @@ export class TransactionsService {
     userId: string,
     acceptedFitIds: string[],
     rejectedFitIds: string[],
-    tx?: any, // Prisma transaction client
+    tx?: Prisma.TransactionClient, // Prisma transaction client
   ) {
     const client = tx || this.prisma;
-    const upserts: Promise<any>[] = [];
+    const upserts: Promise<Prisma.ImportedFitId>[] = [];
 
     for (const fitId of acceptedFitIds) {
       upserts.push(
@@ -542,7 +544,7 @@ export class TransactionsService {
   }
 
   findAll(userId: string, year?: number, month?: number) {
-    const whereClause: any = { userId, deletedAt: null };
+    const whereClause: Prisma.TransactionWhereInput = { userId, deletedAt: null };
 
     if (year !== undefined && month !== undefined) {
       const startOfMonth = new Date(Date.UTC(year, month, 1));
@@ -671,7 +673,7 @@ export class TransactionsService {
 
       // VULN-03: Overdraft check — after reverting old balance, before applying new one
       if (newType === 'EXPENSE' && newAccountId) {
-        const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+        const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
         const account = rows[0];
         if (!account) throw new NotFoundException('Account not found');
         if (Number(account.balance) < newAmount) {
@@ -766,7 +768,7 @@ export class TransactionsService {
 
     return this.prisma.$transaction(async (tx) => {
       // CRITICAL: Balance check + row lock for source account before transfer
-      const sourceRows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${sourceAccountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+      const sourceRows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${sourceAccountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
       const sourceAccount = sourceRows[0];
       if (!sourceAccount) throw new NotFoundException('Conta de origem não encontrada');
       if (Number(sourceAccount.balance) < amount) {
@@ -774,7 +776,7 @@ export class TransactionsService {
       }
 
       // Lock the destination account row too — and validate it belongs to the user
-      const destRows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${destinationAccountId} AND "userId" = ${userId} FOR UPDATE` as any[];
+      const destRows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${destinationAccountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
       if (!destRows[0]) {
         throw new NotFoundException('Conta de destino não encontrada ou não pertence ao usuário');
       }

@@ -148,7 +148,7 @@ export class AccountsService {
   async reconcile(id: string, userId: string) {
     // V18: Lock the account row to prevent concurrent balance changes during reconciliation
     return this.prisma.$transaction(async (tx) => {
-      const accounts = await tx.$queryRaw<Array<{ id: string; balance: any }>>`
+      const accounts = await tx.$queryRaw<Array<{ id: string; balance: number }>>`
         SELECT id, balance FROM "Account" WHERE id = ${id} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE
       `;
       if (accounts.length === 0) throw new NotFoundException('Conta não encontrada');

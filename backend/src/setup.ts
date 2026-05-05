@@ -1,4 +1,5 @@
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -84,7 +85,7 @@ export function configureApp(app: INestApplication) {
 
   // V16: Debug request logger — only in non-production
   if (process.env.NODE_ENV !== 'production') {
-    app.use((req: any, _res: any, next: any) => {
+    app.use((req: Request, _res: Response, next: NextFunction) => {
       const start = Date.now();
       const method = req.method;
       const url = req.originalUrl || req.url;
@@ -102,7 +103,7 @@ export function configureApp(app: INestApplication) {
   // Para requests de escrita (POST/PUT/PATCH/DELETE), exige header x-csrf-token = cookie csrf-token
   // Rotas de auth (login, register, etc.) são excluídas
   const csrfMiddleware = new CsrfMiddleware();
-  app.use((req: any, res: any, next: any) => csrfMiddleware.use(req, res, next));
+  app.use((req: Request, res: Response, next: NextFunction) => csrfMiddleware.use(req, res, next));
 
   // API Versioning
   app.enableVersioning({

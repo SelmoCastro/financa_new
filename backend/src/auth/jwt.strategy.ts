@@ -32,7 +32,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return null;
   }
 
-  async validate(payload: any) {
+  async validate(payload: { sub: string; email: string; isEmailVerified: boolean; isAdmin: boolean }) {
     // Verify user still exists (prevents deleted-user token usage)
     const userExists = await this.prisma.user.findUnique({
       where: { id: payload.sub },

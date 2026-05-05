@@ -4,6 +4,10 @@ import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { AuditAction } from './audit.service';
 
+interface RequestWithUser {
+  user: { userId: string; isAdmin: boolean };
+}
+
 @Controller({ path: 'audit', version: '1' })
 @UseGuards(AuthGuard('jwt'))
 export class AuditController {
@@ -11,7 +15,7 @@ export class AuditController {
 
   @Get()
   async getMyLogs(
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('resource') resource?: string,
@@ -29,7 +33,7 @@ export class AuditController {
   @Get('admin')
   @UseGuards(AdminGuard)
   async getAllLogs(
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('resource') resource?: string,

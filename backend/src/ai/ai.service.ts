@@ -78,7 +78,7 @@ export class AiService {
         rawData.transactions || rawData.classifications || rawData;
 
       const parsedData: Record<string, ClassificationResult> = {};
-      for (const [key, value] of Object.entries<any>(dataToProcess)) {
+      for (const [key, value] of Object.entries(dataToProcess as Record<string, ClassificationResult>)) {
         parsedData[key] = {
           category: value.c || value.category || 'Outros',
           rule:
@@ -103,7 +103,7 @@ export class AiService {
   /**
    * Gera insights financeiros baseados no resumo do mês.
    */
-  async getFinancialInsights(summary: any): Promise<string> {
+  async getFinancialInsights(summary: Record<string, unknown>): Promise<string> {
     if (!this.openai) {
       return 'Serviço AI não disponível no momento.';
     }
@@ -166,7 +166,7 @@ export class AiService {
   /**
    * Chat financeiro interativo que recebe contexto profundo do perfil.
    */
-  async chat(message: string, profile: any): Promise<string> {
+  async chat(message: string, profile: Record<string, unknown>): Promise<string> {
     if (!this.openai) {
       return 'Serviço de chat não disponível.';
     }
@@ -201,7 +201,7 @@ export class AiService {
    * Análise Preditiva - Com base no histórico de gastos recentes,
    * prevê como o mês atual vai terminar e destaca riscos.
    */
-  async getSpendingForecast(historicalData: any): Promise<string> {
+  async getSpendingForecast(historicalData: Record<string, unknown>): Promise<string> {
     if (!this.openai) {
       return 'Serviço de previsão AI não disponível no momento.';
     }
@@ -235,7 +235,7 @@ export class AiService {
    * Análise Preditiva - Identifica possíveis assinaturas pagas
    * ou serviços esquecidos recorrentes nos últimos meses.
    */
-  async findRecurringSubscriptions(recentTransactions: any): Promise<string> {
+  async findRecurringSubscriptions(recentTransactions: Record<string, unknown>): Promise<string> {
     if (!this.openai) {
       return 'Scanner de assinaturas não disponível no momento.';
     }
@@ -285,7 +285,7 @@ export class AiService {
       );
 
       const isPdf = mimeType === 'application/pdf';
-      const contentParts: any[] = [
+      const contentParts: Array<{type: string; text?: string; image_url?: {url: string}; file_url?: {url: string}}> = [
         {
           type: 'text',
           text: 'Extraia os dados de todas as transações encontradas neste documento:',
@@ -338,19 +338,20 @@ export class AiService {
       }
 
       return { transactions: parsed, error: null };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error & { status?: number };
       this.logger.error(
         'Erro ao extrair via OpenRouter Vision:',
-        error?.message || error,
+        err?.message || String(error),
       );
 
-      if (error?.status === 400 || error?.status === 422) {
+      if (err?.status === 400 || err?.status === 422) {
         return { transactions: [], error: 'unsupported_format' };
       }
-      if (error?.status === 429) {
+      if (err?.status === 429) {
         return { transactions: [], error: 'rate_limit' };
       }
-      if (error?.status === 500 || error?.status === 503) {
+      if (err?.status === 500 || err?.status === 503) {
         return { transactions: [], error: 'api_error' };
       }
 

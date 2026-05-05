@@ -133,7 +133,7 @@ export class CreditCardsService {
   }
 
   async getInstallments(userId: string, creditCardId?: string) {
-    const where: any = { userId };
+    const where: { userId: string; creditCardId?: string } = { userId };
     if (creditCardId) where.creditCardId = creditCardId;
     
     return this.prisma.creditCardInstallment.findMany({
@@ -154,16 +154,20 @@ export class CreditCardsService {
 
   async updateInstallment(id: string, dto: UpdateInstallmentDto, userId: string) {
     await this.findOneInstallment(id, userId);
-    return this.prisma.creditCardInstallment.update({
-      where: { id },
+    const result = await this.prisma.creditCardInstallment.updateMany({
+      where: { id, userId },
       data: dto,
-      include: { category: true, account: true, creditCard: true },
     });
+    if (result.count === 0) throw new NotFoundException('Parcela não encontrada');
+    return this.prisma.creditCardInstallment.findUnique({ where: { id }, include: { category: true, account: true, creditCard: true } });
   }
 
   async deleteInstallment(id: string, userId: string) {
     await this.findOneInstallment(id, userId);
-    await this.prisma.creditCardInstallment.delete({ where: { id } });
+    const result = await this.prisma.creditCardInstallment.deleteMany({
+      where: { id, userId },
+    });
+    if (result.count === 0) throw new NotFoundException('Parcela não encontrada');
     return { deleted: true };
   }
 
@@ -173,9 +177,9 @@ export class CreditCardsService {
    */
   getInstallmentSchedule(inst: {
     installmentCount: number;
-    totalAmount: any; // Prisma Decimal
-    amountPerMonth: any; // Prisma Decimal
-    entryAmount: any; // Prisma Decimal | null
+    totalAmount: number; // Serialized from Prisma Decimal by TransformInterceptor
+    amountPerMonth: number; // Serialized from Prisma Decimal
+    entryAmount: number | null; // Serialized from Prisma Decimal | null
     startDate: Date;
     dueDay: number;
   }) {

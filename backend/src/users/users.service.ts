@@ -23,7 +23,7 @@ export class UsersService {
         data,
         select: excludePassword,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error.code === 'P2002') {
         throw new ForbiddenException(
           'Este e-mail já está cadastrado em nossa base.',

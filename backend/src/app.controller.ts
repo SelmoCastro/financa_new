@@ -23,7 +23,7 @@ export class AppController {
 
   @Get('health/email')
   @UseGuards(AuthGuard('jwt'), AdminGuard)
-  checkEmailConfig(@Request() req: any) {
+  checkEmailConfig(@Request() req: { user?: { id?: string } }) {
     const hasKey = !!process.env.RESEND_API_KEY;
     return {
       resendConfigured: hasKey,
