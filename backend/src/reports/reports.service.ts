@@ -323,8 +323,33 @@ export class ReportsService {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([, value]) => value);
 
+    // 6. Credit Card Debt — sum of unpaid invoice remaining amounts
+    // Transactions with creditCardId but no invoiceId are "in-flight" (current period)
+    // Transactions already linked to an unpaid invoice are part of a closed-but-unpaid fatura
+    const unpaidInvoices = await this.prisma.creditCardInvoice.findMany({
+      where: { userId, isPaid: false },
+      select: {
+        id: true,
+        creditCardId: true,
+        referenceMonth: true,
+        referenceYear: true,
+        totalAmount: true,
+        paidAmount: true,
+        closingDate: true,
+        dueDate: true,
+        creditCard: { select: { name: true } },
+      },
+      orderBy: { dueDate: 'asc' },
+    });
+
+    const creditCardDebt = unpaidInvoices.reduce(
+      (sum, inv) => sum + Number(inv.totalAmount) - Number(inv.paidAmount),
+      0,
+    );
+
     return {
       balance,
+      creditCardDebt,
       currentMonth: {
         income: currentIncome,
         expense: currentExpense,
@@ -351,6 +376,17 @@ export class ReportsService {
       },
       categorySummary,
       monthlyHistory,
+      pendingInvoices: unpaidInvoices.map((inv) => ({
+        id: inv.id,
+        creditCardName: inv.creditCard.name,
+        referenceMonth: inv.referenceMonth,
+        referenceYear: inv.referenceYear,
+        totalAmount: Number(inv.totalAmount),
+        paidAmount: Number(inv.paidAmount),
+        remaining: Number(inv.totalAmount) - Number(inv.paidAmount),
+        closingDate: inv.closingDate,
+        dueDate: inv.dueDate,
+      })),
     };
   }
 
