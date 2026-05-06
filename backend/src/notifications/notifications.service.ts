@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PrismaPromise } from '@prisma/client';
 
 @Injectable()
 export class NotificationsService {
@@ -79,9 +78,24 @@ export class NotificationsService {
         const amount = meta.amount;
         const type = meta.transactionType || 'EXPENSE'; // Use transactionType from scheduler, fallback to EXPENSE for installments
 
-        // Criar transação + atualizar saldo atomicamente
-        const operations: PrismaPromise<unknown>[] = [
-          this.prisma.transaction.create({
+        // Use interactive transaction for true atomicity — locks are held
+        // throughout, preventing race conditions on balance and installment state
+        const [transaction] = await this.prisma.$transaction(async (tx) => {
+          // 1. If accountId present, verify ownership AND sufficient balance (atomic)
+          if (meta.accountId) {
+            const account = await tx.account.findFirst({
+              where: { id: meta.accountId, userId },
+            });
+            if (!account) {
+              throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+            }
+            if (type === 'EXPENSE' && Number(account.balance) < Number(amount)) {
+              throw new BadRequestException('Saldo insuficiente para esta operação');
+            }
+          }
+
+          // 2. Create the transaction
+          const txn = await tx.transaction.create({
             data: {
               description: meta.description,
               amount,
@@ -92,54 +106,48 @@ export class NotificationsService {
               creditCardId: meta.creditCardId || null,
               userId,
               isFixed: true,
+              // Copy installment tracking fields when confirming a parcel
+              currentInstallment: meta.currentInstallment || null,
+              installmentCount: meta.installmentCount || null,
             },
-          }),
-        ];
-
-        // Atualizar saldo da conta se tiver accountId (validando ownership)
-        if (meta.accountId) {
-          // Verify account belongs to user before updating balance
-          const account = await this.prisma.account.findFirst({
-            where: { id: meta.accountId, userId },
           });
-          if (!account) {
-            throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
-          }
-          operations.push(
-            this.prisma.account.update({
+
+          // 3. Update account balance if needed
+          if (meta.accountId) {
+            await tx.account.update({
               where: { id: meta.accountId },
               data: {
                 balance: type === 'INCOME'
                   ? { increment: Number(amount) }
                   : { decrement: Number(amount) },
               },
-            }),
-          );
-        }
-
-        const [transaction] = await this.prisma.$transaction(operations) as [{ id: string; description: string }, ...unknown[]];
-
-        // Se for parcela, incrementar o installment
-        if (meta.installmentId) {
-          const inst = await this.prisma.creditCardInstallment.findFirst({
-            where: { id: meta.installmentId, userId },
-          });
-          if (inst) {
-            const next = inst.currentInstallment + 1;
-            await this.prisma.creditCardInstallment.update({
-              where: { id: meta.installmentId },
-              data: {
-                currentInstallment: next,
-                isActive: next < inst.installmentCount,
-              },
             });
           }
-        }
 
-        // Marcar como lida
-        await this.prisma.notification.update({
-          where: { id },
-          data: { isRead: true },
+          // 4. If installment, advance the tracker
+          if (meta.installmentId) {
+            const inst = await tx.creditCardInstallment.findFirst({
+              where: { id: meta.installmentId, userId },
+            });
+            if (inst) {
+              const next = inst.currentInstallment + 1;
+              await tx.creditCardInstallment.update({
+                where: { id: meta.installmentId },
+                data: {
+                  currentInstallment: next,
+                  isActive: next < inst.installmentCount,
+                },
+              });
+            }
+          }
+
+          // 5. Mark notification as read
+          await tx.notification.update({
+            where: { id },
+            data: { isRead: true },
+          });
+
+          return [txn];
         });
 
         return {

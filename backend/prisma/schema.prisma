@@ -123,6 +123,7 @@ model Transaction {
   classificationRule Int?        @map("classification_rule")
   fitId              String?
   sharedWithEmail    String?
+  transferGroupId    String?     // links paired (Entrada)/(Saida) transfer transactions
   account            Account?    @relation(fields: [accountId], references: [id], onDelete: SetNull)
   category           Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   creditCard         CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)

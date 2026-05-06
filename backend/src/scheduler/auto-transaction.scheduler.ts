@@ -147,6 +147,8 @@ export class AutoTransactionScheduler {
           installmentId: inst.id,
           description: `${inst.description} (${nextInstallment}/${inst.installmentCount})`,
           amount: installmentAmount,
+          currentInstallment: nextInstallment,
+          installmentCount: inst.installmentCount,
           accountId: inst.accountId,
           categoryId: inst.categoryId,
           creditCardId: inst.creditCardId,

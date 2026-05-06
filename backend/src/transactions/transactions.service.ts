@@ -802,6 +802,9 @@ export class TransactionsService {
 
       const txDescription = description || 'Transferência';
 
+      // Generate a shared ID to link the two sides of this transfer
+      const transferGroupId = crypto.randomUUID();
+
       // 2. Create the OUT transaction (Expense)
       const outTx = await tx.transaction.create({
         data: {
@@ -811,6 +814,7 @@ export class TransactionsService {
           type: 'EXPENSE',
           categoryId: transferCat.id,
           accountId: sourceAccountId,
+          transferGroupId,
           userId,
         },
       });
@@ -824,6 +828,7 @@ export class TransactionsService {
           type: 'INCOME',
           categoryId: transferCat.id,
           accountId: destinationAccountId,
+          transferGroupId,
           userId,
         },
       });

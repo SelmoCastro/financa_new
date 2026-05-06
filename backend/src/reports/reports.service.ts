@@ -15,17 +15,25 @@ export class ReportsService {
       Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59, 999),
     );
 
-    // Identify real transfer transactions by description pattern
-    // The /transfer endpoint creates transactions with "(Entrada)" and "(Saída)" suffixes
+    // Identify transfer transactions by BOTH description pattern AND transferGroupId
+    // Description: legacy transfers from /transfer endpoint have "(Entrada)" and "(Saída)" suffixes
+    // transferGroupId: new transfers have this field set, so they're filtered even if description is edited
     // We exclude ONLY these, NOT all transactions with transfer-related category names
     // (many real PIX payments get classified as "Transferência Recebida" but ARE real income/expense)
     const filterOutTransfers = {
-      NOT: {
-        OR: [
-          { description: { contains: '(Entrada)' } },
-          { description: { contains: '(Saída)' } },
-        ],
-      },
+      AND: [
+        {
+          NOT: {
+            OR: [
+              { description: { contains: '(Entrada)' } },
+              { description: { contains: '(Saída)' } },
+            ],
+          },
+        },
+        {
+          transferGroupId: null,
+        },
+      ],
     };
 
     // 1. Calculate General Balance (All time)
