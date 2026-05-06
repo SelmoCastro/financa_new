@@ -1,6 +1,6 @@
 {
-  "version": "1.8.13",
-  "mobileVersion": "1.8.13",
+  "version": "1.8.14",
+  "mobileVersion": "1.8.14",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "fix(mobile): remover userId do body do refresh — causava 400 e impedia renovacao de token"
+  "releaseNotes": "Versão 1.8.14"
 }

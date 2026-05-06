@@ -348,6 +348,20 @@ export default function DashboardScreen() {
                                             <View style={[styles.ruleProgressFill, { width: `${Math.min(rule503020.savings?.percent || 0, 100)}%`, backgroundColor: '#3b82f6' }]} />
                                         </View>
                                     </View>
+
+                                    {/* Uncategorized */}
+                                    {rule503020.uncategorized && rule503020.uncategorized.value > 0 && (
+                                        <View style={{ gap: 6 }}>
+                                            <View style={styles.ruleLabelRow}>
+                                                <Text style={styles.ruleLabel}>Outros</Text>
+                                                <Text style={styles.ruleValue}>{rule503020.uncategorized.percent.toFixed(1)}%</Text>
+                                            </View>
+                                            <View style={styles.ruleProgressBar}>
+                                                <View style={[styles.ruleProgressFill, { width: `${Math.min(rule503020.uncategorized.percent || 0, 100)}%`, backgroundColor: '#94a3b8' }]} />
+                                            </View>
+                                            <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>Categorias não classificadas na regra</Text>
+                                        </View>
+                                    )}
                                 </View>
                             </View>
                         )}

@@ -46,13 +46,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
         if (!dashboardSummary) return {
             needs: { value: 0, percent: 0, target: 50 },
             wants: { value: 0, percent: 0, target: 30 },
-            savings: { value: 0, percent: 0, target: 20 }
+            savings: { value: 0, percent: 0, target: 20 },
+            uncategorized: { value: 0, percent: 0 }
         };
 
         return {
             needs: { ...dashboardSummary.rule503020.needs, target: 50 },
             wants: { ...dashboardSummary.rule503020.wants, target: 30 },
-            savings: { ...dashboardSummary.rule503020.savings, target: 20 }
+            savings: { ...dashboardSummary.rule503020.savings, target: 20 },
+            uncategorized: dashboardSummary.rule503020.uncategorized || { value: 0, percent: 0 }
         };
     }, [dashboardSummary]);
 
@@ -386,6 +388,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </div>
                                 <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.2)}</p>
                             </div>
+
+                            {rule503020.uncategorized && rule503020.uncategorized.value > 0 && (
+                                <div className="space-y-2 group cursor-help" title="Gastos em categorias não classificadas na regra 50/30/20 (categorias personalizadas).">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                            Outros
+                                            <AlertCircle className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
+                                        </span>
+                                        <span className="font-black text-slate-900 dark:text-white">{rule503020.uncategorized.percent.toFixed(1)}%</span>
+                                    </div>
+                                    <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+                                        <div
+                                            className="h-full bg-slate-400 dark:bg-slate-500 rounded-full transition-all duration-1000"
+                                            style={{ width: `${Math.min(rule503020.uncategorized.percent, 100)}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Categorias não classificadas na regra</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="glass-card p-6 md:p-8 rounded-[2.5rem]">

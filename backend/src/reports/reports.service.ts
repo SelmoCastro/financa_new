@@ -127,6 +127,7 @@ export class ReportsService {
       'Contas Residenciais',
       'Mercado / Padaria',
       'Transporte Fixo',
+      'Combustível / Gasolina',
       'Saúde e Farmácia',
       'Educação',
       'Impostos Anuais e Seguros',
@@ -138,6 +139,7 @@ export class ReportsService {
       'Lazer / Assinaturas',
       'Compras / Vestuário',
       'Cuidados Pessoais',
+      'Cuidados com Pets',
       'Viagens',
     ];
     const savingsCategories = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
@@ -145,6 +147,7 @@ export class ReportsService {
     let needs = 0;
     let wants = 0;
     let savings = 0;
+    let uncategorized = 0;
 
     const categories = await this.prisma.category.findMany({
       where: { userId, deletedAt: null },
@@ -160,12 +163,13 @@ export class ReportsService {
       if (needsCategories.includes(catName)) needs += val;
       else if (wantsCategories.includes(catName)) wants += val;
       else if (savingsCategories.includes(catName)) savings += val;
-      else wants += val;
+      else uncategorized += val;
     });
 
-    // 3. Rule 50/30/20 (Expenses only, current month)
-    // Note: We use strictly currentIncome as base to show real financial health/excess.
-    // If income is 0, we use 1 to avoid division by zero errors while showing 0% savings.
+    // 3. Rule 50/30/20 (Expenses as % of income)
+    // The rule says: of your income, allocate 50% to needs, 30% to wants, 20% to savings.
+    // We compute actual % of income spent in each category.
+    // If income is 0, we use 1 to avoid division by zero.
     const incomeBase = currentIncome > 0 ? currentIncome : 1;
 
     // 4. Category Summary (Pie Chart Data)
@@ -258,6 +262,10 @@ export class ReportsService {
         savings: {
           value: savings,
           percent: currentIncome > 0 ? (savings / currentIncome) * 100 : 0,
+        },
+        uncategorized: {
+          value: uncategorized,
+          percent: currentIncome > 0 ? (uncategorized / currentIncome) * 100 : 0,
         },
       },
       categorySummary,
