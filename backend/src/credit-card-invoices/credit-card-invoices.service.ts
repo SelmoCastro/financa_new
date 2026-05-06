@@ -186,43 +186,29 @@ export class CreditCardInvoiceService {
       card.closingDay,
     );
 
-    // Soma das transações de crédito no período (não vinculadas a fatura fechada ainda)
+    // Busca TODAS as transações de crédito não faturadas (sem filtro de data restrito)
+    // Isso garante que qualquer lançamento no cartão apareça imediatamente,
+    // mesmo que esteja fora do período de fechamento calculado
     const transactions = await this.prisma.transaction.findMany({
       where: {
         userId,
         creditCardId,
         deletedAt: null,
-        invoiceId: null, // apenas transações ainda não faturadas
-        date: { gte: startDate, lte: endDate },
+        invoiceId: null,
         type: 'EXPENSE',
       },
       include: { category: true },
       orderBy: { date: 'desc' },
     });
 
-    // Também inclui parcelas cujo vencimento cai dentro do período
-    const installmentTx = await this.prisma.transaction.findMany({
-      where: {
-        userId,
-        creditCardId,
-        deletedAt: null,
-        invoiceId: null,
-        date: { gte: startDate, lte: endDate },
-        type: 'EXPENSE',
-        installmentCount: { not: null },
-      },
-      include: { category: true },
-    });
-
-    const allTransactions = [...transactions, ...installmentTx];
-
-    const totalAmount = allTransactions.reduce(
+    const totalAmount = transactions.reduce(
       (sum, t) => sum + Number(t.amount),
       0,
     );
 
     return {
       creditCardId,
+      creditCardName: card.name,
       referenceMonth: refMonth,
       referenceYear: refYear,
       closingDate,
@@ -231,8 +217,8 @@ export class CreditCardInvoiceService {
       paidAmount: 0,
       isPaid: false,
       paidAt: null,
-      transactions: allTransactions,
-      isProjection: true, // indica que é projeção, não persistida
+      transactions,
+      isProjection: true,
     };
   }
 
