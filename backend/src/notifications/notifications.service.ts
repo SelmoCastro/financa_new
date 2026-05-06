@@ -77,6 +77,7 @@ export class NotificationsService {
         notif.type === 'ACTION_INSTALLMENT'
       ) {
         const amount = meta.amount;
+        const type = meta.transactionType || 'EXPENSE'; // Use transactionType from scheduler, fallback to EXPENSE for installments
 
         // Criar transação + atualizar saldo atomicamente
         const operations: PrismaPromise<unknown>[] = [
@@ -85,7 +86,7 @@ export class NotificationsService {
               description: meta.description,
               amount,
               date: new Date(),
-              type: 'EXPENSE',
+              type,
               categoryId: meta.categoryId || null,
               accountId: meta.accountId || null,
               creditCardId: meta.creditCardId || null,
@@ -108,7 +109,9 @@ export class NotificationsService {
             this.prisma.account.update({
               where: { id: meta.accountId },
               data: {
-                balance: { decrement: Number(amount) },
+                balance: type === 'INCOME'
+                  ? { increment: Number(amount) }
+                  : { decrement: Number(amount) },
               },
             }),
           );

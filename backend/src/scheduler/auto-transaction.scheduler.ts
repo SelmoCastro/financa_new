@@ -65,15 +65,17 @@ export class AutoTransactionScheduler {
         continue;
       }
 
+      const isIncome = r.type === 'INCOME';
       await this.notificationsService.create(r.userId, {
-        title: '💰 Despesa Recorrente',
-        message: `"${r.description}" de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(r.amount))} vence hoje. Já foi pago?`,
+        title: isIncome ? '📥 Receita Recorrente' : '💰 Despesa Recorrente',
+        message: `"${r.description}" de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(r.amount))} ${isIncome ? 'prevista para hoje. Já recebeu?' : 'vence hoje. Já foi pago?'}`,
         type: 'ACTION_RECURRING',
         actionType: 'CONFIRM_PAYMENT',
         actionMeta: {
           recurringTransactionId: r.id,
           description: r.description,
           amount: Number(r.amount),
+          transactionType: r.type, // INCOME or EXPENSE — used by handleAction
           accountId: r.accountId,
           categoryId: r.categoryId,
           creditCardId: r.creditCardId,
@@ -111,6 +113,12 @@ export class AutoTransactionScheduler {
     for (const inst of installments) {
       const nextInstallment = inst.currentInstallment + 1;
 
+      // For the first installment, use entryAmount if it exists (down payment)
+      const installmentAmount =
+        inst.currentInstallment === 0 && inst.entryAmount
+          ? Number(inst.entryAmount)
+          : Number(inst.amountPerMonth);
+
       // Check if already notified this month
       const existing = await this.prisma.notification.findFirst({
         where: {
@@ -132,13 +140,13 @@ export class AutoTransactionScheduler {
 
       await this.notificationsService.create(inst.userId, {
         title: '💳 Parcela Cartão de Crédito',
-        message: `Parcela ${nextInstallment}/${inst.installmentCount} de "${inst.description}" — ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(inst.amountPerMonth))} no cartão ${inst.creditCard.name}. Já pagou?`,
+        message: `Parcela ${nextInstallment}/${inst.installmentCount} de "${inst.description}" — ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(installmentAmount)} no cartão ${inst.creditCard.name}. ${inst.currentInstallment === 0 && inst.entryAmount ? '(Entrada + ' + (inst.installmentCount - 1) + 'x)' : ''}Já pagou?`,
         type: 'ACTION_INSTALLMENT',
         actionType: 'CONFIRM_PAYMENT',
         actionMeta: {
           installmentId: inst.id,
           description: `${inst.description} (${nextInstallment}/${inst.installmentCount})`,
-          amount: Number(inst.amountPerMonth),
+          amount: installmentAmount,
           accountId: inst.accountId,
           categoryId: inst.categoryId,
           creditCardId: inst.creditCardId,
