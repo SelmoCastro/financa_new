@@ -1,4 +1,5 @@
 import React from 'react';
+import { InvoicesView } from '../views/InvoicesView';
 import { DashboardView } from '../views/DashboardView';
 import { BudgetsView } from '../views/BudgetsView';
 import { GoalsView } from '../views/GoalsView';
@@ -58,6 +59,8 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
       return <AdminPanelView />;
     case 'settings':
       return <SettingsView userName={userName} userEmail={userEmail} userPlan={userPlan} transactions={transactions} onLogout={onLogout} onNameChange={onUserNameChange} onEmailChange={onUserEmailChange} />;
+    case 'invoices':
+      return <InvoicesView isPrivacyEnabled={isPrivacyEnabled} />;
     default:
       return null;
   }

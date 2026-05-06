@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight, MessageSquareHeart, Shield } from 'lucide-react';
+import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight, MessageSquareHeart, Shield, CreditCard } from 'lucide-react';
 import { version } from '../package.json';
 
 interface SidebarProps {
@@ -17,6 +17,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     { id: 'accounts', label: 'Contas', icon: Wallet },
     { id: 'budgets', label: 'Orçamentos', icon: Target },
     { id: 'goals', label: 'Metas', icon: Trophy },
+    { id: 'invoices', label: 'Faturas', icon: CreditCard },
     { id: 'timeline', label: 'Linha do Tempo', icon: Clock },
     { id: 'fixed', label: 'Recorrentes', icon: Anchor },
     { id: 'history', label: 'Extrato', icon: Receipt },

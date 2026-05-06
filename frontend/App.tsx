@@ -147,6 +147,7 @@ const AppContent: React.FC = () => {
                   activeTab === 'timeline' ? 'Linha do Tempo' :
                     activeTab === 'goals' ? 'Metas & Sonhos' :
                       activeTab === 'budgets' ? 'Orçamentos' :
+                        activeTab === 'invoices' ? 'Faturas' :
                         activeTab === 'fixed' ? 'Recorrentes' :
                           activeTab === 'feedbacks' ? 'Feedbacks (Admin)' :
                         activeTab === 'admin' ? 'Painel Admin' :
