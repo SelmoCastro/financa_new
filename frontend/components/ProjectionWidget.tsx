@@ -111,34 +111,6 @@ export const ProjectionWidget: React.FC<ProjectionWidgetProps> = ({ isPrivacyEna
 
   return (
     <div className="space-y-4">
-      {/* Summary row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl p-3 border border-emerald-100 dark:border-emerald-500/20">
-          <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-0.5">Receitas</p>
-          <p className="text-sm font-black text-emerald-700 dark:text-emerald-300">
-            {isPrivacyEnabled ? '••••' : formatCurrency(projection.upcomingIncome)}
-          </p>
-        </div>
-        <div className="bg-rose-50 dark:bg-rose-500/10 rounded-2xl p-3 border border-rose-100 dark:border-rose-500/20">
-          <p className="text-[9px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400 mb-0.5">Despesas</p>
-          <p className="text-sm font-black text-rose-700 dark:text-rose-300">
-            {isPrivacyEnabled ? '••••' : formatCurrency(projection.upcomingExpenses)}
-          </p>
-        </div>
-        <div className="bg-amber-50 dark:bg-amber-500/10 rounded-2xl p-3 border border-amber-100 dark:border-amber-500/20">
-          <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-0.5">Cartão</p>
-          <p className="text-sm font-black text-amber-700 dark:text-amber-300">
-            {isPrivacyEnabled ? '••••' : formatCurrency(projection.creditCardDebt)}
-          </p>
-        </div>
-        <div className={`rounded-2xl p-3 border ${projection.projectedBalance >= 0 ? 'bg-cyan-50 dark:bg-cyan-500/10 border-cyan-100 dark:border-cyan-500/20' : 'bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20'}`}>
-          <p className={`text-[9px] font-black uppercase tracking-widest mb-0.5 ${projection.projectedBalance >= 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-rose-600 dark:text-rose-400'}`}>Projeção</p>
-          <p className={`text-sm font-black ${projection.projectedBalance >= 0 ? 'text-cyan-700 dark:text-cyan-300' : 'text-rose-700 dark:text-rose-300'}`}>
-            {isPrivacyEnabled ? '••••' : formatCurrency(projection.projectedBalance)}
-          </p>
-        </div>
-      </div>
-
       {/* Chart */}
       <div className="glass-card p-4 rounded-[2rem]">
         <div className="flex items-center justify-between mb-3">
