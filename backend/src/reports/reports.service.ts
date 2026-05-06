@@ -144,10 +144,18 @@ export class ReportsService {
       'Poupança': 'Aplicações / Poupança',
       'Dívidas': 'Pagamento de Dívidas',
       'Celular': 'Contas Residenciais',
-      'Outras Receitas': 'Renda Extra',
-      'Entradas': 'Renda Extra',
       'Manutenção Veicular': 'Transporte Fixo',
+      // Previously uncategorized legacy names → proper classification
+      'Roupas': 'Compras / Vestuário',
+      'Cartao Credito': 'Compras / Vestuário',
+      'Cuidados Pessoais': 'Cuidados Pessoais',
+      // Transferência Recebida is type=TRANSFER, not a real expense
+      // Outros/Outras Receitas/Entradas as expense category names → treat as generic
     };
+
+    // Categories that are transfers/internal movements, not real expenses
+    // These should be excluded from 50/30/20 calculations entirely
+    const transferCategoryNames = ['Transferência Recebida', 'Transferência Enviada'];
 
     const needsCategories = [
       'Moradia',
@@ -168,6 +176,9 @@ export class ReportsService {
       'Cuidados Pessoais',
       'Cuidados com Pets',
       'Viagens',
+      // Generic/catch-all categories that don't fit needs or savings
+      'Outros',
+      'Cartao Credito',
     ];
     const savingsCategories = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
 
@@ -181,12 +192,18 @@ export class ReportsService {
     });
     const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
-    const classifyCategory = (catName: string): string => {
+    const classifyCategory = (catName: string): { name: string; isTransfer: boolean } => {
       // Normalize null/empty/undefined → Outros
-      if (!catName || catName === 'null' || catName === 'undefined') return 'Outros';
-      // Apply alias mapping first
-      return categoryAliases[catName] || catName;
+      if (!catName || catName === 'null' || catName === 'undefined') return { name: 'Outros', isTransfer: false };
+      // Check if this is a transfer category (should be excluded from 50/30/20)
+      if (transferCategoryNames.includes(catName)) return { name: catName, isTransfer: true };
+      // Apply alias mapping
+      return { name: categoryAliases[catName] || catName, isTransfer: false };
     };
+
+    // Legacy expense category names that are actually income/transfer misclassified
+    // These should be excluded from 50/30/20 expense calculations
+    const excludedExpenseCategories = ['Outras Receitas', 'Entradas', 'Rendimento de Investimentos'];
 
     categoryGroup.forEach((g) => {
       // Resolve category name: prefer categoryId lookup, fallback to categoryLegacy
@@ -196,7 +213,15 @@ export class ReportsService {
           ? categoryMap.get(g.categoryId)
           : (g.categoryLegacy && g.categoryLegacy !== 'null' ? g.categoryLegacy : null);
 
-      const catName = classifyCategory(rawCatName || 'Outros');
+      const classified = classifyCategory(rawCatName || 'Outros');
+
+      // Skip transfer categories entirely
+      if (classified.isTransfer) return;
+
+      // Skip misclassified income/transfer categories that appear as EXPENSE
+      if (excludedExpenseCategories.includes(rawCatName || '')) return;
+
+      const catName = classified.name;
       const val = Number(g._sum.amount || 0);
 
       if (needsCategories.includes(catName)) needs += val;
@@ -222,7 +247,10 @@ export class ReportsService {
         g.categoryId
           ? categoryMap.get(g.categoryId)
           : (g.categoryLegacy && g.categoryLegacy !== 'null' ? g.categoryLegacy : null);
-      const catName = classifyCategory(rawCat || 'Outros');
+      const classified = classifyCategory(rawCat || 'Outros');
+      // Skip transfer categories from pie chart too
+      if (classified.isTransfer) return;
+      const catName = classified.name;
       const val = g._sum.amount ? Number(g._sum.amount) : 0;
 
       if (val > 0) {
@@ -328,6 +356,16 @@ export class ReportsService {
     const y = year !== undefined ? year : now.getFullYear();
     const m = month !== undefined ? month : now.getMonth();
 
+    // Filter out transfer transactions (internal movements, not real expenses)
+    const filterOutTransfers = {
+      NOT: {
+        OR: [
+          { description: { contains: '(Entrada)' } },
+          { description: { contains: '(Saída)' } },
+        ],
+      },
+    };
+
     // 1. Resumo do mês atual ou selecionado
     const monthSummary = await this.getDashboardSummary(userId, y, m);
 
@@ -357,6 +395,7 @@ export class ReportsService {
         userId,
         type: 'EXPENSE',
         deletedAt: null,
+        ...filterOutTransfers,
         date: {
           gte: targetStart,
           lte: targetEnd,
