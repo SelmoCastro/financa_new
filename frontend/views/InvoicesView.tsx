@@ -39,6 +39,8 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ isPrivacyEnabled }) 
   const [isPaying, setIsPaying] = useState<string | null>(null);
   const [payAccountId, setPayAccountId] = useState('');
 
+  const [currentInvoice, setCurrentInvoice] = useState<InvoiceDetail | null>(null);
+
   // Set default card on mount
   useEffect(() => {
     if (creditCards.length > 0 && !selectedCardId) {
@@ -46,24 +48,40 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ isPrivacyEnabled }) 
     }
   }, [creditCards, selectedCardId]);
 
-  // Fetch invoices when card changes
+  // Fetch invoices + current open invoice when card changes
   useEffect(() => {
     if (!selectedCardId) return;
 
-    const fetchInvoices = async () => {
+    const fetchAll = async () => {
       setIsLoading(true);
       try {
-        const res = await api.get(`/credit-card-invoices/${selectedCardId}/history`);
-        setInvoices(res.data || []);
+        const [historyRes, currentRes] = await Promise.all([
+          api.get(`/credit-card-invoices/${selectedCardId}/history`),
+          api.get(`/credit-card-invoices/${selectedCardId}/current`),
+        ]);
+        setInvoices(historyRes.data || []);
+        // current endpoint returns projection without id if not yet closed
+        const cur = currentRes.data;
+        if (cur && cur.transactions && cur.transactions.length > 0) {
+          setCurrentInvoice({
+            ...cur,
+            id: cur.id || 'open',
+            creditCardName: cur.creditCardName || selectedCard?.name || '',
+            isPaid: false,
+          });
+        } else {
+          setCurrentInvoice(null);
+        }
       } catch (err) {
         console.error('Failed to load invoices:', err);
         setInvoices([]);
+        setCurrentInvoice(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchInvoices();
+    fetchAll();
   }, [selectedCardId]);
 
   // Set default account for payment
@@ -178,6 +196,42 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ isPrivacyEnabled }) 
                 {isLoading ? 'Fechando...' : 'Fechar Fatura'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Current Open Invoice */}
+      {currentInvoice && (
+        <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-500/5 dark:to-blue-500/5 rounded-[2rem] border border-cyan-200 dark:border-cyan-500/20 p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-cyan-100 dark:bg-cyan-500/20 rounded-xl text-cyan-600">
+              <Receipt className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-black text-sm text-slate-800 dark:text-white">Fatura em Aberto</p>
+              <p className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold">
+                Fecha dia {new Date(currentInvoice.closingDate).toLocaleDateString('pt-BR')}
+              </p>
+            </div>
+            <span className="ml-auto text-sm font-black text-cyan-700 dark:text-cyan-300">
+              {isPrivacyEnabled ? '••••' : formatCurrency(currentInvoice.totalAmount)}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {currentInvoice.transactions.map((tx) => (
+              <div key={tx.id} className="flex justify-between items-center p-2.5 bg-white/60 dark:bg-slate-900/60 rounded-xl">
+                <div>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{tx.description}</p>
+                  <p className="text-[10px] text-slate-400 font-medium">
+                    {new Date(tx.date).toLocaleDateString('pt-BR')}
+                    {tx.category?.name ? ` · ${tx.category.name}` : ''}
+                  </p>
+                </div>
+                <span className={`text-xs font-black ${isPrivacyEnabled ? 'blur-sm' : 'text-slate-800 dark:text-white'}`}>
+                  {isPrivacyEnabled ? '••••' : formatCurrency(tx.amount)}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
