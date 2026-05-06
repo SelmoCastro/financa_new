@@ -7,6 +7,7 @@ import { useMonth } from './MonthContext';
 
 interface DashboardSummary {
     balance: number;
+    creditCardDebt: number;
     currentMonth: {
         income: number;
         expense: number;
@@ -17,9 +18,21 @@ interface DashboardSummary {
         needs: { value: number; percent: number };
         wants: { value: number; percent: number };
         savings: { value: number; percent: number };
+        uncategorized?: { value: number; percent: number };
     };
     categorySummary: Array<{ name: string, value: number }>;
     monthlyHistory: Array<{ month: string, income: number, expenses: number }>;
+    pendingInvoices: Array<{
+        id: string;
+        creditCardName: string;
+        referenceMonth: number;
+        referenceYear: number;
+        totalAmount: number;
+        paidAmount: number;
+        remaining: number;
+        closingDate: string;
+        dueDate: string;
+    }>;
 }
 
 interface DataContextType {

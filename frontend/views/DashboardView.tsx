@@ -39,8 +39,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
         currentIncome: dashboardSummary?.currentMonth?.income || 0,
         currentExpense: dashboardSummary?.currentMonth?.expense || 0,
         incomeTrend: dashboardSummary?.currentMonth?.incomeTrend || 0,
-        expenseTrend: dashboardSummary?.currentMonth?.expenseTrend || 0
+        expenseTrend: dashboardSummary?.currentMonth?.expenseTrend || 0,
+        creditCardDebt: dashboardSummary?.creditCardDebt || 0
     }), [dashboardSummary]);
+
+    const pendingInvoices = useMemo(() => {
+        return dashboardSummary?.pendingInvoices || [];
+    }, [dashboardSummary]);
 
     const rule503020 = useMemo(() => {
         if (!dashboardSummary) return {
@@ -118,6 +123,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             isVisible={!isPrivacyEnabled} 
                         />
                         <StatCard title="Saldo Atual" value={formatCurrency(totals.balance)} color="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300" icon={<Banknote className="" />} isVisible={!isPrivacyEnabled} />
+                        <StatCard
+                            title="Fatura Cartão"
+                            value={formatCurrency(totals.creditCardDebt)}
+                            color={totals.creditCardDebt > 0 ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}
+                            icon={totals.creditCardDebt > 0 ? <AlertCircle className="text-amber-500" /> : <CheckCircle className="text-emerald-500" />}
+                            isVisible={!isPrivacyEnabled}
+                        />
                         <StatCard 
                             title="Entradas (Mês)" 
                             value={formatCurrency(totals.currentIncome)} 
@@ -443,6 +455,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             ))}
                         </div>
                     </div>
+
+                    {pendingInvoices.length > 0 && (
+                        <div className="glass-card p-6 md:p-8 rounded-[2.5rem]">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-800 dark:text-white">Faturas Pendentes</h3>
+                                    <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Cartão de Crédito</p>
+                                </div>
+                                <div className="p-2 bg-amber-50 dark:bg-amber-500/10 rounded-xl">
+                                    <AlertCircle className="w-5 h-5 text-amber-500" />
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                {pendingInvoices.map((inv) => (
+                                    <div key={inv.id} className="p-4 bg-amber-50/50 dark:bg-amber-500/5 rounded-2xl border border-amber-100 dark:border-amber-500/10">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="font-bold text-sm text-slate-700 dark:text-slate-300">{inv.creditCardName}</span>
+                                            <span className={`text-xs font-black px-2 py-0.5 rounded-lg ${inv.remaining > 0 ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/20' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20'}`}>
+                                                {String(inv.referenceMonth).padStart(2, '0')}/{inv.referenceYear}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-end">
+                                            <div>
+                                                <span className={`text-lg font-black ${isPrivacyEnabled ? 'blur-sm' : 'text-slate-800 dark:text-white'}`}>
+                                                    {isPrivacyEnabled ? '••••' : formatCurrency(inv.remaining)}
+                                                </span>
+                                                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                                                    Vence {new Date(inv.dueDate).toLocaleDateString('pt-BR')}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold">
+                                                    Total: {isPrivacyEnabled ? '••••' : formatCurrency(inv.totalAmount)}
+                                                </p>
+                                                {inv.paidAmount > 0 && (
+                                                    <p className="text-[11px] text-emerald-500 font-bold">
+                                                        Pago: {isPrivacyEnabled ? '••••' : formatCurrency(inv.paidAmount)}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
