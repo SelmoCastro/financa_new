@@ -559,4 +559,147 @@ export class ReportsService {
       take: 100,
     });
   }
+
+  /**
+   * Projecao de saldo futuro para os proximos 30 dias.
+   * Considera:
+   * - Saldo atual das contas
+   * - Recorrentes pendentes (isActive=true, ainda nao confirmadas no mes)
+   * - Faturas de cartao nao pagas
+   *
+   * Retorna o saldo projetado dia a dia com eventos que impactam.
+   */
+  async getProjection(userId: string) {
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // Current balance from all accounts
+    const userAccounts = await this.prisma.account.findMany({
+      where: { userId, deletedAt: null },
+      select: { balance: true },
+    });
+    const currentBalance = userAccounts.reduce(
+      (acc, a) => acc + Number(a.balance),
+      0,
+    );
+
+    // Credit card debt (unpaid invoices)
+    const unpaidInvoices = await this.prisma.creditCardInvoice.findMany({
+      where: { userId, isPaid: false },
+    });
+    const creditCardDebt = unpaidInvoices.reduce(
+      (sum, inv) => sum + Number(inv.totalAmount) - Number(inv.paidAmount),
+      0,
+    );
+
+    // Pending recurring transactions for current month (not yet confirmed)
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
+    const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999));
+
+    const activeRecurring = await this.prisma.recurringTransaction.findMany({
+      where: {
+        userId,
+        isActive: true,
+        OR: [{ endMonth: null }, { endMonth: { gte: currentMonth + 1 } }],
+      },
+    });
+
+    // Check which ones have already been confirmed this month
+    const confirmedDescriptions = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        isFixed: true,
+        deletedAt: null,
+        date: { gte: startOfMonth, lte: endOfMonth },
+      },
+      select: { description: true },
+    });
+    const confirmedSet = new Set(confirmedDescriptions.map((t) => t.description.toLowerCase().trim()));
+
+    // Upcoming: recorrentes still pending
+    const upcomingIncome = activeRecurring
+      .filter((r) => r.type === 'INCOME' && !confirmedSet.has(r.description.toLowerCase().trim()))
+      .reduce((sum, r) => sum + Number(r.amount), 0);
+
+    const upcomingExpenses = activeRecurring
+      .filter((r) => r.type === 'EXPENSE' && !confirmedSet.has(r.description.toLowerCase().trim()))
+      .reduce((sum, r) => sum + Number(r.amount), 0);
+
+    // Projected final balance
+    const projectedBalance = currentBalance + upcomingIncome - upcomingExpenses - creditCardDebt;
+
+    // Build daily projection for the next 30 days
+    const days: Array<{ date: string; balance: number; events: string[] }> = [];
+    let runningBalance = currentBalance;
+
+    for (let i = 0; i < 30; i++) {
+      const day = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
+      const dayDueDay = day.getDate();
+      const dayMonth = day.getMonth() + 1;
+
+      const events: string[] = [];
+
+      // Recurring items due on this day
+      const dayItems = activeRecurring.filter(
+        (r) => r.dueDay === dayDueDay && !confirmedSet.has(r.description.toLowerCase().trim()),
+      );
+      for (const item of dayItems) {
+        const val = Number(item.amount);
+        if (item.type === 'INCOME') {
+          runningBalance += val;
+          events.push(`+ ${item.description}: R$${val.toFixed(2)}`);
+        } else {
+          runningBalance -= val;
+          events.push(`- ${item.description}: R$${val.toFixed(2)}`);
+        }
+      }
+
+      // Invoice due dates
+      for (const inv of unpaidInvoices) {
+        const dueDate = new Date(inv.dueDate);
+        if (
+          dueDate.getDate() === dayDueDay &&
+          dueDate.getMonth() + 1 === dayMonth
+        ) {
+          const remaining = Number(inv.totalAmount) - Number(inv.paidAmount);
+          if (remaining > 0) {
+            // Invoice due date doesn't auto-debit — it's informational
+            events.push(`Fatura cartão vence: R$${remaining.toFixed(2)}`);
+          }
+        }
+      }
+
+      days.push({
+        date: day.toISOString().split('T')[0],
+        balance: runningBalance,
+        events,
+      });
+    }
+
+    return {
+      currentBalance,
+      upcomingIncome,
+      upcomingExpenses,
+      creditCardDebt,
+      projectedBalance,
+      days,
+      upcomingItems: activeRecurring
+        .filter((r) => !confirmedSet.has(r.description.toLowerCase().trim()))
+        .map((r) => ({
+          description: r.description,
+          amount: Number(r.amount),
+          type: r.type,
+          dueDay: r.dueDay,
+        })),
+      unpaidInvoices: unpaidInvoices.map((inv) => ({
+        id: inv.id,
+        referenceMonth: inv.referenceMonth,
+        referenceYear: inv.referenceYear,
+        remaining: Number(inv.totalAmount) - Number(inv.paidAmount),
+        dueDate: inv.dueDate,
+      })),
+    };
+  }
 }

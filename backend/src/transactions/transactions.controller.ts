@@ -196,6 +196,11 @@ export class TransactionsController {
     );
   }
 
+  @Get('projection')
+  getProjection(@Request() req) {
+    return this.reportsService.getProjection(req.user.userId);
+  }
+
   @Get('dashboard-summary')
   getDashboardSummary(
     @Request() req,

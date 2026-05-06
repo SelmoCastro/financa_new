@@ -10,6 +10,7 @@ import { useData } from '../context/DataProvider';
 import api from '../services/api';
 import { Sparkles, RefreshCw, AlertCircle, Crosshair, Banknote, TrendingUp, TrendingDown, CheckCircle, Trophy, PieChart as PieChartIcon } from 'lucide-react';
 import { OnboardingWidget } from '../components/OnboardingWidget';
+import { ProjectionWidget } from '../components/ProjectionWidget';
 import { useCurrency } from '../context/CurrencyContext';
 import { motion } from 'framer-motion';
 
@@ -142,6 +143,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                         <StatCard title="Saídas (Mês)" value={formatCurrency(totals.currentExpense)} color="bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400" icon={<TrendingDown className="" />} trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`} trendUp={totals.expenseTrend <= 0} isVisible={!isPrivacyEnabled} />
                     </>
                 )}
+            </div>
+
+            <div className="mb-6">
+              <ProjectionWidget isPrivacyEnabled={isPrivacyEnabled} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
