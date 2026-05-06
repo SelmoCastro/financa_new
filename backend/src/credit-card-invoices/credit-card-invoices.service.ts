@@ -445,4 +445,63 @@ export class CreditCardInvoiceService {
       orderBy: [{ referenceYear: 'desc' }, { referenceMonth: 'desc' }],
     });
   }
+
+  /**
+   * Fecha faturas de TODOS os cartões cujo closingDay é hoje.
+   * Chamado pelo scheduler diário. Retorna contagem de faturas fechadas.
+   *
+   * Para cada cartão ativo:
+   * - Determina o mês de referência da fatura que fecha hoje
+   * - Se já existe fatura para esse período, pula
+   * - Senão, cria a fatura e vincula as transações do período
+   */
+  async closeAllDueInvoices(): Promise<{ closed: number; skipped: number }> {
+    const today = new Date();
+    const closingDay = today.getDate();
+
+    // Busca todos os cartões ativos cujo fechamento é hoje
+    const cards = await this.prisma.creditCard.findMany({
+      where: { deletedAt: null },
+      select: { id: true, userId: true, closingDay: true, dueDay: true, name: true },
+    });
+
+    const dueCards = cards.filter((c) => c.closingDay === closingDay);
+    if (dueCards.length === 0) {
+      return { closed: 0, skipped: 0 };
+    }
+
+    let closed = 0;
+    let skipped = 0;
+
+    for (const card of dueCards) {
+      const { refMonth, refYear } = this.getCurrentReference(card.closingDay);
+
+      // Verifica se já existe fatura para este período
+      const existing = await this.prisma.creditCardInvoice.findUnique({
+        where: {
+          creditCardId_referenceMonth_referenceYear: {
+            creditCardId: card.id,
+            referenceMonth: refMonth,
+            referenceYear: refYear,
+          },
+        },
+      });
+
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      try {
+        await this.closeInvoice(card.id, card.userId);
+        closed++;
+      } catch (error) {
+        // Log but don't fail the batch — one failing card shouldn't block others
+        console.error(`Failed to close invoice for card ${card.name} (${card.id}):`, (error as Error).message);
+        skipped++;
+      }
+    }
+
+    return { closed, skipped };
+  }
 }

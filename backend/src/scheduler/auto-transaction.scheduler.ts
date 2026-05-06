@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { CreditCardInvoiceService } from '../credit-card-invoices/credit-card-invoices.service';
 
 @Injectable()
 export class AutoTransactionScheduler {
@@ -10,11 +11,13 @@ export class AutoTransactionScheduler {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
+    private invoiceService: CreditCardInvoiceService,
   ) {}
 
   /**
    * Runs daily at 2 AM Brasília time (5 AM UTC).
    * Generates interactive notifications instead of auto-creating transactions.
+   * Also closes credit card invoices that hit their closing day.
    */
   @Cron('0 5 * * *')
   async handleAutoTransactions() {
@@ -22,6 +25,7 @@ export class AutoTransactionScheduler {
 
     await this.processRecurringTransactions();
     await this.processInstallments();
+    await this.processInvoiceClosing();
 
     this.logger.log('✅ Auto-notification processing complete.');
   }
@@ -163,6 +167,23 @@ export class AutoTransactionScheduler {
 
     if (notified > 0) {
       this.logger.log(`📋 Generated ${notified} installment notification(s)`);
+    }
+  }
+
+  /**
+   * Closes credit card invoices that hit their closing day today.
+   * This makes the invoice model useful without requiring manual user action.
+   */
+  private async processInvoiceClosing() {
+    try {
+      const result = await this.invoiceService.closeAllDueInvoices();
+      if (result.closed > 0 || result.skipped > 0) {
+        this.logger.log(
+          `📄 Invoices: ${result.closed} closed, ${result.skipped} skipped`,
+        );
+      }
+    } catch (error) {
+      this.logger.error('❌ Error processing invoice closing:', (error as Error).message);
     }
   }
 }
