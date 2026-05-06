@@ -13,6 +13,7 @@ import { GoalsModule } from './goals/goals.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CreditCardsModule } from './credit-cards/credit-cards.module';
+import { CreditCardInvoiceModule } from './credit-card-invoices/credit-card-invoices.module';
 import { FeedbackModule } from './feedback/feedback.module';
 
 import { PrismaService } from './prisma/prisma.service';
@@ -50,6 +51,7 @@ import { AutoTransactionScheduler } from './scheduler/auto-transaction.scheduler
     AccountsModule,
     CategoriesModule,
     CreditCardsModule,
+    CreditCardInvoiceModule,
     AiModule,
     ReportsModule,
     FeedbackModule,

@@ -39,6 +39,7 @@ model User {
   auditLogs              AuditLog[]
   recurringTransactions  RecurringTransaction[]
   creditCardInstallments CreditCardInstallment[]
+  creditCardInvoices    CreditCardInvoice[]
 }
 
 model Account {
@@ -74,6 +75,7 @@ model CreditCard {
   account              Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade)
   user                 User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions         Transaction[]
+  invoices             CreditCardInvoice[]
   installments         CreditCardInstallment[]
   RecurringTransaction RecurringTransaction[]
 
@@ -117,6 +119,7 @@ model Transaction {
   accountId          String?
   categoryId         String?
   creditCardId       String?
+  invoiceId          String? // FK para CreditCardInvoice (fatura fechada)
   currentInstallment Int?
   installmentCount   Int?
   receiptUrl         String?
@@ -127,6 +130,7 @@ model Transaction {
   account            Account?    @relation(fields: [accountId], references: [id], onDelete: SetNull)
   category           Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   creditCard         CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+  invoice            CreditCardInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, fitId])
@@ -138,6 +142,7 @@ model Transaction {
   @@index([userId, deletedAt])
   @@index([accountId])
   @@index([creditCardId])
+  @@index([invoiceId])
 }
 
 model Budget {
@@ -356,4 +361,29 @@ model CreditCardInstallment {
   @@index([userId])
   @@index([creditCardId])
   @@index([isActive])
+}
+
+model CreditCardInvoice {
+  id             String   @id @default(uuid())
+  creditCardId   String
+  referenceMonth Int // 1-12, mês de referência da fatura
+  referenceYear  Int // ano de referência da fatura
+  closingDate    DateTime // data de fechamento da fatura (baseada no closingDay)
+  dueDate        DateTime // data de vencimento da fatura (baseada no dueDay)
+  totalAmount    Decimal  @default(0) @db.Decimal(15, 2) // soma das transações do período
+  paidAmount     Decimal  @default(0) @db.Decimal(15, 2) // valor já pago (registro parcial/total)
+  isPaid         Boolean  @default(false) // fatura foi quitada?
+  paidAt         DateTime? // data do pagamento total
+  userId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  creditCard   CreditCard    @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[] // transações vinculadas a esta fatura
+
+  @@unique([creditCardId, referenceMonth, referenceYear]) // um cartão só tem uma fatura por mês/ano
+  @@index([userId])
+  @@index([creditCardId])
+  @@index([creditCardId, isPaid])
 }
