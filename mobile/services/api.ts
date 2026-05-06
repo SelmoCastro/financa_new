@@ -70,15 +70,14 @@ api.interceptors.response.use(
 
             try {
                 const refreshToken = await SecureStore.getItemAsync('refreshToken');
-                const userId = await SecureStore.getItemAsync('userId');
 
-                if (!refreshToken || !userId) {
-                    throw new Error("No refresh tokens available");
+                if (!refreshToken) {
+                    throw new Error("No refresh token available");
                 }
 
                 // Use raw axios to avoid interceptor loop
+                // Backend extracts userId from decoded JWT (not from body)
                 const refreshResponse = await axios.post(`${API_URL}/auth/refresh`, {
-                    userId,
                     refreshToken
                 }, {
                     headers: { 'x-platform': 'mobile' },

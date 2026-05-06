@@ -1,6 +1,6 @@
 {
-  "version": "1.8.12",
-  "mobileVersion": "1.8.12",
+  "version": "1.8.13",
+  "mobileVersion": "1.8.13",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corre\u00e7\u00e3o critica: app mobile agora mant\u00e9m sess\u00e3o permanente (refresh token de 30 dias, renova\u00e7\u00e3o autom\u00e1tica). Logout instant\u00e2neo nas configura\u00e7\u00f5es."
+  "releaseNotes": "fix(mobile): remover userId do body do refresh — causava 400 e impedia renovacao de token"
 }
