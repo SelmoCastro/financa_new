@@ -223,6 +223,11 @@ export class TransactionsController {
     res.send('\uFEFF' + csvData);
   }
 
+  @Get('export/report')
+  async exportReport(@Request() req) {
+    return this.transactionsService.exportReport(req.user.userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     return this.transactionsService.findOne(id, req.user.userId);

@@ -591,6 +591,83 @@ export class TransactionsService {
     return [headers.join(';'), ...rows].join('\n');
   }
 
+  async exportReport(userId: string) {
+    const [transactions, accounts, creditCards, categories, invoices] = await Promise.all([
+      this.prisma.transaction.findMany({
+        where: { userId, deletedAt: null },
+        orderBy: { date: 'desc' },
+        include: { category: true, account: true, creditCard: true },
+      }),
+      this.prisma.account.findMany({ where: { userId, deletedAt: null } }),
+      this.prisma.creditCard.findMany({
+        where: { userId, deletedAt: null },
+        include: { invoices: { where: { isPaid: false } } },
+      }),
+      this.prisma.category.findMany({ where: { userId, deletedAt: null } }),
+      this.prisma.creditCardInvoice.findMany({
+        where: { userId },
+        orderBy: [{ referenceYear: 'desc' }, { referenceMonth: 'desc' }],
+        include: { creditCard: true },
+        take: 12,
+      }),
+    ]);
+
+    // Group by month for summaries
+    const byMonth = new Map<string, { income: number; expense: number }>();
+    transactions.forEach((t) => {
+      const d = new Date(t.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!byMonth.has(key)) byMonth.set(key, { income: 0, expense: 0 });
+      const m = byMonth.get(key)!;
+      if (t.type === 'INCOME') m.income += Number(t.amount);
+      else if (t.type === 'EXPENSE') m.expense += Number(t.amount);
+    });
+
+    const balance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
+    const creditCardDebt = creditCards.reduce(
+      (sum, c) =>
+        sum + c.invoices.reduce(
+          (invSum, inv) => invSum + Number(inv.totalAmount) - Number(inv.paidAmount),
+          0,
+        ),
+      0,
+    );
+
+    return {
+      exportedAt: new Date().toISOString(),
+      balance,
+      creditCardDebt,
+      accounts: accounts.map((a) => ({ name: a.name, balance: Number(a.balance) })),
+      creditCards: creditCards.map((c) => ({
+        name: c.name,
+        limit: Number(c.limit),
+        debt: c.invoices.reduce((s, i) => s + Number(i.totalAmount) - Number(i.paidAmount), 0),
+      })),
+      monthlySummary: Array.from(byMonth.entries())
+        .sort(([a], [b]) => b.localeCompare(a))
+        .map(([month, data]) => ({ month, ...data })),
+      invoices: invoices.map((i) => ({
+        creditCardName: i.creditCard.name,
+        reference: `${String(i.referenceMonth).padStart(2, '0')}/${i.referenceYear}`,
+        totalAmount: Number(i.totalAmount),
+        paidAmount: Number(i.paidAmount),
+        remaining: Number(i.totalAmount) - Number(i.paidAmount),
+        isPaid: i.isPaid,
+        dueDate: i.dueDate,
+      })),
+      categories: categories.map((c) => ({ name: c.name, type: c.type })),
+      transactions: transactions.slice(0, 200).map((t) => ({
+        date: t.date,
+        description: t.description,
+        amount: Number(t.amount),
+        type: t.type,
+        category: t.category?.name || t.categoryLegacy || 'Outros',
+        account: t.account?.name || null,
+        creditCard: t.creditCard?.name || null,
+      })),
+    };
+  }
+
   findOne(id: string, userId: string) {
     return this.prisma.transaction.findFirst({
       where: { id, userId, deletedAt: null },
