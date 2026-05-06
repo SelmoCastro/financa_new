@@ -114,6 +114,7 @@ export class ReportsService {
         userId,
         type: 'EXPENSE',
         deletedAt: null,
+        ...filterOutTransfers,
         date: {
           gte: startOfMonth,
           lte: endOfMonth,
@@ -121,6 +122,32 @@ export class ReportsService {
       },
       _sum: { amount: true },
     });
+
+    // Canonical category name mappings (legacy names → standard names)
+    // This handles old transactions created before category standardization
+    // and categories that exist with different names in user data
+    const categoryAliases: Record<string, string> = {
+      // Legacy/old names that don't match STANDARD_CATEGORIES exactly
+      'Assinaturas': 'Lazer / Assinaturas',
+      'Lazer': 'Lazer / Assinaturas',
+      'Alimentação': 'Mercado / Padaria',
+      'Mercado': 'Mercado / Padaria',
+      'Transporte': 'Transporte Fixo',
+      'Compras': 'Compras / Vestuário',
+      'Saúde': 'Saúde e Farmácia',
+      'Moradia': 'Moradia',
+      'Contas': 'Contas Residenciais',
+      'Contas e Serviços': 'Contas Residenciais',
+      'Educação': 'Educação',
+      'Investimentos (Aporte)': 'Aplicações / Poupança',
+      'Investimentos': 'Aplicações / Poupança',
+      'Poupança': 'Aplicações / Poupança',
+      'Dívidas': 'Pagamento de Dívidas',
+      'Celular': 'Contas Residenciais',
+      'Outras Receitas': 'Renda Extra',
+      'Entradas': 'Renda Extra',
+      'Manutenção Veicular': 'Transporte Fixo',
+    };
 
     const needsCategories = [
       'Moradia',
@@ -154,10 +181,22 @@ export class ReportsService {
     });
     const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
+    const classifyCategory = (catName: string): string => {
+      // Normalize null/empty/undefined → Outros
+      if (!catName || catName === 'null' || catName === 'undefined') return 'Outros';
+      // Apply alias mapping first
+      return categoryAliases[catName] || catName;
+    };
+
     categoryGroup.forEach((g) => {
-      const catName =
-        (g.categoryId ? categoryMap.get(g.categoryId) : g.categoryLegacy) ||
-        'Outros';
+      // Resolve category name: prefer categoryId lookup, fallback to categoryLegacy
+      // Handle string 'null' as invalid legacy value
+      const rawCatName =
+        g.categoryId
+          ? categoryMap.get(g.categoryId)
+          : (g.categoryLegacy && g.categoryLegacy !== 'null' ? g.categoryLegacy : null);
+
+      const catName = classifyCategory(rawCatName || 'Outros');
       const val = Number(g._sum.amount || 0);
 
       if (needsCategories.includes(catName)) needs += val;
@@ -166,18 +205,24 @@ export class ReportsService {
       else uncategorized += val;
     });
 
-    // 3. Rule 50/30/20 (Expenses as % of income)
-    // The rule says: of your income, allocate 50% to needs, 30% to wants, 20% to savings.
-    // We compute actual % of income spent in each category.
-    // If income is 0, we use 1 to avoid division by zero.
-    const incomeBase = currentIncome > 0 ? currentIncome : 1;
+    // 3. Rule 50/30/20 (Expenses as % of TOTAL EXPENSES, not income)
+    // The original rule says: of your income, 50% to needs, 30% to wants, 20% to savings.
+    // But displaying % of income makes the bars meaningless when spending < income.
+    // Showing % of total expenses makes the 3 segments sum to ~100% and directly
+    // comparable to the 50/30/20 targets.
+    // If no expenses, we use 1 to avoid division by zero.
+    const expenseBase = (needs + wants + savings + uncategorized) > 0
+      ? (needs + wants + savings + uncategorized)
+      : 1;
 
     // 4. Category Summary (Pie Chart Data)
     const categorySummary: { name: string; value: number }[] = [];
     categoryGroup.forEach((g) => {
-      const catName =
-        (g.categoryId ? categoryMap.get(g.categoryId) : g.categoryLegacy) ||
-        'Outros';
+      const rawCat =
+        g.categoryId
+          ? categoryMap.get(g.categoryId)
+          : (g.categoryLegacy && g.categoryLegacy !== 'null' ? g.categoryLegacy : null);
+      const catName = classifyCategory(rawCat || 'Outros');
       const val = g._sum.amount ? Number(g._sum.amount) : 0;
 
       if (val > 0) {
@@ -253,19 +298,19 @@ export class ReportsService {
       rule503020: {
         needs: {
           value: needs,
-          percent: currentIncome > 0 ? (needs / currentIncome) * 100 : 0,
+          percent: expenseBase > 1 ? (needs / expenseBase) * 100 : 0,
         },
         wants: {
           value: wants,
-          percent: currentIncome > 0 ? (wants / currentIncome) * 100 : 0,
+          percent: expenseBase > 1 ? (wants / expenseBase) * 100 : 0,
         },
         savings: {
           value: savings,
-          percent: currentIncome > 0 ? (savings / currentIncome) * 100 : 0,
+          percent: expenseBase > 1 ? (savings / expenseBase) * 100 : 0,
         },
         uncategorized: {
           value: uncategorized,
-          percent: currentIncome > 0 ? (uncategorized / currentIncome) * 100 : 0,
+          percent: expenseBase > 1 ? (uncategorized / expenseBase) * 100 : 0,
         },
       },
       categorySummary,
