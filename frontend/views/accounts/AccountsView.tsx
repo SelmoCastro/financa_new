@@ -1,11 +1,8 @@
 import React from 'react';
-import { CreditCardForm } from '../../components/CreditCardForm';
 import { AccountForm } from '../../components/AccountForm';
 import { useAccountsLogic } from './useAccountsLogic';
 import { AccountsSection } from './AccountsSection';
-import { CreditCardsSection } from './CreditCardsSection';
 import { MonthlySummarySection } from './MonthlySummarySection';
-import { InstallmentFormModal } from './InstallmentFormModal';
 
 export const AccountsView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivacyEnabled }) => {
   const logic = useAccountsLogic(isPrivacyEnabled);
@@ -32,22 +29,6 @@ export const AccountsView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivac
           onToggleMenu={logic.setOpenMenuId}
         />
 
-        <CreditCardsSection
-          isPrivacyEnabled={isPrivacyEnabled}
-          creditCards={logic.creditCards}
-          cardInstallments={logic.cardInstallments}
-          openCardMenuId={logic.openCardMenuId}
-          cardMenuRef={logic.cardMenuRef}
-          expandedInstallId={logic.expandedInstallId}
-          onAddCard={() => logic.setIsCardFormOpen(true)}
-          onEditCard={(card) => { logic.setEditingCard(card); logic.setIsCardFormOpen(true); }}
-          onDeleteCard={logic.handleDeleteCard}
-          onToggleCardMenu={logic.setOpenCardMenuId}
-          onOpenInstallModal={logic.openInstallModal}
-          onDeleteInstallment={logic.handleDeleteInstallment}
-          onToggleExpand={logic.setExpandedInstallId}
-        />
-
         <MonthlySummarySection
           isPrivacyEnabled={isPrivacyEnabled}
           monthlySummary={logic.monthlySummary}
@@ -56,30 +37,11 @@ export const AccountsView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivac
         />
       </div>
 
-      {logic.isCardFormOpen && (
-        <CreditCardForm
-          accounts={logic.accounts}
-          cardToEdit={logic.editingCard}
-          onSave={logic.handleCardSaved}
-          onClose={() => { logic.setIsCardFormOpen(false); logic.setEditingCard(null); }}
-        />
-      )}
-
       {logic.isAccountFormOpen && (
         <AccountForm
           accountToEdit={logic.editingAccount}
           onSave={logic.handleAccountSaved}
           onClose={() => { logic.setIsAccountFormOpen(false); logic.setEditingAccount(null); }}
-        />
-      )}
-
-      {logic.isInstallFormOpen && (
-        <InstallmentFormModal
-          installForm={logic.installForm}
-          installmentPreview={logic.installmentPreview}
-          setInstallForm={logic.setInstallForm}
-          onSubmit={logic.handleInstallSubmit}
-          onClose={() => logic.setIsInstallFormOpen(false)}
         />
       )}
     </>
