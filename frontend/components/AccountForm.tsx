@@ -69,6 +69,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
                 });
             }
             onSave();
+            onClose();
         } catch (error) {
             console.error('Erro ao salvar conta', error);
             alert('Erro ao salvar conta. Verifique os dados.');

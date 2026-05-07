@@ -138,6 +138,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       } else {
         await (onAdd as any)(transactionData as unknown as Omit<Transaction, 'id'>);
       }
+      onClose();
     } finally {
       setIsSubmitting(false);
     }

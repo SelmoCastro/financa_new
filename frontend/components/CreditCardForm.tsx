@@ -71,6 +71,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
                 await api.post('/credit-cards', dataPayload);
             }
             onSave();
+            onClose();
         } catch (error) {
             console.error('Erro ao salvar cartão', error);
             alert('Erro ao salvar cartão. Verifique os dados.');
