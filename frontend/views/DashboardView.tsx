@@ -212,7 +212,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             {isLoading ? (
                                 <Skeleton className="w-full h-full rounded-2xl" />
                             ) : monthlyChartData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={200}>
                                     <BarChart data={monthlyChartData} barSize={20}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:opacity-5" />
                                         <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} dy={10} />
@@ -429,7 +429,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                     <div className="glass-card p-6 md:p-8 rounded-[2.5rem]">
                         <h3 className="text-lg font-black text-slate-800 dark:text-white mb-6">Alocação de Recursos</h3>
                         <div className="h-64 relative mx-auto">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={150} minHeight={150}>
                                 <PieChart>
                                     <Pie data={categorySummary} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value">
                                         {categorySummary.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" />)}
