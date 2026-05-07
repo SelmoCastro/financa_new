@@ -2,7 +2,6 @@ import React from 'react';
 import { AccountForm } from '../../components/AccountForm';
 import { useAccountsLogic } from './useAccountsLogic';
 import { AccountsSection } from './AccountsSection';
-import { MonthlySummarySection } from './MonthlySummarySection';
 
 export const AccountsView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivacyEnabled }) => {
   const logic = useAccountsLogic(isPrivacyEnabled);
@@ -27,13 +26,6 @@ export const AccountsView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivac
           onEditAccount={(acc) => { logic.setEditingAccount(acc); logic.setIsAccountFormOpen(true); }}
           onDeleteAccount={logic.handleDeleteAccount}
           onToggleMenu={logic.setOpenMenuId}
-        />
-
-        <MonthlySummarySection
-          isPrivacyEnabled={isPrivacyEnabled}
-          monthlySummary={logic.monthlySummary}
-          expandedInstallId={logic.expandedInstallId}
-          onToggleExpand={logic.setExpandedInstallId}
         />
       </div>
 
