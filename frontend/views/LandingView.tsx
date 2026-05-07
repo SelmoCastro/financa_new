@@ -63,13 +63,18 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* METRICS STRIP */}
-      <section className="py-12 border-y border-white/5">
-        <div className="max-w-4xl mx-auto px-6 grid grid-cols-3 gap-8 text-center">
-          {[['4.9', 'Avaliação'], ['10k+', 'Usuários'], ['R$2M+', 'Economizados']].map(([value, label]) => (
-            <div key={label}>
-              <div className="text-2xl sm:text-3xl font-black text-cyan-400">{value}</div>
-              <div className="text-xs text-slate-500 mt-1 uppercase tracking-wider">{label}</div>
+      {/* WHY FINANZA */}
+      <section className="py-16 border-y border-white/5">
+        <div className="max-w-4xl mx-auto px-6 grid sm:grid-cols-3 gap-8 text-center">
+          {[
+            { emoji: '🇧🇷', title: 'Feito para brasileiros', desc: 'Categorias em português, bancos brasileiros e suporte à nossa realidade financeira.' },
+            { emoji: '🔒', title: 'Seus dados são seus', desc: 'Sem rastreamento, sem venda de dados. Criptografia de ponta a ponta.' },
+            { emoji: '🆓', title: 'Grátis de verdade', desc: 'Todas as funcionalidades essenciais gratuitas. Sem cartão de crédito.' },
+          ].map((item) => (
+            <div key={item.title}>
+              <div className="text-2xl mb-3">{item.emoji}</div>
+              <h3 className="font-bold text-sm mb-1">{item.title}</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
@@ -144,16 +149,6 @@ const LandingPage: React.FC = () => {
               <div className="text-xs text-slate-500">Reserva, metas, investimentos</div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIAL */}
-      <section className="py-24 bg-white/[0.01] border-y border-white/5">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <p className="text-xl sm:text-2xl text-slate-300 italic leading-relaxed mb-6">
-            "Finalmente um app brasileiro que entende minhas finanças. A IA categoriza tudo sozinha e o dashboard me mostra exatamente onde estou gastando demais."
-          </p>
-          <div className="text-sm text-slate-400">— Usuário Finanza AI</div>
         </div>
       </section>
 
