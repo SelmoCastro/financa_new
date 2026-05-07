@@ -90,7 +90,7 @@ const LandingPage: React.FC = () => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { emoji: '📊', title: 'Dashboard em tempo real', desc: 'Receitas, despesas e saldo consolidados com gráficos que se atualizam sozinhos.' },
-              { emoji: '🤖', title: 'Assistente IA', desc: 'Tire dúvidas, peça análises e receba sugestões personalizadas de economia.' },
+              { emoji: '🤖', title: 'Assistente IA', desc: 'Peça análises, tire dúvidas e receba sugestões de economia quando quiser.' },
               { emoji: '📱', title: 'Android + Web', desc: 'Mesmos dados sincronizados. Comece no celular e continue no computador.' },
               { emoji: '🎯', title: 'Orçamentos inteligentes', desc: 'Defina limites por categoria com alertas visuais e método 50/30/20 incluso.' },
               { emoji: '💳', title: 'Contas e cartões', desc: 'Gerencie múltiplas contas bancárias e acompanhe faturas de cartão de crédito.' },
@@ -114,7 +114,7 @@ const LandingPage: React.FC = () => {
             {[
               { step: '01', emoji: '🚀', title: 'Crie sua conta', desc: 'E-mail e senha. Sem Facebook, sem Google. 30 segundos.' },
               { step: '02', emoji: '🏦', title: 'Adicione suas contas', desc: 'Conecte bancos e cartões. Ou importe extratos OFX automaticamente.' },
-              { step: '03', emoji: '✨', title: 'IA faz o resto', desc: 'Categorização automática, insights diários e previsões de gastos.' },
+              { step: '03', emoji: '📊', title: 'Acompanhe seus resultados', desc: 'Visualize gráficos, compare meses e veja para onde seu dinheiro está indo.' },
             ].map((item) => (
               <div key={item.step} className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-5 shadow-lg shadow-cyan-500/20">{item.emoji}</div>
