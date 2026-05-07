@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Sparkles, Smartphone, Target, CreditCard, Import } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
@@ -99,8 +100,9 @@ const LandingPage: React.FC = () => {
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <a
-                                href="/downloads/Financa_new.apk"
-                                download
+                                href="https://finanzaai.tech/downloads/"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="px-8 py-4 bg-cyan-600 hover:bg-cyan-700 rounded-2xl font-black text-sm tracking-wider shadow-2xl shadow-cyan-600/30 transition-all active:scale-95 flex items-center gap-3"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">

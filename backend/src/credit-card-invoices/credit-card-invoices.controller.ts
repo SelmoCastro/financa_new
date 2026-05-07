@@ -5,7 +5,10 @@ import { PayInvoiceDto } from './dto/pay-invoice.dto';
 
 @ApiTags('credit-card-invoices')
 @ApiBearerAuth()
-@Controller('credit-card-invoices')
+@Controller({
+  path: 'credit-card-invoices',
+  version: '1',
+})
 export class CreditCardInvoiceController {
   constructor(private readonly invoiceService: CreditCardInvoiceService) {}
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const ANDROID_APK_URL = 'https://finanzaai.tech/downloads/Financa_new.apk';
+const DOWNLOADS_URL = 'https://finanzaai.tech/downloads/';
 
 export const SmartBanner: React.FC = () => {
   const [visible, setVisible] = useState(false);
@@ -39,7 +39,9 @@ export const SmartBanner: React.FC = () => {
           </div>
         </div>
         <a
-          href={ANDROID_APK_URL}
+          href={DOWNLOADS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex-shrink-0 bg-white text-cyan-700 font-black text-[10px] uppercase tracking-widest px-5 py-2 rounded-xl hover:bg-cyan-50 transition-all active:scale-95 shadow-md"
         >
           Baixar App

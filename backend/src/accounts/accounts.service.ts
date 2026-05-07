@@ -131,6 +131,19 @@ export class AccountsService {
         where: { accountId: id, userId, deletedAt: null },
         data: { deletedAt: new Date() },
       });
+
+      // Unlink credit cards from this account (set accountId = null)
+      await tx.creditCard.updateMany({
+        where: { accountId: id, userId, deletedAt: null },
+        data: { accountId: null },
+      });
+
+      // Unlink recurring transactions from this account
+      await tx.recurringTransaction.updateMany({
+        where: { accountId: id, userId },
+        data: { accountId: null },
+      });
+
       // Soft-delete the account
       const result = await tx.account.updateMany({
         where: { id, userId, deletedAt: null },

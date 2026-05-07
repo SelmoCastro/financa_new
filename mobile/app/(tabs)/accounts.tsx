@@ -10,6 +10,7 @@ import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currency
 import { Account, CreditCard } from '../../types';
 import { BankIcon } from '../../components/BankIcon';
 import { useCurrency } from '../../context/CurrencyContext';
+import { invoiceService, InvoiceDTO } from '../../services/invoiceService';
 
 const BANKS = [
     'Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander',
@@ -31,6 +32,7 @@ export default function AccountsScreen() {
     const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
     const [loading, setLoading] = useState(true);
     const { formatCurrency, currency } = useCurrency();
+    const [invoiceData, setInvoiceData] = useState<Record<string, InvoiceDTO | null>>({});
 
     // Criação
     const [createModal, setCreateModal] = useState(false);
@@ -69,6 +71,16 @@ export default function AccountsScreen() {
             Alert.alert('Erro', 'Não foi possível carregar as contas e cartões.');
         } finally {
             setLoading(false);
+        }
+    }, []);
+
+    const fetchInvoice = useCallback(async (creditCardId: string) => {
+        try {
+            const res = await invoiceService.getCurrent(creditCardId);
+            setInvoiceData(prev => ({ ...prev, [creditCardId]: res.data }));
+        } catch {
+            // Invoice might not exist yet — that's OK
+            setInvoiceData(prev => ({ ...prev, [creditCardId]: null }));
         }
     }, []);
 
@@ -322,15 +334,17 @@ export default function AccountsScreen() {
                                 </Pressable>
                             </View>
 
-                            {/* Parcelas */}
+                            {/* Fatura atual + Parcelas */}
                             <View className="mt-3 pt-3 border-t border-slate-100">
                               <View className="flex-row items-center justify-between mb-2">
-                                <Text className="text-xs font-black text-slate-400 uppercase">Compras Parceladas</Text>
-                                <Pressable onPress={() => {/* openInstallModal */}} hitSlop={8}>
-                                  <MaterialIcons name="add-circle" size={18} color="#0891b2" />
-                                </Pressable>
+                                <Text className="text-xs font-black text-slate-400 uppercase">Fatura Atual</Text>
+                                <View className="flex-row items-center gap-1">
+                                  <Pressable onPress={() => fetchInvoice(cc.id)} hitSlop={8}>
+                                    <MaterialIcons name="refresh" size={16} color="#0891b2" />
+                                  </Pressable>
+                                </View>
                               </View>
-                              <Text className="text-xs text-slate-300 italic">Em breve...</Text>
+                              <CardInvoiceSection creditCardId={cc.id} creditCardName={cc.name} accounts={accounts} />
                             </View>
                         </View>
                     ))}
@@ -534,6 +548,188 @@ function CreditCardFormModal({
                 </View>
             </KeyboardAvoidingView>
         </Modal>
+    );
+}
+
+// ─── Card Invoice Section Component ────────────────────────────────────
+function CardInvoiceSection({ creditCardId, creditCardName, accounts }: {
+    creditCardId: string;
+    creditCardName: string;
+    accounts: Account[];
+}) {
+    const [invoice, setInvoice] = useState<InvoiceDTO | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [paying, setPaying] = useState(false);
+    const [showPayModal, setShowPayModal] = useState(false);
+    const [selectedAccountId, setSelectedAccountId] = useState('');
+    const [payAmount, setPayAmount] = useState('');
+    const { formatCurrency } = useCurrency();
+
+    const loadInvoice = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await invoiceService.getCurrent(creditCardId);
+            setInvoice(res.data);
+            if (accounts.length > 0 && !selectedAccountId) {
+                setSelectedAccountId(accounts[0].id);
+            }
+        } catch {
+            setInvoice(null);
+        } finally {
+            setLoading(false);
+        }
+    }, [creditCardId, accounts]);
+
+    useFocusEffect(useCallback(() => { loadInvoice(); }, [loadInvoice]));
+
+    const handlePay = async () => {
+        if (!invoice?.id || !selectedAccountId) return;
+        setPaying(true);
+        try {
+            const amount = payAmount ? parseCurrencyToNumber(payAmount) : undefined;
+            await invoiceService.payInvoice(invoice.id, {
+                accountId: selectedAccountId,
+                ...(amount ? { amount } : {}),
+            });
+            Alert.alert('Sucesso', 'Fatura paga com sucesso!');
+            setShowPayModal(false);
+            setPayAmount('');
+            await loadInvoice();
+        } catch (err: any) {
+            const msg = err?.response?.data?.message || 'Erro ao pagar fatura.';
+            Alert.alert('Atenção', msg);
+        } finally {
+            setPaying(false);
+        }
+    };
+
+    const remaining = invoice ? Number(invoice.totalAmount) - Number(invoice.paidAmount) : 0;
+    const monthNames = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+    if (loading) {
+        return <ActivityIndicator size="small" color="#0891b2" style={{ marginVertical: 8 }} />;
+    }
+
+    if (!invoice) {
+        return (
+            <Pressable onPress={loadInvoice} className="py-3 items-center">
+                <Text className="text-xs text-slate-400">Sem faturas no momento</Text>
+            </Pressable>
+        );
+    }
+
+    return (
+        <View>
+            {/* Invoice summary card */}
+            <View className="bg-indigo-50 rounded-xl p-3 mb-2">
+                <View className="flex-row justify-between items-center mb-1">
+                    <Text className="text-xs font-bold text-indigo-700">
+                        {monthNames[invoice.referenceMonth]}/{invoice.referenceYear}
+                    </Text>
+                    <Text className="text-xs text-slate-500">
+                        Fecha: {new Date(invoice.closingDate).toLocaleDateString('pt-BR')}
+                    </Text>
+                </View>
+                <View className="flex-row justify-between items-center mb-1">
+                    <Text className="text-lg font-black text-slate-800">
+                        {formatCurrency(Number(invoice.totalAmount))}
+                    </Text>
+                    {remaining > 0 && (
+                        <Text className="text-xs text-rose-600 font-semibold">
+                            Falta: {formatCurrency(remaining)}
+                        </Text>
+                    )}
+                </View>
+                {invoice.isPaid && (
+                    <View className="flex-row items-center gap-1 mt-1">
+                        <MaterialIcons name="check-circle" size={14} color="#10b981" />
+                        <Text className="text-xs text-emerald-600 font-bold">Fatura paga</Text>
+                    </View>
+                )}
+                {!invoice.isPaid && remaining > 0 && (
+                    <Pressable
+                        onPress={() => {
+                            setPayAmount(formatCurrencyInput(String(remaining)));
+                            if (accounts.length > 0) setSelectedAccountId(accounts[0].id);
+                            setShowPayModal(true);
+                        }}
+                        className="mt-2 bg-cyan-600 rounded-lg py-2 items-center"
+                    >
+                        <Text className="text-white font-bold text-xs uppercase">Pagar Fatura</Text>
+                    </Pressable>
+                )}
+                {invoice.transactions && invoice.transactions.length > 0 && (
+                    <View className="mt-2">
+                        <Text className="text-xs font-bold text-slate-500 mb-1">
+                            {invoice.transactions.length} compra{invoice.transactions.length > 1 ? 's' : ''}
+                        </Text>
+                        {invoice.transactions.slice(0, 3).map(t => (
+                            <View key={t.id} className="flex-row justify-between items-center py-0.5">
+                                <Text className="text-xs text-slate-600" numberOfLines={1} style={{ flex: 1 }}>
+                                    {t.description}
+                                </Text>
+                                <Text className="text-xs font-bold text-rose-600 ml-2">
+                                    {formatCurrency(Number(t.amount))}
+                                </Text>
+                            </View>
+                        ))}
+                        {invoice.transactions.length > 3 && (
+                            <Text className="text-xs text-slate-400 mt-0.5">
+                                +{invoice.transactions.length - 3} mais
+                            </Text>
+                        )}
+                    </View>
+                )}
+            </View>
+
+            {/* Pay Invoice Modal */}
+            <Modal visible={showPayModal} animationType="slide" transparent onRequestClose={() => setShowPayModal(false)}>
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                    <View style={{ backgroundColor: 'white', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40 }}>
+                        <View style={{ width: 40, height: 4, backgroundColor: '#e2e8f0', borderRadius: 99, alignSelf: 'center', marginBottom: 20 }} />
+                        <Text style={{ fontSize: 20, fontWeight: '900', color: '#1e293b', marginBottom: 16 }}>Pagar Fatura</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: 6 }}>Conta para Débito</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                            {accounts.map(acc => (
+                                <Pressable
+                                    key={acc.id}
+                                    onPress={() => setSelectedAccountId(acc.id)}
+                                    style={{
+                                        paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5,
+                                        borderColor: selectedAccountId === acc.id ? '#4f46e5' : '#e2e8f0',
+                                        backgroundColor: selectedAccountId === acc.id ? '#eef2ff' : '#f8fafc',
+                                        marginRight: 8,
+                                    }}
+                                >
+                                    <Text style={{ fontSize: 13, fontWeight: '600', color: selectedAccountId === acc.id ? '#4f46e5' : '#64748b' }}>
+                                        {acc.name} ({formatCurrency(Number(acc.balance))})
+                                    </Text>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: 6 }}>Valor (deixe vazio para pagar total)</Text>
+                        <TextInput
+                            style={{ backgroundColor: '#f8fafc', borderWidth: 1.5, borderColor: '#e2e8f0', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, fontWeight: '600', color: '#1e293b', marginBottom: 16 }}
+                            placeholder={formatCurrency(remaining)}
+                            placeholderTextColor="#94a3b8"
+                            keyboardType="numeric"
+                            value={payAmount}
+                            onChangeText={setPayAmount}
+                        />
+
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <Pressable onPress={() => setShowPayModal(false)} style={{ flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: '#f1f5f9', alignItems: 'center' }}>
+                                <Text style={{ fontWeight: '700', color: '#64748b', textTransform: 'uppercase', fontSize: 13 }}>Cancelar</Text>
+                            </Pressable>
+                            <Pressable onPress={handlePay} style={{ flex: 2, paddingVertical: 14, borderRadius: 14, backgroundColor: '#0891b2', alignItems: 'center' }} disabled={paying}>
+                                {paying ? <ActivityIndicator color="white" /> : <Text style={{ fontWeight: '800', color: 'white', textTransform: 'uppercase', fontSize: 13 }}>Confirmar Pagamento</Text>}
+                            </Pressable>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
+        </View>
     );
 }
 

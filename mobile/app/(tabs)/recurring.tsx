@@ -109,6 +109,7 @@ export default function RecurringScreen() {
     ]);
   };
 
+  const today = new Date().getDate();
   const pct = weight?.weight || 0;
 
   return (
@@ -162,8 +163,11 @@ export default function RecurringScreen() {
         )}
 
         <View className="px-4 space-y-3">
-          {recorrentes.map(r => (
-            <View key={r.id} className={`bg-white p-5 rounded-2xl border shadow-sm ${r.isActive ? 'border-slate-100' : 'border-slate-50 opacity-50'}`}>
+          {recorrentes.map(r => {
+            const isDueToday = r.isActive && r.dueDay === today;
+            const isOverdue = r.isActive && r.dueDay < today && r.startMonth <= (new Date().getMonth() + 1);
+            return (
+            <View key={r.id} className={`bg-white p-5 rounded-2xl border shadow-sm ${!r.isActive ? 'border-slate-50 opacity-50' : isDueToday ? 'border-amber-300' : isOverdue ? 'border-rose-200' : 'border-slate-100'}`}>
               <View className="flex-row justify-between items-center">
                 <View className="flex-row items-center gap-4 flex-1">
                   <View className={`w-12 h-12 rounded-xl items-center justify-center ${r.type === 'INCOME' ? 'bg-emerald-50' : 'bg-rose-50'}`}>
@@ -174,7 +178,11 @@ export default function RecurringScreen() {
                     />
                   </View>
                   <View className="flex-1">
-                    <Text className="font-bold text-slate-700 text-base">{r.description}</Text>
+                    <View className="flex-row items-center gap-2">
+                      <Text className="font-bold text-slate-700 text-base">{r.description}</Text>
+                      {isDueToday && <View className="bg-amber-100 px-2 py-0.5 rounded-full"><Text className="text-amber-700 text-[10px] font-black uppercase">Hoje</Text></View>}
+                      {isOverdue && <View className="bg-rose-100 px-2 py-0.5 rounded-full"><Text className="text-rose-700 text-[10px] font-black uppercase">Vencido</Text></View>}
+                    </View>
                     <View className="flex-row items-center gap-2 mt-1">
                       <Text className={`font-black text-sm ${r.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {formatCurrency(Number(r.amount))}
@@ -201,7 +209,8 @@ export default function RecurringScreen() {
                 </View>
               </View>
             </View>
-          ))}
+          );
+          })}
         </View>
       </ScrollView>
 

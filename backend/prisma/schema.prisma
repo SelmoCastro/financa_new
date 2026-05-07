@@ -67,12 +67,12 @@ model CreditCard {
   limit                Decimal                 @db.Decimal(15, 2)
   closingDay           Int
   dueDay               Int
-  accountId            String
+  accountId            String?
   userId               String
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
   deletedAt            DateTime? // Soft delete
-  account              Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account              Account?                @relation(fields: [accountId], references: [id], onDelete: SetNull)
   user                 User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions         Transaction[]
   invoices             CreditCardInvoice[]

@@ -60,6 +60,7 @@ export class NotificationsService {
   /**
    * Processa ação do usuário em notificação interativa.
    * - confirm: cria transação + atualiza saldo + incrementa parcela (se aplicável)
+   * - confirm (ACTION_INVOICE_DUE): paga a fatura debitando da conta vinculada
    * - postpone: apenas marca como lida
    */
   async handleAction(id: string, action: string, userId: string) {
@@ -71,6 +72,76 @@ export class NotificationsService {
     const meta = (notif.actionMeta || {}) as Record<string, any>;
 
     if (action === 'confirm') {
+      // ACTION_INVOICE_DUE: pay the credit card invoice
+      if (notif.type === 'ACTION_INVOICE_DUE') {
+        const invoiceId = meta.invoiceId as string;
+        const accountId = meta.accountId as string;
+        const amount = meta.amount as number;
+
+        if (!invoiceId || !accountId) {
+          throw new BadRequestException('Dados da fatura incompletos');
+        }
+
+        // Use interactive transaction for atomicity
+        const result = await this.prisma.$transaction(async (tx) => {
+          // 1. Lock and verify the account
+          const rows = await tx.$queryRaw<
+            { id: string; balance: number }[]
+          >`SELECT id, balance FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE`;
+
+          if (!rows[0]) {
+            throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+          }
+          if (Number(rows[0].balance) < amount) {
+            throw new BadRequestException('Saldo insuficiente para pagar a fatura');
+          }
+
+          // 2. Debit the account
+          await tx.account.updateMany({
+            where: { id: accountId, userId },
+            data: { balance: { decrement: amount } },
+          });
+
+          // 3. Update the invoice
+          const invoice = await tx.creditCardInvoice.update({
+            where: { id: invoiceId },
+            data: {
+              paidAmount: { increment: amount },
+              isPaid: true,
+              paidAt: new Date(),
+            },
+            include: { creditCard: true },
+          });
+
+          // 4. Create a traceability transaction
+          await tx.transaction.create({
+            data: {
+              description: meta.description || `Pagamento fatura ${invoice.creditCard?.name || ''}`,
+              amount,
+              date: new Date(),
+              type: 'EXPENSE',
+              accountId,
+              invoiceId,
+              userId,
+            },
+          });
+
+          // 5. Mark notification as read
+          await tx.notification.update({
+            where: { id },
+            data: { isRead: true },
+          });
+
+          return invoice;
+        });
+
+        return {
+          success: true,
+          invoiceId,
+          message: `Fatura paga com sucesso! R$ ${amount.toFixed(2)} debitado da conta.`,
+        };
+      }
+
       if (
         notif.type === 'ACTION_RECURRING' ||
         notif.type === 'ACTION_INSTALLMENT'
