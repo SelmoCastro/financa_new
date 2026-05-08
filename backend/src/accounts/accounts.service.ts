@@ -135,7 +135,7 @@ export class AccountsService {
       // Unlink credit cards from this account (set accountId = null)
       await tx.creditCard.updateMany({
         where: { accountId: id, userId, deletedAt: null },
-        data: { accountId: null },
+        data: { accountId: { set: null } },
       });
 
       // Unlink recurring transactions from this account

@@ -37,8 +37,12 @@ export class CreditCardsService {
     }
     return this.prisma.creditCard.create({
       data: {
-        ...createCreditCardDto,
+        name: createCreditCardDto.name,
+        limit: createCreditCardDto.limit,
+        closingDay: createCreditCardDto.closingDay,
+        dueDay: createCreditCardDto.dueDay,
         userId,
+        ...(createCreditCardDto.accountId ? { accountId: createCreditCardDto.accountId } : {}),
       },
     });
   }
