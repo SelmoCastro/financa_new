@@ -200,6 +200,18 @@ const CardsTab: React.FC<InvoicesViewTabsProps> = ({
                 <div className="relative">
                   <button onClick={() => setOpenCardMenuId(openCardMenuId === card.id ? null : card.id)}
                     className="text-white/50 hover:text-white p-1">•••</button>
+                  {openCardMenuId === card.id && (
+                    <div ref={cardMenuRef} className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                      <button onClick={() => { onEditCard(card); setOpenCardMenuId(null); }}
+                        className="w-full text-left px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all flex items-center gap-2">
+                        <span>✏️</span> Editar Cartão
+                      </button>
+                      <button onClick={() => onDeleteCard(card.id, card.name)}
+                        className="w-full text-left px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-all flex items-center gap-2">
+                        <span>🗑️</span> Excluir Cartão
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex justify-between items-end">
