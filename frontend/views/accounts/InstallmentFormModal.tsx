@@ -9,12 +9,18 @@ interface InstallmentFormModalProps {
   setInstallForm: (f: InstallFormData) => void;
   onSubmit: () => void;
   onClose: () => void;
+  creditCardLimit?: number;
+  creditCardUsed?: number;
 }
 
 export const InstallmentFormModal: React.FC<InstallmentFormModalProps> = ({
   installForm, installmentPreview, setInstallForm, onSubmit, onClose,
+  creditCardLimit = 0, creditCardUsed = 0,
 }) => {
   const { formatCurrency } = useCurrency();
+  const availableLimit = creditCardLimit - creditCardUsed;
+  const currentTotal = Number(installForm.totalAmount) || 0;
+  const exceedsLimit = creditCardLimit > 0 && (creditCardUsed + currentTotal) > creditCardLimit;
 
   return (
     <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md">
@@ -32,6 +38,11 @@ export const InstallmentFormModal: React.FC<InstallmentFormModalProps> = ({
             <div>
               <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Valor total (R$)</label>
               <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Valor total" value={installForm.totalAmount} onChange={e => setInstallForm({...installForm, totalAmount: e.target.value})} />
+              {creditCardLimit > 0 && (
+                <p className={`text-[10px] font-bold mt-1 ${exceedsLimit ? 'text-rose-500' : 'text-slate-400'}`}>
+                  {exceedsLimit ? 'Excede o limite!' : `Disponível: ${formatCurrency(availableLimit)} / ${formatCurrency(creditCardLimit)}`}
+                </p>
+              )}
             </div>
             <div>
               <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Número de parcelas</label>
@@ -45,7 +56,7 @@ export const InstallmentFormModal: React.FC<InstallmentFormModalProps> = ({
           </div>
           <div>
             <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Dia do vencimento</label>
-            <input type="number" min="1" max="31" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Dia do vencimento" value={installForm.dueDay} onChange={e => setInstallForm({...installForm, dueDay: e.target.value})} />
+            <p className="p-3.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300">Dia {installForm.dueDay} (do cartão)</p>
           </div>
 
           {/* Live preview */}

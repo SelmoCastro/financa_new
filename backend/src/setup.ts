@@ -36,8 +36,24 @@ export function configureApp(app: INestApplication) {
     'https://*.finanzaai.tech',
   ];
 
+  // Custom origin validator: only echo CORS headers for whitelisted origins.
+  // When callback(null, false), NestJS omits Access-Control-Allow-Origin from the
+  // preflight response, causing browsers to block the actual request entirely.
+  const corsOriginValidator = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin) {
+      // Non-browser requests (curl, server-to-server) — allow
+      return callback(null, true);
+    }
+    const isAllowed = allowedOriginsCORS.some((o) => {
+      if (typeof o === 'string') return o === origin;
+      if (o instanceof RegExp) return o.test(origin);
+      return false;
+    });
+    callback(null, isAllowed);
+  };
+
   app.enableCors({
-    origin: allowedOriginsCORS,
+    origin: corsOriginValidator,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders:

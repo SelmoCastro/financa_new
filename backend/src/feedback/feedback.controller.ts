@@ -7,10 +7,10 @@ import {
   Body,
   Request,
   UseGuards,
-  ForbiddenException,
 } from '@nestjs/common';
 import { FeedbackService } from './feedback.service';
 import { AuthGuard } from '@nestjs/passport';
+import { AdminGuard } from '../common/guards/admin.guard';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 
 @Controller({
@@ -34,14 +34,13 @@ export class FeedbackController {
   }
 
   @Get()
+  @UseGuards(AdminGuard)
   async getAllFeedbacks(@Request() req) {
-    // Basic verification without making an extra DB call here.
-    // Usually we would fetch the user or rely on the JWT token payload containing 'isAdmin'.
-    // For now we trust the service to check.
     return this.feedbackService.findAllFeedbacks(req.user.userId);
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
   async deleteFeedback(@Param('id') id: string, @Request() req) {
     return this.feedbackService.deleteFeedback(id, req.user.userId);
   }

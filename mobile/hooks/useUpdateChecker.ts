@@ -11,6 +11,7 @@ const REAPPEAR_DELAY = 24 * 60 * 60 * 1000; // 24 hours after dismiss
 
 interface VersionInfo {
     version: string;
+    mobileVersion: string;
     apkUrl: string | null;
     apkAvailable: boolean;
     minRequiredVersion: string;
@@ -85,7 +86,7 @@ export function useUpdateChecker(): UpdateStatus {
             setChecking(true);
             const response = await api.get('/app/version');
             const data = response.data?.data || response.data;
-            console.log('[UpdateChecker] currentVersion:', currentVersion, 'serverVersion:', data?.version, 'hasUpdate:', data ? compareVersions(data.version, currentVersion) > 0 : 'no data');
+            console.log('[UpdateChecker] currentVersion:', currentVersion, 'serverVersion:', data?.mobileVersion, 'hasUpdate:', data ? compareVersions(data.mobileVersion, currentVersion) > 0 : 'no data');
             setVersionInfo(data);
         } catch (error: any) {
             console.log('[UpdateChecker] Failed to check for updates:', error?.message || error);
@@ -128,7 +129,7 @@ export function useUpdateChecker(): UpdateStatus {
     }, [checkForUpdate]);
 
     const hasUpdate = versionInfo
-        ? compareVersions(versionInfo.version, currentVersion) > 0 && versionInfo.apkAvailable !== false
+        ? compareVersions(versionInfo.mobileVersion, currentVersion) > 0 && versionInfo.apkAvailable !== false
         : false;
 
     const isRequired = versionInfo

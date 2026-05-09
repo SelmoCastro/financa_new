@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsPositive, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsPositive, Min, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
@@ -12,6 +12,6 @@ export class PayInvoiceDto {
   amount?: number;
 
   @ApiPropertyOptional({ description: 'ID da conta de onde sairá o pagamento' })
-  @IsString()
+  @IsUUID()
   accountId: string;
 }

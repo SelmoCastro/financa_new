@@ -113,8 +113,6 @@ export class CategoriesService {
       orderBy: { name: 'asc' },
     });
 
-    console.log(`[CATEGORIES-SVC] findAll - userId: ${userId}, existing: ${existing.length} categories`);
-
     const existingNamesLower = existing.map((c) => c.name.toLowerCase().trim());
 
     // ONLY Seed missing standard categories. NEVER delete user data automatically.
@@ -122,7 +120,6 @@ export class CategoriesService {
       (s) => !existingNamesLower.includes(s.name.toLowerCase().trim()),
     );
     if (missing.length > 0) {
-      console.log(`[CATEGORIES-SVC] Seeding ${missing.length} missing categories for userId: ${userId} - types: ${missing.map(m => m.type).join(',')}`);
       await this.prisma.category.createMany({
         data: missing.map((c) => ({ ...c, userId })),
         skipDuplicates: true,
@@ -132,7 +129,6 @@ export class CategoriesService {
         where: { userId, deletedAt: null },
         orderBy: { name: 'asc' },
       });
-      console.log(`[CATEGORIES-SVC] After seed - userId: ${userId}, total: ${seeded.length} categories`);
       return seeded;
     }
 

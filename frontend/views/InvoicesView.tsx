@@ -37,6 +37,7 @@ export const InvoicesView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivac
         isPaying={logic.isPaying}
         handleCloseInvoice={logic.handleCloseInvoice}
         handlePayInvoice={logic.handlePayInvoice}
+        handleDeleteTransaction={logic.handleDeleteTransaction}
         cardInstallments={logic.cardInstallments}
         expandedInstallId={logic.expandedInstallId}
         setExpandedInstallId={logic.setExpandedInstallId}
@@ -67,6 +68,8 @@ export const InvoicesView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivac
           setInstallForm={(f: InstallFormData) => logic.setInstallForm(f)}
           onSubmit={logic.handleInstallSubmit}
           onClose={() => logic.setIsInstallFormOpen(false)}
+          creditCardLimit={logic.installFormCardLimit}
+          creditCardUsed={logic.installFormCardUsed}
         />
       )}
     </>

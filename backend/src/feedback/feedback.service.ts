@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -19,19 +19,7 @@ export class FeedbackService {
   }
 
   async findAllFeedbacks(userId: string) {
-    console.log(`[Feedback] Searching for user ID: ${userId}`);
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { isAdmin: true },
-    });
-
-    console.log(`[Feedback] User Found. isAdmin? ${user?.isAdmin}`);
-
-    if (!user || !user.isAdmin) {
-      throw new ForbiddenException(
-        'Only administrators can access the feedback list',
-      );
-    }
+    // AdminGuard already verified admin status at controller level
 
     return this.prisma.feedback.findMany({
       orderBy: { createdAt: 'desc' },
@@ -46,16 +34,8 @@ export class FeedbackService {
     });
   }
 
-  async deleteFeedback(id: string, adminId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: adminId },
-      select: { isAdmin: true },
-    });
-
-    if (!user || !user.isAdmin) {
-      throw new ForbiddenException('Only administrators can delete feedback');
-    }
-
+  async deleteFeedback(id: string, _adminId: string) {
+    // AdminGuard already verified admin status at controller level
     return this.prisma.feedback.delete({
       where: { id },
     });

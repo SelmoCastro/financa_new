@@ -89,7 +89,7 @@ export function InviteNotification() {
     if (invites.length === 0) return null;
 
     return (
-        <View style={styles.container}>
+        <>
             <Pressable
                 onPress={() => { setModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                 style={styles.pill}
@@ -190,27 +190,26 @@ export function InviteNotification() {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 16,
     },
     pill: {
         backgroundColor: '#4f46e5',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
         borderRadius: 999,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 4,
         alignSelf: 'center',
     },
     pillText: {
         color: 'white',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '900',
         textTransform: 'uppercase',
     },

@@ -40,6 +40,8 @@ export function useInvoicesLogic() {
   const [cardInstallments, setCardInstallments] = useState<Record<string, CreditCardInstallmentDTO[]>>({});
   const [isInstallFormOpen, setIsInstallFormOpen] = useState(false);
   const [installFormCardId, setInstallFormCardId] = useState('');
+  const [installFormCardLimit, setInstallFormCardLimit] = useState(0);
+  const [installFormCardUsed, setInstallFormCardUsed] = useState(0);
   const [installForm, setInstallForm] = useState<InstallFormData>({
     description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: '1', accountId: '', categoryId: ''
   });
@@ -158,14 +160,28 @@ export function useInvoicesLogic() {
   useEffect(() => { fetchInstallments(); }, [creditCards]);
 
   const openInstallModal = (cardId: string) => {
+    const card = creditCards.find(c => c.id === cardId);
+    const usedLimit = currentInvoice?.totalAmount ? Number(currentInvoice.totalAmount) : 0;
     setInstallFormCardId(cardId);
-    setInstallForm({ description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: '1', accountId: '', categoryId: '' });
+    setInstallFormCardLimit(Number(card?.limit) || 0);
+    setInstallFormCardUsed(usedLimit);
+    const dueDay = card?.dueDay || 10;
+    setInstallForm({ description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: String(dueDay), accountId: '', categoryId: '' });
     setIsInstallFormOpen(true);
   };
 
   const handleInstallSubmit = async () => {
     if (!installForm.description || !installForm.totalAmount) {
       addToast('Preencha descrição e valor', 'error');
+      return;
+    }
+    const totalAmount = Number(installForm.totalAmount);
+    if (totalAmount <= 0) {
+      addToast('O valor deve ser maior que zero', 'error');
+      return;
+    }
+    if (installFormCardLimit > 0 && (installFormCardUsed + totalAmount) > installFormCardLimit) {
+      addToast(`Valor ultrapassa o limite disponível. Disponível: R$ ${(installFormCardLimit - installFormCardUsed).toFixed(2)}`, 'error');
       return;
     }
     try {
@@ -198,6 +214,16 @@ export function useInvoicesLogic() {
     } catch { addToast('Erro ao remover', 'error'); }
   };
 
+  const handleDeleteTransaction = async (transactionId: string) => {
+    if (!confirm('Excluir este lançamento?')) return;
+    try {
+      await api.delete(`/transactions/${transactionId}`);
+      addToast('Lançamento excluído', 'success');
+      fetchInvoices();
+      refreshData();
+    } catch { addToast('Erro ao excluir', 'error'); }
+  };
+
   return {
     creditCards, accounts, categories,
     isCardFormOpen, setIsCardFormOpen, editingCard, setEditingCard,
@@ -209,9 +235,10 @@ export function useInvoicesLogic() {
     payAccountId, setPayAccountId,
     isPaying, handleCloseInvoice, handlePayInvoice,
     cardInstallments, isInstallFormOpen, setIsInstallFormOpen,
-    installFormCardId, installForm, setInstallForm,
+    installFormCardId, installFormCardLimit, installFormCardUsed, installForm, setInstallForm,
     expandedInstallId, setExpandedInstallId,
     openInstallModal, handleInstallSubmit, handleDeleteInstallment,
+    handleDeleteTransaction,
     refreshData,
   };
 }

@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Param, Body, Req, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Req, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { CreditCardInvoiceService } from './credit-card-invoices.service';
 import { PayInvoiceDto } from './dto/pay-invoice.dto';
 
@@ -9,6 +10,7 @@ import { PayInvoiceDto } from './dto/pay-invoice.dto';
   path: 'credit-card-invoices',
   version: '1',
 })
+@UseGuards(AuthGuard('jwt'))
 export class CreditCardInvoiceController {
   constructor(private readonly invoiceService: CreditCardInvoiceService) {}
 
@@ -20,7 +22,7 @@ export class CreditCardInvoiceController {
     @Param('creditCardId', ParseUUIDPipe) creditCardId: string,
     @Req() req: any,
   ) {
-    return this.invoiceService.getCurrentInvoice(creditCardId, req.user.id);
+    return this.invoiceService.getCurrentInvoice(creditCardId, req.user.userId);
   }
 
   /**
@@ -31,7 +33,7 @@ export class CreditCardInvoiceController {
     @Param('creditCardId', ParseUUIDPipe) creditCardId: string,
     @Req() req: any,
   ) {
-    return this.invoiceService.closeInvoice(creditCardId, req.user.id);
+    return this.invoiceService.closeInvoice(creditCardId, req.user.userId);
   }
 
   /**
@@ -43,7 +45,7 @@ export class CreditCardInvoiceController {
     @Body() dto: PayInvoiceDto,
     @Req() req: any,
   ) {
-    return this.invoiceService.payInvoice(invoiceId, dto, req.user.id);
+    return this.invoiceService.payInvoice(invoiceId, dto, req.user.userId);
   }
 
   /**
@@ -54,6 +56,6 @@ export class CreditCardInvoiceController {
     @Param('creditCardId', ParseUUIDPipe) creditCardId: string,
     @Req() req: any,
   ) {
-    return this.invoiceService.getInvoiceHistory(creditCardId, req.user.id);
+    return this.invoiceService.getInvoiceHistory(creditCardId, req.user.userId);
   }
 }

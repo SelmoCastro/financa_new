@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Receipt, CreditCard, ShoppingBag } from 'lucide-react';
+import { Receipt, CreditCard, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCurrency } from '../../context/CurrencyContext';
 import { Skeleton } from '../../components/Skeleton';
 
@@ -19,6 +19,7 @@ interface InvoicesViewTabsProps {
   isPaying: string | null;
   handleCloseInvoice: () => void;
   handlePayInvoice: (invoiceId: string, amount: number) => void;
+  handleDeleteTransaction: (transactionId: string) => void;
   cardInstallments: Record<string, any[]>;
   expandedInstallId: string | null;
   setExpandedInstallId: (id: string | null) => void;
@@ -73,6 +74,7 @@ const InvoicesTab: React.FC<InvoicesViewTabsProps> = ({
   isPrivacyEnabled, creditCards, selectedCardId, setSelectedCardId,
   invoices, currentInvoice, isInvoicesLoading, expandedInvoice, setExpandedInvoice,
   payAccountId, setPayAccountId, isPaying, handleCloseInvoice, handlePayInvoice,
+  handleDeleteTransaction,
   accounts,
 }) => {
   const { formatCurrency } = useCurrency();
@@ -100,19 +102,24 @@ const InvoicesTab: React.FC<InvoicesViewTabsProps> = ({
       )}
 
       {currentInvoice && (
-        <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-500/5 dark:to-blue-500/5 rounded-2xl border border-cyan-200 dark:border-cyan-500/20 p-5">
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-500/5 dark:to-blue-500/5 rounded-2xl border border-cyan-200 dark:border-cyan-500/20 p-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="font-black text-sm text-slate-800 dark:text-white">Fatura em Aberto</p>
-              <p className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold">Fecha {new Date(currentInvoice.closingDate).toLocaleDateString('pt-BR')}</p>
+              <p className="font-black text-base text-slate-800 dark:text-white">Fatura em Aberto</p>
+              <p className="text-xs text-cyan-600 dark:text-cyan-400 font-bold">Fecha {new Date(currentInvoice.closingDate).toLocaleDateString('pt-BR')}</p>
             </div>
-            <span className="text-sm font-black text-cyan-700 dark:text-cyan-300">{isPrivacyEnabled ? '••••' : formatCurrency(currentInvoice.totalAmount)}</span>
+            <span className="text-lg font-black text-cyan-700 dark:text-cyan-300">{isPrivacyEnabled ? '••••' : formatCurrency(currentInvoice.totalAmount)}</span>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {currentInvoice.transactions.map((tx: any) => (
-              <div key={tx.id} className="flex justify-between items-center p-2 bg-white/60 dark:bg-slate-900/60 rounded-lg text-xs">
+              <div key={tx.id} className="flex justify-between items-center p-3 bg-white/60 dark:bg-slate-900/60 rounded-xl text-sm border-b border-cyan-100 dark:border-cyan-500/10">
                 <span className="font-bold text-slate-700 dark:text-slate-200">{tx.description}</span>
-                <span className="font-black text-slate-800 dark:text-white">{isPrivacyEnabled ? '••••' : formatCurrency(tx.amount)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-slate-800 dark:text-white">{isPrivacyEnabled ? '••••' : formatCurrency(tx.amount)}</span>
+                  <button onClick={() => handleDeleteTransaction(tx.id)} className="text-rose-400 hover:text-rose-600 transition-colors p-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Excluir lançamento">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -153,9 +160,14 @@ const InvoicesTab: React.FC<InvoicesViewTabsProps> = ({
                       </div>
                     )}
                     {inv.transactions?.map((tx: any) => (
-                      <div key={tx.id} className="flex justify-between text-xs">
-                        <span>{tx.description}</span>
-                        <span className="font-bold">{formatCurrency(tx.amount)}</span>
+                      <div key={tx.id} className="flex justify-between items-center text-sm py-1.5 border-b border-slate-100 dark:border-slate-700/50 last:border-0">
+                        <span className="font-medium text-slate-700 dark:text-slate-300">{tx.description}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold">{formatCurrency(tx.amount)}</span>
+                          <button onClick={() => handleDeleteTransaction(tx.id)} className="text-rose-400 hover:text-rose-600 transition-colors p-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Excluir lançamento">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

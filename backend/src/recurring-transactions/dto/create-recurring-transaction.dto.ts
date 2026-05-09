@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, Min, Max, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, Min, Max, IsUUID, IsIn } from 'class-validator';
 
 export class CreateRecurringTransactionDto {
   @IsString()
@@ -10,9 +10,8 @@ export class CreateRecurringTransactionDto {
   @Min(0.01)
   amount: number;
 
-  @IsString()
-  @IsNotEmpty()
-  type: string; // INCOME, EXPENSE
+  @IsIn(['INCOME', 'EXPENSE'])
+  type: string;
 
   @IsUUID()
   @IsOptional()

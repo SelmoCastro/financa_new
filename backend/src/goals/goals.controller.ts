@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
+  NotFoundException,
 } from '@nestjs/common';
 import { GoalsService } from './goals.service';
 import { CreateGoalDto } from './dto/create-goal.dto';
@@ -27,6 +28,20 @@ export class GoalsController {
   @RequireVerifiedEmail()
   create(@Body() createGoalDto: CreateGoalDto, @Request() req) {
     return this.goalsService.create(createGoalDto, req.user.userId);
+  }
+
+  @Post(':id/deposit')
+  @RequireVerifiedEmail()
+  async deposit(
+    @Param('id') id: string,
+    @Body() body: { amount: number },
+    @Request() req,
+  ) {
+    const goal = await this.goalsService.findOne(id, req.user.userId);
+    if (!goal) throw new NotFoundException('Meta não encontrada');
+    
+    const currentAmount = Number(goal.currentAmount) + Number(body.amount);
+    return this.goalsService.update(id, { currentAmount } as any, req.user.userId);
   }
 
   @Get()

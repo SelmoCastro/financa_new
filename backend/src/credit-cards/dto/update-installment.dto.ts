@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsBoolean, Min, Max, IsUUID } from 'class-validator';
 
 export class UpdateInstallmentDto {
   @IsString()
@@ -16,11 +16,11 @@ export class UpdateInstallmentDto {
   @Max(31)
   dueDay?: number;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   accountId?: string;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   categoryId?: string;
 

@@ -46,14 +46,13 @@ export default function TabLayout() {
           }}
         >
           <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => <MaterialIcons name="grid-view" size={24} color={color} /> }} />
-          <Tabs.Screen name="transactions" options={{ title: 'Extrato', tabBarIcon: ({ color }) => <MaterialIcons name="receipt-long" size={24} color={color} /> }} />
-          <Tabs.Screen name="accounts" options={{ title: 'Contas', tabBarIcon: ({ color }) => <MaterialIcons name="account-balance-wallet" size={24} color={color} /> }} />
           <Tabs.Screen name="notifications" options={{ title: 'Alertas', tabBarIcon: ({ color, size }) => <View><MaterialIcons name="notifications" size={size} color={color} /><NotificationsBadge /></View> }} />
-          <Tabs.Screen name="budgets" options={{ title: 'Orçamentos', tabBarIcon: ({ color }) => <MaterialIcons name="pie-chart" size={24} color={color} /> }} />
+          <Tabs.Screen name="accounts" options={{ title: 'Contas', tabBarIcon: ({ color }) => <MaterialIcons name="account-balance-wallet" size={24} color={color} /> }} />
+          <Tabs.Screen name="recurring" options={{ title: 'Fixo/Recorr.', tabBarIcon: ({ color }) => <MaterialIcons name="event-repeat" size={24} color={color} /> }} />
+          <Tabs.Screen name="transactions" options={{ title: 'Extrato', tabBarIcon: ({ color }) => <MaterialIcons name="receipt-long" size={24} color={color} /> }} />
+          <Tabs.Screen name="budgets" options={{ title: 'Orç.', tabBarIcon: ({ color }) => <MaterialIcons name="pie-chart" size={24} color={color} /> }} />
           <Tabs.Screen name="goals" options={{ title: 'Metas', tabBarIcon: ({ color }) => <MaterialIcons name="track-changes" size={24} color={color} /> }} />
-          <Tabs.Screen name="fixed" options={{ title: 'Fixos', tabBarIcon: ({ color }) => <MaterialIcons name="event-repeat" size={24} color={color} /> }} />
-          <Tabs.Screen name="recurring" options={{ title: 'Recorrentes', tabBarIcon: ({ color }) => <MaterialIcons name="loop" size={24} color={color} /> }} />
-          <Tabs.Screen name="reports" options={{ title: 'Relatórios', tabBarIcon: ({ color }) => <MaterialIcons name="bar-chart" size={24} color={color} /> }} />
+          <Tabs.Screen name="reports" options={{ title: 'Relat.', tabBarIcon: ({ color }) => <MaterialIcons name="bar-chart" size={24} color={color} /> }} />
         </Tabs>
       </TransactionsProvider>
     </MonthProvider>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, RefreshControl, Alert,
   Pressable, Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform
@@ -7,12 +7,22 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { recurringService, RecurringTransactionDTO, WeightData } from '../../services/recurringService';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useTransactions } from '../../hooks/useTransactions';
+import { useFixedTransactions } from '../../hooks/useFixedTransactions';
+import { formatCurrencyInput, parseCurrencyToNumber } from '../../utils/currencyUtils';
+import * as Haptics from 'expo-haptics';
+import api from '../../services/api';
 
 export default function RecurringScreen() {
   const [recorrentes, setRecorrentes] = useState<RecurringTransactionDTO[]>([]);
   const [weight, setWeight] = useState<WeightData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currency } = useCurrency();
+
+  // Fixed items from transactions
+  const { transactions, setTransactions } = useTransactions();
+  const totals = useMemo(() => ({ income: 0, expense: 0, balance: 0, currentIncome: 0, currentExpense: 0 }), []);
+  const { fixedItems } = useFixedTransactions(transactions, totals);
 
   // Form
   const [modalVisible, setModalVisible] = useState(false);
@@ -50,7 +60,7 @@ export default function RecurringScreen() {
   const openEdit = (r: RecurringTransactionDTO) => {
     setEditing(r);
     setDesc(r.description);
-    setAmount(String(Number(r.amount)));
+    setAmount(formatCurrencyInput(String(Number(r.amount)), currency));
     setTrType(r.type);
     setDueDay(String(r.dueDay));
     setModalVisible(true);
@@ -65,7 +75,7 @@ export default function RecurringScreen() {
     try {
       const payload = {
         description: desc.trim(),
-        amount: Number(amount.replace(',', '.')),
+        amount: parseCurrencyToNumber(amount),
         type: trType,
         dueDay: Number(dueDay),
       };
@@ -109,6 +119,27 @@ export default function RecurringScreen() {
     ]);
   };
 
+  const handleRemoveFixed = (txId: string, desc: string) => {
+    Alert.alert(
+      'Parar de Repetir',
+      `Deseja remover "${desc}" dos fixos?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Confirmar', style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.patch(`/transactions/${txId}`, { isFixed: false });
+              setTransactions(prev => prev.map(t => t.id === txId ? { ...t, isFixed: false } : t));
+            } catch {
+              Alert.alert('Erro', 'Falha ao atualizar.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const today = new Date().getDate();
   const pct = weight?.weight || 0;
 
@@ -121,7 +152,7 @@ export default function RecurringScreen() {
         {/* Header */}
         <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
           <View>
-            <Text className="text-2xl font-black text-slate-800">Recorrentes</Text>
+            <Text className="text-2xl font-black text-slate-800">Recorrentes & Fixos</Text>
             <Text className="text-sm text-slate-500 font-medium mt-1">Despesas e receitas fixas</Text>
           </View>
           <Pressable onPress={openCreate} style={{ backgroundColor: '#0891b2', borderRadius: 999, padding: 12 }}>
@@ -151,14 +182,20 @@ export default function RecurringScreen() {
           </View>
         )}
 
-        {/* List */}
+        {/* Seção: Recorrentes (from backend) */}
+        {!loading && (
+          <View className="px-6 mb-2">
+            <Text className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Programados (Recorrentes)</Text>
+          </View>
+        )}
         {recorrentes.length === 0 && !loading && (
-          <View className="items-center justify-center py-20 px-6">
-            <View className="w-16 h-16 bg-slate-100 rounded-full items-center justify-center mb-4">
-              <MaterialIcons name="event-repeat" size={32} color="#cbd5e1" />
+          <View className="items-center justify-center py-10 px-6">
+            <View className="w-12 h-12 bg-slate-100 rounded-full items-center justify-center mb-3">
+              <MaterialIcons name="event-repeat" size={24} color="#cbd5e1" />
             </View>
-            <Text className="text-slate-900 font-bold text-lg mb-2">Nenhum recorrente</Text>
-            <Text className="text-slate-500 text-center">Adicione suas despesas fixas para acompanhar o peso no orçamento.</Text>
+            <Text className="text-slate-500 text-center text-sm">
+              Adicione suas despesas fixas programadas aqui.
+            </Text>
           </View>
         )}
 
@@ -212,6 +249,56 @@ export default function RecurringScreen() {
           );
           })}
         </View>
+
+        {/* Seção: Fixos (from transaction isFixed flag) — hide items that already exist as recorrentes */}
+        {(() => {
+          const recorrenteKeys = new Set(recorrentes.map(r => r.description.toLowerCase().trim()));
+          const uniqueFixedItems = fixedItems.filter(item => !recorrenteKeys.has(item.name.toLowerCase().trim()));
+          return uniqueFixedItems.length > 0 && !loading ? (
+            <>
+              <View className="px-6 mt-8 mb-2">
+                <Text className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Fixos (detectados)</Text>
+              </View>
+              <View className="px-4 space-y-3">
+                {uniqueFixedItems.map(item => (
+                  <View key={item.lastTransactionId} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex-row justify-between items-center">
+                    <View className="flex-row items-center gap-4">
+                      <View className={`w-12 h-12 rounded-xl items-center justify-center ${item.type === 'INCOME' ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                        <MaterialIcons
+                          name={item.type === 'INCOME' ? 'arrow-upward' : 'arrow-downward'}
+                          size={24}
+                          color={item.type === 'INCOME' ? '#10b981' : '#f43f5e'}
+                        />
+                      </View>
+                      <View>
+                        <Text className="font-bold text-slate-700 text-base">{item.name}</Text>
+                        <View className="flex-row items-center gap-2">
+                          <Text className="text-xs text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded">{item.category}</Text>
+                          {item.day && <Text className="text-xs text-slate-400">Todo dia {item.day}</Text>}
+                        </View>
+                      </View>
+                    </View>
+
+                    <View className="items-end gap-2">
+                      <Text className={`font-black text-base ${item.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-700'}`}>
+                        {formatCurrency(item.amount)}
+                      </Text>
+                      <View className="rounded-lg overflow-hidden bg-red-50">
+                        <Pressable
+                          onPress={() => { handleRemoveFixed(item.lastTransactionId, item.name); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                          android_ripple={{ color: 'rgba(239,68,68,0.2)' }}
+                          className="p-1"
+                        >
+                          <MaterialIcons name="delete" size={16} color="#ef4444" />
+                        </Pressable>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : null;
+        })()}
       </ScrollView>
 
       {/* Modal */}
@@ -248,7 +335,7 @@ export default function RecurringScreen() {
                 <TextInput
                   style={{ backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 16, padding: 16, fontSize: 16, fontWeight: '600', color: '#1e293b' }}
                   placeholder="0,00" placeholderTextColor="#94a3b8" keyboardType="numeric"
-                  value={amount} onChangeText={setAmount}
+                  value={amount} onChangeText={(v) => setAmount(formatCurrencyInput(v, currency))}
                 />
               </View>
               <View style={{ flex: 1 }}>

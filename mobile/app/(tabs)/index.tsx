@@ -147,6 +147,7 @@ export default function DashboardScreen() {
                             <Text style={styles.welcomeText} numberOfLines={1}>Bem-vindo de volta,</Text>
                         </View>
                         <View style={styles.headerButtonsSmall}>
+                            <InviteNotification />
                             <Pressable
                                 onPress={() => { togglePrivacy(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                                 android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
@@ -181,7 +182,6 @@ export default function DashboardScreen() {
 
                     {/* Bottom Row: Month Selector */}
                     <View style={styles.headerBottomRow}>
-                        <InviteNotification />
                         <MonthSelector />
                     </View>
 

@@ -195,22 +195,29 @@ export default function GoalsScreen() {
                                     </View>
                                 </View>
 
-                                <View className="h-4 w-full bg-slate-100 rounded-full overflow-hidden mb-3 relative">
-                                    <View
-                                        className="h-full bg-indigo-500 absolute left-0 top-0 bottom-0 z-10"
-                                        style={{ width: `${Math.min(goal.progress || 0, 100)}%` }}
-                                    />
-                                    <Text className="absolute w-full text-center text-xs font-bold text-slate-500 z-20 top-[1px]">
-                                        {(Number(goal.progress) || 0).toFixed(1)}%
-                                    </Text>
-                                </View>
+                                {(() => {
+                                    const current = Number(goal.currentAmount) || 0;
+                                    const target = Number(goal.targetAmount) || 1;
+                                    const progress = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+                                    return (
+                                        <View className="h-4 w-full bg-slate-100 rounded-full overflow-hidden mb-3 relative">
+                                            <View
+                                                className="h-full bg-indigo-500 absolute left-0 top-0 bottom-0 z-10"
+                                                style={{ width: `${progress}%` }}
+                                            />
+                                            <Text className="absolute w-full text-center text-xs font-bold text-slate-500 z-20 top-[1px]">
+                                                {progress.toFixed(1)}%
+                                            </Text>
+                                        </View>
+                                    );
+                                })()}
 
                                 <View className="flex-row justify-between items-center">
                                     <Text className="text-2xl font-black text-slate-800">
                                         {formatValue(goal.currentAmount)}
                                     </Text>
                                     <Text className="text-xs font-bold text-slate-400">
-                                        Faltam {formatValue(goal.remainingAmount)}
+                                        Faltam {formatValue((Number(goal.targetAmount) || 0) - (Number(goal.currentAmount) || 0))}
                                     </Text>
                                 </View>
 

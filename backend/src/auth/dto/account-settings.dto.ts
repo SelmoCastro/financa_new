@@ -1,7 +1,8 @@
-import { IsString, MinLength, IsEmail, IsOptional, MaxLength, Matches } from 'class-validator';
+import { IsString, MinLength, IsEmail, IsOptional, MaxLength, Matches, IsUUID } from 'class-validator';
 
 export class ChangePasswordDto {
   @IsString()
+  @MinLength(1)
   @MaxLength(72)
   currentPassword: string;
 

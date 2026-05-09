@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsNotEmpty, MaxLength, IsUUID } from 'class-validator';
 
 export class CreateErrorReportDto {
   @IsString()
@@ -31,7 +31,7 @@ export class CreateErrorReportDto {
   @MaxLength(200)
   deviceId?: string;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   userId?: string;
 
