@@ -1,12 +1,13 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, Platform } from 'react-native';
+import { View, Text, Platform, Pressable } from 'react-native';
 import { MonthProvider } from '../../context/MonthContext';
 import { TransactionsProvider } from '../../context/TransactionsContext';
 import { useNotifications, refreshUnreadCount } from '../../hooks/useNotifications';
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
+import * as Haptics from 'expo-haptics';
 
 function NotificationsBadge() {
   const { unreadCount } = useNotifications();
@@ -24,6 +25,35 @@ function NotificationsBadge() {
     </View>
   );
 }
+
+function NotificationBell() {
+  const router = useRouter();
+  const { unreadCount } = useNotifications();
+  return (
+    <Pressable
+      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/notifications'); }}
+      android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+      hitSlop={15}
+      style={{ position: 'relative', padding: 6 }}
+    >
+      <MaterialIcons name={unreadCount > 0 ? 'notifications-active' : 'notifications-none'} size={24} color={unreadCount > 0 ? '#4f46e5' : '#64748b'} />
+      {unreadCount > 0 && (
+        <View style={{
+          position: 'absolute', top: 2, right: 2,
+          backgroundColor: '#ef4444', borderRadius: 999,
+          minWidth: 16, height: 16,
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Text style={{ color: 'white', fontSize: 9, fontWeight: '800' }}>
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+export { NotificationBell };
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -46,7 +76,7 @@ export default function TabLayout() {
           }}
         >
           <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => <MaterialIcons name="grid-view" size={24} color={color} /> }} />
-          <Tabs.Screen name="notifications" options={{ title: 'Alertas', tabBarIcon: ({ color, size }) => <View><MaterialIcons name="notifications" size={size} color={color} /><NotificationsBadge /></View> }} />
+          <Tabs.Screen name="notifications" options={{ href: null }} />
           <Tabs.Screen name="accounts" options={{ title: 'Contas', tabBarIcon: ({ color }) => <MaterialIcons name="account-balance-wallet" size={24} color={color} /> }} />
           <Tabs.Screen name="recurring" options={{ title: 'Fixo/Recorr.', tabBarIcon: ({ color }) => <MaterialIcons name="event-repeat" size={24} color={color} /> }} />
           <Tabs.Screen name="transactions" options={{ title: 'Extrato', tabBarIcon: ({ color }) => <MaterialIcons name="receipt-long" size={24} color={color} /> }} />

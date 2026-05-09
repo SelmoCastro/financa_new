@@ -20,6 +20,7 @@ import { FeedbackModal } from '../../components/FeedbackModal';
 import SettingsModal from '../../components/SettingsModal';
 import { InviteNotification } from '../../components/InviteNotification';
 import { AiChatWidget } from '../../components/AiChatWidget';
+import { NotificationBell } from './_layout';
 import { useCurrency } from '../../context/CurrencyContext';
 
 
@@ -147,6 +148,7 @@ export default function DashboardScreen() {
                             <Text style={styles.welcomeText} numberOfLines={1}>Bem-vindo de volta,</Text>
                         </View>
                         <View style={styles.headerButtonsSmall}>
+                            <NotificationBell />
                             <InviteNotification />
                             <Pressable
                                 onPress={() => { togglePrivacy(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}

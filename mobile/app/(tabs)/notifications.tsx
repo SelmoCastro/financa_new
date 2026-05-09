@@ -4,10 +4,11 @@ import {
   Pressable, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { notificationService, NotificationDTO } from '../../services/notificationService';
 import { useCurrency } from '../../context/CurrencyContext';
 import { refreshUnreadCount } from '../../hooks/useNotifications';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TYPE_CONFIG: Record<string, { icon: keyof typeof MaterialIcons.glyphMap; color: string; bg: string }> = {
   ACTION_RECURRING: { icon: 'event-repeat', color: '#0891b2', bg: '#ecfeff' },
@@ -35,6 +36,8 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function NotificationsScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [actioning, setActioning] = useState<string | null>(null);
@@ -161,12 +164,22 @@ export default function NotificationsScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* Header */}
-        <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
-          <View>
-            <Text className="text-2xl font-black text-slate-800">Notificações</Text>
-            <Text className="text-sm text-slate-500 font-medium mt-1">
-              {unread.length > 0 ? `${unread.length} pendente${unread.length > 1 ? 's' : ''}` : 'Tudo em dia'}
-            </Text>
+        <View style={{ paddingTop: insets.top + 12 }} className="px-6 pb-4 flex-row items-center justify-between">
+          <View className="flex-row items-center gap-3 flex-1">
+            <Pressable
+              onPress={() => router.back()}
+              android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+              hitSlop={15}
+              className="w-10 h-10 items-center justify-center rounded-xl bg-white"
+            >
+              <MaterialIcons name="arrow-back" size={22} color="#334155" />
+            </Pressable>
+            <View>
+              <Text className="text-2xl font-black text-slate-800">Notificações</Text>
+              <Text className="text-sm text-slate-500 font-medium mt-0.5">
+                {unread.length > 0 ? `${unread.length} pendente${unread.length > 1 ? 's' : ''}` : 'Tudo em dia'}
+              </Text>
+            </View>
           </View>
           {unread.length > 0 && (
             <Pressable onPress={handleMarkAllRead} className="px-3 py-2 bg-slate-100 rounded-xl">

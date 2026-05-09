@@ -1,6 +1,6 @@
 {
-  "version": "1.8.17",
-  "mobileVersion": "1.8.17",
+  "version": "1.8.18",
+  "mobileVersion": "1.8.18",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.8.17 \u2014 Corre\u00e7\u00e3o: % das metas sempre 0, itens duplicados em Fixos/Recorrentes, bot\u00e3o Sair da Conta cortado, endpoint de dep\u00f3sito em metas"
+  "releaseNotes": "Remove tab Alertas do menu inferior, adiciona icone sino no header da Home"
 }
