@@ -36,6 +36,73 @@ async function bootstrap() {
     configureApp(app);
     console.log('App configurado (CORS, Pipes, Helmet).');
 
+    // Migração: gerar transações para parcelamentos existentes (v1.8.19)
+    try {
+      const { PrismaService } = await import('./prisma/prisma.service');
+      const prisma = new PrismaService();
+      const installments = await prisma.creditCardInstallment.findMany({
+        where: { isActive: true },
+      });
+      let migrated = 0;
+      for (const inst of installments) {
+        // Checar se já tem transações associadas
+        const existing = await prisma.transaction.findMany({
+          where: {
+            userId: inst.userId,
+            creditCardId: inst.creditCardId,
+            description: { startsWith: inst.description },
+            installmentCount: inst.installmentCount,
+            type: 'EXPENSE',
+            deletedAt: null,
+          },
+        });
+        if (existing.length >= inst.installmentCount) continue;
+
+        // Remover parciais
+        if (existing.length > 0) {
+          await prisma.transaction.deleteMany({ where: { id: { in: existing.map((t: any) => t.id) } } });
+        }
+
+        const entryAmount = inst.entryAmount ? Number(inst.entryAmount) : 0;
+        const totalAmount = Number(inst.totalAmount);
+        const ic = inst.installmentCount;
+        let amountPerMonth: number;
+        if (entryAmount > 0 && ic > 1) {
+          amountPerMonth = Math.round(((totalAmount - entryAmount) / (ic - 1)) * 100) / 100;
+        } else {
+          amountPerMonth = Math.round((totalAmount / ic) * 100) / 100;
+        }
+
+        const start = new Date(inst.startDate);
+        const txData: any[] = [];
+        for (let i = 1; i <= ic; i++) {
+          const mOff = i - 1;
+          const dueDate = new Date(start.getFullYear(), start.getMonth() + mOff, inst.dueDay);
+          const expMonth = (start.getMonth() + mOff) % 12;
+          if (dueDate.getMonth() !== expMonth) dueDate.setDate(0);
+          const amount = (entryAmount > 0 && i === 1) ? entryAmount : amountPerMonth;
+          txData.push({
+            description: `${inst.description}${ic > 1 ? ` (${i}/${ic})` : ''}`,
+            amount,
+            date: dueDate,
+            type: 'EXPENSE',
+            creditCardId: inst.creditCardId,
+            userId: inst.userId,
+            categoryId: inst.categoryId || null,
+            accountId: inst.accountId || null,
+            currentInstallment: i,
+            installmentCount: ic,
+          });
+        }
+        await prisma.transaction.createMany({ data: txData });
+        migrated++;
+      }
+      if (migrated > 0) console.log(`✅ Migração parcelamentos: ${migrated} migrados`);
+      await prisma.$disconnect();
+    } catch (migErr: any) {
+      console.warn('⚠️  Migração de parcelamentos pulada:', migErr?.message || migErr);
+    }
+
     const port = process.env.PORT ?? 3000;
     console.log(`Iniciando na porta: ${port}`);
 
