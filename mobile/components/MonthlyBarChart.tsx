@@ -26,30 +26,37 @@ export const MonthlyBarChart: React.FC<MonthlyBarChartProps> = ({ data, isPrivac
 
             <View style={{ height: chartHeight, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
                 {data.map((item, index) => {
-                    const incomeHeight = (item.income / maxVal) * chartHeight;
-                    const expenseHeight = (item.expenses / maxVal) * chartHeight;
+                    const rawIncomeHeight = (item.income / maxVal) * chartHeight;
+                    const rawExpenseHeight = (item.expenses / maxVal) * chartHeight;
+                    // Minimum visible height of 4px when value > 0
+                    const incomeHeight = item.income > 0 ? Math.max(rawIncomeHeight, 4) : 0;
+                    const expenseHeight = item.expenses > 0 ? Math.max(rawExpenseHeight, 4) : 0;
 
                     return (
                         <View key={index} className="items-center" style={{ flex: 1 }}>
                             <View className="flex-row items-end gap-1">
                                 {/* Income Bar */}
-                                <View
-                                    style={{
-                                        height: incomeHeight,
-                                        width: 8,
-                                        backgroundColor: '#10b981',
-                                        borderRadius: 4
-                                    }}
-                                />
+                                {incomeHeight > 0 && (
+                                    <View
+                                        style={{
+                                            height: incomeHeight,
+                                            width: 8,
+                                            backgroundColor: '#10b981',
+                                            borderRadius: 4
+                                        }}
+                                    />
+                                )}
                                 {/* Expense Bar */}
-                                <View
-                                    style={{
-                                        height: expenseHeight,
-                                        width: 8,
-                                        backgroundColor: '#f43f5e',
-                                        borderRadius: 4
-                                    }}
-                                />
+                                {expenseHeight > 0 && (
+                                    <View
+                                        style={{
+                                            height: expenseHeight,
+                                            width: 8,
+                                            backgroundColor: '#f43f5e',
+                                            borderRadius: 4
+                                        }}
+                                    />
+                                )}
                             </View>
                             <Text className="text-[9px] font-bold text-slate-400 mt-2 uppercase">
                                 {item.month}
