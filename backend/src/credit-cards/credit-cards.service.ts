@@ -104,19 +104,43 @@ export class CreditCardsService {
     // Validate card belongs to user
     const card = await this.findOne(creditCardId, userId);
 
-    const entryAmount = dto.entryAmount ? Number(dto.entryAmount) : 0;
     const totalAmount = Number(dto.totalAmount);
     const installmentCount = dto.installmentCount;
 
-    // Calculate amount per month considering entry
-    // Entry (1st installment) = entryAmount (or equal share if no entry specified)
-    // Remaining installments = (totalAmount - entryAmount) / (installmentCount - 1)
-    let amountPerMonth: number;
-    if (entryAmount > 0 && installmentCount > 1) {
-      amountPerMonth = Math.round(((totalAmount - entryAmount) / (installmentCount - 1)) * 100) / 100;
+    // Determine the amount for each installment
+    let amounts: number[];
+
+    if (dto.installmentValues && dto.installmentValues.length > 0) {
+      // Custom amounts per installment
+      if (dto.installmentValues.length !== installmentCount) {
+        throw new BadRequestException(
+          `installmentValues length (${dto.installmentValues.length}) must match installmentCount (${installmentCount})`,
+        );
+      }
+      amounts = dto.installmentValues.map((iv) => Number(iv.amount));
+      const sumValues = Math.round(amounts.reduce((a, b) => a + b, 0) * 100) / 100;
+      if (Math.abs(sumValues - totalAmount) > 0.02) {
+        throw new BadRequestException(
+          `Sum of installment values (${sumValues}) must match totalAmount (${totalAmount})`,
+        );
+      }
     } else {
-      amountPerMonth = Math.round((totalAmount / installmentCount) * 100) / 100;
+      // Equal split (or with entry)
+      const entryAmount = dto.entryAmount ? Number(dto.entryAmount) : 0;
+      let amountPerMonth: number;
+      if (entryAmount > 0 && installmentCount > 1) {
+        amountPerMonth = Math.round(((totalAmount - entryAmount) / (installmentCount - 1)) * 100) / 100;
+      } else {
+        amountPerMonth = Math.round((totalAmount / installmentCount) * 100) / 100;
+      }
+      amounts = Array.from({ length: installmentCount }, (_, i) =>
+        (entryAmount > 0 && installmentCount > 1 && i === 0) ? entryAmount : amountPerMonth,
+      );
     }
+
+    const amountPerMonth = amounts.length > 1
+      ? Math.round(amounts.slice(1).reduce((a, b) => a + b, 0) / (amounts.length - 1) * 100) / 100
+      : amounts[0];
 
     const installment = await this.prisma.creditCardInstallment.create({
       data: {
@@ -135,40 +159,36 @@ export class CreditCardsService {
       include: { category: true, account: true, creditCard: true },
     });
 
-    // Gerar as transações mensais para cada parcela
-    // Isso faz com que a fatura atual some corretamente os parcelamentos
+    // Generate transactions for each installment with individual amounts
     const startDate = new Date();
     const transactionData: any[] = [];
 
-    for (let i = 1; i <= installmentCount; i++) {
-      // Calcular a data de vencimento de cada parcela
-      const monthOffset = i - 1;
+    for (let i = 0; i < installmentCount; i++) {
+      const monthOffset = i;
       const dueDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthOffset, dto.dueDay);
       // Clamp day if month has fewer days
       const expectedMonth = (startDate.getMonth() + monthOffset) % 12;
       if (dueDate.getMonth() !== expectedMonth) {
-        dueDate.setDate(0); // último dia do mês anterior (= mês esperado)
+        dueDate.setDate(0); // last day of previous month (= expected month)
       }
 
-      const amount = (entryAmount > 0 && i === 1) ? entryAmount : amountPerMonth;
-
       transactionData.push({
-        description: `${dto.description}${installmentCount > 1 ? ` (${i}/${installmentCount})` : ''}`,
-        amount,
+        description: `${dto.description}${installmentCount > 1 ? ` (${i + 1}/${installmentCount})` : ''}`,
+        amount: amounts[i],
         date: dueDate,
         type: 'EXPENSE',
         creditCardId,
         userId,
         categoryId: dto.categoryId || null,
         accountId: dto.accountId || null,
-        currentInstallment: i,
+        currentInstallment: i + 1,
         installmentCount,
       });
     }
 
     await this.prisma.transaction.createMany({ data: transactionData });
 
-    // Atualizar currentInstallment no parcelamento
+    // Update currentInstallment on the installment record
     await this.prisma.creditCardInstallment.update({
       where: { id: installment.id },
       data: { currentInstallment: 1 },

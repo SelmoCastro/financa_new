@@ -71,4 +71,9 @@ export interface AccountsLogic {
   handleDeleteCard: (id: string, name: string) => void;
   handleInstallSubmit: () => void;
   handleDeleteInstallment: (id: string) => void;
+  // Custom installment values
+  useCustomValues: boolean;
+  setUseCustomValues: (v: boolean) => void;
+  installmentAmounts: string[];
+  setInstallmentAmounts: (v: string[]) => void;
 }

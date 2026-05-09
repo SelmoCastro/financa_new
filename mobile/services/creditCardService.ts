@@ -48,6 +48,7 @@ export const creditCardService = {
       dueDay: number;
       accountId?: string | null;
       categoryId?: string | null;
+      installmentValues?: { amount: number }[];
     },
   ) => api.post(`/credit-cards/${cardId}/installments`, data),
 

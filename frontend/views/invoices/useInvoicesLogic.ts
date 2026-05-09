@@ -52,6 +52,8 @@ export function useInvoicesLogic() {
     description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: '1', accountId: '', categoryId: ''
   });
   const [expandedInstallId, setExpandedInstallId] = useState<string | null>(null);
+  const [useCustomValues, setUseCustomValues] = useState(false);
+  const [installmentAmounts, setInstallmentAmounts] = useState<string[]>([]);
 
   // Close card menu on outside click
   useEffect(() => {
@@ -173,6 +175,8 @@ export function useInvoicesLogic() {
     setInstallFormCardUsed(usedLimit);
     const dueDay = card?.dueDay || 10;
     setInstallForm({ description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: String(dueDay), accountId: '', categoryId: '' });
+    setUseCustomValues(false);
+    setInstallmentAmounts([]);
     setIsInstallFormOpen(true);
   };
 
@@ -196,17 +200,32 @@ export function useInvoicesLogic() {
       return;
     }
     try {
-      await creditCardService.createInstallment(installFormCardId, {
+      const data: any = {
         description: installForm.description,
         totalAmount,
         installmentCount: Number(installForm.installmentCount),
-        entryAmount,
+        entryAmount: (entryAmount && !useCustomValues) ? entryAmount : undefined,
         dueDay: Number(installForm.dueDay),
         accountId: installForm.accountId || undefined,
         categoryId: installForm.categoryId || undefined,
-      });
+      };
+
+      if (useCustomValues && Number(installForm.installmentCount) > 1) {
+        const sumValues = installmentAmounts.reduce((acc, v) => acc + parseCurrencyValue(v || '0'), 0);
+        if (Math.abs(sumValues - totalAmount) > 0.02) {
+          addToast(`Soma das parcelas (R$ ${sumValues.toFixed(2)}) não confere com o valor total (R$ ${totalAmount.toFixed(2)})`, 'error');
+          return;
+        }
+        data.installmentValues = installmentAmounts.map((v) => ({
+          amount: parseCurrencyValue(v || '0'),
+        }));
+      }
+
+      await creditCardService.createInstallment(installFormCardId, data);
       addToast('Compra parcelada adicionada!', 'success');
       setIsInstallFormOpen(false);
+      setUseCustomValues(false);
+      setInstallmentAmounts([]);
       fetchInstallments();
       refreshData();
     } catch (e: any) {
@@ -250,6 +269,7 @@ export function useInvoicesLogic() {
     expandedInstallId, setExpandedInstallId,
     openInstallModal, handleInstallSubmit, handleDeleteInstallment,
     handleDeleteTransaction,
+    useCustomValues, setUseCustomValues, installmentAmounts, setInstallmentAmounts,
     refreshData,
   };
 }

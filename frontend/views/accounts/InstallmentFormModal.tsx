@@ -11,11 +11,16 @@ interface InstallmentFormModalProps {
   onClose: () => void;
   creditCardLimit?: number;
   creditCardUsed?: number;
+  useCustomValues?: boolean;
+  setUseCustomValues?: (v: boolean) => void;
+  installmentAmounts?: string[];
+  setInstallmentAmounts?: (v: string[]) => void;
 }
 
 export const InstallmentFormModal: React.FC<InstallmentFormModalProps> = ({
   installForm, installmentPreview, setInstallForm, onSubmit, onClose,
   creditCardLimit = 0, creditCardUsed = 0,
+  useCustomValues = false, setUseCustomValues, installmentAmounts = [], setInstallmentAmounts,
 }) => {
   const { formatCurrency, locale } = useCurrency();
   const availableLimit = creditCardLimit - creditCardUsed;
@@ -86,6 +91,70 @@ export const InstallmentFormModal: React.FC<InstallmentFormModalProps> = ({
               onChange={e => setInstallForm({...installForm, entryAmount: formatCurrencyInput(e.target.value)})}
             />
           </div>
+
+          {/* Custom installment values */}
+          {Number(installForm.installmentCount) > 1 && setUseCustomValues && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Valor por parcela</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newVal = !useCustomValues;
+                    setUseCustomValues(newVal);
+                    if (newVal) {
+                      const count = Number(installForm.installmentCount) || 1;
+                      const totalNum = parseCurrencyToNumber(installForm.totalAmount);
+                      const equalShare = count > 0 ? totalNum / count : 0;
+                      setInstallmentAmounts?.(Array.from({ length: count }, () => equalShare.toFixed(2).replace('.', ',')));
+                    } else {
+                      setInstallmentAmounts?.([]);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 text-[11px] font-bold"
+                >
+                  <span className={`w-4 h-4 rounded border-2 flex items-center justify-center ${useCustomValues ? 'bg-cyan-500 border-cyan-500' : 'border-slate-300 bg-white'}`}>
+                    {useCustomValues && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                  </span>
+                  <span className={useCustomValues ? 'text-cyan-600' : 'text-slate-400'}>Personalizar</span>
+                </button>
+              </div>
+              {useCustomValues && (() => {
+                const count = Number(installForm.installmentCount) || 1;
+                const totalNum = parseCurrencyToNumber(installForm.totalAmount);
+                const sumValues = installmentAmounts.reduce((acc, v) => acc + (Number(v?.replace(',', '.')) || 0), 0);
+                const diff = Math.abs(sumValues - totalNum);
+                return (
+                  <div className="space-y-2">
+                    {Array.from({ length: count }, (_, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-slate-500 w-16">{i + 1}ª parcela</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          className="flex-1 p-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white"
+                          placeholder="0,00"
+                          value={installmentAmounts[i] || ''}
+                          onChange={e => {
+                            const newAmounts = [...installmentAmounts];
+                            newAmounts[i] = formatCurrencyInput(e.target.value);
+                            setInstallmentAmounts?.(newAmounts);
+                          }}
+                        />
+                      </div>
+                    ))}
+                    <div className="flex justify-between text-[10px] font-bold pt-1">
+                      <span className={diff > 0.02 ? 'text-rose-500' : 'text-emerald-500'}>Soma: {formatCurrency(sumValues)}</span>
+                      <span className={diff > 0.02 ? 'text-rose-500' : 'text-emerald-500'}>
+                        {diff > 0.02 ? `Falta ${formatCurrency(totalNum - sumValues)}` : '✓ Valores conferem'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           <div>
             <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Dia do vencimento</label>
             <p className="p-3.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300">Dia {installForm.dueDay} (do cartão)</p>

@@ -75,6 +75,10 @@ export const InvoicesView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivac
           onClose={() => logic.setIsInstallFormOpen(false)}
           creditCardLimit={logic.installFormCardLimit}
           creditCardUsed={logic.installFormCardUsed}
+          useCustomValues={logic.useCustomValues}
+          setUseCustomValues={logic.setUseCustomValues}
+          installmentAmounts={logic.installmentAmounts}
+          setInstallmentAmounts={logic.setInstallmentAmounts}
         />
       )}
     </>

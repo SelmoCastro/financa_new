@@ -75,6 +75,9 @@ export default function AccountsScreen() {
     const [isPurchaseAccountPickerOpen, setIsPurchaseAccountPickerOpen] = useState(false);
     const [savingPurchase, setSavingPurchase] = useState(false);
     const [invoiceRefreshKey, setInvoiceRefreshKey] = useState(0);
+    // Custom installment values
+    const [useCustomValues, setUseCustomValues] = useState(false);
+    const [installmentAmounts, setInstallmentAmounts] = useState<string[]>([]);
 
     // Parcelas
     const [installments, setInstallments] = useState<Record<string, CreditCardInstallmentDTO[]>>({});
@@ -373,7 +376,7 @@ export default function AccountsScreen() {
 
                             {/* Nova compra no cartão */}
                             <Pressable
-                                onPress={() => { setPurchaseCardId(cc.id); setPurchaseCardLimit(Number(cc.limit) || 0); setPurchaseCardUsed(Number(invoiceData[cc.id]?.totalAmount) || 0); setPurchaseDesc(''); setPurchaseTotal(''); setPurchaseInstallments('1'); setPurchaseEntry(''); setPurchaseDueDay(String(cc.dueDay || 10)); setPurchaseAccountId(''); setPurchaseCategoryId(''); setPurchaseModal(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                onPress={() => { setPurchaseCardId(cc.id); setPurchaseCardLimit(Number(cc.limit) || 0); setPurchaseCardUsed(Number(invoiceData[cc.id]?.totalAmount) || 0); setPurchaseDesc(''); setPurchaseTotal(''); setPurchaseInstallments('1'); setPurchaseEntry(''); setPurchaseDueDay(String(cc.dueDay || 10)); setPurchaseAccountId(''); setPurchaseCategoryId(''); setUseCustomValues(false); setInstallmentAmounts([]); setPurchaseModal(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, backgroundColor: '#9333ea', borderRadius: 10, paddingVertical: 8 }}
                             >
                                 <MaterialIcons name="add-shopping-cart" size={16} color="white" />
@@ -567,6 +570,81 @@ export default function AccountsScreen() {
                                 onChangeText={(v) => setPurchaseEntry(formatCurrencyInput(v, currency))}
                             />
 
+                            {/* Valores por parcela */}
+                            {parseInt(purchaseInstallments) > 1 && (
+                                <View style={{ marginTop: 8 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                        <Text style={[styles.label, { marginBottom: 0 }]}>Valor por parcela</Text>
+                                        <Pressable
+                                            onPress={() => {
+                                                const newVal = !useCustomValues;
+                                                setUseCustomValues(newVal);
+                                                if (!newVal) {
+                                                    setInstallmentAmounts([]);
+                                                } else {
+                                                    const count = parseInt(purchaseInstallments) || 1;
+                                                    const totalNum = purchaseTotal ? parseCurrencyToNumber(purchaseTotal) : 0;
+                                                    const equalShare = count > 0 ? totalNum / count : 0;
+                                                    setInstallmentAmounts(
+                                                        Array.from({ length: count }, () => formatCurrency(equalShare))
+                                                    );
+                                                }
+                                            }}
+                                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                                        >
+                                            <View style={{
+                                                width: 18, height: 18, borderRadius: 4, borderWidth: 2,
+                                                borderColor: useCustomValues ? '#4f46e5' : '#cbd5e1',
+                                                backgroundColor: useCustomValues ? '#4f46e5' : 'white',
+                                                alignItems: 'center', justifyContent: 'center'
+                                            }}>
+                                                {useCustomValues && <MaterialIcons name="check" size={12} color="white" />}
+                                            </View>
+                                            <Text style={{ fontSize: 12, color: '#64748b', fontWeight: '600' }}>Personalizar</Text>
+                                        </Pressable>
+                                    </View>
+                                    {useCustomValues && (() => {
+                                        const count = parseInt(purchaseInstallments) || 1;
+                                        const totalNum = purchaseTotal ? parseCurrencyToNumber(purchaseTotal) : 0;
+                                        const sumValues = installmentAmounts.reduce((acc, v) => acc + (v ? parseCurrencyToNumber(v) : 0), 0);
+                                        const diff = Math.abs(sumValues - totalNum);
+                                        return (
+                                            <View>
+                                                {Array.from({ length: count }, (_, i) => (
+                                                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                                        <Text style={{ fontSize: 13, color: '#64748b', fontWeight: '600', width: 50 }}>
+                                                            {i + 1}ª parcela
+                                                        </Text>
+                                                        <TextInput
+                                                            style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                                                            placeholder="0,00"
+                                                            placeholderTextColor="#94a3b8"
+                                                            keyboardType="numeric"
+                                                            value={installmentAmounts[i] || ''}
+                                                            onChangeText={(v) => {
+                                                                const newAmounts = [...installmentAmounts];
+                                                                newAmounts[i] = formatCurrencyInput(v, currency);
+                                                                setInstallmentAmounts(newAmounts);
+                                                            }}
+                                                        />
+                                                    </View>
+                                                ))}
+                                                {count > 0 && (
+                                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+                                                        <Text style={{ fontSize: 12, color: diff > 0.02 ? '#ef4444' : '#22c55e', fontWeight: '600' }}>
+                                                            Soma: {formatCurrency(sumValues)}
+                                                        </Text>
+                                                        <Text style={{ fontSize: 12, color: diff > 0.02 ? '#ef4444' : '#22c55e', fontWeight: '600' }}>
+                                                            {diff > 0.02 ? `Falta ${formatCurrency(totalNum - sumValues)}` : '✓ Valores conferem'}
+                                                        </Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        );
+                                    })()}
+                                </View>
+                            )}
+
                             {/* Categoria */}
                             <Text style={styles.label}>Categoria (opcional)</Text>
                             <Pressable
@@ -646,22 +724,38 @@ export default function AccountsScreen() {
                                             Alert.alert('Atenção', `O valor ultrapassa o limite disponível. Disponível: R$ ${(purchaseCardLimit - purchaseCardUsed).toFixed(2)}`);
                                             return;
                                         }
-                                        setSavingPurchase(true);
-                                        try {
-                                            const installmentCount = parseInt(purchaseInstallments) || 1;
-                                            const entryAmount = purchaseEntry ? parseCurrencyToNumber(purchaseEntry) : undefined;
-                                            const dueDay = parseInt(purchaseDueDay) || 10;
+                                            setSavingPurchase(true);
+                                            try {
+                                                const installmentCount = parseInt(purchaseInstallments) || 1;
+                                                const entryAmount = purchaseEntry ? parseCurrencyToNumber(purchaseEntry) : undefined;
+                                                const dueDay = parseInt(purchaseDueDay) || 10;
 
-                                            // Sempre usar o endpoint de installments (igual à web)
-                                            await creditCardService.createInstallment(purchaseCardId, {
-                                                description: purchaseDesc.trim(),
-                                                totalAmount,
-                                                installmentCount,
-                                                ...(entryAmount ? { entryAmount } : {}),
-                                                dueDay,
-                                                ...(purchaseAccountId ? { accountId: purchaseAccountId } : {}),
-                                                ...(purchaseCategoryId ? { categoryId: purchaseCategoryId } : {}),
-                                            });
+                                                // Build installment values if custom
+                                                const data: any = {
+                                                    description: purchaseDesc.trim(),
+                                                    totalAmount,
+                                                    installmentCount,
+                                                    ...(entryAmount && !useCustomValues ? { entryAmount } : {}),
+                                                    dueDay,
+                                                    ...(purchaseAccountId ? { accountId: purchaseAccountId } : {}),
+                                                    ...(purchaseCategoryId ? { categoryId: purchaseCategoryId } : {}),
+                                                };
+
+                                                if (useCustomValues && installmentCount > 1) {
+                                                    // Validate sum matches total
+                                                    const sumValues = installmentAmounts.reduce((acc, v) => acc + (v ? parseCurrencyToNumber(v) : 0), 0);
+                                                    if (Math.abs(sumValues - totalAmount) > 0.02) {
+                                                        Alert.alert('Atenção', `A soma das parcelas (R$ ${sumValues.toFixed(2)}) não confere com o valor total (R$ ${totalAmount.toFixed(2)}).`);
+                                                        setSavingPurchase(false);
+                                                        return;
+                                                    }
+                                                    data.installmentValues = installmentAmounts.map((v) => ({
+                                                        amount: v ? parseCurrencyToNumber(v) : 0,
+                                                    }));
+                                                }
+
+                                                // Sempre usar o endpoint de installments (igual à web)
+                                                await creditCardService.createInstallment(purchaseCardId, data);
                                             setPurchaseModal(false);
                                             setInvoiceRefreshKey(k => k + 1);
                                             fetchData();

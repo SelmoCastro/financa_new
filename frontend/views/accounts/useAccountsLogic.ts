@@ -25,6 +25,8 @@ export function useAccountsLogic(isPrivacyEnabled: boolean): UseAccountsLogicRet
     description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: '1', accountId: '', categoryId: ''
   });
   const [expandedInstallId, setExpandedInstallId] = useState<string | null>(null);
+  const [useCustomValues, setUseCustomValues] = useState(false);
+  const [installmentAmounts, setInstallmentAmounts] = useState<string[]>([]);
   const { addToast } = useToast();
   const { accounts, creditCards, isLoading, refreshData } = useData();
 
@@ -113,6 +115,8 @@ export function useAccountsLogic(isPrivacyEnabled: boolean): UseAccountsLogicRet
   const openInstallModal = (cardId: string) => {
     setInstallFormCardId(cardId);
     setInstallForm({ description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: '1', accountId: '', categoryId: '' });
+    setUseCustomValues(false);
+    setInstallmentAmounts([]);
     setIsInstallFormOpen(true);
   };
 
@@ -133,17 +137,33 @@ export function useAccountsLogic(isPrivacyEnabled: boolean): UseAccountsLogicRet
       return;
     }
     try {
-      await creditCardService.createInstallment(installFormCardId, {
+      const data: any = {
         description: installForm.description,
         totalAmount: Number(installForm.totalAmount),
         installmentCount: Number(installForm.installmentCount),
-        entryAmount: installForm.entryAmount ? Number(installForm.entryAmount) : null,
+        entryAmount: (installForm.entryAmount && !useCustomValues) ? Number(installForm.entryAmount) : null,
         dueDay: Number(installForm.dueDay),
         accountId: installForm.accountId || null,
         categoryId: installForm.categoryId || null,
-      });
+      };
+
+      if (useCustomValues && Number(installForm.installmentCount) > 1) {
+        const totalNum = Number(installForm.totalAmount);
+        const sumValues = installmentAmounts.reduce((acc, v) => acc + (Number(v) || 0), 0);
+        if (Math.abs(sumValues - totalNum) > 0.02) {
+          addToast(`Soma das parcelas (R$ ${sumValues.toFixed(2)}) não confere com o valor total (R$ ${totalNum.toFixed(2)})`, 'error');
+          return;
+        }
+        data.installmentValues = installmentAmounts.map((v) => ({
+          amount: Number(v) || 0,
+        }));
+      }
+
+      await creditCardService.createInstallment(installFormCardId, data);
       addToast('Compra parcelada adicionada!', 'success');
       setIsInstallFormOpen(false);
+      setUseCustomValues(false);
+      setInstallmentAmounts([]);
       fetchInstallments();
       refreshData();
     } catch (err: any) {
@@ -214,6 +234,7 @@ export function useAccountsLogic(isPrivacyEnabled: boolean): UseAccountsLogicRet
     setExpandedInstallId, setInstallForm,
     openInstallModal, handleCardSaved, handleAccountSaved,
     handleDeleteAccount, handleDeleteCard, handleInstallSubmit, handleDeleteInstallment,
+    useCustomValues, setUseCustomValues, installmentAmounts, setInstallmentAmounts,
     menuRef, cardMenuRef,
   };
 }
