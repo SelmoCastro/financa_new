@@ -16,18 +16,11 @@ export class ReportsService {
     );
 
     // Identify transfer transactions to exclude from dashboard.
-    // Exclude: (1) transactions with transferGroupId set (new /transfer pairs),
-    //          (2) legacy transfers whose description ENDS WITH "(Entrada)" or "(Saída)".
-    // Using endsWith instead of contains avoids filtering legitimate income
-    // like "Pagamento (Entrada)" where "(Entrada)" is part of the name, not a suffix.
+    // Only exclude transactions that have a transferGroupId (new /transfer pairs).
+    // Legacy transfers without transferGroupId are included as normal income/expense
+    // to avoid filtering legitimate transactions like "Pagamento casa (Entrada)".
     const filterOutTransfers = {
-      NOT: {
-        OR: [
-          { transferGroupId: { not: null } },
-          { description: { endsWith: '(Entrada)' } },
-          { description: { endsWith: '(Saída)' } },
-        ],
-      },
+      transferGroupId: null,
     };
 
     // 1. Calculate General Balance (All time)
@@ -395,14 +388,9 @@ export class ReportsService {
     const m = month !== undefined ? month : now.getMonth();
 
     // Filter out transfer transactions (internal movements, not real expenses)
+    // Only exclude transactions that have a transferGroupId.
     const filterOutTransfers = {
-      NOT: {
-        OR: [
-          { transferGroupId: { not: null } },
-          { description: { endsWith: '(Entrada)' } },
-          { description: { endsWith: '(Saída)' } },
-        ],
-      },
+      transferGroupId: null,
     };
 
     // 1. Resumo do mês atual ou selecionado
