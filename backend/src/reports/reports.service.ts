@@ -325,14 +325,14 @@ export class ReportsService {
         paidAmount: true,
         closingDate: true,
         dueDate: true,
-        creditCard: { select: { name: true } },
+        creditCard: { select: { name: true, deletedAt: true } },
       },
       orderBy: { dueDate: 'asc' },
     });
 
     // Filter out invoices whose credit card has been deleted
     const validUnpaidInvoices = unpaidInvoices.filter(
-      (inv) => inv.creditCard !== null,
+      (inv) => inv.creditCard?.deletedAt === null,
     );
 
     // Also include open (not yet closed) invoices — cards with unlinked CC transactions
