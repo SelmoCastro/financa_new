@@ -330,6 +330,11 @@ export class ReportsService {
       orderBy: { dueDate: 'asc' },
     });
 
+    // Filter out invoices whose credit card has been deleted
+    const validUnpaidInvoices = unpaidInvoices.filter(
+      (inv) => inv.creditCard !== null,
+    );
+
     // Also include open (not yet closed) invoices — cards with unlinked CC transactions
     // but no closed invoice for the current period
     const creditCards = await this.prisma.creditCard.findMany({
@@ -337,7 +342,7 @@ export class ReportsService {
       select: { id: true, name: true, closingDay: true, dueDay: true },
     });
 
-    const closedCardIds = new Set(unpaidInvoices.map((inv) => inv.creditCardId));
+    const closedCardIds = new Set(validUnpaidInvoices.map((inv) => inv.creditCardId));
     const currentMonth = new Date().getMonth() + 1;
     const currentYear = new Date().getFullYear();
 
@@ -387,7 +392,7 @@ export class ReportsService {
       });
     }
 
-    const allPendingInvoices = [...unpaidInvoices.map((inv) => ({
+    const allPendingInvoices = [...validUnpaidInvoices.map((inv) => ({
       ...inv,
       remaining: Number(inv.totalAmount) - Number(inv.paidAmount),
       creditCardName: inv.creditCard.name,
