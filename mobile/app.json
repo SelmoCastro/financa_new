@@ -2,7 +2,7 @@
   "expo": {
     "name": "Financa New",
     "slug": "mobile",
-    "version": "1.8.31",
+    "version": "1.8.32",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
