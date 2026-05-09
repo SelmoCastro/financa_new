@@ -812,6 +812,56 @@ export class TransactionsService {
       });
       if (deleteResult.count === 0) return { count: 0 };
 
+      // If this transaction is part of an installment, soft-delete all sibling
+      // installments (e.g. "Compra (2/5)" deletes also (1/5), (3/5), (4/5), (5/5))
+      let siblingCount = 0;
+      const deletedIds: string[] = [id];
+      if (oldTx.currentInstallment && oldTx.installmentCount) {
+        // Extract base description: "Compra (2/5)" → "Compra"
+        const baseDescription = oldTx.description.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
+        const siblingIds = await tx.transaction.findMany({
+          where: {
+            userId,
+            deletedAt: null,
+            description: { startsWith: baseDescription + ' (' },
+            creditCardId: oldTx.creditCardId,
+            installmentCount: oldTx.installmentCount,
+            id: { not: id },
+          },
+          select: { id: true },
+        });
+        if (siblingIds.length > 0) {
+          const siblingResult = await tx.transaction.updateMany({
+            where: {
+              id: { in: siblingIds.map(s => s.id) },
+              userId,
+              deletedAt: null,
+            },
+            data: { deletedAt: new Date() },
+          });
+          siblingCount = siblingResult.count;
+          deletedIds.push(...siblingIds.map(s => s.id));
+
+          // Revert balance for each sibling that has an accountId
+          for (const sibling of siblingIds) {
+            const sibTx = await tx.transaction.findFirst({
+              where: { id: sibling.id, userId },
+            });
+            if (sibTx?.accountId) {
+              const sibAmount = Number(sibTx.amount);
+              const revertAdj =
+                sibTx.type === 'INCOME' ? -sibAmount : sibTx.type === 'EXPENSE' ? sibAmount : 0;
+              if (revertAdj !== 0) {
+                await tx.account.updateMany({
+                  where: { id: sibTx.accountId, userId },
+                  data: { balance: { increment: revertAdj } },
+                });
+              }
+            }
+          }
+        }
+      }
+
       if (oldTx.accountId) {
         const oldAmount = Number(oldTx.amount);
         const revertAdj =
@@ -828,10 +878,13 @@ export class TransactionsService {
         }
       }
 
+      // Soft-delete the installment record if all transactions are deleted
+      // (future enhancement — currently no installmentId on transactions)
+
       // Audit log
       this.auditService.log(userId, AuditAction.DELETE, 'Transaction', id);
 
-      return { count: deleteResult.count };
+      return { count: deleteResult.count + siblingCount, deletedIds };
     });
   }
 

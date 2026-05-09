@@ -220,16 +220,16 @@ export default function DashboardScreen() {
                                 <MaterialIcons 
                                     name={forecast.availableReal < 0 ? "warning" : "account-balance-wallet"} 
                                     size={16} 
-                                    color={forecast.availableReal < 0 ? "#fecaca" : "#e0e7ff"} 
+                                    color={forecast.availableReal < 0 ? "#e11d48" : "#e0e7ff"} 
                                 />
                                 <Text style={[
                                     styles.cardLabelPrimary,
-                                    forecast.availableReal < 0 ? { color: "#fecaca" } : null
+                                    forecast.availableReal < 0 ? { color: "#e11d48" } : null
                                 ]}>Disponível (Mês)</Text>
                             </View>
                             <Text style={[
                                 styles.cardValuePrimary,
-                                forecast.availableReal < 0 ? { color: "white" } : null
+                                forecast.availableReal < 0 ? { color: "#9f1239" } : null
                             ]}>{formatValue(forecast.availableReal)}</Text>
                         </View>
 

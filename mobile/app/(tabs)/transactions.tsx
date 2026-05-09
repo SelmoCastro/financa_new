@@ -112,8 +112,11 @@ export default function TransactionsScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await api.delete(`/transactions/${id}`);
-                            setTransactions(prev => prev.filter(t => t.id !== id));
+                            const res = await api.delete(`/transactions/${id}`);
+                            // Backend may delete sibling installments too — remove all returned IDs
+                            // Interceptor already unwraps response.data.data → response.data
+                            const deletedIds: string[] = res.data?.deletedIds || [id];
+                            setTransactions(prev => prev.filter(t => !deletedIds.includes(t.id)));
                         } catch (error) {
                             Alert.alert('Erro', 'Falha ao excluir.');
                         }
