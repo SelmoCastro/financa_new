@@ -57,6 +57,7 @@ export class ReportsService {
       },
       _sum: { amount: true },
     });
+    console.log('[DEBUG] currentMonthGroup:', JSON.stringify(currentMonthGroup));
 
     let currentIncome = 0;
     let currentExpense = 0;
@@ -316,6 +317,7 @@ export class ReportsService {
     const monthlyHistory = Array.from(monthlyMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([, value]) => value);
+    console.log('[DEBUG] monthlyHistory:', JSON.stringify(monthlyHistory));
 
     // 6. Credit Card Debt — sum of unpaid invoice remaining amounts
     // Transactions with creditCardId but no invoiceId are "in-flight" (current period)
