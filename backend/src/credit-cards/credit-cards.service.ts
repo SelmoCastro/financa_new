@@ -102,7 +102,7 @@ export class CreditCardsService {
 
   async createInstallment(creditCardId: string, dto: CreateInstallmentDto, userId: string) {
     // Validate card belongs to user
-    await this.findOne(creditCardId, userId);
+    const card = await this.findOne(creditCardId, userId);
 
     const entryAmount = dto.entryAmount ? Number(dto.entryAmount) : 0;
     const totalAmount = Number(dto.totalAmount);
@@ -118,7 +118,7 @@ export class CreditCardsService {
       amountPerMonth = Math.round((totalAmount / installmentCount) * 100) / 100;
     }
 
-    return this.prisma.creditCardInstallment.create({
+    const installment = await this.prisma.creditCardInstallment.create({
       data: {
         description: dto.description,
         totalAmount: dto.totalAmount,
@@ -134,6 +134,47 @@ export class CreditCardsService {
       },
       include: { category: true, account: true, creditCard: true },
     });
+
+    // Gerar as transações mensais para cada parcela
+    // Isso faz com que a fatura atual some corretamente os parcelamentos
+    const startDate = new Date();
+    const transactionData: any[] = [];
+
+    for (let i = 1; i <= installmentCount; i++) {
+      // Calcular a data de vencimento de cada parcela
+      const monthOffset = i - 1;
+      const dueDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthOffset, dto.dueDay);
+      // Clamp day if month has fewer days
+      const expectedMonth = (startDate.getMonth() + monthOffset) % 12;
+      if (dueDate.getMonth() !== expectedMonth) {
+        dueDate.setDate(0); // último dia do mês anterior (= mês esperado)
+      }
+
+      const amount = (entryAmount > 0 && i === 1) ? entryAmount : amountPerMonth;
+
+      transactionData.push({
+        description: `${dto.description}${installmentCount > 1 ? ` (${i}/${installmentCount})` : ''}`,
+        amount,
+        date: dueDate,
+        type: 'EXPENSE',
+        creditCardId,
+        userId,
+        categoryId: dto.categoryId || null,
+        accountId: dto.accountId || null,
+        currentInstallment: i,
+        installmentCount,
+      });
+    }
+
+    await this.prisma.transaction.createMany({ data: transactionData });
+
+    // Atualizar currentInstallment no parcelamento
+    await this.prisma.creditCardInstallment.update({
+      where: { id: installment.id },
+      data: { currentInstallment: 1 },
+    });
+
+    return installment;
   }
 
   async getInstallments(userId: string, creditCardId?: string) {
@@ -167,7 +208,20 @@ export class CreditCardsService {
   }
 
   async deleteInstallment(id: string, userId: string) {
-    await this.findOneInstallment(id, userId);
+    const inst = await this.findOneInstallment(id, userId);
+
+    // Excluir transações associadas a este parcelamento
+    // Busca transações que correspondem à descrição do parcelamento no cartão
+    await this.prisma.transaction.deleteMany({
+      where: {
+        userId,
+        creditCardId: inst.creditCardId,
+        description: { startsWith: inst.description },
+        installmentCount: inst.installmentCount,
+        invoiceId: null, // Apenas transações não faturadas
+      },
+    });
+
     const result = await this.prisma.creditCardInstallment.deleteMany({
       where: { id, userId },
     });

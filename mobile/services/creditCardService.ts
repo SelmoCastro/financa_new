@@ -8,6 +8,7 @@ export interface CreditCardInstallmentDTO {
   currentInstallment: number;
   amountPerMonth: number;
   dueDay: number;
+  entryAmount: number | null;
   isActive: boolean;
   accountId: string | null;
   creditCardId: string;
@@ -15,13 +16,27 @@ export interface CreditCardInstallmentDTO {
   category: any;
   account: any;
   creditCard: any;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InstallmentScheduleItem {
+  month: number;
+  year: number;
+  amount: number;
+  installmentNumber: number;
+  isPaid: boolean;
+  isEntry: boolean;
 }
 
 export const creditCardService = {
   getInstallments: (cardId?: string) =>
     cardId
-      ? api.get(`/credit-cards/${cardId}/installments`)
-      : api.get('/credit-cards/installments/all'),
+      ? api.get<CreditCardInstallmentDTO[]>(`/credit-cards/${cardId}/installments`)
+      : api.get<CreditCardInstallmentDTO[]>('/credit-cards/installments/all'),
+
+  getAllInstallments: () =>
+    api.get<CreditCardInstallmentDTO[]>('/credit-cards/installments/all'),
 
   createInstallment: (
     cardId: string,
@@ -29,6 +44,7 @@ export const creditCardService = {
       description: string;
       totalAmount: number;
       installmentCount: number;
+      entryAmount?: number | null;
       dueDay: number;
       accountId?: string | null;
       categoryId?: string | null;
@@ -40,4 +56,7 @@ export const creditCardService = {
 
   deleteInstallment: (id: string) =>
     api.delete(`/credit-cards/installments/${id}`),
+
+  getInstallmentSchedule: (cardId: string) =>
+    api.get<InstallmentScheduleItem[]>(`/credit-cards/${cardId}/installments/schedule`),
 };

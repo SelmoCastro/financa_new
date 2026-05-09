@@ -12,6 +12,7 @@ import { Account, CreditCard } from '../../types';
 import { BankIcon } from '../../components/BankIcon';
 import { useCurrency } from '../../context/CurrencyContext';
 import { invoiceService, InvoiceDTO } from '../../services/invoiceService';
+import { creditCardService, CreditCardInstallmentDTO } from '../../services/creditCardService';
 
 const BANKS = [
     'Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander',
@@ -67,18 +68,41 @@ export default function AccountsScreen() {
     const [purchaseInstallments, setPurchaseInstallments] = useState('1');
     const [purchaseEntry, setPurchaseEntry] = useState('');
     const [purchaseDueDay, setPurchaseDueDay] = useState('');
+    const [purchaseAccountId, setPurchaseAccountId] = useState('');
+    const [purchaseCategoryId, setPurchaseCategoryId] = useState('');
+    const [categories, setCategories] = useState<any[]>([]);
+    const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+    const [isPurchaseAccountPickerOpen, setIsPurchaseAccountPickerOpen] = useState(false);
     const [savingPurchase, setSavingPurchase] = useState(false);
     const [invoiceRefreshKey, setInvoiceRefreshKey] = useState(0);
+
+    // Parcelas
+    const [installments, setInstallments] = useState<Record<string, CreditCardInstallmentDTO[]>>({});
 
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const [accRes, ccRes] = await Promise.all([
+            const [accRes, ccRes, catRes] = await Promise.all([
                 api.get('/accounts'),
-                api.get('/credit-cards')
+                api.get('/credit-cards'),
+                api.get('/categories'),
             ]);
             setAccounts(accRes.data);
             setCreditCards(ccRes.data);
+            setCategories(catRes.data || []);
+            // Fetch installments for all cards
+            try {
+                const instRes = await creditCardService.getAllInstallments();
+                const instData: CreditCardInstallmentDTO[] = instRes.data || instRes;
+                const grouped: Record<string, CreditCardInstallmentDTO[]> = {};
+                for (const inst of instData) {
+                    if (!grouped[inst.creditCardId]) grouped[inst.creditCardId] = [];
+                    grouped[inst.creditCardId].push(inst);
+                }
+                setInstallments(grouped);
+            } catch {
+                // Installments may not exist yet
+            }
         } catch (error) {
             console.error('Erro ao buscar dados:', error);
             Alert.alert('Erro', 'Não foi possível carregar as contas e cartões.');
@@ -349,7 +373,7 @@ export default function AccountsScreen() {
 
                             {/* Nova compra no cartão */}
                             <Pressable
-                                onPress={() => { setPurchaseCardId(cc.id); setPurchaseCardLimit(Number(cc.limit) || 0); setPurchaseCardUsed(Number(invoiceData[cc.id]?.totalAmount) || 0); setPurchaseDesc(''); setPurchaseTotal(''); setPurchaseInstallments('1'); setPurchaseEntry(''); setPurchaseDueDay(String(cc.dueDay || 10)); setPurchaseModal(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                onPress={() => { setPurchaseCardId(cc.id); setPurchaseCardLimit(Number(cc.limit) || 0); setPurchaseCardUsed(Number(invoiceData[cc.id]?.totalAmount) || 0); setPurchaseDesc(''); setPurchaseTotal(''); setPurchaseInstallments('1'); setPurchaseEntry(''); setPurchaseDueDay(String(cc.dueDay || 10)); setPurchaseAccountId(''); setPurchaseCategoryId(''); setPurchaseModal(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, backgroundColor: '#9333ea', borderRadius: 10, paddingVertical: 8 }}
                             >
                                 <MaterialIcons name="add-shopping-cart" size={16} color="white" />
@@ -368,6 +392,56 @@ export default function AccountsScreen() {
                               </View>
                               <CardInvoiceSection creditCardId={cc.id} creditCardName={cc.name} accounts={accounts} refreshKey={invoiceRefreshKey} />
                             </View>
+
+                            {/* Parcelas Ativas */}
+                            {installments[cc.id] && installments[cc.id].length > 0 && (
+                              <View className="mt-3 pt-3 border-t border-slate-100">
+                                <Text className="text-xs font-black text-purple-500 uppercase mb-2">Parcelas</Text>
+                                {installments[cc.id].filter(inst => inst.isActive).map(inst => (
+                                  <View key={inst.id} className="bg-purple-50 rounded-xl p-3 mb-2 border border-purple-100">
+                                    <View className="flex-row justify-between items-center">
+                                      <View className="flex-1">
+                                        <Text className="text-sm font-bold text-slate-800" numberOfLines={1}>{inst.description}</Text>
+                                        <Text className="text-xs text-purple-600 font-medium">
+                                          {inst.currentInstallment}/{inst.installmentCount}x de {formatCurrency(inst.amountPerMonth)}
+                                        </Text>
+                                        {inst.entryAmount && Number(inst.entryAmount) > 0 && (
+                                          <Text className="text-xs text-amber-600">Entrada: {formatCurrency(Number(inst.entryAmount))}</Text>
+                                        )}
+                                      </View>
+                                      <View className="items-end">
+                                        <Text className="text-sm font-black text-slate-800">{formatCurrency(inst.totalAmount)}</Text>
+                                        <Pressable
+                                          onPress={() => {
+                                            Alert.alert(
+                                                'Excluir Parcelamento',
+                                                `Deseja excluir "${inst.description}"? Todas as parcelas futuras serão removidas.`,
+                                                [
+                                                    { text: 'Cancelar', style: 'cancel' },
+                                                    {
+                                                        text: 'Excluir', style: 'destructive',
+                                                        onPress: async () => {
+                                                            try {
+                                                                await creditCardService.deleteInstallment(inst.id);
+                                                                fetchData();
+                                                            } catch {
+                                                                Alert.alert('Erro', 'Não foi possível excluir o parcelamento.');
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            );
+                                          }}
+                                          hitSlop={8}
+                                        >
+                                          <MaterialIcons name="delete-outline" size={18} color="#ef4444" />
+                                        </Pressable>
+                                      </View>
+                                    </View>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
                         </View>
                     ))}
                 </View>
@@ -493,6 +567,36 @@ export default function AccountsScreen() {
                                 onChangeText={(v) => setPurchaseEntry(formatCurrencyInput(v, currency))}
                             />
 
+                            {/* Categoria */}
+                            <Text style={styles.label}>Categoria (opcional)</Text>
+                            <Pressable
+                                onPress={() => { setIsCategoryPickerOpen(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                style={{ backgroundColor: '#f8fafc', borderRadius: 12, borderWidth: 1.5, borderColor: purchaseCategoryId ? '#4f46e5' : '#e2e8f0', paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}
+                            >
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                    <MaterialIcons name="category" size={18} color={purchaseCategoryId ? '#4f46e5' : '#94a3b8'} />
+                                    <Text style={{ fontSize: 15, fontWeight: '600', color: purchaseCategoryId ? '#1e293b' : '#94a3b8' }}>
+                                        {purchaseCategoryId ? (categories.find((c: any) => c.id === purchaseCategoryId)?.name || 'Categoria') : 'Sem categoria'}
+                                    </Text>
+                                </View>
+                                <MaterialIcons name="expand-more" size={20} color="#64748b" />
+                            </Pressable>
+
+                            {/* Conta para Débito */}
+                            <Text style={styles.label}>Conta para Débito (opcional)</Text>
+                            <Pressable
+                                onPress={() => { setIsPurchaseAccountPickerOpen(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                style={{ backgroundColor: '#f8fafc', borderRadius: 12, borderWidth: 1.5, borderColor: purchaseAccountId ? '#4f46e5' : '#e2e8f0', paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}
+                            >
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                    <MaterialIcons name="account-balance" size={18} color={purchaseAccountId ? '#4f46e5' : '#94a3b8'} />
+                                    <Text style={{ fontSize: 15, fontWeight: '600', color: purchaseAccountId ? '#1e293b' : '#94a3b8' }}>
+                                        {purchaseAccountId ? (accounts.find(a => a.id === purchaseAccountId)?.name || 'Conta') : 'Nenhuma'}
+                                    </Text>
+                                </View>
+                                <MaterialIcons name="expand-more" size={20} color="#64748b" />
+                            </Pressable>
+
                             {/* Prévia */}
                             {purchaseTotal && Number(purchaseInstallments) > 0 && (() => {
                                 const total = parseCurrencyToNumber(purchaseTotal) || 0;
@@ -548,25 +652,16 @@ export default function AccountsScreen() {
                                             const entryAmount = purchaseEntry ? parseCurrencyToNumber(purchaseEntry) : undefined;
                                             const dueDay = parseInt(purchaseDueDay) || 10;
 
-                                            if (installmentCount === 1) {
-                                                // Compra à vista no cartão
-                                                await api.post('/transactions', {
-                                                    description: purchaseDesc.trim(),
-                                                    amount: totalAmount,
-                                                    type: 'EXPENSE',
-                                                    creditCardId: purchaseCardId,
-                                                    date: new Date().toISOString().split('T')[0],
-                                                });
-                                            } else {
-                                                // Compra parcelada
-                                                await api.post(`/credit-cards/${purchaseCardId}/installments`, {
-                                                    description: purchaseDesc.trim(),
-                                                    totalAmount,
-                                                    installmentCount,
-                                                    ...(entryAmount ? { entryAmount } : {}),
-                                                    dueDay,
-                                                });
-                                            }
+                                            // Sempre usar o endpoint de installments (igual à web)
+                                            await creditCardService.createInstallment(purchaseCardId, {
+                                                description: purchaseDesc.trim(),
+                                                totalAmount,
+                                                installmentCount,
+                                                ...(entryAmount ? { entryAmount } : {}),
+                                                dueDay,
+                                                ...(purchaseAccountId ? { accountId: purchaseAccountId } : {}),
+                                                ...(purchaseCategoryId ? { categoryId: purchaseCategoryId } : {}),
+                                            });
                                             setPurchaseModal(false);
                                             setInvoiceRefreshKey(k => k + 1);
                                             fetchData();
@@ -587,6 +682,79 @@ export default function AccountsScreen() {
                         </ScrollView>
                     </View>
                 </KeyboardAvoidingView>
+
+                {/* Category Picker Modal */}
+                <Modal visible={isCategoryPickerOpen} transparent animationType="fade" onRequestClose={() => setIsCategoryPickerOpen(false)}>
+                    <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 24 }}>
+                        <View style={{ backgroundColor: 'white', borderRadius: 32, padding: 16, maxHeight: '80%' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingHorizontal: 8 }}>
+                                <Text style={{ fontSize: 18, fontWeight: '900', color: '#1e293b' }}>Categoria</Text>
+                                <Pressable onPress={() => setIsCategoryPickerOpen(false)} style={{ padding: 4 }}>
+                                    <MaterialIcons name="close" size={24} color="#94a3b8" />
+                                </Pressable>
+                            </View>
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                <Pressable
+                                    onPress={() => { setPurchaseCategoryId(''); setIsCategoryPickerOpen(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: !purchaseCategoryId ? '#f1f5f9' : 'transparent', borderRadius: 16, borderWidth: 1, borderColor: !purchaseCategoryId ? '#e2e8f0' : 'transparent', marginBottom: 8 }}
+                                >
+                                    <MaterialIcons name="block" size={22} color={!purchaseCategoryId ? '#4f46e5' : '#94a3b8'} style={{ marginRight: 14 }} />
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: !purchaseCategoryId ? '#4f46e5' : '#475569', flex: 1 }}>Sem categoria</Text>
+                                    {!purchaseCategoryId && <MaterialIcons name="check" size={20} color="#4f46e5" />}
+                                </Pressable>
+                                {categories.filter((c: any) => c.type === 'EXPENSE').map((c: any) => (
+                                    <Pressable
+                                        key={c.id}
+                                        onPress={() => { setPurchaseCategoryId(c.id); setIsCategoryPickerOpen(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                        style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: purchaseCategoryId === c.id ? '#f1f5f9' : 'transparent', borderRadius: 16, borderWidth: 1, borderColor: purchaseCategoryId === c.id ? '#e2e8f0' : 'transparent', marginBottom: 8 }}
+                                    >
+                                        <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: c.color || '#e2e8f0', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                            <Text style={{ fontSize: 14 }}>{c.icon || '📎'}</Text>
+                                        </View>
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: purchaseCategoryId === c.id ? '#4f46e5' : '#475569', flex: 1 }}>{c.name}</Text>
+                                        {purchaseCategoryId === c.id && <MaterialIcons name="check" size={20} color="#4f46e5" />}
+                                    </Pressable>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* Purchase Account Picker Modal */}
+                <Modal visible={isPurchaseAccountPickerOpen} transparent animationType="fade" onRequestClose={() => setIsPurchaseAccountPickerOpen(false)}>
+                    <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 24 }}>
+                        <View style={{ backgroundColor: 'white', borderRadius: 32, padding: 16, maxHeight: '70%' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingHorizontal: 8 }}>
+                                <Text style={{ fontSize: 18, fontWeight: '900', color: '#1e293b' }}>Conta para Débito</Text>
+                                <Pressable onPress={() => setIsPurchaseAccountPickerOpen(false)} style={{ padding: 4 }}>
+                                    <MaterialIcons name="close" size={24} color="#94a3b8" />
+                                </Pressable>
+                            </View>
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                <Pressable
+                                    onPress={() => { setPurchaseAccountId(''); setIsPurchaseAccountPickerOpen(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                    style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: !purchaseAccountId ? '#f1f5f9' : 'transparent', borderRadius: 16, borderWidth: 1, borderColor: !purchaseAccountId ? '#e2e8f0' : 'transparent', marginBottom: 8 }}
+                                >
+                                    <MaterialIcons name="block" size={22} color={!purchaseAccountId ? '#4f46e5' : '#94a3b8'} style={{ marginRight: 14 }} />
+                                    <Text style={{ fontSize: 16, fontWeight: '700', color: !purchaseAccountId ? '#4f46e5' : '#475569', flex: 1 }}>Nenhuma</Text>
+                                    {!purchaseAccountId && <MaterialIcons name="check" size={20} color="#4f46e5" />}
+                                </Pressable>
+                                {accounts.map(acc => (
+                                    <Pressable
+                                        key={acc.id}
+                                        onPress={() => { setPurchaseAccountId(acc.id); setIsPurchaseAccountPickerOpen(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                                        style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: purchaseAccountId === acc.id ? '#f1f5f9' : 'transparent', borderRadius: 16, borderWidth: 1, borderColor: purchaseAccountId === acc.id ? '#e2e8f0' : 'transparent', marginBottom: 8 }}
+                                    >
+                                        <MaterialIcons name="account-balance" size={22} color={purchaseAccountId === acc.id ? '#4f46e5' : '#94a3b8'} style={{ marginRight: 14 }} />
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: purchaseAccountId === acc.id ? '#4f46e5' : '#475569', flex: 1 }}>{acc.name}</Text>
+                                        <Text style={{ fontSize: 12, fontWeight: '600', color: purchaseAccountId === acc.id ? '#4f46e5' : '#94a3b8', marginRight: 8 }}>{ACCOUNT_TYPE_LABELS[acc.type] ?? acc.type}</Text>
+                                        {purchaseAccountId === acc.id && <MaterialIcons name="check" size={20} color="#4f46e5" />}
+                                    </Pressable>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    </View>
+                </Modal>
             </Modal>
         </>
     );
