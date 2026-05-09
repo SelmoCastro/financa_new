@@ -1,12 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
-import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('v1/app')
 export class AppVersionController {
-  constructor(private prisma: PrismaService) {}
-
   /**
    * Public endpoint — no auth required.
    * Mobile app checks this on startup to detect new versions.
@@ -76,39 +73,6 @@ export class AppVersionController {
         : null,
       minRequiredVersion,
       releaseNotes,
-    };
-  }
-
-  /**
-   * DEBUG: Temporary debug endpoint to check installment migration state.
-   * TODO: Remove after migration is verified.
-   */
-  @Get('debug-installments')
-  async debugInstallments() {
-    const installments = await this.prisma.creditCardInstallment.findMany({
-      where: { isActive: true },
-      select: { id: true, description: true, installmentCount: true, creditCardId: true, userId: true, startDate: true, amountPerMonth: true, entryAmount: true },
-    });
-
-    const txWithCard = await this.prisma.transaction.findMany({
-      where: { creditCardId: { not: null }, invoiceId: null, type: 'EXPENSE', deletedAt: null },
-      select: { id: true, description: true, amount: true, creditCardId: true, installmentCount: true, currentInstallment: true, date: true },
-      take: 50,
-      orderBy: { date: 'desc' },
-    });
-
-    const totalUninvoicedCredit = await this.prisma.transaction.aggregate({
-      where: { creditCardId: { not: null }, invoiceId: null, type: 'EXPENSE', deletedAt: null },
-      _sum: { amount: true },
-      _count: true,
-    });
-
-    return {
-      activeInstallments: installments.length,
-      installments,
-      uninvoicedCreditTransactions: txWithCard,
-      totalUninvoicedCredit: totalUninvoicedCredit._sum.amount,
-      totalUninvoicedCreditCount: totalUninvoicedCredit._count,
     };
   }
 }
