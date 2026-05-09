@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useCurrency } from '../../context/CurrencyContext';
 import { InstallFormData, InstallmentPreview } from './types';
@@ -17,9 +17,26 @@ export const InstallmentFormModal: React.FC<InstallmentFormModalProps> = ({
   installForm, installmentPreview, setInstallForm, onSubmit, onClose,
   creditCardLimit = 0, creditCardUsed = 0,
 }) => {
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, locale } = useCurrency();
   const availableLimit = creditCardLimit - creditCardUsed;
-  const currentTotal = Number(installForm.totalAmount) || 0;
+
+  // Currency input formatting
+  const formatCurrencyInput = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    const amount = parseInt(digits) / 100;
+    return amount.toLocaleString(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const parseCurrencyToNumber = (value: string): number => {
+    if (!value) return 0;
+    return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+  };
+
+  const currentTotal = parseCurrencyToNumber(installForm.totalAmount);
   const exceedsLimit = creditCardLimit > 0 && (creditCardUsed + currentTotal) > creditCardLimit;
 
   return (
@@ -34,13 +51,21 @@ export const InstallmentFormModal: React.FC<InstallmentFormModalProps> = ({
         <div className="p-6 space-y-4">
           <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Descrição</label>
           <input className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500" placeholder="Descrição (ex: Notebook, Geladeira)" value={installForm.description} onChange={e => setInstallForm({...installForm, description: e.target.value})} />
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Valor total (R$)</label>
-              <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Valor total" value={installForm.totalAmount} onChange={e => setInstallForm({...installForm, totalAmount: e.target.value})} />
+              <input
+                type="text"
+                inputMode="numeric"
+                className={`w-full p-3.5 bg-white dark:bg-slate-950 border rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 text-slate-900 dark:text-white ${exceedsLimit ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10' : 'border-slate-200 dark:border-slate-800 focus:border-cyan-500'}`}
+                placeholder="0,00"
+                value={installForm.totalAmount}
+                onChange={e => setInstallForm({...installForm, totalAmount: formatCurrencyInput(e.target.value)})}
+              />
               {creditCardLimit > 0 && (
                 <p className={`text-[10px] font-bold mt-1 ${exceedsLimit ? 'text-rose-500' : 'text-slate-400'}`}>
-                  {exceedsLimit ? 'Excede o limite!' : `Disponível: ${formatCurrency(availableLimit)} / ${formatCurrency(creditCardLimit)}`}
+                  {exceedsLimit ? 'Excede o limite!' : `Disponível: ${formatCurrency(availableLimit - currentTotal)} / ${formatCurrency(creditCardLimit)}`}
                 </p>
               )}
             </div>
@@ -51,8 +76,15 @@ export const InstallmentFormModal: React.FC<InstallmentFormModalProps> = ({
           </div>
           <div>
             <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Valor da entrada (opcional)</label>
-            <p className="text-[9px] text-slate-500 dark:text-slate-400 mb-2">Primeira parcela (deixa 0 se não houver entrada)</p>
-            <input type="number" step="0.01" min="0" className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white" placeholder="Valor da entrada (opcional)" value={installForm.entryAmount} onChange={e => setInstallForm({...installForm, entryAmount: e.target.value})} />
+            <p className="text-[9px] text-slate-500 dark:text-slate-400 mb-2">Primeira parcela (deixe 0 se não houver entrada)</p>
+            <input
+              type="text"
+              inputMode="numeric"
+              className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 text-slate-900 dark:text-white"
+              placeholder="0,00"
+              value={installForm.entryAmount}
+              onChange={e => setInstallForm({...installForm, entryAmount: formatCurrencyInput(e.target.value)})}
+            />
           </div>
           <div>
             <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">Dia do vencimento</label>
@@ -86,7 +118,7 @@ export const InstallmentFormModal: React.FC<InstallmentFormModalProps> = ({
 
           <div className="flex gap-3 pt-2">
             <button onClick={onClose} className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 rounded-xl">Cancelar</button>
-            <button onClick={onSubmit} className="flex-[2] py-3 text-[10px] font-black uppercase tracking-widest bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 shadow-lg shadow-cyan-600/20">Adicionar</button>
+            <button onClick={onSubmit} className={`flex-[2] py-3 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg ${(exceedsLimit) ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' : 'bg-cyan-600 text-white hover:bg-cyan-700 shadow-cyan-600/20'}`}>Adicionar</button>
           </div>
         </div>
       </div>

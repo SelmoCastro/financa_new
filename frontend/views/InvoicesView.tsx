@@ -8,10 +8,15 @@ import { InstallmentPreview } from '../views/accounts/types';
 export const InvoicesView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivacyEnabled }) => {
   const logic = useInvoicesLogic();
 
+  const parseCurrencyValue = (value: string): number => {
+    if (!value) return 0;
+    return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+  };
+
   const installmentPreview: InstallmentPreview | null = React.useMemo(() => {
-    const total = Number(logic.installForm.totalAmount) || 0;
+    const total = parseCurrencyValue(logic.installForm.totalAmount);
     const count = Number(logic.installForm.installmentCount) || 1;
-    const entry = Number(logic.installForm.entryAmount) || 0;
+    const entry = parseCurrencyValue(logic.installForm.entryAmount);
     if (total <= 0 || count < 1) return null;
     const perMonth = entry > 0 && count > 1
       ? Math.round(((total - entry) / (count - 1)) * 100) / 100

@@ -5,6 +5,12 @@ import { CreditCard } from '../../types';
 import { useData } from '../../context/DataProvider';
 import { useToast } from '../../context/ToastContext';
 
+/** Parse a currency-formatted string like "1.500,00" into a number */
+function parseCurrencyValue(value: string): number {
+  if (!value) return 0;
+  return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+}
+
 export interface InstallFormData {
   description: string;
   totalAmount: string;
@@ -175,7 +181,7 @@ export function useInvoicesLogic() {
       addToast('Preencha descrição e valor', 'error');
       return;
     }
-    const totalAmount = Number(installForm.totalAmount);
+    const totalAmount = parseCurrencyValue(installForm.totalAmount);
     if (totalAmount <= 0) {
       addToast('O valor deve ser maior que zero', 'error');
       return;
@@ -184,12 +190,17 @@ export function useInvoicesLogic() {
       addToast(`Valor ultrapassa o limite disponível. Disponível: R$ ${(installFormCardLimit - installFormCardUsed).toFixed(2)}`, 'error');
       return;
     }
+    const entryAmount = installForm.entryAmount ? parseCurrencyValue(installForm.entryAmount) : undefined;
+    if (entryAmount !== undefined && entryAmount >= totalAmount) {
+      addToast('O valor da entrada deve ser menor que o valor total', 'error');
+      return;
+    }
     try {
       await creditCardService.createInstallment(installFormCardId, {
         description: installForm.description,
-        totalAmount: Number(installForm.totalAmount),
+        totalAmount,
         installmentCount: Number(installForm.installmentCount),
-        entryAmount: installForm.entryAmount ? Number(installForm.entryAmount) : undefined,
+        entryAmount,
         dueDay: Number(installForm.dueDay),
         accountId: installForm.accountId || undefined,
         categoryId: installForm.categoryId || undefined,
