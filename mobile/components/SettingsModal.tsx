@@ -135,7 +135,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
+          <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll} contentContainerStyle={{ paddingBottom: 24 }}>
             {/* NOME */}
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>👤 Nome de Exibição</Text>
