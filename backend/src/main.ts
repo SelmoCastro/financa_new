@@ -43,6 +43,7 @@ async function bootstrap() {
       const installments = await prisma.creditCardInstallment.findMany({
         where: { isActive: true },
       });
+      console.log(`📋 Migração: encontrados ${installments.length} parcelamentos ativos`);
       let migrated = 0;
       for (const inst of installments) {
         // Checar se já tem transações associadas
@@ -56,6 +57,7 @@ async function bootstrap() {
             deletedAt: null,
           },
         });
+        console.log(`  🔍 "${inst.description}" (${inst.installmentCount}x) — ${existing.length} transações existentes`);
         if (existing.length >= inst.installmentCount) continue;
 
         // Remover parciais
@@ -95,9 +97,21 @@ async function bootstrap() {
           });
         }
         await prisma.transaction.createMany({ data: txData });
+        console.log(`  ✅ Criadas ${ic} transações para "${inst.description}" no cartão ${inst.creditCardId}`);
         migrated++;
       }
       if (migrated > 0) console.log(`✅ Migração parcelamentos: ${migrated} migrados`);
+      else console.log(`📋 Migração: nenhum parcelamento precisou de migração`);
+      
+      // Debug: verificar se transações com creditCardId existem
+      const txWithCard = await prisma.transaction.findMany({
+        where: { creditCardId: { not: null }, invoiceId: null, type: 'EXPENSE', deletedAt: null },
+        select: { id: true, creditCardId: true, description: true, amount: true, installmentCount: true },
+        take: 10,
+      });
+      console.log(`📋 Debug: ${txWithCard.length} transações não faturadas com creditCardId:`);
+      txWithCard.forEach(t => console.log(`  → ${t.description} | R$${t.amount} | card=${t.creditCardId} | installments=${t.installmentCount}`));
+      
       await prisma.$disconnect();
     } catch (migErr: any) {
       console.warn('⚠️  Migração de parcelamentos pulada:', migErr?.message || migErr);
