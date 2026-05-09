@@ -330,8 +330,71 @@ export class ReportsService {
       orderBy: { dueDate: 'asc' },
     });
 
-    const creditCardDebt = unpaidInvoices.reduce(
-      (sum, inv) => sum + Number(inv.totalAmount) - Number(inv.paidAmount),
+    // Also include open (not yet closed) invoices — cards with unlinked CC transactions
+    // but no closed invoice for the current period
+    const creditCards = await this.prisma.creditCard.findMany({
+      where: { userId, deletedAt: null },
+      select: { id: true, name: true, closingDay: true, dueDay: true },
+    });
+
+    const closedCardIds = new Set(unpaidInvoices.map((inv) => inv.creditCardId));
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+
+    const openInvoices: Array<{
+      id: string;
+      creditCardId: string;
+      creditCardName: string;
+      referenceMonth: number;
+      referenceYear: number;
+      totalAmount: number;
+      paidAmount: number;
+      remaining: number;
+      closingDate: Date;
+      dueDate: Date;
+    }> = [];
+
+    for (const card of creditCards) {
+      if (closedCardIds.has(card.id)) continue; // already has a closed invoice
+      const unlinkedTotal = await this.prisma.transaction.aggregate({
+        where: {
+          userId,
+          creditCardId: card.id,
+          deletedAt: null,
+          invoiceId: null,
+          type: 'EXPENSE',
+        },
+        _sum: { amount: true },
+      });
+      const total = Number(unlinkedTotal._sum.amount ?? 0);
+      if (total === 0) continue; // skip cards with no spending
+
+      // Calculate closing and due dates for the current period
+      const closingDate = new Date(currentYear, currentMonth - 1, card.closingDay);
+      const dueDate = new Date(currentYear, currentMonth, card.dueDay);
+
+      openInvoices.push({
+        id: `open-${card.id}`,
+        creditCardId: card.id,
+        creditCardName: card.name,
+        referenceMonth: currentMonth,
+        referenceYear: currentYear,
+        totalAmount: total,
+        paidAmount: 0,
+        remaining: total,
+        closingDate,
+        dueDate,
+      });
+    }
+
+    const allPendingInvoices = [...unpaidInvoices.map((inv) => ({
+      ...inv,
+      remaining: Number(inv.totalAmount) - Number(inv.paidAmount),
+      creditCardName: inv.creditCard.name,
+    })), ...openInvoices];
+
+    const creditCardDebt = allPendingInvoices.reduce(
+      (sum, inv) => sum + (inv.remaining || Number(inv.totalAmount) - Number(inv.paidAmount ?? 0)),
       0,
     );
 
@@ -364,17 +427,7 @@ export class ReportsService {
       },
       categorySummary,
       monthlyHistory,
-      pendingInvoices: unpaidInvoices.map((inv) => ({
-        id: inv.id,
-        creditCardName: inv.creditCard.name,
-        referenceMonth: inv.referenceMonth,
-        referenceYear: inv.referenceYear,
-        totalAmount: Number(inv.totalAmount),
-        paidAmount: Number(inv.paidAmount),
-        remaining: Number(inv.totalAmount) - Number(inv.paidAmount),
-        closingDate: inv.closingDate,
-        dueDate: inv.dueDate,
-      })),
+      pendingInvoices: allPendingInvoices,
     };
   }
 
