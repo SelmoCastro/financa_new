@@ -61,7 +61,7 @@ jobs:
           echo "🏥 Waiting for health check..."
           sleep 5
 
-          HTTP_CODE=$($SSH "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/v1/app/version")
+          HTTP_CODE=$($SSH "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/v1/app/version")
           if [[ "$HTTP_CODE" != "200" ]]; then
             echo "❌ Health check failed! HTTP $HTTP_CODE"
             $SSH "pm2 logs finanza-api --lines 30 --nostream"
