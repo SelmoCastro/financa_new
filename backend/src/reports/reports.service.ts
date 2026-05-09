@@ -260,7 +260,7 @@ export class ReportsService {
     categorySummary.sort((a, b) => b.value - a.value);
 
     // 5. Monthly History (Bar Chart Data)
-    // Limit to last 12 months to avoid showing future dates and keep chart readable
+    // Limit to last 12 months, up to current month (exclude future months from chart)
     const twelveMonthsAgo = new Date(
       Date.UTC(now.getFullYear(), now.getMonth() - 11, 1),
     );
@@ -271,6 +271,7 @@ export class ReportsService {
         ...filterOutTransfers,
         date: {
           gte: twelveMonthsAgo,
+          lte: endOfMonth,
         },
       },
       select: { date: true, amount: true, type: true },
