@@ -371,6 +371,8 @@ export class ReportsService {
         },
       },
       categorySummary,
+      // DEBUG: remove after verifying income fix
+      _debugCurrentMonthGroup: currentMonthGroup,
       monthlyHistory,
       pendingInvoices: unpaidInvoices.map((inv) => ({
         id: inv.id,
