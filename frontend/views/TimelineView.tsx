@@ -29,10 +29,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
 
     return (
         <div className="max-w-4xl mx-auto space-y-10 sm:space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="text-center space-y-2 sm:space-y-3">
-                <p className="text-[10px] font-black uppercase text-cyan-600 dark:text-cyan-400 tracking-[0.3em] mb-1">Jornada Temporal</p>
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-800 dark:text-white tracking-tight">Caminho Financeiro</h3>
-                <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium px-4">Sua história detalhada dia após dia</p>
+            <div className="text-center space-y-3 sm:space-y-4 px-4">
+                <p className="text-[10px] font-black uppercase text-cyan-600 dark:text-cyan-400 tracking-widest">Jornada Temporal</p>
+                <h3 className="text-xl sm:text-2xl md:text-4xl font-black text-slate-800 dark:text-white tracking-tight leading-tight">Caminho Financeiro</h3>
+                <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Sua história detalhada dia após dia</p>
             </div>
             <div className="relative px-2 md:px-0">
                 <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 via-blue-500 to-slate-200 dark:to-slate-800 -translate-x-1/2 rounded-full hidden md:block"></div>
