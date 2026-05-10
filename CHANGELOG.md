@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.46](https://github.com/SelmoCastro/financa_new/compare/v1.8.45...v1.8.46) (2026-05-10)
+
+
+### 🐛 Bug Fixes
+
+* **subscription:** update free plan limits - 1 AI/day, 1 CC, 1 account, 3 budgets, 3 goals ([4cfff0f](https://github.com/SelmoCastro/financa_new/commit/4cfff0fec23ab9b3dd0ee5f7415aa91aadc6ce81))
+
 ### [1.8.45](https://github.com/SelmoCastro/financa_new/compare/v1.8.44...v1.8.45) (2026-05-10)
 
 ### [1.8.44](https://github.com/SelmoCastro/financa_new/compare/v1.8.43...v1.8.44) (2026-05-10)
