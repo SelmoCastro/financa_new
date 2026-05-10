@@ -103,6 +103,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                     : 'Erro ao criar meta.';
                 addToast(msg, 'error');
             }
+        }
     };
 
     const handleDeposit = async (goal: Goal) => {
