@@ -1,6 +1,6 @@
 {
-  "version": "1.8.34",
-  "mobileVersion": "1.8.34",
+  "version": "1.8.35",
+  "mobileVersion": "1.8.35",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corrige double-counting de saldo: compras no cartão não debitam conta; apenas pagamento da fatura afeta o saldo. Adiciona DELETE /credit-card-invoices/:invoiceId para remover faturas revertendo pagamento."
+  "releaseNotes": "Corrige flicker do onboarding: widget aguarda carregamento dos dados antes de decidir se mostra ou não."
 }

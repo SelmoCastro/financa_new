@@ -9,7 +9,7 @@ interface OnboardingWidgetProps {
 }
 
 export const OnboardingWidget: React.FC<OnboardingWidgetProps> = ({ onAddAccount, onAddTransaction, onAddBudget }) => {
-    const { accounts, transactions, budgets } = useData();
+    const { accounts, transactions, budgets, isLoading } = useData();
 
     const steps = useMemo(() => [
         {
@@ -46,6 +46,7 @@ export const OnboardingWidget: React.FC<OnboardingWidgetProps> = ({ onAddAccount
         return (completed / steps.length) * 100;
     }, [steps]);
 
+    if (isLoading) return null;
     if (progress === 100) return null;
 
     return (
