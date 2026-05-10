@@ -152,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                   {moreMenuOpen && (
                     <>
                       <div className="fixed inset-0 z-[89]" onClick={() => setMoreMenuOpen(false)} />
-                      <div className="absolute bottom-full mb-2 right-0 left-0 sm:left-1/2 sm:-translate-x-1/2 sm:min-w-[200px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-2 z-[100]">
+                      <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-2 min-w-[200px] z-[100]">
                         {allMoreItems.map((item) => (
                           <button
                             key={item.id}
