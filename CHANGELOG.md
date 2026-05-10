@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.48](https://github.com/SelmoCastro/financa_new/compare/v1.8.47...v1.8.48) (2026-05-10)
+
+
+### ✨ Features
+
+* **frontend:** show friendly upgrade message on plan limit errors (403 Limite) ([7348570](https://github.com/SelmoCastro/financa_new/commit/734857059096739fe896fcf785eef7fe3cb637e7))
+
 ### [1.8.47](https://github.com/SelmoCastro/financa_new/compare/v1.8.46...v1.8.47) (2026-05-10)
 
 
