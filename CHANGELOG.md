@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.49](https://github.com/SelmoCastro/financa_new/compare/v1.8.48...v1.8.49) (2026-05-10)
+
+
+### 🐛 Bug Fixes
+
+* **frontend:** add missing closing brace in GoalsView.tsx (v1.8.48 build failed) ([44c6067](https://github.com/SelmoCastro/financa_new/commit/44c6067ff7c92d9f9ac6b1ef84fe41864a06d503))
+
 ### [1.8.48](https://github.com/SelmoCastro/financa_new/compare/v1.8.47...v1.8.48) (2026-05-10)
 
 
