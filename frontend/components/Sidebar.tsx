@@ -130,30 +130,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
         return (
           <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[90]">
             <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-200/50 dark:border-slate-800/50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-1" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-              <div className="flex items-center justify-around h-14">
+              <div className="flex items-center justify-around h-12">
                 {primaryItems.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => { setActiveTab(item.id); setMoreMenuOpen(false); }}
-                    className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 rounded-xl active:scale-95 transition-all ${activeTab === item.id ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                    className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-0.5 rounded-xl active:scale-95 transition-all ${activeTab === item.id ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
                   >
-                    <item.icon className={`w-5 h-5 transition-transform ${activeTab === item.id ? 'scale-110' : ''}`} />
-                    <span className="text-[10px] font-semibold leading-none">{item.label}</span>
+                    <item.icon className={`w-[18px] h-[18px] transition-transform ${activeTab === item.id ? 'scale-110' : ''}`} />
+                    <span className="text-[9px] font-semibold leading-none">{item.label}</span>
                   </button>
                 ))}
                 <button
                   onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 rounded-xl active:scale-95 transition-all ${isMoreActive || moreMenuOpen ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-0.5 rounded-xl active:scale-95 transition-all ${isMoreActive || moreMenuOpen ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
                 >
-                  <LayoutGrid className="w-5 h-5" />
-                  <span className="text-[10px] font-semibold leading-none">Mais</span>
+                  <LayoutGrid className="w-[18px] h-[18px]" />
+                  <span className="text-[9px] font-semibold leading-none">Mais</span>
                 </button>
               </div>
             </div>
             {moreMenuOpen && (
               <>
                 <div className="fixed inset-0 z-[89]" onClick={() => setMoreMenuOpen(false)} />
-                <div className="fixed bottom-[84px] inset-x-0 mx-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-1 z-[100]">
+                <div className="fixed bottom-[68px] left-2 right-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-1 z-[100] max-w-md mx-auto">
                   {allMoreItems.map((item) => (
                     <button
                       key={item.id}
