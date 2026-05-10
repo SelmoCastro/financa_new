@@ -153,15 +153,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
             {moreMenuOpen && (
               <>
                 <div className="fixed inset-0 z-[89]" onClick={() => setMoreMenuOpen(false)} />
-                <div className="fixed bottom-[84px] left-2 right-2 sm:left-auto sm:right-4 sm:bottom-20 sm:w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-1.5 sm:p-2 z-[100]">
+                <div className="fixed bottom-[84px] inset-x-0 mx-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-1 z-[100]">
                   {allMoreItems.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => { setActiveTab(item.id); setMoreMenuOpen(false); }}
-                      className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 sm:px-3 sm:py-3 rounded-xl text-xs sm:text-sm transition-all ${activeTab === item.id ? 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                      className={`w-full flex items-center gap-2 px-2 py-2.5 rounded-xl text-xs transition-all ${activeTab === item.id ? 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
                     >
-                      <item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                      {item.label}
+                      <item.icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{item.label}</span>
                     </button>
                   ))}
                 </div>
