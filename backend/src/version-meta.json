@@ -1,6 +1,6 @@
 {
-  "version": "1.8.38",
-  "mobileVersion": "1.8.38",
+  "version": "1.8.39",
+  "mobileVersion": "1.8.39",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "ProjectionWidget: refetch ao criar/editar/deletar transacao. Desliga animacao do AreaChart."
+  "releaseNotes": "Projecao: grafico mostra ultimos 15 dias + previstos 15 dias. Inclui transacoes reais no grafico, nao so recorrentes."
 }

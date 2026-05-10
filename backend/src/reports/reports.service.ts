@@ -672,49 +672,105 @@ export class ReportsService {
     // Projected final balance
     const projectedBalance = currentBalance + upcomingIncome - upcomingExpenses - creditCardDebt;
 
-    // Build daily projection for the next 30 days
+    // Build daily projection: last 15 days + next 15 days
     const days: Array<{ date: string; balance: number; events: string[] }> = [];
-    let runningBalance = currentBalance;
+    const startDate = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
+
+    // Fetch ALL transactions from the last 15 days (for the history part of the chart)
+    const recentTxs = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        deletedAt: null,
+        date: { gte: startDate },
+      },
+      select: { date: true, type: true, amount: true, description: true },
+      orderBy: { date: 'asc' },
+    });
+
+    // Group transactions by date
+    const txByDate = new Map<string, { type: string; amount: number; desc: string }[]>();
+    for (const tx of recentTxs) {
+      const key = tx.date.toISOString().split('T')[0];
+      if (!txByDate.has(key)) txByDate.set(key, []);
+      txByDate.get(key)!.push({ type: tx.type, amount: Number(tx.amount), desc: tx.description });
+    }
+
+    // Calculate starting balance (15 days ago): income - expense before the window
+    const incomeBefore = await this.prisma.transaction.aggregate({
+      where: {
+        userId,
+        accountId: { not: null },
+        deletedAt: null,
+        date: { lt: startDate },
+        type: 'INCOME',
+      },
+      _sum: { amount: true },
+    });
+    const expenseBefore = await this.prisma.transaction.aggregate({
+      where: {
+        userId,
+        accountId: { not: null },
+        deletedAt: null,
+        date: { lt: startDate },
+        type: 'EXPENSE',
+      },
+      _sum: { amount: true },
+    });
+    let runningBalance = (Number(incomeBefore._sum.amount) || 0) - (Number(expenseBefore._sum.amount) || 0);
 
     for (let i = 0; i < 30; i++) {
-      const day = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
+      const day = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+      const dayKey = day.toISOString().split('T')[0];
       const dayDueDay = day.getDate();
       const dayMonth = day.getMonth() + 1;
 
       const events: string[] = [];
 
-      // Recurring items due on this day
-      const dayItems = activeRecurring.filter(
-        (r) => r.dueDay === dayDueDay && !confirmedSet.has(r.description.toLowerCase().trim()),
-      );
-      for (const item of dayItems) {
-        const val = Number(item.amount);
-        if (item.type === 'INCOME') {
-          runningBalance += val;
-          events.push(`+ ${item.description}: R$${val.toFixed(2)}`);
+      // Past transactions on this day
+      const dayTxs = txByDate.get(dayKey) || [];
+      for (const tx of dayTxs) {
+        if (tx.type === 'INCOME') {
+          runningBalance += tx.amount;
+          events.push(`+ ${tx.desc}: R$${tx.amount.toFixed(2)}`);
         } else {
-          runningBalance -= val;
-          events.push(`- ${item.description}: R$${val.toFixed(2)}`);
+          runningBalance -= tx.amount;
+          events.push(`- ${tx.desc}: R$${tx.amount.toFixed(2)}`);
         }
       }
 
-      // Invoice due dates
-      for (const inv of unpaidInvoices) {
-        const dueDate = new Date(inv.dueDate);
-        if (
-          dueDate.getDate() === dayDueDay &&
-          dueDate.getMonth() + 1 === dayMonth
-        ) {
-          const remaining = Number(inv.totalAmount) - Number(inv.paidAmount);
-          if (remaining > 0) {
-            // Invoice due date doesn't auto-debit — it's informational
-            events.push(`Fatura cartão vence: R$${remaining.toFixed(2)}`);
+      // Future: recurring items due on this day (only for future days)
+      if (day >= now) {
+        const dayItems = activeRecurring.filter(
+          (r) => r.dueDay === dayDueDay && !confirmedSet.has(r.description.toLowerCase().trim()),
+        );
+        for (const item of dayItems) {
+          const val = Number(item.amount);
+          if (item.type === 'INCOME') {
+            runningBalance += val;
+            events.push(`+ ${item.description}: R$${val.toFixed(2)}`);
+          } else {
+            runningBalance -= val;
+            events.push(`- ${item.description}: R$${val.toFixed(2)}`);
+          }
+        }
+
+        // Invoice due dates
+        for (const inv of unpaidInvoices) {
+          const dueDate = new Date(inv.dueDate);
+          if (
+            dueDate.getDate() === dayDueDay &&
+            dueDate.getMonth() + 1 === dayMonth
+          ) {
+            const remaining = Number(inv.totalAmount) - Number(inv.paidAmount);
+            if (remaining > 0) {
+              events.push(`Fatura cartão vence: R$${remaining.toFixed(2)}`);
+            }
           }
         }
       }
 
       days.push({
-        date: day.toISOString().split('T')[0],
+        date: dayKey,
         balance: runningBalance,
         events,
       });
