@@ -429,6 +429,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                     <div className="glass-card p-6 md:p-8 rounded-[2.5rem]">
                         <h3 className="text-lg font-black text-slate-800 dark:text-white mb-6">Alocação de Recursos</h3>
                         <div className="h-64 relative mx-auto">
+                            {categorySummary.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%" minWidth={150} minHeight={150}>
                                 <PieChart>
                                     <Pie data={categorySummary} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value">
@@ -441,6 +442,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     />
                                 </PieChart>
                             </ResponsiveContainer>
+                            ) : (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <p className="text-sm text-slate-400 dark:text-slate-500">Sem dados de categorização</p>
+                                </div>
+                            )}
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                 <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Despesas</span>
                                 <span className="text-xl font-black text-slate-800 dark:text-white">100%</span>

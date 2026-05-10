@@ -1,6 +1,6 @@
 {
-  "version": "1.8.35",
-  "mobileVersion": "1.8.35",
+  "version": "1.8.36",
+  "mobileVersion": "1.8.36",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corrige flicker do onboarding: widget aguarda carregamento dos dados antes de decidir se mostra ou não."
+  "releaseNotes": "Remove nginx limit_req (causava 503 em SPA load). Protege PieChart contra render sem dados."
 }
