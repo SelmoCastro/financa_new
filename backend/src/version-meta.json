@@ -1,6 +1,6 @@
 {
-  "version": "1.8.36",
-  "mobileVersion": "1.8.36",
+  "version": "1.8.37",
+  "mobileVersion": "1.8.37",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Remove nginx limit_req (causava 503 em SPA load). Protege PieChart contra render sem dados."
+  "releaseNotes": "Desliga animacoes do Recharts (BarChart, PieChart). Remove animacao de entrada do dashboard. Dados aparecem instantaneos sem flicker."
 }

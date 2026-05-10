@@ -103,7 +103,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-8">
             <OnboardingWidget onAddAccount={onAddAccount} onAddTransaction={onAddTransaction} onAddBudget={onAddBudget} />
 
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-10">
@@ -224,8 +224,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                             formatter={(value: number) => isPrivacyEnabled ? '••••' : formatCurrency(value)}
                                         />
                                         <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }} />
-                                        <Bar name="Receitas" dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                        <Bar name="Despesas" dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                                        <Bar name="Receitas" dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                                        <Bar name="Despesas" dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             ) : (
@@ -432,7 +432,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             {categorySummary.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%" minWidth={150} minHeight={150}>
                                 <PieChart>
-                                    <Pie data={categorySummary} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value">
+                                    <Pie data={categorySummary} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value" isAnimationActive={false}>
                                         {categorySummary.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" />)}
                                     </Pie>
                                     <Tooltip 
