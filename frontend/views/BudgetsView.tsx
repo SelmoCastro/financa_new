@@ -90,10 +90,14 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
             setEditingBudget(null);
             setIsModalOpen(false);
             fetchBudgets(); // Refresh to ensure calculation is correct
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao salvar:', error);
-            addToast('Erro ao salvar orçamento', 'error');
-        }
+            const message = error.response?.data?.message || '';
+            if (error.response?.status === 403 && message.includes('Limite')) {
+                addToast(`${message} 🚀`, 'error');
+            } else {
+                addToast('Erro ao salvar orçamento', 'error');
+            }
     };
 
     const handleDelete = async (id: string, categoryName: string) => {

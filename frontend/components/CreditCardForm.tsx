@@ -3,6 +3,7 @@ import { X, CreditCard as CreditCardIcon, ChevronDown } from 'lucide-react';
 import { Account, CreditCard, ACCOUNT_TYPE_LABELS } from '../types';
 import api from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import { useToast } from '../context/ToastContext';
 
 interface CreditCardFormProps {
     accounts: Account[];
@@ -72,10 +73,14 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
             }
             onSave();
             onClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao salvar cartão', error);
-            alert('Erro ao salvar cartão. Verifique os dados.');
-        } finally {
+            const message = error.response?.data?.message || '';
+            if (error.response?.status === 403 && message.includes('Limite')) {
+                addToast(`${message} 🚀`, 'error');
+            } else {
+                addToast('Erro ao salvar cartão. Verifique os dados.', 'error');
+            }
             setIsLoading(false);
         }
     };

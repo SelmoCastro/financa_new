@@ -94,11 +94,15 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
             fetchGoals();
         } catch (error: any) {
             console.error('Erro ao salvar meta:', error);
-            const msg = error.response?.data?.message
-                ? (Array.isArray(error.response.data.message) ? error.response.data.message[0] : error.response.data.message)
-                : 'Erro ao criar meta.';
-            addToast(msg, 'error');
-        }
+            const message = error.response?.data?.message || '';
+            if (error.response?.status === 403 && message.includes('Limite')) {
+                addToast(`${message} 🚀`, 'error');
+            } else {
+                const msg = error.response?.data?.message
+                    ? (Array.isArray(error.response.data.message) ? error.response.data.message[0] : error.response.data.message)
+                    : 'Erro ao criar meta.';
+                addToast(msg, 'error');
+            }
     };
 
     const handleDeposit = async (goal: Goal) => {

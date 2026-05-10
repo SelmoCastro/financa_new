@@ -3,6 +3,7 @@ import { X, Wallet, ChevronDown } from 'lucide-react';
 import api from '../services/api';
 import { BANKS } from '../constants';
 import { useCurrency } from '../context/CurrencyContext';
+import { useToast } from '../context/ToastContext';
 
 interface AccountFormProps {
     accountToEdit?: any;
@@ -70,9 +71,14 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
             }
             onSave();
             onClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao salvar conta', error);
-            alert('Erro ao salvar conta. Verifique os dados.');
+            const message = error.response?.data?.message || '';
+            if (error.response?.status === 403 && message.includes('Limite')) {
+                addToast(`${message} 🚀`, 'error');
+            } else {
+                addToast('Erro ao salvar conta. Verifique os dados.', 'error');
+            }
         } finally {
             setIsLoading(false);
         }
