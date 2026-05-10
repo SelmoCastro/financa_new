@@ -141,34 +141,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                     <span className="text-[10px] font-semibold leading-none">{item.label}</span>
                   </button>
                 ))}
-                <div className="relative flex-1">
-                  <button
-                    onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                    className={`flex flex-col items-center justify-center gap-0.5 w-full py-1 rounded-xl active:scale-95 transition-all ${isMoreActive || moreMenuOpen ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-                  >
-                    <LayoutGrid className="w-5 h-5" />
-                    <span className="text-[10px] font-semibold leading-none">Mais</span>
-                  </button>
-                  {moreMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-[89]" onClick={() => setMoreMenuOpen(false)} />
-                      <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-2 min-w-[200px] z-[100]">
-                        {allMoreItems.map((item) => (
-                          <button
-                            key={item.id}
-                            onClick={() => { setActiveTab(item.id); setMoreMenuOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all ${activeTab === item.id ? 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
-                          >
-                            <item.icon className="w-5 h-5" />
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
+                <button
+                  onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 rounded-xl active:scale-95 transition-all ${isMoreActive || moreMenuOpen ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                >
+                  <LayoutGrid className="w-5 h-5" />
+                  <span className="text-[10px] font-semibold leading-none">Mais</span>
+                </button>
               </div>
             </div>
+            {moreMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-[89]" onClick={() => setMoreMenuOpen(false)} />
+                <div className="absolute bottom-[70px] left-3 right-3 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-2 z-[100]">
+                  {allMoreItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => { setActiveTab(item.id); setMoreMenuOpen(false); }}
+                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all ${activeTab === item.id ? 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                    >
+                      <item.icon className="w-5 h-5" />
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </nav>
         );
       })()}
