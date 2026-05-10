@@ -16,6 +16,8 @@ import { CreateInstallmentDto } from './dto/create-installment.dto';
 import { UpdateInstallmentDto } from './dto/update-installment.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
+import { PlanGuard, REQUIRED_PLAN_KEY } from '../subscription/plan.guard';
+import { SetMetadata } from '@nestjs/common';
 
 @Controller({
   path: 'credit-cards',
@@ -27,6 +29,8 @@ export class CreditCardsController {
 
   @Post()
   @RequireVerifiedEmail()
+  @UseGuards(PlanGuard)
+  @SetMetadata(REQUIRED_PLAN_KEY, 'free')
   create(@Body() createCreditCardDto: CreateCreditCardDto, @Request() req) {
     return this.creditCardsService.create(createCreditCardDto, req.user.userId);
   }

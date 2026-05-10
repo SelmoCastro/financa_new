@@ -15,6 +15,8 @@ import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
+import { PlanGuard, REQUIRED_PLAN_KEY } from '../subscription/plan.guard';
+import { SetMetadata } from '@nestjs/common';
 
 @Controller({
   path: 'goals',
@@ -26,6 +28,8 @@ export class GoalsController {
 
   @Post()
   @RequireVerifiedEmail()
+  @UseGuards(PlanGuard)
+  @SetMetadata(REQUIRED_PLAN_KEY, 'free')
   create(@Body() createGoalDto: CreateGoalDto, @Request() req) {
     return this.goalsService.create(createGoalDto, req.user.userId);
   }

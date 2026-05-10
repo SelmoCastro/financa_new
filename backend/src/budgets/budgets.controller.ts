@@ -15,6 +15,8 @@ import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
+import { PlanGuard, REQUIRED_PLAN_KEY } from '../subscription/plan.guard';
+import { SetMetadata } from '@nestjs/common';
 
 @Controller({
   path: 'budgets',
@@ -26,6 +28,8 @@ export class BudgetsController {
 
   @Post()
   @RequireVerifiedEmail()
+  @UseGuards(PlanGuard)
+  @SetMetadata(REQUIRED_PLAN_KEY, 'free')
   create(@Body() createBudgetDto: CreateBudgetDto, @Request() req) {
     return this.budgetsService.create(createBudgetDto, req.user.userId);
   }
