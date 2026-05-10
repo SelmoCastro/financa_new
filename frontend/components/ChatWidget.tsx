@@ -84,7 +84,7 @@ export const ChatWidget: React.FC = () => {
             {/* Floating Trigger */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`fixed bottom-24 lg:bottom-6 right-6 z-[999] p-4 rounded-2xl shadow-2xl transition-all duration-300 active:scale-90 flex items-center gap-2 group ${isOpen
+                className={`fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-[999] p-3 sm:p-4 rounded-2xl shadow-2xl transition-all duration-300 active:scale-90 flex items-center gap-2 group ${isOpen
                     ? 'bg-rose-500 text-white rotate-90 scale-110'
                     : 'bg-cyan-600 text-white hover:bg-cyan-700 hover:scale-110'
                     }`}
@@ -98,7 +98,7 @@ export const ChatWidget: React.FC = () => {
             </button>
 
             {/* Chat Panel */}
-            <div className={`fixed bottom-40 lg:bottom-24 right-6 z-[999] w-[90vw] md:w-[450px] h-[65vh] lg:h-[75vh] max-h-[700px] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-500 ease-in-out origin-bottom-right ${isOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-20 opacity-0 scale-90 pointer-events-none'
+            <div className={`fixed bottom-36 lg:bottom-24 right-4 sm:right-6 z-[999] w-[92vw] sm:w-[90vw] md:w-[450px] h-[60vh] sm:h-[65vh] lg:h-[75vh] max-h-[700px] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-500 ease-in-out origin-bottom-right ${isOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-20 opacity-0 scale-90 pointer-events-none'
                 }`}>
                 {/* Header */}
                 <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 p-6 text-white flex items-center justify-between shadow-md z-10">

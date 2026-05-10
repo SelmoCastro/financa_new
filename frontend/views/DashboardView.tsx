@@ -156,7 +156,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                     transition={{ duration: 0.5 }}
                     className="lg:col-span-12"
                 >
-                    <div className="bg-gradient-to-br from-cyan-600 to-blue-700 rounded-[2.5rem] p-6 md:p-8 text-white shadow-xl shadow-cyan-100 dark:shadow-none flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group animate-float">
+                    <div className="bg-gradient-to-br from-cyan-600 to-blue-700 rounded-2xl md:rounded-[2.5rem] p-4 md:p-8 text-white shadow-xl shadow-cyan-100 dark:shadow-none flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group animate-float">
                         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
 
                         <div className="flex-1 space-y-4 relative z-10">
@@ -203,7 +203,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                 </motion.div>
 
                 <div className="lg:col-span-8 space-y-6 md:space-y-8">
-                    <div className="glass-card p-4 md:p-8 rounded-[2.5rem] overflow-hidden">
+                    <div className="glass-card p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] overflow-hidden">
                         <div className="mb-8">
                             <h3 className="text-lg font-black text-slate-800 dark:text-white">Performance Mensal</h3>
                             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Fluxo consolidado de caixa</p>
@@ -258,7 +258,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                        <div className="glass-card p-6 rounded-[2.5rem]">
+                        <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem]">
                             {isLoading ? (
                                 <div className="space-y-4">
                                     <Skeleton className="h-4 w-32" />
@@ -291,7 +291,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             )}
                         </div>
                         <div className="space-y-6">
-                            <div className="glass-card p-6 rounded-[2.5rem] relative overflow-hidden">
+                            <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] relative overflow-hidden">
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Top Gastos</h3>
                                     <Trophy className="w-4 h-4 text-amber-500" />
@@ -314,7 +314,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </div>
                             </div>
 
-                            <div className="glass-card p-6 rounded-[2.5rem]">
+                            <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem]">
                                 <div className="flex justify-between items-center mb-2">
                                     <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Comprometimento</h3>
                                     <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${forecast.fixedRatio > 60 ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20' : 'bg-cyan-100 text-cyan-600 dark:bg-cyan-500/20'}`}>
@@ -343,7 +343,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                 </div>
 
                 <div className="lg:col-span-4 space-y-6 md:space-y-8">
-                    <div className="glass-card p-6 md:p-8 rounded-[2.5rem]">
+                    <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem]">
                         <div className="flex justify-between items-start mb-6">
                             <div>
                                 <h3 className="text-lg font-black text-slate-800 dark:text-white">Regra 50/30/20</h3>
@@ -426,7 +426,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             )}
                         </div>
                     </div>
-                    <div className="glass-card p-6 md:p-8 rounded-[2.5rem]">
+                    <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem]">
                         <h3 className="text-lg font-black text-slate-800 dark:text-white mb-6">Alocação de Recursos</h3>
                         <div className="h-64 relative mx-auto">
                             {categorySummary.length > 0 ? (
@@ -468,7 +468,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                     </div>
 
                     {pendingInvoices.length > 0 && (
-                        <div className="glass-card p-6 md:p-8 rounded-[2.5rem]">
+                        <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem]">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <h3 className="text-lg font-black text-slate-800 dark:text-white">Faturas Pendentes</h3>

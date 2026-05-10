@@ -137,7 +137,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                 </div>
             )}
 
-            <div className="glass-card rounded-[2.5rem] md:rounded-[3rem] overflow-hidden">
+            <div className="glass-card rounded-2xl md:rounded-[2.5rem] lg:rounded-[3rem] overflow-hidden">
                 {/* Header */}
                 <div className="p-8 md:p-12 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                     <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.3em] mb-2">Conta</p>

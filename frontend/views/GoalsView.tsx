@@ -228,7 +228,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                         const isComplete = progress >= 100;
 
                         return (
-                            <div key={goal.id} className="glass-card p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] relative overflow-hidden group hover:translate-y-[-6px] transition-all duration-300">
+                            <div key={goal.id} className="glass-card p-4 sm:p-8 md:p-10 rounded-2xl sm:rounded-[2.5rem] md:rounded-[3rem] relative overflow-hidden group hover:translate-y-[-6px] transition-all duration-300">
                                 {isComplete && (
                                     <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-black uppercase px-6 py-2 rounded-bl-[1.5rem] shadow-lg shadow-emerald-500/20 tracking-widest z-10 animate-pulse">
                                         Concluído

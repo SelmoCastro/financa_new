@@ -51,7 +51,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
                                     {group.transactions.map((tx) => (
                                         <div key={tx.id} className={`flex flex-col md:flex-row items-center gap-6 md:gap-12 ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
                                             <div className="w-full md:w-1/2 pl-12 md:pl-0">
-                                                <div className={`glass-card p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300 ${isEven ? 'md:mr-auto' : 'md:ml-auto'}`}>
+                                                <div className={`glass-card p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-[2rem] lg:rounded-[2.5rem] relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300 ${isEven ? 'md:mr-auto' : 'md:ml-auto'}`}>
                                                     <div className={`absolute top-0 left-0 bottom-0 w-2 ${tx.type === 'INCOME' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
                                                     <div className="flex justify-between items-start gap-4">
                                                         <div className="space-y-2 overflow-hidden">

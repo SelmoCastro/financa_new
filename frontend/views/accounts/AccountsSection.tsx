@@ -41,7 +41,7 @@ export const AccountsSection: React.FC<AccountsSectionProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Card Total */}
-        <div className="bg-gradient-to-br from-cyan-600 to-blue-700 text-white rounded-[2.5rem] p-8 shadow-xl shadow-cyan-600/20 relative overflow-hidden group">
+        <div className="bg-gradient-to-br from-cyan-600 to-blue-700 text-white rounded-2xl md:rounded-[2.5rem] p-8 shadow-xl shadow-cyan-600/20 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full -mt-20 -mr-20 blur-3xl group-hover:opacity-20 transition-all duration-700"></div>
           <p className="text-cyan-100 font-black uppercase tracking-[0.2em] text-[10px] mb-4 relative z-10">Saldo Consolidado</p>
           <h4 className="text-4xl font-black tracking-tighter relative z-10">
@@ -73,7 +73,7 @@ export const AccountsSection: React.FC<AccountsSectionProps> = ({
           </div>
         ) : (
           accounts.map(acc => (
-            <div key={acc.id} className="glass-card rounded-[2.5rem] p-8 hover:translate-y-[-4px] transition-all duration-300 group" style={{ overflow: 'visible' }}>
+            <div key={acc.id} className="glass-card rounded-2xl md:rounded-[2.5rem] p-4 md:p-8 hover:translate-y-[-4px] transition-all duration-300 group" style={{ overflow: 'visible' }}>
               <div className="flex justify-between items-start mb-8">
                 <div className="p-1 bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
                   <BankIcon name={acc.name} type={acc.type} />

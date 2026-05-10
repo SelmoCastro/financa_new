@@ -147,7 +147,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
             {isLoading ? (
                 <div className="text-center py-12 text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-xs">Carregando orçamentos...</div>
             ) : budgets.length === 0 ? (
-                <div className="text-center py-20 glass-card rounded-[2.5rem] border-dashed border-slate-200 dark:border-slate-800">
+                <div className="text-center py-16 sm:py-20 glass-card rounded-2xl sm:rounded-[2.5rem] border-dashed border-slate-200 dark:border-slate-800">
                     <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-sm">
                         <PiggyBank className="w-10 h-10 text-slate-300 dark:text-slate-600" />
                     </div>
@@ -157,7 +157,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {budgets.map((budget) => (
-                        <div key={budget.categoryId} className="glass-card p-8 rounded-[2.5rem] relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300">
+                        <div key={budget.categoryId} className="glass-card p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300">
                             <div className="flex justify-between items-start mb-6">
                                 <div className="space-y-1 min-w-0 flex-1 mr-4">
                                     <h3 className="font-black text-slate-800 dark:text-white text-xl tracking-tight truncate">{budget.categoryObj?.name || 'Categoria'}</h3>

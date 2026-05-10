@@ -41,9 +41,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[200] flex items-center justify-center p-4 transition-all duration-300">
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200 dark:border-slate-800">
-                <div className="px-8 py-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/50">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all duration-300">
+            <div className="bg-white dark:bg-slate-900 rounded-t-[2rem] sm:rounded-[2.5rem] shadow-2xl w-full sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-in zoom-in-95 duration-300 border border-slate-200 dark:border-slate-800">
+                <div className="px-4 sm:px-8 py-5 sm:py-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-950/50">
                     <div className="space-y-1">
                         <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">Comunicação</p>
                         <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-4">
