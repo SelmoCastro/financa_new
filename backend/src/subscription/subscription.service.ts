@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export type PlanType = 'free' | 'premium';
 
 export const PLAN_LIMITS: Record<PlanType, { aiRequestsPerDay: number; maxAccounts: number; maxBudgets: number; maxCreditCards: number; maxGoals: number }> = {
-  free: { aiRequestsPerDay: 10, maxAccounts: 5, maxBudgets: 5, maxCreditCards: 5, maxGoals: 5 },
+  free: { aiRequestsPerDay: 1, maxAccounts: 1, maxBudgets: 3, maxCreditCards: 1, maxGoals: 3 },
   premium: { aiRequestsPerDay: -1, maxAccounts: -1, maxBudgets: -1, maxCreditCards: -1, maxGoals: -1 }, // -1 = unlimited
 };
 
