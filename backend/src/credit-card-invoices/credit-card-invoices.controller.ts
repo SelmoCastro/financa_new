@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Req, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Req, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { CreditCardInvoiceService } from './credit-card-invoices.service';
@@ -57,5 +57,16 @@ export class CreditCardInvoiceController {
     @Req() req: any,
   ) {
     return this.invoiceService.getInvoiceHistory(creditCardId, req.user.userId);
+  }
+
+  /**
+   * Remove uma fatura, revertendo pagamentos e desvinculando transações.
+   */
+  @Delete(':invoiceId')
+  removeInvoice(
+    @Param('invoiceId', ParseUUIDPipe) invoiceId: string,
+    @Req() req: any,
+  ) {
+    return this.invoiceService.remove(invoiceId, req.user.userId);
   }
 }

@@ -41,4 +41,8 @@ export const invoiceService = {
   /** Get paid invoice history for a card */
   getHistory: (creditCardId: string) =>
     api.get<InvoiceDTO[]>(`/credit-card-invoices/${creditCardId}/history`),
+
+  /** Delete an invoice, reverting payments and unlinking transactions */
+  deleteInvoice: (invoiceId: string) =>
+    api.delete<{ deleted: boolean; revertedAmount: number; revertedPayments: number }>(`/credit-card-invoices/${invoiceId}`),
 };

@@ -490,4 +490,77 @@ export class CreditCardInvoiceService {
 
     return { closed, skipped };
   }
+
+  /**
+   * Remove uma fatura e reverte qualquer impacto no saldo da conta.
+   *
+   * - Se a fatura tem pagamentos (paidAmount > 0), reverte o débito na conta
+   * - Desvincula transações de compra (seta invoiceId=null, NÃO deleta)
+   * - Deleta as transações de pagamento (aquelas criadas pelo payInvoice)
+   * - Deleta a fatura
+   */
+  async remove(invoiceId: string, userId: string) {
+    const invoice = await this.getInvoiceOrThrow(invoiceId, userId);
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Busca transações de PAGAMENTO vinculadas a esta fatura
+      //    (criadas pelo payInvoice — são EXPENSE com accountId + invoiceId)
+      const paymentTxs = await tx.transaction.findMany({
+        where: {
+          invoiceId,
+          userId,
+          deletedAt: null,
+          type: 'EXPENSE',
+          accountId: { not: null },
+          description: { startsWith: 'Pagamento fatura' },
+        },
+        select: { id: true, amount: true, accountId: true },
+      });
+
+      // 2. Para cada pagamento, reverte o débito na conta (com lock)
+      for (const p of paymentTxs) {
+        if (p.accountId) {
+          const payAmount = Number(p.amount);
+
+          // Lock da conta
+          const rows = await tx.$queryRaw<
+            { id: string; balance: number }[]
+          >`SELECT id, balance FROM "Account" WHERE id = ${p.accountId} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE`;
+
+          if (rows[0]) {
+            // Reverte: pagamento é EXPENSE que decrementou → agora incrementa
+            await tx.account.updateMany({
+              where: { id: p.accountId, userId },
+              data: { balance: { increment: payAmount } },
+            });
+          }
+        }
+      }
+
+      // 3. Deleta as transações de pagamento (hard delete — não faz sentido mantê-las)
+      if (paymentTxs.length > 0) {
+        await tx.transaction.deleteMany({
+          where: { id: { in: paymentTxs.map((t) => t.id) }, userId },
+        });
+      }
+
+      // 4. Desvincula transações de COMPRA (seta invoiceId=null, NÃO deleta)
+      //    São as transações que representam gastos no cartão
+      await tx.transaction.updateMany({
+        where: { invoiceId, userId, deletedAt: null },
+        data: { invoiceId: null },
+      });
+
+      // 5. Deleta a fatura
+      await tx.creditCardInvoice.delete({
+        where: { id: invoiceId },
+      });
+
+      return {
+        deleted: true,
+        revertedAmount: paymentTxs.reduce((sum, t) => sum + Number(t.amount), 0),
+        revertedPayments: paymentTxs.length,
+      };
+    });
+  }
 }

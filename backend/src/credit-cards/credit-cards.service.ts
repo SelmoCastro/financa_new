@@ -180,7 +180,11 @@ export class CreditCardsService {
         creditCardId,
         userId,
         categoryId: dto.categoryId || null,
-        accountId: dto.accountId || null,
+        // CRITICAL: NUNCA definir accountId em transações de cartão de crédito.
+        // O saldo da conta só é afetado quando a FATURA é paga (payInvoice).
+        // Se accountId fosse setado aqui, o saldo seria debitado 2x:
+        //   1) na criação da compra  2) no pagamento da fatura = double-counting.
+        accountId: null,
         currentInstallment: i + 1,
         installmentCount,
       });

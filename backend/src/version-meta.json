@@ -1,6 +1,6 @@
 {
-  "version": "1.8.18",
-  "mobileVersion": "1.8.18",
+  "version": "1.8.34",
+  "mobileVersion": "1.8.34",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Remove tab Alertas do menu inferior, adiciona icone sino no header da Home"
+  "releaseNotes": "Corrige double-counting de saldo: compras no cartão não debitam conta; apenas pagamento da fatura afeta o saldo. Adiciona DELETE /credit-card-invoices/:invoiceId para remover faturas revertendo pagamento."
 }
