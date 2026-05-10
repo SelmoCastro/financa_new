@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight, MessageSquareHeart, Shield, CreditCard } from 'lucide-react';
 import { version } from '../package.json';
 
@@ -12,6 +12,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen, onOpenFeedback, isAdmin }) => {
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const allMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
     { id: 'accounts', label: 'Contas', icon: Wallet },
@@ -117,20 +118,60 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
       </aside>
 
       {/* Mobile Nav */}
-      <nav className="lg:hidden fixed bottom-6 left-4 right-4 z-[90]">
-        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-slate-200/50 dark:border-slate-800/50 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-2 flex items-center justify-around">
-          {menuItems.filter(i => i.id !== 'feedbacks' && i.id !== 'admin').concat([{ id: 'settings', label: 'Ajustes', icon: Settings } as any]).map((item: any) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center justify-center gap-1 transition-all px-2 flex-shrink-0 min-w-[64px] h-[56px] rounded-2xl active:scale-90 ${activeTab === item.id ? 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10' : 'text-slate-400'}`}
-            >
-              <item.icon className={`w-6 h-6 ${activeTab === item.id ? 'scale-110' : ''} transition-transform`} />
-              <span className="text-[9px] font-black tracking-tight uppercase whitespace-nowrap leading-none">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      {(() => {
+        const mobileItems = menuItems.filter(i => i.id !== 'feedbacks' && i.id !== 'admin');
+        const primaryIds = ['dashboard', 'accounts', 'invoices', 'history'];
+        const primaryItems = mobileItems.filter(i => primaryIds.includes(i.id));
+        const moreItems = mobileItems.filter(i => !primaryIds.includes(i.id));
+        const settingsItem = { id: 'settings', label: 'Ajustes', icon: Settings };
+        const allMoreItems = [...moreItems, settingsItem];
+        const isMoreActive = allMoreItems.some(i => i.id === activeTab);
+
+        return (
+          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[90]">
+            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-200/50 dark:border-slate-800/50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-1" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+              <div className="flex items-center justify-around h-14">
+                {primaryItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => { setActiveTab(item.id); setMoreMenuOpen(false); }}
+                    className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1 rounded-xl active:scale-95 transition-all ${activeTab === item.id ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                  >
+                    <item.icon className={`w-5 h-5 transition-transform ${activeTab === item.id ? 'scale-110' : ''}`} />
+                    <span className="text-[10px] font-semibold leading-none">{item.label}</span>
+                  </button>
+                ))}
+                <div className="relative flex-1">
+                  <button
+                    onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                    className={`flex flex-col items-center justify-center gap-0.5 w-full py-1 rounded-xl active:scale-95 transition-all ${isMoreActive || moreMenuOpen ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                  >
+                    <LayoutGrid className="w-5 h-5" />
+                    <span className="text-[10px] font-semibold leading-none">Mais</span>
+                  </button>
+                  {moreMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-[89]" onClick={() => setMoreMenuOpen(false)} />
+                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-2 min-w-[180px] z-[100]">
+                        {allMoreItems.map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => { setActiveTab(item.id); setMoreMenuOpen(false); }}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${activeTab === item.id ? 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                          >
+                            <item.icon className="w-4 h-4" />
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </nav>
+        );
+      })()}
     </>
   );
 };

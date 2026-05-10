@@ -272,7 +272,7 @@ const AppContent: React.FC = () => {
       {!isFormOpen && !isImportOpen && (
         <button
           onClick={handleOpenTransactionForm}
-          className="fixed lg:hidden bottom-[100px] sm:bottom-[100px] right-4 md:right-8 z-50 bg-cyan-600 hover:bg-cyan-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95 group"
+          className="fixed lg:hidden bottom-20 right-4 z-50 bg-cyan-600 hover:bg-cyan-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95 group"
           title="Novo Lançamento"
           style={{ boxShadow: '0 10px 25px -5px rgba(6, 182, 212, 0.4)' }}
         >
