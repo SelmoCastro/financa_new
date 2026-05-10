@@ -1,6 +1,6 @@
 {
-  "version": "1.8.37",
-  "mobileVersion": "1.8.37",
+  "version": "1.8.38",
+  "mobileVersion": "1.8.38",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Desliga animacoes do Recharts (BarChart, PieChart). Remove animacao de entrada do dashboard. Dados aparecem instantaneos sem flicker."
+  "releaseNotes": "ProjectionWidget: refetch ao criar/editar/deletar transacao. Desliga animacao do AreaChart."
 }

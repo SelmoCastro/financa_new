@@ -25,10 +25,10 @@ interface ProjectionWidgetProps {
 export const ProjectionWidget: React.FC<ProjectionWidgetProps> = ({ isPrivacyEnabled }) => {
   const { formatCurrency } = useCurrency();
   const { selectedDate } = useMonth();
+  const { transactions } = useData(); // Re-fetch when transactions change (add/update/delete)
   const [projection, setProjection] = useState<ProjectionData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     const fetchProjection = async () => {
@@ -46,7 +46,7 @@ export const ProjectionWidget: React.FC<ProjectionWidgetProps> = ({ isPrivacyEna
     };
 
     fetchProjection();
-  }, []); // Only fetch once on mount (projection is forward-looking)
+  }, [transactions, selectedDate]);
 
   const chartData = useMemo(() => {
     if (!projection) return [];
@@ -143,7 +143,7 @@ export const ProjectionWidget: React.FC<ProjectionWidgetProps> = ({ isPrivacyEna
                 labelFormatter={(label) => `Dia ${new Date(label).toLocaleDateString('pt-BR')}`}
                 formatter={(value: number, name: string) => [name === 'saldo' ? formatCurrency(value) : `${value} evento(s)`, name === 'saldo' ? 'Saldo' : 'Eventos']}
               />
-              <Area type="monotone" dataKey="saldo" stroke="#06b6d4" strokeWidth={2} fill="url(#projectionGradient)" dot={false} />
+              <Area type="monotone" dataKey="saldo" stroke="#06b6d4" strokeWidth={2} fill="url(#projectionGradient)" dot={false} isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
