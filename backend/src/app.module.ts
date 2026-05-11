@@ -30,6 +30,7 @@ import { AdminModule } from './admin/admin.module';
 import { AppVersionModule } from './app-version/app-version.module';
 import { ErrorsModule } from './errors/errors.module';
 import { RecurringTransactionsModule } from './recurring-transactions/recurring-transactions.module';
+import { PaymentsModule } from './payments/payments.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AutoTransactionScheduler } from './scheduler/auto-transaction.scheduler';
 
@@ -64,6 +65,7 @@ import { AutoTransactionScheduler } from './scheduler/auto-transaction.scheduler
     AppVersionModule,
     ErrorsModule,
     RecurringTransactionsModule,
+    PaymentsModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],

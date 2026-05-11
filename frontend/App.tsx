@@ -8,6 +8,7 @@ import { ActionMenu } from './components/ActionMenu';
 import { ImportOverlay } from './components/import/ImportOverlay';
 import { FeedbackModal } from './components/FeedbackModal';
 import { SmartBanner } from './components/SmartBanner';
+import { UpgradeModal } from './components/UpgradeModal';
 import { AppProviders } from './components/AppProviders';
 import { ViewRouter } from './components/ViewRouter';
 import { ToastProvider, useToast } from './context/ToastContext';
@@ -29,6 +30,7 @@ const AppContent: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showVerifyBanner, setShowVerifyBanner] = useState(true);
@@ -73,6 +75,8 @@ const AppContent: React.FC = () => {
     };
     fetchProfile();
   }, []);
+
+  const handleOpenUpgrade = () => setIsUpgradeOpen(true);
 
   const totals = useMemo(() => ({
     balance: dashboardSummary?.balance || 0,
@@ -231,7 +235,8 @@ const AppContent: React.FC = () => {
                 onLogout={handleLogout}
                 onUserNameChange={(name) => setUserName(name)}
                 onUserEmailChange={(email) => setUserEmail(email)}
-              />
+                onUpgrade={handleOpenUpgrade}
+          />
             </motion.div>
           </AnimatePresence>
         </main>
@@ -267,6 +272,13 @@ const AppContent: React.FC = () => {
 
       {isFeedbackOpen && (
         <FeedbackModal onClose={() => setIsFeedbackOpen(false)} />
+      )}
+
+      {isUpgradeOpen && (
+        <UpgradeModal
+          onClose={() => setIsUpgradeOpen(false)}
+          currentPlan={userPlan}
+        />
       )}
 
       {!isFormOpen && !isImportOpen && (

@@ -29,6 +29,7 @@ interface ViewRouterProps {
   onLogout: () => void;
   onUserNameChange: (name: string) => void;
   onUserEmailChange: (email: string) => void;
+  onUpgrade: () => void;
 }
 
 export const ViewRouter: React.FC<ViewRouterProps> = ({
@@ -36,7 +37,7 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
   isPrivacyEnabled, isLoading, userName, userEmail, userPlan,
   onAddAccount, onAddTransaction, onAddBudget,
   onEditTransaction, onDeleteTransaction, onLogout,
-  onUserNameChange, onUserEmailChange,
+  onUserNameChange, onUserEmailChange, onUpgrade,
 }) => {
   switch (activeTab) {
     case 'dashboard':
@@ -58,7 +59,7 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
     case 'admin':
       return <AdminPanelView />;
     case 'settings':
-      return <SettingsView userName={userName} userEmail={userEmail} userPlan={userPlan} transactions={transactions} onLogout={onLogout} onNameChange={onUserNameChange} onEmailChange={onUserEmailChange} />;
+      return <SettingsView userName={userName} userEmail={userEmail} userPlan={userPlan} transactions={transactions} onLogout={onLogout} onNameChange={onUserNameChange} onEmailChange={onUserEmailChange} onUpgrade={onUpgrade} />;
     case 'invoices':
       return <InvoicesView isPrivacyEnabled={isPrivacyEnabled} />;
     default:

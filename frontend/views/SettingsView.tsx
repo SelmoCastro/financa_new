@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogOut, User, Mail, Lock, Trash2, Crown, Shield, ChevronDown, Check, Loader2, X } from 'lucide-react';
+import { LogOut, User, Mail, Lock, Trash2, Crown, Shield, ChevronDown, Check, Loader2, X, Sparkles } from 'lucide-react';
 import { Transaction } from '../types';
 import api from '../services/api';
 
@@ -11,9 +11,10 @@ interface SettingsViewProps {
     onLogout: () => void;
     onNameChange?: (name: string) => void;
     onEmailChange?: (email: string) => void;
+    onUpgrade?: () => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail, userPlan, transactions, onLogout, onNameChange, onEmailChange }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail, userPlan, transactions, onLogout, onNameChange, onEmailChange, onUpgrade }) => {
     // Edit name
     const [editingName, setEditingName] = useState(false);
     const [nameValue, setNameValue] = useState(userName);
@@ -305,6 +306,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     <Crown className="w-7 h-7" />
                                 </div>
                             </div>
+                            {!isPremium && (
+                                <button
+                                    onClick={() => onUpgrade?.()}
+                                    className="mt-4 w-full py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    <Sparkles className="w-4 h-4" />
+                                    Fazer Upgrade para Premium
+                                </button>
+                            )}
                         </div>
                     </div>
 
