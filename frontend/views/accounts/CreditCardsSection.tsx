@@ -3,6 +3,8 @@ import { MoreVertical, Edit3, Trash2, CreditCard as CreditCardIcon, Nfc, Shoppin
 import { CreditCard } from '../../types';
 import { CreditCardInstallmentDTO, computeSchedule } from '../../services/creditCardService';
 import { useCurrency } from '../../context/CurrencyContext';
+import { ReadOnlyBadge } from '../../components/ReadOnlyBadge';
+import { useExceeding } from '../../context/ExceedingContext';
 
 interface CreditCardsSectionProps {
   isPrivacyEnabled: boolean;
@@ -27,6 +29,7 @@ export const CreditCardsSection: React.FC<CreditCardsSectionProps> = ({
   onOpenInstallModal, onDeleteInstallment, onToggleExpand,
 }) => {
   const { formatCurrency } = useCurrency();
+  const { isExceeding } = useExceeding();
 
   return (
     <section className="pt-12 border-t border-slate-200 dark:border-slate-800">
@@ -65,6 +68,7 @@ export const CreditCardsSection: React.FC<CreditCardsSectionProps> = ({
               cardMenuRef={cardMenuRef}
               expandedInstallId={expandedInstallId}
               formatCurrency={formatCurrency}
+              isExceeding={isExceeding}
               onEditCard={onEditCard}
               onDeleteCard={onDeleteCard}
               onToggleCardMenu={onToggleCardMenu}
@@ -89,6 +93,7 @@ interface CreditCardItemProps {
   cardMenuRef: React.RefObject<HTMLDivElement | null>;
   expandedInstallId: string | null;
   formatCurrency: (v: number) => string;
+  isExceeding: (type: 'account' | 'budget' | 'creditCard' | 'goal', id: string) => boolean;
   onEditCard: (card: CreditCard) => void;
   onDeleteCard: (id: string, name: string) => void;
   onToggleCardMenu: (id: string | null) => void;
@@ -99,7 +104,7 @@ interface CreditCardItemProps {
 
 const CreditCardItem: React.FC<CreditCardItemProps> = ({
   card, isPrivacyEnabled, installments,
-  openCardMenuId, cardMenuRef, expandedInstallId, formatCurrency,
+  openCardMenuId, cardMenuRef, expandedInstallId, formatCurrency, isExceeding,
   onEditCard, onDeleteCard, onToggleCardMenu,
   onOpenInstallModal, onDeleteInstallment, onToggleExpand,
 }) => (
@@ -108,7 +113,10 @@ const CreditCardItem: React.FC<CreditCardItemProps> = ({
 
     <div className="flex justify-between items-start mb-16 relative z-10">
       <div>
-        <h5 className="text-2xl font-black tracking-tight mb-2">{card.name}</h5>
+        <div className="flex items-center gap-2 mb-2">
+          <h5 className="text-2xl font-black tracking-tight">{card.name}</h5>
+          <ReadOnlyBadge type="creditCard" id={card.id} />
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Débito em:</span>
           <span className="text-[10px] font-bold text-slate-300">{card.account?.name || 'Não associado'}</span>
@@ -129,14 +137,18 @@ const CreditCardItem: React.FC<CreditCardItemProps> = ({
             <div ref={cardMenuRef} className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 p-2">
               <button
                 onClick={() => { onEditCard(card); onToggleCardMenu(null); }}
-                className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all flex items-center gap-3 rounded-xl"
+                disabled={isExceeding('creditCard', card.id)}
+                className={`w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all flex items-center gap-3 rounded-xl ${isExceeding('creditCard', card.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={isExceeding('creditCard', card.id) ? 'Recurso em modo somente leitura' : ''}
               >
                 <Edit3 className="w-4 h-4" />
                 Editar Cartão
               </button>
               <button
                 onClick={() => onDeleteCard(card.id, card.name)}
-                className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-all flex items-center gap-3 rounded-xl"
+                disabled={isExceeding('creditCard', card.id)}
+                className={`w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-all flex items-center gap-3 rounded-xl ${isExceeding('creditCard', card.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={isExceeding('creditCard', card.id) ? 'Recurso em modo somente leitura' : ''}
               >
                 <Trash2 className="w-4 h-4" />
                 Excluir Cartão

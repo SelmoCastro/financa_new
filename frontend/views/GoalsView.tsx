@@ -3,6 +3,8 @@ import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { toYYYYMMDD } from '../utils/dateUtils';
 import { useCurrency } from '../context/CurrencyContext';
+import { ReadOnlyBadge } from '../components/ReadOnlyBadge';
+import { useExceeding } from '../context/ExceedingContext';
 import { PlusCircle, Target, Edit3, Trash2, Plus, Calendar, X, Tag, PiggyBank } from 'lucide-react';
 
 interface Goal {
@@ -25,6 +27,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
     const [isLoading, setIsLoading] = useState(false);
     const { addToast } = useToast();
     const { formatCurrency, currencySymbol, locale } = useCurrency();
+    const { isExceeding } = useExceeding();
 
     // Form State
     const [form, setForm] = useState({
@@ -246,21 +249,24 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
                                     </div>
                                     <div className="flex gap-2">
                                         <div className="flex gap-2 bg-slate-50 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                            <button onClick={() => openEditModal(goal)} className="p-2.5 text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm" title="Editar Meta">
+                                            <button onClick={() => openEditModal(goal)} disabled={isExceeding('goal', goal.id)} className={`p-2.5 text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm ${isExceeding('goal', goal.id) ? 'opacity-50 cursor-not-allowed' : ''}`} title={isExceeding('goal', goal.id) ? 'Recurso em modo somente leitura' : 'Editar Meta'}>
                                                 <Edit3 className="w-5 h-5" />
                                             </button>
-                                            <button onClick={() => handleDelete(goal)} className="p-2.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm" title="Excluir Meta">
+                                            <button onClick={() => handleDelete(goal)} disabled={isExceeding('goal', goal.id)} className={`p-2.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm ${isExceeding('goal', goal.id) ? 'opacity-50 cursor-not-allowed' : ''}`} title={isExceeding('goal', goal.id) ? 'Recurso em modo somente leitura' : 'Excluir Meta'}>
                                                 <Trash2 className="w-5 h-5" />
                                             </button>
                                         </div>
-                                        <button onClick={() => openDepositModal(goal)} className="p-4 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-all active:scale-90 shadow-sm border border-emerald-100 dark:border-emerald-500/20" title="Adicionar dinheiro">
+                                        <button onClick={() => openDepositModal(goal)} disabled={isExceeding('goal', goal.id)} className={`p-4 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-all active:scale-90 shadow-sm border border-emerald-100 dark:border-emerald-500/20 ${isExceeding('goal', goal.id) ? 'opacity-50 cursor-not-allowed' : ''}`} title={isExceeding('goal', goal.id) ? 'Recurso em modo somente leitura' : 'Adicionar dinheiro'}>
                                             <Plus className="w-6 h-6" />
                                         </button>
                                     </div>
                                 </div>
 
                                 <div className="space-y-1 mb-8 min-w-0">
-                                    <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors truncate">{goal.title}</h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors truncate">{goal.title}</h3>
+                                        <ReadOnlyBadge type="goal" id={goal.id} />
+                                    </div>
                                     <p className={`text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-[0.2em] ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
                                         Meta: {isPrivacyEnabled ? '•••' : formatCurrency(goal.targetAmount)}
                                     </p>

@@ -70,6 +70,7 @@ export class CreditCardsService {
     updateCreditCardDto: UpdateCreditCardDto,
     userId: string,
   ) {
+    await this.subscriptionService.checkNotExceeding(userId, 'creditCard', id);
     await this.findOne(id, userId);
     // V4: Validate accountId ownership if being changed
     if (updateCreditCardDto.accountId) {
@@ -89,6 +90,7 @@ export class CreditCardsService {
   }
 
   async remove(id: string, userId: string) {
+    await this.subscriptionService.checkNotExceeding(userId, 'creditCard', id);
     await this.findOne(id, userId);
     const result = await this.prisma.creditCard.updateMany({
       where: { id, userId, deletedAt: null },
@@ -101,6 +103,8 @@ export class CreditCardsService {
   // ─── Installment Methods ───
 
   async createInstallment(creditCardId: string, dto: CreateInstallmentDto, userId: string) {
+    // Bloquear se cartão é excedente (read-only)
+    await this.subscriptionService.checkNotExceeding(userId, 'creditCard', creditCardId);
     // Validate card belongs to user
     const card = await this.findOne(creditCardId, userId);
 
@@ -222,7 +226,8 @@ export class CreditCardsService {
   }
 
   async updateInstallment(id: string, dto: UpdateInstallmentDto, userId: string) {
-    await this.findOneInstallment(id, userId);
+    const inst = await this.findOneInstallment(id, userId);
+    await this.subscriptionService.checkNotExceeding(userId, 'creditCard', inst.creditCardId);
     const result = await this.prisma.creditCardInstallment.updateMany({
       where: { id, userId },
       data: dto,
@@ -233,6 +238,7 @@ export class CreditCardsService {
 
   async deleteInstallment(id: string, userId: string) {
     const inst = await this.findOneInstallment(id, userId);
+    await this.subscriptionService.checkNotExceeding(userId, 'creditCard', inst.creditCardId);
 
     // Excluir transações associadas a este parcelamento
     // Busca transações que correspondem à descrição do parcelamento no cartão

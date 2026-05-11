@@ -101,6 +101,7 @@ export class BudgetsService {
   }
 
   async update(id: string, updateBudgetDto: UpdateBudgetDto, userId: string) {
+    await this.subscriptionService.checkNotExceeding(userId, 'budget', id);
     const data: Record<string, unknown> = { ...updateBudgetDto };
 
     if (data.amount) {
@@ -128,6 +129,7 @@ export class BudgetsService {
   }
 
   async remove(id: string, userId: string) {
+    await this.subscriptionService.checkNotExceeding(userId, 'budget', id);
     return this.prisma.budget.updateMany({
       where: { id, userId, deletedAt: null },
       data: { deletedAt: new Date() },

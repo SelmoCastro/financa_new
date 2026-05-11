@@ -24,6 +24,11 @@ export class SubscriptionController {
     return this.subscriptionService.getLimits(req.user.userId);
   }
 
+  @Get('exceeding')
+  async getExceedingResources(@Request() req: RequestWithUser) {
+    return this.subscriptionService.getAllExceeding(req.user.userId);
+  }
+
   @Post('cancel')
   async cancelSubscription(@Request() req: RequestWithUser) {
     return this.subscriptionService.cancel(req.user.userId);

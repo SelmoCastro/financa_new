@@ -4,6 +4,8 @@ import { useToast } from '../context/ToastContext';
 import { useData } from '../context/DataProvider';
 import { useMonth } from '../context/MonthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { ReadOnlyBadge } from '../components/ReadOnlyBadge';
+import { useExceeding } from '../context/ExceedingContext';
 import { Category } from '../types';
 import { Plus, PiggyBank, Edit3, Trash2, X, ChevronDown } from 'lucide-react';
 
@@ -26,6 +28,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
     const { selectedDate } = useMonth();
     const { addToast } = useToast();
     const { formatCurrency, currencySymbol, locale } = useCurrency(); // Component State
+    const { isExceeding } = useExceeding();
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -165,7 +168,10 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                         <div key={budget.categoryId} className="glass-card p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300">
                             <div className="flex justify-between items-start mb-6">
                                 <div className="space-y-1 min-w-0 flex-1 mr-4">
-                                    <h3 className="font-black text-slate-800 dark:text-white text-xl tracking-tight truncate">{budget.categoryObj?.name || 'Categoria'}</h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-black text-slate-800 dark:text-white text-xl tracking-tight truncate">{budget.categoryObj?.name || 'Categoria'}</h3>
+                                        <ReadOnlyBadge type="budget" id={budget.id} />
+                                    </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Gasto Atual</span>
                                         <span className={`text-sm font-black ${budget.isOverBudget ? 'text-rose-500' : 'text-slate-600 dark:text-slate-300'} ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
@@ -177,15 +183,17 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => openEditModal(budget)}
-                                            className="p-2 text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-xl transition-all"
-                                            title="Editar Orçamento"
+                                            disabled={isExceeding('budget', budget.id)}
+                                            className={`p-2 text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-xl transition-all ${isExceeding('budget', budget.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            title={isExceeding('budget', budget.id) ? 'Recurso em modo somente leitura' : 'Editar Orçamento'}
                                         >
                                             <Edit3 className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(budget.id, budget.categoryObj?.name || 'Categoria')}
-                                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
-                                            title="Excluir Orçamento"
+                                            disabled={isExceeding('budget', budget.id)}
+                                            className={`p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all ${isExceeding('budget', budget.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            title={isExceeding('budget', budget.id) ? 'Recurso em modo somente leitura' : 'Excluir Orçamento'}
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>

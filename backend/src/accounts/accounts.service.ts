@@ -95,6 +95,7 @@ export class AccountsService {
   }
 
   async update(id: string, updateAccountDto: UpdateAccountDto, userId: string) {
+    await this.subscriptionService.checkNotExceeding(userId, 'account', id);
     await this.findOne(id, userId);
     const result = await this.prisma.account.updateMany({
       where: { id, userId, deletedAt: null },
@@ -105,6 +106,7 @@ export class AccountsService {
   }
 
   async remove(id: string, userId: string) {
+    await this.subscriptionService.checkNotExceeding(userId, 'account', id);
     await this.findOne(id, userId);
     return this.prisma.$transaction(async (tx) => {
       // V8: Reverse balance contributions from all active transactions BEFORE soft-deleting them
@@ -159,6 +161,7 @@ export class AccountsService {
    * Recalculates the correct balance by summing all active (non-soft-deleted) transactions.
    */
   async reconcile(id: string, userId: string) {
+    await this.subscriptionService.checkNotExceeding(userId, 'account', id);
     // V18: Lock the account row to prevent concurrent balance changes during reconciliation
     return this.prisma.$transaction(async (tx) => {
       const accounts = await tx.$queryRaw<Array<{ id: string; balance: number }>>`

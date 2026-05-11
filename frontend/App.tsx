@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { MonthSelector } from './components/MonthSelector';
 import { TransactionForm } from './components/TransactionForm';
+import { ExceedingProvider } from './context/ExceedingContext';
 import { NotificationCenter } from './components/NotificationCenter';
 import { ActionMenu } from './components/ActionMenu';
 import { ImportOverlay } from './components/import/ImportOverlay';
@@ -137,6 +138,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
+    <ExceedingProvider userPlan={userPlan}>
     <>
     <SmartBanner />
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex text-slate-900 dark:text-slate-100 selection:bg-cyan-100 dark:selection:bg-cyan-900 selection:text-cyan-900 dark:selection:text-cyan-100 transition-colors duration-300">
@@ -293,6 +295,7 @@ const AppContent: React.FC = () => {
       )}
     </div>
     </>
+    </ExceedingProvider>
   );
 };
 

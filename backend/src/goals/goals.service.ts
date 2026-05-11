@@ -48,16 +48,20 @@ export class GoalsService {
   }
 
   update(id: string, updateGoalDto: UpdateGoalDto, userId: string) {
-    return this.prisma.goal.updateMany({
-      where: { id, userId, deletedAt: null },
-      data: updateGoalDto,
-    });
+    return this.subscriptionService.checkNotExceeding(userId, 'goal', id).then(() =>
+      this.prisma.goal.updateMany({
+        where: { id, userId, deletedAt: null },
+        data: updateGoalDto,
+      }),
+    );
   }
 
   remove(id: string, userId: string) {
-    return this.prisma.goal.updateMany({
-      where: { id, userId, deletedAt: null },
-      data: { deletedAt: new Date() },
-    });
+    return this.subscriptionService.checkNotExceeding(userId, 'goal', id).then(() =>
+      this.prisma.goal.updateMany({
+        where: { id, userId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      }),
+    );
   }
 }

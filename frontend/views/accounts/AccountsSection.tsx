@@ -1,8 +1,10 @@
 import React from 'react';
 import { Wallet, Sparkles, Plus, MoreVertical, Edit3, Trash2 } from 'lucide-react';
 import { BankIcon } from '../../components/BankIcon';
+import { ReadOnlyBadge } from '../../components/ReadOnlyBadge';
 import { Account } from '../../types';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useExceeding } from '../../context/ExceedingContext';
 
 interface AccountsSectionProps {
   isPrivacyEnabled: boolean;
@@ -21,6 +23,7 @@ export const AccountsSection: React.FC<AccountsSectionProps> = ({
   onAddAccount, onEditAccount, onDeleteAccount, onToggleMenu,
 }) => {
   const { formatCurrency } = useCurrency();
+  const { isExceeding } = useExceeding();
 
   return (
     <section>
@@ -89,14 +92,18 @@ export const AccountsSection: React.FC<AccountsSectionProps> = ({
                     <div ref={menuRef} className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 p-2">
                       <button
                         onClick={() => onEditAccount(acc)}
-                        className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all flex items-center gap-3 rounded-xl"
+                        disabled={isExceeding('account', acc.id)}
+                        className={`w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-cyan-50 dark:hover:bg-slate-800 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all flex items-center gap-3 rounded-xl ${isExceeding('account', acc.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title={isExceeding('account', acc.id) ? 'Recurso em modo somente leitura' : ''}
                       >
                         <Edit3 className="w-4 h-4" />
                         Editar Conta
                       </button>
                       <button
                         onClick={() => onDeleteAccount(acc.id, acc.name)}
-                        className="w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-all flex items-center gap-3 rounded-xl"
+                        disabled={isExceeding('account', acc.id)}
+                        className={`w-full text-left px-4 py-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-all flex items-center gap-3 rounded-xl ${isExceeding('account', acc.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title={isExceeding('account', acc.id) ? 'Recurso em modo somente leitura' : ''}
                       >
                         <Trash2 className="w-4 h-4" />
                         Excluir Conta
@@ -106,7 +113,10 @@ export const AccountsSection: React.FC<AccountsSectionProps> = ({
                 </div>
               </div>
               <div className="space-y-1 mb-6">
-                <h5 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">{acc.name}</h5>
+                <div className="flex items-center gap-2">
+                  <h5 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">{acc.name}</h5>
+                  <ReadOnlyBadge type="account" id={acc.id} />
+                </div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{
                   acc.type === 'CHECKING' ? 'Conta Corrente' :
                     acc.type === 'SAVINGS' ? 'Conta Poupança' :

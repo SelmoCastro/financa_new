@@ -2,8 +2,10 @@ import React from 'react';
 import { AccountForm } from '../../components/AccountForm';
 import { useAccountsLogic } from './useAccountsLogic';
 import { AccountsSection } from './AccountsSection';
+import { useExceeding } from '../../context/ExceedingContext';
 
 export const AccountsView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivacyEnabled }) => {
+  const { isExceeding } = useExceeding();
   const logic = useAccountsLogic(isPrivacyEnabled);
 
   if (logic.isLoading) {
