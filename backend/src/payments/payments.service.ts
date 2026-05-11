@@ -2,21 +2,18 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionService } from '../subscription/subscription.service';
-import axios from 'axios';
 
 const MP_API = 'https://api.mercadopago.com';
 
-interface PreferenceItem {
-  id: string;
-  title: string;
-  description: string;
-  quantity: number;
-  currency_id: string;
-  unit_price: number;
-}
-
-interface PreferenceRequest {
-  items: PreferenceItem[];
+interface MercadoPagoPreference {
+  items: Array<{
+    id: string;
+    title: string;
+    description: string;
+    quantity: number;
+    currency_id: string;
+    unit_price: number;
+  }>;
   external_reference: string;
   notification_url: string;
   back_urls: {
@@ -43,11 +40,23 @@ export class PaymentsService {
     }
   }
 
-  private getHeaders() {
-    return {
-      Authorization: `Bearer ${this.accessToken}`,
+  private async mpRequest(path: string, options: RequestInit = {}): Promise<any> {
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${this.accessToken}`,
       'Content-Type': 'application/json',
     };
+
+    const response = await fetch(`${MP_API}${path}`, {
+      ...options,
+      headers: { ...headers, ...((options.headers as Record<string, string>) || {}) },
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`MercadoPago API error ${response.status}: ${body}`);
+    }
+
+    return response.json();
   }
 
   async createPreference(userId: string, plan: 'premium_monthly' | 'premium_annual') {
@@ -61,7 +70,7 @@ export class PaymentsService {
     const webhookUrl = this.configService.get<string>('MERCADOPAGO_WEBHOOK_URL')
       || `${this.configService.get<string>('API_URL') || 'https://api.finanzaai.tech'}/v1/payments/webhook`;
 
-    const preferenceData: PreferenceRequest = {
+    const preference: MercadoPagoPreference = {
       items: [{
         id: plan,
         title,
@@ -81,29 +90,28 @@ export class PaymentsService {
     };
 
     try {
-      const response = await axios.post(
-        `${MP_API}/checkout/preferences`,
-        preferenceData,
-        { headers: this.getHeaders() },
-      );
+      const response = await this.mpRequest('/checkout/preferences', {
+        method: 'POST',
+        body: JSON.stringify(preference),
+      });
 
       // Store pending payment record
       await this.prisma.payment.create({
         data: {
           userId,
-          mpPreferenceId: response.data.id,
+          mpPreferenceId: response.id,
           amount,
           planPurchased: plan,
           status: 'pending',
         },
       });
 
-      this.logger.log(`Preference created for user ${userId}: ${response.data.id}`);
+      this.logger.log(`Preference created for user ${userId}: ${response.id}`);
 
       return {
-        preferenceId: response.data.id,
-        initPoint: response.data.init_point,
-        sandboxInitPoint: response.data.sandbox_init_point,
+        preferenceId: response.id,
+        initPoint: response.init_point,
+        sandboxInitPoint: response.sandbox_init_point,
         amount,
         plan,
       };
@@ -144,12 +152,8 @@ export class PaymentsService {
       }
 
       // Fetch payment details from Mercado Pago
-      const response = await axios.get(
-        `${MP_API}/v1/payments/${mpPaymentId}`,
-        { headers: this.getHeaders() },
-      );
+      const mpData = await this.mpRequest(`/v1/payments/${mpPaymentId}`);
 
-      const mpData = response.data;
       const userId = mpData.external_reference;
       const status = mpData.status;
       const paymentMethod = mpData.payment_method_id;
