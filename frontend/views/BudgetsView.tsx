@@ -98,6 +98,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
             } else {
                 addToast('Erro ao salvar orçamento', 'error');
             }
+        }
     };
 
     const handleDelete = async (id: string, categoryName: string) => {

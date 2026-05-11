@@ -28,6 +28,7 @@ interface MercadoPagoPreference {
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
   private accessToken: string;
+  private isSandbox: boolean;
 
   constructor(
     private configService: ConfigService,
@@ -35,8 +36,12 @@ export class PaymentsService {
     private subscriptionService: SubscriptionService,
   ) {
     this.accessToken = this.configService.get<string>('MERCADOPAGO_ACCESS_TOKEN') || '';
+    this.isSandbox = this.accessToken.startsWith('TEST-') || this.accessToken.startsWith('APP_USR-');
     if (!this.accessToken) {
       this.logger.warn('MERCADOPAGO_ACCESS_TOKEN not set — payments disabled');
+    }
+    if (this.isSandbox) {
+      this.logger.log('Mercado Pago: modo SANDBOX ativo');
     }
   }
 
@@ -108,10 +113,13 @@ export class PaymentsService {
 
       this.logger.log(`Preference created for user ${userId}: ${response.id}`);
 
+      // Em sandbox usa sandbox_init_point, em producao usa init_point
+      const checkoutUrl = this.isSandbox ? response.sandbox_init_point : response.init_point;
+
       return {
         preferenceId: response.id,
-        initPoint: response.init_point,
-        sandboxInitPoint: response.sandbox_init_point,
+        initPoint: checkoutUrl,
+        sandbox: this.isSandbox,
         amount,
         plan,
       };
@@ -138,7 +146,7 @@ export class PaymentsService {
     }
 
     return this.processPayment(paymentId);
-  }
+  } // Webhook sempre retorna 200 pro MP nao reenviar
 
   async processPayment(mpPaymentId: string) {
     try {
@@ -202,7 +210,8 @@ export class PaymentsService {
       };
     } catch (error: any) {
       this.logger.error(`Failed to process payment ${mpPaymentId}: ${error.message}`);
-      throw error;
+      // Nao throw — webhook deve sempre retornar sucesso pro MP nao ficar reenviando
+      return { paymentId: mpPaymentId, status: 'error', error: error.message, upgraded: false };
     }
   }
 
