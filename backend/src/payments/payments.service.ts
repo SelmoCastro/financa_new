@@ -36,12 +36,11 @@ export class PaymentsService {
     private subscriptionService: SubscriptionService,
   ) {
     this.accessToken = this.configService.get<string>('MERCADOPAGO_ACCESS_TOKEN') || '';
-    this.isSandbox = this.accessToken.startsWith('TEST-') || this.accessToken.startsWith('APP_USR-');
+    // Sempre usar init_point (produção) — sandbox.mercadopago.com.br está instável/fora do ar.
+    // O MP redireciona para modo teste automaticamente quando o app é de teste.
+    this.isSandbox = false;
     if (!this.accessToken) {
       this.logger.warn('MERCADOPAGO_ACCESS_TOKEN not set — payments disabled');
-    }
-    if (this.isSandbox) {
-      this.logger.log('Mercado Pago: modo SANDBOX ativo');
     }
   }
 
