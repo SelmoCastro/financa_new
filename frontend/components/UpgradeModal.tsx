@@ -8,6 +8,15 @@ interface UpgradeModalProps {
   currentPlan: string;
 }
 
+const premiumFeatures = [
+  'Contas bancárias ilimitadas',
+  'Cartões de crédito ilimitados',
+  'Orçamentos ilimitados',
+  'Metas financeiras ilimitadas',
+  'IA sem limites diários',
+  'Suporte prioritário',
+];
+
 const plans = [
   {
     id: 'premium_monthly',
@@ -15,13 +24,7 @@ const plans = [
     price: 'R$ 19,90',
     period: '/mês',
     duration: '1 mês',
-    features: [
-      'Contas bancárias ilimitadas',
-      'Cartões de crédito ilimitados',
-      'Orçamentos ilimitados',
-      'Metas financeiras ilimitadas',
-      'IA sem limites diários',
-    ],
+    features: premiumFeatures,
     highlight: false,
   },
   {
@@ -31,11 +34,7 @@ const plans = [
     period: '/3 meses',
     duration: '3 meses',
     subtext: 'Economize 8%',
-    features: [
-      'Tudo do plano mensal',
-      'R$ 18,30/mês',
-      'Cancelamento a qualquer momento',
-    ],
+    features: [...premiumFeatures, 'R$ 18,30/mês'],
     highlight: false,
   },
   {
@@ -45,11 +44,7 @@ const plans = [
     period: '/6 meses',
     duration: '6 meses',
     subtext: 'Economize 17%',
-    features: [
-      'Tudo do plano mensal',
-      'R$ 16,65/mês',
-      'Cancelamento a qualquer momento',
-    ],
+    features: [...premiumFeatures, 'R$ 16,65/mês'],
     highlight: false,
   },
   {
@@ -59,12 +54,7 @@ const plans = [
     period: '/ano',
     duration: '1 ano',
     subtext: 'Economize 25%',
-    features: [
-      'Tudo do plano mensal',
-      'R$ 14,99/mês',
-      'Acesso antecipado a novos recursos',
-      'Badge de apoiador no perfil',
-    ],
+    features: [...premiumFeatures, 'R$ 14,99/mês'],
     highlight: true,
   },
 ];
@@ -192,7 +182,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, currentPlan
               {loading ? 'Processando...' : `Assinar ${plans.find(p => p.id === selectedPlan)?.name}`}
             </button>
             <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-3">
-              Pagamento seguro via Mercado Pago. Cancele a qualquer momento.
+              Pagamento seguro via Mercado Pago. Sem renovação automática.
             </p>
           </div>
         </div>
