@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlanId } from './dto/payment.dto';
 import { SubscriptionService } from '../subscription/subscription.service';
 
 const MP_API = 'https://api.mercadopago.com';
@@ -63,10 +64,12 @@ export class PaymentsService {
     return response.json();
   }
 
-  async createPreference(userId: string, plan: 'premium_monthly' | 'premium_annual') {
-    const prices: Record<string, { amount: number; title: string }> = {
-      premium_monthly: { amount: 19.9, title: 'Finanza Premium — Mensal' },
-      premium_annual: { amount: 179.9, title: 'Finanza Premium — Anual' },
+  async createPreference(userId: string, plan: PlanId) {
+    const prices: Record<PlanId, { amount: number; title: string; durationDays: number }> = {
+      premium_monthly: { amount: 19.9, title: 'Finanza Premium — Mensal', durationDays: 30 },
+      premium_quarterly: { amount: 54.9, title: 'Finanza Premium — Trimestral', durationDays: 90 },
+      premium_semiannual: { amount: 99.9, title: 'Finanza Premium — Semestral', durationDays: 180 },
+      premium_annual: { amount: 179.9, title: 'Finanza Premium — Anual', durationDays: 365 },
     };
 
     const { amount, title } = prices[plan];
@@ -183,12 +186,16 @@ export class PaymentsService {
 
       // If payment approved, upgrade user's plan
       if (status === 'approved' && userId && userId !== 'unknown') {
-        const planType = planId === 'premium_annual' ? 'premium' : 'premium';
-        const expiresAt = planId === 'premium_annual'
-          ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        const planDurations: Record<string, number> = {
+          premium_monthly: 30,
+          premium_quarterly: 90,
+          premium_semiannual: 180,
+          premium_annual: 365,
+        };
+        const durationDays = planDurations[planId] || 30;
+        const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
 
-        await this.subscriptionService.upgrade(userId, planType, expiresAt);
+        await this.subscriptionService.upgrade(userId, 'premium', expiresAt);
 
         // Link payment to subscription
         const sub = await this.prisma.subscription.findUnique({ where: { userId } });

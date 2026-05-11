@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
-import { Sparkles, Zap, Infinity, Check, X } from 'lucide-react';
+import { Sparkles, Zap, Check, X } from 'lucide-react';
 
 interface UpgradeModalProps {
   onClose: () => void;
@@ -11,33 +11,60 @@ interface UpgradeModalProps {
 const plans = [
   {
     id: 'premium_monthly',
-    name: 'Premium Mensal',
+    name: 'Mensal',
     price: 'R$ 19,90',
     period: '/mês',
+    duration: '1 mês',
     features: [
       'Contas bancárias ilimitadas',
       'Cartões de crédito ilimitados',
       'Orçamentos ilimitados',
       'Metas financeiras ilimitadas',
       'IA sem limites diários',
-      'Suporte prioritário',
     ],
-    notIncluded: [],
+    highlight: false,
+  },
+  {
+    id: 'premium_quarterly',
+    name: 'Trimestral',
+    price: 'R$ 54,90',
+    period: '/3 meses',
+    duration: '3 meses',
+    subtext: 'Economize 8%',
+    features: [
+      'Tudo do plano mensal',
+      'R$ 18,30/mês',
+      'Cancelamento a qualquer momento',
+    ],
+    highlight: false,
+  },
+  {
+    id: 'premium_semiannual',
+    name: 'Semestral',
+    price: 'R$ 99,90',
+    period: '/6 meses',
+    duration: '6 meses',
+    subtext: 'Economize 17%',
+    features: [
+      'Tudo do plano mensal',
+      'R$ 16,65/mês',
+      'Cancelamento a qualquer momento',
+    ],
     highlight: false,
   },
   {
     id: 'premium_annual',
-    name: 'Premium Anual',
+    name: 'Anual',
     price: 'R$ 179,90',
     period: '/ano',
+    duration: '1 ano',
     subtext: 'Economize 25%',
     features: [
       'Tudo do plano mensal',
-      '2 meses grátis',
+      'R$ 14,99/mês',
       'Acesso antecipado a novos recursos',
       'Badge de apoiador no perfil',
     ],
-    notIncluded: [],
     highlight: true,
   },
 ];
@@ -80,7 +107,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, currentPlan
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
+      <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
         {/* Header */}
         <div className="p-6 md:p-8 text-center border-b border-slate-200 dark:border-slate-800">
           <div className="inline-flex items-center gap-2 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 px-4 py-1.5 rounded-full text-xs font-bold mb-4">
@@ -162,7 +189,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, currentPlan
               ) : (
                 <Zap className="w-5 h-5" />
               )}
-              {loading ? 'Processando...' : `Assinar ${selectedPlan === 'premium_annual' ? 'Anual' : 'Mensal'}`}
+              {loading ? 'Processando...' : `Assinar ${plans.find(p => p.id === selectedPlan)?.name}`}
             </button>
             <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-3">
               Pagamento seguro via Mercado Pago. Cancele a qualquer momento.
