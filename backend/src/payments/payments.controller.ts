@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { SkipThrottle } from '@nestjs/throttler';
 import { PaymentsService } from './payments.service';
 import { CreatePreferenceDto } from './dto/payment.dto';
 
@@ -40,8 +41,10 @@ export class PaymentsController {
   /**
    * Public webhook endpoint — called by Mercado Pago servers.
    * No auth guard (MP signs requests with their own mechanism in production).
+   * SkipThrottle: MP can send rapid successive notifications.
    * For production: add x-signature verification from MP headers.
    */
+  @SkipThrottle()
   @Post('webhook')
   async webhook(@Body() body: any) {
     return this.paymentsService.handleWebhook(body);

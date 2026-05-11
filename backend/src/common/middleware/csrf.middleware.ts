@@ -30,6 +30,7 @@ export class CsrfMiddleware implements NestMiddleware {
     '/auth/verify-email',
     '/auth/refresh',
     '/errors/report', // Error reporter — must work even without auth
+    '/payments/webhook', // Mercado Pago notifications — no CSRF, server-to-server
   ];
 
   private readonly safeMethods = ['GET', 'HEAD', 'OPTIONS'];

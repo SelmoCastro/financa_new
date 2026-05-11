@@ -5,6 +5,7 @@ import { Login } from './components/Login';
 import { ResetPassword } from './components/ResetPassword';
 import { VerifyEmail } from './components/VerifyEmail';
 import LandingView from './views/LandingView';
+import PremiumReturn from './components/PremiumReturn';
 import api from './services/api';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -65,6 +66,9 @@ const Main = () => {
                         </PrivateRoute>
                     }
                 />
+                <Route path="/premium/success" element={<PremiumReturn />} />
+                <Route path="/premium/failure" element={<PremiumReturn />} />
+                <Route path="/premium/pending" element={<PremiumReturn />} />
             </Routes>
         </BrowserRouter>
     );
