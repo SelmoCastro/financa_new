@@ -47,7 +47,7 @@ model Account {
   id                     String                  @id @default(uuid())
   name                   String
   type                   String
-  balance                Decimal                 @default(0) @db.Decimal(15, 2)
+  balance                String                 @default("0")
   userId                 String
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
@@ -65,7 +65,7 @@ model Account {
 model CreditCard {
   id                   String                  @id @default(uuid())
   name                 String
-  limit                Decimal                 @db.Decimal(15, 2)
+  limit                String
   closingDay           Int
   dueDay               Int
   accountId            String?
@@ -108,7 +108,7 @@ model Category {
 model Transaction {
   id                 String      @id @default(uuid())
   description        String
-  amount             Decimal     @db.Decimal(15, 2)
+  amount             String
   date               DateTime
   categoryLegacy     String?     @map("category")
   type               String
@@ -148,7 +148,7 @@ model Transaction {
 
 model Budget {
   id          String    @id @default(uuid())
-  amount      Decimal   @db.Decimal(15, 2)
+  amount      String
   userId      String
   categoryId  String
   createdAt   DateTime  @default(now())
@@ -166,8 +166,8 @@ model Budget {
 model Goal {
   id            String    @id @default(uuid())
   title         String
-  targetAmount  Decimal   @db.Decimal(15, 2)
-  currentAmount Decimal   @default(0) @db.Decimal(15, 2)
+  targetAmount  String
+  currentAmount String   @default("0")
   deadline      DateTime?
   userId        String
   createdAt     DateTime  @default(now())
@@ -220,7 +220,7 @@ model VerificationToken {
 
 model TransactionInvite {
   id                    String   @id @default(uuid())
-  amount                Decimal  @db.Decimal(15, 2)
+  amount                String
   description           String
   date                  DateTime
   type                  String
@@ -345,7 +345,7 @@ model AuditLog {
 model RecurringTransaction {
   id           String   @id @default(uuid())
   description  String
-  amount       Decimal  @db.Decimal(15, 2)
+  amount       String
   type         String // INCOME, EXPENSE
   categoryId   String?
   accountId    String?
@@ -370,11 +370,11 @@ model RecurringTransaction {
 model CreditCardInstallment {
   id                 String   @id @default(uuid())
   description        String
-  totalAmount        Decimal  @db.Decimal(15, 2)
+  totalAmount        String
   installmentCount   Int
   currentInstallment Int      @default(0)
-  amountPerMonth     Decimal  @db.Decimal(15, 2)
-  entryAmount        Decimal? @db.Decimal(15, 2) // valor da entrada (null = sem entrada)
+  amountPerMonth     String
+  entryAmount        String? // valor da entrada (null = sem entrada)
   startDate          DateTime
   dueDay             Int // 1-31
   isActive           Boolean  @default(true)
@@ -402,8 +402,8 @@ model CreditCardInvoice {
   referenceYear  Int // ano de referência da fatura
   closingDate    DateTime // data de fechamento da fatura (baseada no closingDay)
   dueDate        DateTime // data de vencimento da fatura (baseada no dueDay)
-  totalAmount    Decimal  @default(0) @db.Decimal(15, 2) // soma das transações do período
-  paidAmount     Decimal  @default(0) @db.Decimal(15, 2) // valor já pago (registro parcial/total)
+  totalAmount    String  @default("0") // soma das transações do período
+  paidAmount     String  @default("0") // valor já pago (registro parcial/total)
   isPaid         Boolean  @default(false) // fatura foi quitada?
   paidAt         DateTime? // data do pagamento total
   userId         String
