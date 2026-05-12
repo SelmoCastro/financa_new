@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.55](https://github.com/SelmoCastro/financa_new/compare/v1.8.49...v1.8.55) (2026-05-12)
+
+
+### ✨ Features
+
+* **payments:** 4 planos — mensal R9.90, trimestral R4.90, semestral R9.90, anual R79.90 ([6e434e8](https://github.com/SelmoCastro/financa_new/commit/6e434e801652a246225821ba3ad9ea4455ef836e))
+* **payments:** add Mercado Pago integration with subscription upgrade flow ([79868c7](https://github.com/SelmoCastro/financa_new/commit/79868c7c3a649fde44948b8d5df1d8d63318a3e8))
+* **payments:** add premium return pages + fix webhook CSRF and throttle ([5c8e33a](https://github.com/SelmoCastro/financa_new/commit/5c8e33a6702b1528ce9adb42c6d3d5a8c703da3c))
+* **subscription:** read-only mode for exceeding resources when plan expires ([5b686a6](https://github.com/SelmoCastro/financa_new/commit/5b686a6f08fa96403ff70d927d88298235cbc3bd))
+
+
+### 🐛 Bug Fixes
+
+* **docs:** correct Free plan limits in terms.html ([31b152c](https://github.com/SelmoCastro/financa_new/commit/31b152c7bb39dd95e0f4100afe9752b2e4208762))
+* **payments:** remover badge apoiador, acesso antecipado e cancelamento ambiguo ([36c0601](https://github.com/SelmoCastro/financa_new/commit/36c06014673700ab21637e48f3297b9ab10a36b8))
+* **payments:** replace axios with native fetch to avoid missing dependency ([f71c8be](https://github.com/SelmoCastro/financa_new/commit/f71c8beab34a5f4d0e2a27ed14052be351825409))
+* **payments:** sandbox mode detection + webhook error handling ([16f6f77](https://github.com/SelmoCastro/financa_new/commit/16f6f776da7b23721d011e78124bb046f2c8ae03))
+* **payments:** usar init_point ao inves de sandbox_init_point — sandbox MP fora do ar ([5e87fb5](https://github.com/SelmoCastro/financa_new/commit/5e87fb529d77a0d95220398c4b6e3686edf9313f))
+* **prisma:** add reverse relation payments on User model ([ce859d6](https://github.com/SelmoCastro/financa_new/commit/ce859d6c998ee9f440a29967f0f035233799d5bd))
+* **security:** payment race condition mutex, remove getPaymentById IDOR risk ([b5a171a](https://github.com/SelmoCastro/financa_new/commit/b5a171a8646511c4ff965e2fd97ea9c63336f1ea))
+* **security:** webhook hardening, CSP on nginx, NODE_ENV production ([57c82f0](https://github.com/SelmoCastro/financa_new/commit/57c82f0593d2ae24fb5369cf65b0525fcb102e9a))
+
 ### [1.8.49](https://github.com/SelmoCastro/financa_new/compare/v1.8.48...v1.8.49) (2026-05-10)
 
 
