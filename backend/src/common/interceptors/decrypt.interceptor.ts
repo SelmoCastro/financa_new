@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { EncryptionService } from './encryption.service';
+import { EncryptionService } from '../services/encryption.service';
 
 /**
  * Fields in each model that are encrypted and need decryption before sending to clients.
