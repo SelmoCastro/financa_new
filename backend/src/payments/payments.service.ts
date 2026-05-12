@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanId } from './dto/payment.dto';
 import { SubscriptionService } from '../subscription/subscription.service';
+import * as crypto from 'crypto';
 
 const MP_API = 'https://api.mercadopago.com';
 
@@ -29,6 +30,7 @@ interface MercadoPagoPreference {
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
   private accessToken: string;
+  private webhookSecret: string;
   private isSandbox: boolean;
 
   constructor(
@@ -37,12 +39,51 @@ export class PaymentsService {
     private subscriptionService: SubscriptionService,
   ) {
     this.accessToken = this.configService.get<string>('MERCADOPAGO_ACCESS_TOKEN') || '';
-    // Sempre usar init_point (produção) — sandbox.mercadopago.com.br está instável/fora do ar.
-    // O MP redireciona para modo teste automaticamente quando o app é de teste.
+    this.webhookSecret = this.configService.get<string>('MERCADOPAGO_WEBHOOK_SECRET') || '';
+    // Sempre usar init_point (produção)
     this.isSandbox = false;
     if (!this.accessToken) {
       this.logger.warn('MERCADOPAGO_ACCESS_TOKEN not set — payments disabled');
     }
+  }
+
+  /**
+   * Verify Mercado Pago webhook signature (x-signature header).
+   * MP sends: x-signature: ts=<timestamp>,v1=<hmac-sha256>
+   * Verification: HMAC-SHA256(webhookSecret, <data.id><timestamp>) == v1
+   */
+  verifyWebhookSignature(dataId: string, xSignature: string): boolean {
+    if (!this.webhookSecret) {
+      // If no secret configured, skip verification (dev mode)
+      this.logger.warn('No MERCADOPAGO_WEBHOOK_SECRET set — skipping signature verification');
+      return true;
+    }
+
+    const parts = xSignature.split(',');
+    let ts = '';
+    let v1 = '';
+    for (const part of parts) {
+      const [key, value] = part.split('=');
+      if (key.trim() === 'ts') ts = value.trim();
+      if (key.trim() === 'v1') v1 = value.trim();
+    }
+
+    if (!ts || !v1) {
+      this.logger.warn('Invalid x-signature format');
+      return false;
+    }
+
+    // Hash = HMAC-SHA256(webhookSecret, dataId + ts)
+    const manifest = `${dataId}${ts}`;
+    const expected = crypto
+      .createHmac('sha256', this.webhookSecret)
+      .update(manifest)
+      .digest('hex');
+
+    return crypto.timingSafeEqual(
+      Buffer.from(expected, 'hex'),
+      Buffer.from(v1, 'hex'),
+    );
   }
 
   private async mpRequest(path: string, options: RequestInit = {}): Promise<any> {
@@ -58,7 +99,8 @@ export class PaymentsService {
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(`MercadoPago API error ${response.status}: ${body}`);
+      this.logger.error(`MercadoPago API error ${response.status}: ${body.substring(0, 200)}`);
+      throw new Error(`MercadoPago API error ${response.status}`);
     }
 
     return response.json();
@@ -115,13 +157,12 @@ export class PaymentsService {
 
       this.logger.log(`Preference created for user ${userId}: ${response.id}`);
 
-      // Em sandbox usa sandbox_init_point, em producao usa init_point
-      const checkoutUrl = this.isSandbox ? response.sandbox_init_point : response.init_point;
+      const checkoutUrl = response.init_point;
 
       return {
         preferenceId: response.id,
         initPoint: checkoutUrl,
-        sandbox: this.isSandbox,
+        sandbox: false,
         amount,
         plan,
       };
@@ -135,20 +176,28 @@ export class PaymentsService {
     type?: string;
     action?: string;
     data?: { id?: string };
-  }) {
+  }, xSignature?: string, xRequestId?: string) {
     this.logger.log(`Webhook received: type=${webhookData.type}, action=${webhookData.action}`);
 
     if (webhookData.type !== 'payment') {
-      return { received: true, processed: false, reason: 'not a payment notification' };
+      return { received: true, processed: false };
     }
 
     const paymentId = webhookData.data?.id;
     if (!paymentId) {
-      return { received: true, processed: false, reason: 'no payment id' };
+      return { received: true, processed: false };
+    }
+
+    // Verify x-signature in production
+    if (this.webhookSecret && xSignature) {
+      if (!this.verifyWebhookSignature(paymentId, xSignature)) {
+        this.logger.warn(`Webhook signature verification failed for payment ${paymentId}`);
+        return { received: true, processed: false };
+      }
     }
 
     return this.processPayment(paymentId);
-  } // Webhook sempre retorna 200 pro MP nao reenviar
+  }
 
   async processPayment(mpPaymentId: string) {
     try {
@@ -158,7 +207,7 @@ export class PaymentsService {
       });
       if (existing && existing.status !== 'pending') {
         this.logger.log(`Payment ${mpPaymentId} already processed with status: ${existing.status}`);
-        return { paymentId: mpPaymentId, status: existing.status, upgraded: false, skipped: true };
+        return { processed: true, skipped: true };
       }
 
       // Fetch payment details from Mercado Pago
@@ -170,6 +219,27 @@ export class PaymentsService {
       const amount = mpData.transaction_amount || 0;
       const planId = mpData.additional_info?.items?.[0]?.id || 'premium_monthly';
 
+      // Validate planId is a recognized plan
+      const validPlans = ['premium_monthly', 'premium_quarterly', 'premium_semiannual', 'premium_annual'];
+      if (!validPlans.includes(planId)) {
+        this.logger.warn(`Invalid planId from MP payment ${mpPaymentId}: ${planId}, defaulting to premium_monthly`);
+      }
+      const safePlanId = validPlans.includes(planId) ? planId : 'premium_monthly';
+
+      // Validate amount matches expected plan price
+      const prices: Record<string, number> = {
+        premium_monthly: 19.9,
+        premium_quarterly: 54.9,
+        premium_semiannual: 99.9,
+        premium_annual: 179.9,
+      };
+      const expectedAmount = prices[safePlanId];
+      if (expectedAmount && Math.abs(amount - expectedAmount) > 1) {
+        this.logger.warn(`Amount mismatch for payment ${mpPaymentId}: expected ${expectedAmount}, got ${amount}`);
+        // Don't upgrade — suspicious payment
+        return { processed: true, upgraded: false };
+      }
+
       // Upsert payment record
       const paymentRecord = await this.prisma.payment.upsert({
         where: { mpPaymentId },
@@ -178,7 +248,7 @@ export class PaymentsService {
           mpPaymentId,
           userId: userId || 'unknown',
           amount,
-          planPurchased: planId,
+          planPurchased: safePlanId,
           status,
           paymentMethod,
         },
@@ -192,7 +262,7 @@ export class PaymentsService {
           premium_semiannual: 180,
           premium_annual: 365,
         };
-        const durationDays = planDurations[planId] || 30;
+        const durationDays = planDurations[safePlanId] || 30;
         const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
 
         await this.subscriptionService.upgrade(userId, 'premium', expiresAt);
@@ -206,18 +276,17 @@ export class PaymentsService {
           });
         }
 
-        this.logger.log(`User ${userId} upgraded to ${planId}`);
+        this.logger.log(`User ${userId} upgraded to ${safePlanId}`);
       }
 
       return {
-        paymentId: mpPaymentId,
-        status,
+        processed: true,
         upgraded: status === 'approved',
       };
     } catch (error: any) {
       this.logger.error(`Failed to process payment ${mpPaymentId}: ${error.message}`);
-      // Nao throw — webhook deve sempre retornar sucesso pro MP nao ficar reenviando
-      return { paymentId: mpPaymentId, status: 'error', error: error.message, upgraded: false };
+      // Don't throw — webhook must always return 200 so MP doesn't retry
+      return { processed: false, error: true };
     }
   }
 
