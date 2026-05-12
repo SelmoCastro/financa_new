@@ -32,6 +32,8 @@ export class PaymentsService {
   private accessToken: string;
   private webhookSecret: string;
   private isSandbox: boolean;
+  // In-memory mutex to prevent race condition on payment processing
+  private readonly processingPayments = new Set<string>();
 
   constructor(
     private configService: ConfigService,
@@ -200,6 +202,20 @@ export class PaymentsService {
   }
 
   async processPayment(mpPaymentId: string) {
+    // Race condition protection: skip if already processing this payment
+    if (this.processingPayments.has(mpPaymentId)) {
+      this.logger.log(`Payment ${mpPaymentId} already being processed, skipping duplicate`);
+      return { processed: true, skipped: true };
+    }
+    this.processingPayments.add(mpPaymentId);
+    try {
+      return await this._doProcessPayment(mpPaymentId);
+    } finally {
+      this.processingPayments.delete(mpPaymentId);
+    }
+  }
+
+  private async _doProcessPayment(mpPaymentId: string) {
     try {
       // Idempotency check: if already processed, skip
       const existing = await this.prisma.payment.findUnique({
