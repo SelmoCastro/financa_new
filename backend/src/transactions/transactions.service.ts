@@ -91,7 +91,7 @@ export class TransactionsService {
       }
 
       // Audit log
-      this.auditService.log(userId, AuditAction.CREATE, 'Transaction', transaction.id);
+      this.auditService.logAction(userId, AuditAction.CREATE, 'Transaction', transaction.id);
 
       return transaction;
     });
@@ -500,7 +500,7 @@ export class TransactionsService {
       await this.saveImportHistory(userId, acceptedFitIds, rejectedFitIds, tx);
 
       // Audit log
-      this.auditService.log(userId, AuditAction.IMPORT, 'Transaction', undefined, undefined, { importedCount: result.count });
+      this.auditService.logAction(userId, AuditAction.IMPORT, 'Transaction', undefined, undefined, { importedCount: result.count });
 
       return { importedCount: result.count };
     });
@@ -788,7 +788,7 @@ export class TransactionsService {
       }
 
       // Audit log
-      this.auditService.log(userId, AuditAction.UPDATE, 'Transaction', id);
+      this.auditService.logAction(userId, AuditAction.UPDATE, 'Transaction', id);
 
       return tx.transaction.findFirst({
         where: { id, userId, deletedAt: null },
@@ -882,7 +882,7 @@ export class TransactionsService {
       // (future enhancement — currently no installmentId on transactions)
 
       // Audit log
-      this.auditService.log(userId, AuditAction.DELETE, 'Transaction', id);
+      this.auditService.logAction(userId, AuditAction.DELETE, 'Transaction', id);
 
       return { count: deleteResult.count + siblingCount, deletedIds };
     });
@@ -975,7 +975,7 @@ export class TransactionsService {
       });
 
       // Audit log
-      this.auditService.log(userId, AuditAction.TRANSFER, 'Transaction', undefined, undefined, { sourceAccountId, destinationAccountId, amount });
+      this.auditService.logAction(userId, AuditAction.TRANSFER, 'Transaction', undefined, undefined, { sourceAccountId, destinationAccountId, amount });
 
       return { outTx, inTx };
     });

@@ -154,7 +154,8 @@ export class CategoriesService {
       data: updateCategoryDto,
     });
     if (result.count === 0) throw new NotFoundException('Categoria não encontrada');
-    return this.prisma.category.findUnique({ where: { id } });
+    // IDOR fix: include userId in findFirst to prevent cross-tenant data access
+    return this.prisma.category.findFirst({ where: { id, userId, deletedAt: null } });
   }
 
   async remove(id: string, userId: string) {

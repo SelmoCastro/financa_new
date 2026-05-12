@@ -102,7 +102,8 @@ export class AccountsService {
       data: updateAccountDto,
     });
     if (result.count === 0) throw new NotFoundException('Conta não encontrada');
-    return this.prisma.account.findUnique({ where: { id } });
+    // IDOR fix: include userId in findFirst to prevent cross-tenant data access
+    return this.prisma.account.findFirst({ where: { id, userId, deletedAt: null } });
   }
 
   async remove(id: string, userId: string) {

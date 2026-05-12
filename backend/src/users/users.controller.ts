@@ -12,6 +12,7 @@ import {
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { AdminGuard } from '../common/guards/admin.guard';
 
 @Controller({
   path: 'users',
@@ -22,6 +23,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
+  @UseGuards(AdminGuard)
   findAll(@Request() req) {
     return this.usersService.findAll(req.user.userId);
   }

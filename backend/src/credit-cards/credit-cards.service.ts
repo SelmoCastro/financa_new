@@ -86,7 +86,8 @@ export class CreditCardsService {
       data: updateCreditCardDto,
     });
     if (result.count === 0) throw new NotFoundException('Cartão de crédito não encontrado');
-    return this.prisma.creditCard.findUnique({ where: { id } });
+    // IDOR fix: include userId in findFirst to prevent cross-tenant data access
+    return this.prisma.creditCard.findFirst({ where: { id, userId, deletedAt: null }, include: { account: true } });
   }
 
   async remove(id: string, userId: string) {
@@ -233,7 +234,8 @@ export class CreditCardsService {
       data: dto,
     });
     if (result.count === 0) throw new NotFoundException('Parcela não encontrada');
-    return this.prisma.creditCardInstallment.findUnique({ where: { id }, include: { category: true, account: true, creditCard: true } });
+    // IDOR fix: include userId in findFirst to prevent cross-tenant data access
+    return this.prisma.creditCardInstallment.findFirst({ where: { id, userId }, include: { category: true, account: true, creditCard: true } });
   }
 
   async deleteInstallment(id: string, userId: string) {

@@ -1,8 +1,7 @@
-import { Controller, Get, Query, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
 import { AuditService } from './audit.service';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../common/guards/admin.guard';
-import { AuditAction } from './audit.service';
 
 interface RequestWithUser {
   user: { userId: string; isAdmin: boolean };
@@ -45,5 +44,16 @@ export class AuditController {
       resource,
       action,
     );
+  }
+
+  /**
+   * Verify the integrity of the audit chain.
+   * Returns whether the hash chain is intact and where it breaks (if it does).
+   * Admin-only endpoint for forensic investigations.
+   */
+  @Get('verify-integrity')
+  @UseGuards(AdminGuard)
+  async verifyIntegrity() {
+    return this.auditService.verifyChain();
   }
 }

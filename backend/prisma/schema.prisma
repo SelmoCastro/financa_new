@@ -320,19 +320,26 @@ model ErrorReport {
 }
 
 model AuditLog {
-  id         String   @id @default(uuid())
-  userId     String
-  action     String // CREATE, UPDATE, DELETE, IMPORT, TRANSFER, LOGIN, LOGIN_FAILED
-  resource   String // Transaction, Account, Budget, Goal, etc
-  resourceId String?
-  ip         String?
-  details    String? // JSON string with change details
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(uuid())
+  userId        String
+  action        String // CREATE, UPDATE, DELETE, IMPORT, TRANSFER, LOGIN, LOGIN_FAILED
+  resource      String // Transaction, Account, Budget, Goal, etc
+  resourceId    String?
+  ip            String?
+  userAgent     String? // Browser/device info for forensic analysis
+  sessionId     String? // Track session for cross-request correlation
+  previousState String? // JSON — state before mutation (for UPDATE/DELETE)
+  newState      String? // JSON — state after mutation (for CREATE/UPDATE)
+  details       String? // JSON string with change details
+  previousHash  String? // SHA-256 of previous audit entry (integrity chain)
+  currentHash   String? // SHA-256 of this entry (computed field for verification)
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([resource])
   @@index([createdAt])
+  @@index([action])
 }
 
 model RecurringTransaction {

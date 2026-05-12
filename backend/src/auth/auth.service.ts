@@ -46,7 +46,7 @@ export class AuthService {
         data: { failedLoginAttempts: 0, lockedUntil: null },
       });
       // Audit log - successful login
-      this.auditService.log(user.id, AuditAction.LOGIN, 'User', user.id);
+      this.auditService.logAction(user.id, AuditAction.LOGIN, 'User', user.id);
       const { password, ...result } = user;
       return result;
     }
@@ -67,7 +67,7 @@ export class AuthService {
     });
 
     // Audit log - failed login
-    this.auditService.log(user.id, AuditAction.LOGIN_FAILED, 'User', user.id);
+    this.auditService.logAction(user.id, AuditAction.LOGIN_FAILED, 'User', user.id);
 
     throw new UnauthorizedException('Credenciais inválidas');
   }
@@ -303,7 +303,7 @@ export class AuthService {
     });
 
     // Audit log - password reset
-    this.auditService.log(verificationToken.userId, AuditAction.PASSWORD_RESET, 'User', verificationToken.userId);
+    this.auditService.logAction(verificationToken.userId, AuditAction.PASSWORD_RESET, 'User', verificationToken.userId);
 
     return { message: 'Password has been successfully updated' };
   }
@@ -368,7 +368,7 @@ export class AuthService {
       data: { password: hashedPassword, hashedRefreshToken: null },
     });
 
-    this.auditService.log(userId, AuditAction.PASSWORD_RESET, 'User', userId);
+    this.auditService.logAction(userId, AuditAction.PASSWORD_RESET, 'User', userId);
 
     return { message: 'Senha alterada com sucesso' };
   }

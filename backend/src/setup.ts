@@ -3,9 +3,19 @@ import { Request, Response, NextFunction } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import * as crypto from 'crypto';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { CsrfMiddleware } from './common/middleware/csrf.middleware';
+
+/**
+ * Generate a cryptographically random nonce for CSP.
+ * Each request gets a unique nonce that is embedded in CSP headers
+ * and made available to templates via res.locals.
+ */
+function generateNonce(): string {
+  return crypto.randomBytes(16).toString('base64');
+}
 
 export function configureApp(app: INestApplication) {
   // CORS (Aceita Regex)
@@ -60,7 +70,17 @@ export function configureApp(app: INestApplication) {
       'Content-Type, Accept, Authorization, X-Requested-With, Cache-Control, Pragma, Expires, X-CSRF-Token',
   });
 
-  // Security Headers (Helmet com CSP restritivo e Policies adicionais)
+  // ── Security: CSP Nonce-per-request ──
+  // Generate a unique nonce for each request and attach it to res.locals.
+  // The CSP header in Helmet references this nonce, so inline scripts/tags
+  // must use <script nonce="..."> to be allowed.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const nonce = generateNonce();
+    res.locals.nonce = nonce;
+    next();
+  });
+
+  // ── Security Headers (Helmet com CSP nonce-based) ──
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -75,11 +95,14 @@ export function configureApp(app: INestApplication) {
           defaultSrc: ["'self'"],
           scriptSrc: [
             "'self'",
-            // Swagger em dev precisa do unpkg/esm.sh, mas nunca unsafe-eval/unsafe-inline em produção
+            // Dynamic nonce — Helmet replaces this function with the actual nonce per request
+            (req: Request, res: Response) => `'nonce-${res.locals.nonce}'`,
+            // Swagger in dev needs unpkg/esm.sh, never in production
             ...(process.env.NODE_ENV !== 'production' ? ['https://unpkg.com', 'https://esm.sh'] : []),
           ],
           styleSrc: [
             "'self'",
+            "'unsafe-inline'", // Tailwind needs inline styles
             ...(process.env.NODE_ENV !== 'production' ? ['https://fonts.googleapis.com'] : []),
           ],
           imgSrc: ["'self'", 'data:', 'https:'],

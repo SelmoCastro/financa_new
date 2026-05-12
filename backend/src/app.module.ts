@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
@@ -33,6 +33,8 @@ import { RecurringTransactionsModule } from './recurring-transactions/recurring-
 import { PaymentsModule } from './payments/payments.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AutoTransactionScheduler } from './scheduler/auto-transaction.scheduler';
+import { EncryptionModule } from './common/services/encryption.module';
+import { BehavioralThrottleMiddleware } from './common/middleware/behavioral-throttle.middleware';
 
 @Module({
   imports: [
@@ -66,6 +68,7 @@ import { AutoTransactionScheduler } from './scheduler/auto-transaction.scheduler
     ErrorsModule,
     RecurringTransactionsModule,
     PaymentsModule,
+    EncryptionModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
@@ -84,4 +87,10 @@ import { AutoTransactionScheduler } from './scheduler/auto-transaction.scheduler
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(BehavioralThrottleMiddleware)
+      .forRoutes('*');
+  }
+}

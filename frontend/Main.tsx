@@ -69,6 +69,7 @@ const Main = () => {
                 <Route path="/premium/success" element={<PremiumReturn />} />
                 <Route path="/premium/failure" element={<PremiumReturn />} />
                 <Route path="/premium/pending" element={<PremiumReturn />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>
     );
