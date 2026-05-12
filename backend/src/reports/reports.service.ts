@@ -1,65 +1,64 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EncryptionService } from '../common/services/encryption.service';
+import { decryptAmount } from '../common/services/balance-helper';
 
 @Injectable()
 export class ReportsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryption: EncryptionService,
+  ) {}
+
+  private dec(val: string | null | undefined): number {
+    if (!val) return 0;
+    return decryptAmount(val, this.encryption);
+  }
 
   async getDashboardSummary(userId: string, year?: number, month?: number) {
     const now = new Date();
     const targetYear = year !== undefined ? year : now.getFullYear();
-    const targetMonth = month !== undefined ? month : now.getMonth(); // 0-indexed month
+    const targetMonth = month !== undefined ? month : now.getMonth();
 
     const startOfMonth = new Date(Date.UTC(targetYear, targetMonth, 1));
     const endOfMonth = new Date(
       Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59, 999),
     );
 
-    // Identify transfer transactions to exclude from dashboard.
-    // Only exclude transactions that have a transferGroupId (new /transfer pairs).
-    // Legacy transfers without transferGroupId are included as normal income/expense
-    // to avoid filtering legitimate transactions like "Pagamento casa (Entrada)".
     const filterOutTransfers = {
       transferGroupId: null,
     };
 
-    // 1. Calculate General Balance (All time)
-    // O "Saldo Atual" reflete fielmente o saldo em caixa (soma do balance das contas),
-    // ao invés de somar/subtrair todo histórico de transações que afasta o número real.
+    // 1. General Balance (sum of encrypted account balances)
     const userAccounts = await this.prisma.account.findMany({
       where: { userId, deletedAt: null },
       select: { balance: true },
     });
-
     const balance = userAccounts.reduce(
-      (acc, account) => acc + Number(account.balance),
+      (acc, account) => acc + this.dec(account.balance),
       0,
     );
 
-    // 2. Current Month Totals
-    const currentMonthGroup = await this.prisma.transaction.groupBy({
-      by: ['type'],
+    // 2. Current Month Totals (manual sum since _sum doesn't work on encrypted strings)
+    const currentMonthTxs = await this.prisma.transaction.findMany({
       where: {
         userId,
         deletedAt: null,
         ...filterOutTransfers,
-        date: {
-          gte: startOfMonth,
-          lte: endOfMonth,
-        },
+        date: { gte: startOfMonth, lte: endOfMonth },
       },
-      _sum: { amount: true },
+      select: { type: true, amount: true },
     });
 
     let currentIncome = 0;
     let currentExpense = 0;
+    for (const t of currentMonthTxs) {
+      const val = this.dec(t.amount);
+      if (t.type === 'INCOME') currentIncome += val;
+      else if (t.type === 'EXPENSE') currentExpense += val;
+    }
 
-    currentMonthGroup.forEach((g) => {
-      if (g.type === 'INCOME') currentIncome += Number(g._sum.amount || 0);
-      else if (g.type === 'EXPENSE') currentExpense += Number(g._sum.amount || 0);
-    });
-
-    // 2.5 Calculate Previous Month for Trends
+    // 2.5 Previous Month for Trends
     const prevMonth = targetMonth === 0 ? 11 : targetMonth - 1;
     const prevYear = targetMonth === 0 ? targetYear - 1 : targetYear;
     const startOfPrevMonth = new Date(Date.UTC(prevYear, prevMonth, 1));
@@ -67,27 +66,23 @@ export class ReportsService {
       Date.UTC(prevYear, prevMonth + 1, 0, 23, 59, 59, 999),
     );
 
-    const prevMonthGroup = await this.prisma.transaction.groupBy({
-      by: ['type'],
+    const prevMonthTxs = await this.prisma.transaction.findMany({
       where: {
         userId,
         deletedAt: null,
         ...filterOutTransfers,
-        date: {
-          gte: startOfPrevMonth,
-          lte: endOfPrevMonth,
-        },
+        date: { gte: startOfPrevMonth, lte: endOfPrevMonth },
       },
-      _sum: { amount: true },
+      select: { type: true, amount: true },
     });
 
     let prevIncome = 0;
     let prevExpense = 0;
-
-    prevMonthGroup.forEach((g) => {
-      if (g.type === 'INCOME') prevIncome += Number(g._sum.amount || 0);
-      else if (g.type === 'EXPENSE') prevExpense += Number(g._sum.amount || 0);
-    });
+    for (const t of prevMonthTxs) {
+      const val = this.dec(t.amount);
+      if (t.type === 'INCOME') prevIncome += val;
+      else if (t.type === 'EXPENSE') prevExpense += val;
+    }
 
     const incomeTrend =
       prevIncome === 0 && currentIncome > 0
@@ -102,27 +97,19 @@ export class ReportsService {
           ? 0
           : ((currentExpense - prevExpense) / prevExpense) * 100;
 
-    // 3. Rule 50/30/20 (Expenses only, current month)
-    const categoryGroup = await this.prisma.transaction.groupBy({
-      by: ['categoryId', 'categoryLegacy'],
+    // 3. Rule 50/30/20 (Expenses by category)
+    const categoryTxs = await this.prisma.transaction.findMany({
       where: {
         userId,
         type: 'EXPENSE',
         deletedAt: null,
         ...filterOutTransfers,
-        date: {
-          gte: startOfMonth,
-          lte: endOfMonth,
-        },
+        date: { gte: startOfMonth, lte: endOfMonth },
       },
-      _sum: { amount: true },
+      select: { categoryId: true, categoryLegacy: true, amount: true },
     });
 
-    // Canonical category name mappings (legacy names → standard names)
-    // This handles old transactions created before category standardization
-    // and categories that exist with different names in user data
     const categoryAliases: Record<string, string> = {
-      // Legacy/old names that don't match STANDARD_CATEGORIES exactly
       'Assinaturas': 'Lazer / Assinaturas',
       'Lazer': 'Lazer / Assinaturas',
       'Alimentação': 'Mercado / Padaria',
@@ -140,40 +127,22 @@ export class ReportsService {
       'Dívidas': 'Pagamento de Dívidas',
       'Celular': 'Contas Residenciais',
       'Manutenção Veicular': 'Transporte Fixo',
-      // Previously uncategorized legacy names → proper classification
       'Roupas': 'Compras / Vestuário',
       'Cartao Credito': 'Compras / Vestuário',
       'Cuidados Pessoais': 'Cuidados Pessoais',
-      // Transferência Recebida is type=TRANSFER, not a real expense
-      // Outros/Outras Receitas/Entradas as expense category names → treat as generic
     };
 
-    // Categories that are transfers/internal movements, not real expenses
-    // These should be excluded from 50/30/20 calculations entirely
     const transferCategoryNames = ['Transferência Recebida', 'Transferência Enviada'];
 
     const needsCategories = [
-      'Moradia',
-      'Contas Residenciais',
-      'Mercado / Padaria',
-      'Transporte Fixo',
-      'Combustível / Gasolina',
-      'Saúde e Farmácia',
-      'Educação',
-      'Impostos Anuais e Seguros',
-      'Impostos Mensais',
+      'Moradia', 'Contas Residenciais', 'Mercado / Padaria',
+      'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia',
+      'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
     ];
     const wantsCategories = [
-      'Restaurante / Delivery',
-      'Transporte App',
-      'Lazer / Assinaturas',
-      'Compras / Vestuário',
-      'Cuidados Pessoais',
-      'Cuidados com Pets',
-      'Viagens',
-      // Generic/catch-all categories that don't fit needs or savings
-      'Outros',
-      'Cartao Credito',
+      'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas',
+      'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets',
+      'Viagens', 'Outros', 'Cartao Credito',
     ];
     const savingsCategories = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
 
@@ -188,132 +157,83 @@ export class ReportsService {
     const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
     const classifyCategory = (catName: string): { name: string; isTransfer: boolean } => {
-      // Normalize null/empty/undefined → Outros
       if (!catName || catName === 'null' || catName === 'undefined') return { name: 'Outros', isTransfer: false };
-      // Check if this is a transfer category (should be excluded from 50/30/20)
       if (transferCategoryNames.includes(catName)) return { name: catName, isTransfer: true };
-      // Apply alias mapping
       return { name: categoryAliases[catName] || catName, isTransfer: false };
     };
 
-    // Legacy expense category names that are actually income/transfer misclassified
-    // These should be excluded from 50/30/20 expense calculations
     const excludedExpenseCategories = ['Outras Receitas', 'Entradas', 'Rendimento de Investimentos'];
 
-    categoryGroup.forEach((g) => {
-      // Resolve category name: prefer categoryId lookup, fallback to categoryLegacy
-      // Handle string 'null' as invalid legacy value
+    // Build category sums manually
+    const categorySums = new Map<string, number>();
+    for (const t of categoryTxs) {
+      const val = this.dec(t.amount);
       const rawCatName =
-        g.categoryId
-          ? categoryMap.get(g.categoryId)
-          : (g.categoryLegacy && g.categoryLegacy !== 'null' ? g.categoryLegacy : null);
+        t.categoryId
+          ? categoryMap.get(t.categoryId)
+          : (t.categoryLegacy && t.categoryLegacy !== 'null' ? t.categoryLegacy : null);
 
       const classified = classifyCategory(rawCatName || 'Outros');
-
-      // Skip transfer categories entirely
-      if (classified.isTransfer) return;
-
-      // Skip misclassified income/transfer categories that appear as EXPENSE
-      if (excludedExpenseCategories.includes(rawCatName || '')) return;
+      if (classified.isTransfer) continue;
+      if (excludedExpenseCategories.includes(rawCatName || '')) continue;
 
       const catName = classified.name;
-      const val = Number(g._sum.amount || 0);
+      categorySums.set(catName, (categorySums.get(catName) || 0) + val);
 
       if (needsCategories.includes(catName)) needs += val;
       else if (wantsCategories.includes(catName)) wants += val;
       else if (savingsCategories.includes(catName)) savings += val;
       else uncategorized += val;
-    });
+    }
 
-    // 3. Rule 50/30/20 (Expenses as % of TOTAL EXPENSES, not income)
-    // The original rule says: of your income, 50% to needs, 30% to wants, 20% to savings.
-    // But displaying % of income makes the bars meaningless when spending < income.
-    // Showing % of total expenses makes the 3 segments sum to ~100% and directly
-    // comparable to the 50/30/20 targets.
-    // If no expenses, we use 1 to avoid division by zero.
     const expenseBase = (needs + wants + savings + uncategorized) > 0
       ? (needs + wants + savings + uncategorized)
       : 1;
 
-    // 4. Category Summary (Pie Chart Data)
+    // 4. Category Summary (Pie Chart)
     const categorySummary: { name: string; value: number }[] = [];
-    categoryGroup.forEach((g) => {
-      const rawCat =
-        g.categoryId
-          ? categoryMap.get(g.categoryId)
-          : (g.categoryLegacy && g.categoryLegacy !== 'null' ? g.categoryLegacy : null);
-      const classified = classifyCategory(rawCat || 'Outros');
-      // Skip transfer categories from pie chart too
-      if (classified.isTransfer) return;
-      const catName = classified.name;
-      const val = g._sum.amount ? Number(g._sum.amount) : 0;
-
-      if (val > 0) {
-        const existing = categorySummary.find((c) => c.name === catName);
-        if (existing) {
-          existing.value += val;
-        } else {
-          categorySummary.push({ name: catName, value: val });
-        }
-      }
-    });
+    for (const [name, val] of categorySums) {
+      if (val > 0) categorySummary.push({ name, value: val });
+    }
     categorySummary.sort((a, b) => b.value - a.value);
 
-    // 5. Monthly History (Bar Chart Data)
-    // Limit to last 12 months, up to current month (exclude future months from chart)
-    const twelveMonthsAgo = new Date(
-      Date.UTC(now.getFullYear(), now.getMonth() - 11, 1),
-    );
+    // 5. Monthly History (Bar Chart)
+    const twelveMonthsAgo = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 11, 1));
     const allTxs = await this.prisma.transaction.findMany({
       where: {
         userId,
         deletedAt: null,
         ...filterOutTransfers,
-        date: {
-          gte: twelveMonthsAgo,
-          lte: endOfMonth,
-        },
+        date: { gte: twelveMonthsAgo, lte: endOfMonth },
       },
       select: { date: true, amount: true, type: true },
       orderBy: { date: 'asc' },
     });
 
-    const monthlyMap = new Map<
-      string,
-      { income: number; expenses: number; month: string }
-    >();
-    allTxs.forEach((t) => {
-      // Use UTC consistently to avoid timezone drift
+    const monthlyMap = new Map<string, { income: number; expenses: number; month: string }>();
+    for (const t of allTxs) {
       const d = new Date(t.date);
       const monthKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
       if (!monthlyMap.has(monthKey)) {
-        // Use UTC month name extraction to be robust
-        const formatter = new Intl.DateTimeFormat('pt-BR', {
-          month: 'short',
-          timeZone: 'UTC',
-        });
+        const formatter = new Intl.DateTimeFormat('pt-BR', { month: 'short', timeZone: 'UTC' });
         const monthName = formatter.format(d);
-        const formattedMonth =
-          monthName.charAt(0).toUpperCase() + monthName.slice(1);
         monthlyMap.set(monthKey, {
           income: 0,
           expenses: 0,
-          month: formattedMonth,
+          month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
         });
       }
-      const stats = monthlyMap.get(monthKey);
-      if (t.type === 'INCOME') stats!.income += Number(t.amount);
-      else if (t.type === 'EXPENSE') stats!.expenses += Number(t.amount);
-    });
+      const stats = monthlyMap.get(monthKey)!;
+      const val = this.dec(t.amount);
+      if (t.type === 'INCOME') stats.income += val;
+      else if (t.type === 'EXPENSE') stats.expenses += val;
+    }
 
-    // Sort chronologically and ensure proper month ordering
     const monthlyHistory = Array.from(monthlyMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([, value]) => value);
 
-    // 6. Credit Card Debt — sum of unpaid invoice remaining amounts
-    // Transactions with creditCardId but no invoiceId are "in-flight" (current period)
-    // Transactions already linked to an unpaid invoice are part of a closed-but-unpaid fatura
+    // 6. Credit Card Debt
     const unpaidInvoices = await this.prisma.creditCardInvoice.findMany({
       where: { userId, isPaid: false },
       select: {
@@ -330,13 +250,10 @@ export class ReportsService {
       orderBy: { dueDate: 'asc' },
     });
 
-    // Filter out invoices whose credit card has been deleted
     const validUnpaidInvoices = unpaidInvoices.filter(
       (inv) => inv.creditCard?.deletedAt === null,
     );
 
-    // Also include open (not yet closed) invoices — cards with unlinked CC transactions
-    // but no closed invoice for the current period
     const creditCards = await this.prisma.creditCard.findMany({
       where: { userId, deletedAt: null },
       select: { id: true, name: true, closingDay: true, dueDay: true },
@@ -360,8 +277,9 @@ export class ReportsService {
     }> = [];
 
     for (const card of creditCards) {
-      if (closedCardIds.has(card.id)) continue; // already has a closed invoice
-      const unlinkedTotal = await this.prisma.transaction.aggregate({
+      if (closedCardIds.has(card.id)) continue;
+      // Manual sum since _sum doesn't work on encrypted strings
+      const unlinkedTxs = await this.prisma.transaction.findMany({
         where: {
           userId,
           creditCardId: card.id,
@@ -369,12 +287,11 @@ export class ReportsService {
           invoiceId: null,
           type: 'EXPENSE',
         },
-        _sum: { amount: true },
+        select: { amount: true },
       });
-      const total = Number(unlinkedTotal._sum.amount ?? 0);
-      if (total === 0) continue; // skip cards with no spending
+      const total = unlinkedTxs.reduce((sum, t) => sum + this.dec(t.amount), 0);
+      if (total === 0) continue;
 
-      // Calculate closing and due dates for the current period
       const closingDate = new Date(currentYear, currentMonth - 1, card.closingDay);
       const dueDate = new Date(currentYear, currentMonth, card.dueDay);
 
@@ -394,12 +311,12 @@ export class ReportsService {
 
     const allPendingInvoices = [...validUnpaidInvoices.map((inv) => ({
       ...inv,
-      remaining: Number(inv.totalAmount) - Number(inv.paidAmount),
+      remaining: this.dec(inv.totalAmount) - this.dec(inv.paidAmount),
       creditCardName: inv.creditCard.name,
     })), ...openInvoices];
 
     const creditCardDebt = allPendingInvoices.reduce(
-      (sum, inv) => sum + (inv.remaining || Number(inv.totalAmount) - Number(inv.paidAmount ?? 0)),
+      (sum, inv) => sum + (inv.remaining || (this.dec(inv.totalAmount as any) - this.dec(inv.paidAmount as any))),
       0,
     );
 
@@ -436,26 +353,15 @@ export class ReportsService {
     };
   }
 
-  /**
-   * Retorna um perfil completo para o "cérebro" da IA.
-   * Inclui metas, orçamentos e principais gastos.
-   * Pode usar dados específicos de um mês se `year` e `month` forem informados.
-   */
   async getFinancialProfile(userId: string, year?: number, month?: number) {
     const now = new Date();
     const y = year !== undefined ? year : now.getFullYear();
     const m = month !== undefined ? month : now.getMonth();
 
-    // Filter out transfer transactions (internal movements, not real expenses)
-    // Only exclude transactions that have a transferGroupId.
-    const filterOutTransfers = {
-      transferGroupId: null,
-    };
+    const filterOutTransfers = { transferGroupId: null };
 
-    // 1. Resumo do mês atual ou selecionado
     const monthSummary = await this.getDashboardSummary(userId, y, m);
 
-    // 2. Metas do usuário
     const goals = await this.prisma.goal.findMany({
       where: { userId, deletedAt: null },
       select: {
@@ -466,30 +372,23 @@ export class ReportsService {
       },
     });
 
-    // 3. Orçamentos vs Realizado
     const budgets = await this.prisma.budget.findMany({
       where: { userId, deletedAt: null },
       select: { categoryId: true, amount: true },
     });
 
-    // 4. Maiores categorias de gasto no mês
     const targetStart = new Date(Date.UTC(y, m, 1));
     const targetEnd = new Date(Date.UTC(y, m + 1, 0, 23, 59, 59, 999));
-    const topExpenses = await this.prisma.transaction.groupBy({
-      by: ['categoryId', 'categoryLegacy'],
+    const topExpenseTxs = await this.prisma.transaction.findMany({
       where: {
         userId,
         type: 'EXPENSE',
         deletedAt: null,
         ...filterOutTransfers,
-        date: {
-          gte: targetStart,
-          lte: targetEnd,
-        },
+        date: { gte: targetStart, lte: targetEnd },
       },
-      _sum: { amount: true },
-      orderBy: { _sum: { amount: 'desc' } },
-      take: 5,
+      select: { categoryId: true, categoryLegacy: true, amount: true },
+      take: 500,
     });
 
     const categories = await this.prisma.category.findMany({
@@ -497,22 +396,20 @@ export class ReportsService {
     });
     const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
-    const formattedTopExpenses = topExpenses.map((g) => ({
-      category:
-        (g.categoryId ? categoryMap.get(g.categoryId) : g.categoryLegacy) ||
-        'Outros',
-      amount: Number(g._sum.amount || 0),
-    }));
+    // Aggregate manually and sort by amount desc
+    const categoryAgg = new Map<string, number>();
+    for (const t of topExpenseTxs) {
+      const catName = (t.categoryId ? categoryMap.get(t.categoryId) : t.categoryLegacy) || 'Outros';
+      categoryAgg.set(catName, (categoryAgg.get(catName) || 0) + this.dec(t.amount));
+    }
+    const formattedTopExpenses = Array.from(categoryAgg.entries())
+      .map(([category, amount]) => ({ category, amount }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
 
-    // 5. Últimas 50 transações para contexto específico da IA
     const recentTransactions = await this.prisma.transaction.findMany({
       where: { userId, deletedAt: null },
-      select: {
-        description: true,
-        amount: true,
-        date: true,
-        type: true,
-      },
+      select: { description: true, amount: true, date: true, type: true },
       orderBy: { date: 'desc' },
       take: 50,
     });
@@ -526,35 +423,19 @@ export class ReportsService {
     };
   }
 
-  /**
-   * Retorna um resumo histórico dos últimos 3 meses focado apenas nas despesas.
-   * Ideal para contexto de Forecasting na Inteligência Artificial.
-   */
   async getHistoricalSpending(userId: string) {
     const now = new Date();
-    const startOfHistory = new Date(
-      Date.UTC(now.getFullYear(), now.getMonth() - 3, 1),
-    );
-    const endOfHistory = new Date(
-      Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
-    );
+    const startOfHistory = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 3, 1));
+    const endOfHistory = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999));
 
     const transactions = await this.prisma.transaction.findMany({
       where: {
         userId,
         type: 'EXPENSE',
         deletedAt: null,
-        date: {
-          gte: startOfHistory,
-          lte: endOfHistory,
-        },
+        date: { gte: startOfHistory, lte: endOfHistory },
       },
-      select: {
-        amount: true,
-        date: true,
-        categoryId: true,
-        categoryLegacy: true,
-      },
+      select: { amount: true, date: true, categoryId: true, categoryLegacy: true },
     });
 
     const categories = await this.prisma.category.findMany({
@@ -563,18 +444,13 @@ export class ReportsService {
     const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
     return transactions.map((t) => ({
-      amount: Number(t.amount),
+      amount: this.dec(t.amount),
       date: t.date,
       category:
-        (t.categoryId ? categoryMap.get(t.categoryId) : t.categoryLegacy) ||
-        'Outros',
+        (t.categoryId ? categoryMap.get(t.categoryId) : t.categoryLegacy) || 'Outros',
     }));
   }
 
-  /**
-   * Retorna até 100 transações de saída com descrição dos últimos 90 dias
-   * Ideal para identificar assinaturas e custos ocultos via Inteligência Artificial.
-   */
   async getRecentTransactionsForAudit(userId: string) {
     const now = new Date();
     const ninetyDaysAgo = new Date();
@@ -585,56 +461,35 @@ export class ReportsService {
         userId,
         type: 'EXPENSE',
         deletedAt: null,
-        date: {
-          gte: ninetyDaysAgo,
-          lte: now,
-        },
+        date: { gte: ninetyDaysAgo, lte: now },
       },
-      select: {
-        description: true,
-        amount: true,
-        date: true,
-      },
-      orderBy: {
-        date: 'desc',
-      },
+      select: { description: true, amount: true, date: true },
+      orderBy: { date: 'desc' },
       take: 100,
     });
   }
 
-  /**
-   * Projecao de saldo futuro para os proximos 30 dias.
-   * Considera:
-   * - Saldo atual das contas
-   * - Recorrentes pendentes (isActive=true, ainda nao confirmadas no mes)
-   * - Faturas de cartao nao pagas
-   *
-   * Retorna o saldo projetado dia a dia com eventos que impactam.
-   */
   async getProjection(userId: string) {
     const now = new Date();
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    // Current balance from all accounts
     const userAccounts = await this.prisma.account.findMany({
       where: { userId, deletedAt: null },
       select: { balance: true },
     });
     const currentBalance = userAccounts.reduce(
-      (acc, a) => acc + Number(a.balance),
+      (acc, a) => acc + this.dec(a.balance),
       0,
     );
 
-    // Credit card debt (unpaid invoices)
     const unpaidInvoices = await this.prisma.creditCardInvoice.findMany({
       where: { userId, isPaid: false },
     });
     const creditCardDebt = unpaidInvoices.reduce(
-      (sum, inv) => sum + Number(inv.totalAmount) - Number(inv.paidAmount),
+      (sum, inv) => sum + this.dec(inv.totalAmount) - this.dec(inv.paidAmount),
       0,
     );
 
-    // Pending recurring transactions for current month (not yet confirmed)
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
@@ -648,7 +503,6 @@ export class ReportsService {
       },
     });
 
-    // Check which ones have already been confirmed this month
     const confirmedDescriptions = await this.prisma.transaction.findMany({
       where: {
         userId,
@@ -660,23 +514,19 @@ export class ReportsService {
     });
     const confirmedSet = new Set(confirmedDescriptions.map((t) => t.description.toLowerCase().trim()));
 
-    // Upcoming: recorrentes still pending
     const upcomingIncome = activeRecurring
       .filter((r) => r.type === 'INCOME' && !confirmedSet.has(r.description.toLowerCase().trim()))
-      .reduce((sum, r) => sum + Number(r.amount), 0);
+      .reduce((sum, r) => sum + this.dec(r.amount), 0);
 
     const upcomingExpenses = activeRecurring
       .filter((r) => r.type === 'EXPENSE' && !confirmedSet.has(r.description.toLowerCase().trim()))
-      .reduce((sum, r) => sum + Number(r.amount), 0);
+      .reduce((sum, r) => sum + this.dec(r.amount), 0);
 
-    // Projected final balance
     const projectedBalance = currentBalance + upcomingIncome - upcomingExpenses - creditCardDebt;
 
-    // Build daily projection: last 15 days + next 15 days
     const days: Array<{ date: string; balance: number; events: string[] }> = [];
     const startDate = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
 
-    // Fetch ALL transactions from the last 15 days (for the history part of the chart)
     const recentTxs = await this.prisma.transaction.findMany({
       where: {
         userId,
@@ -687,16 +537,15 @@ export class ReportsService {
       orderBy: { date: 'asc' },
     });
 
-    // Group transactions by date
     const txByDate = new Map<string, { type: string; amount: number; desc: string }[]>();
     for (const tx of recentTxs) {
       const key = tx.date.toISOString().split('T')[0];
       if (!txByDate.has(key)) txByDate.set(key, []);
-      txByDate.get(key)!.push({ type: tx.type, amount: Number(tx.amount), desc: tx.description });
+      txByDate.get(key)!.push({ type: tx.type, amount: this.dec(tx.amount), desc: tx.description });
     }
 
-    // Calculate starting balance (15 days ago): income - expense before the window
-    const incomeBefore = await this.prisma.transaction.aggregate({
+    // Manual sum instead of aggregate _sum
+    const incomeBeforeTxs = await this.prisma.transaction.findMany({
       where: {
         userId,
         accountId: { not: null },
@@ -704,9 +553,9 @@ export class ReportsService {
         date: { lt: startDate },
         type: 'INCOME',
       },
-      _sum: { amount: true },
+      select: { amount: true },
     });
-    const expenseBefore = await this.prisma.transaction.aggregate({
+    const expenseBeforeTxs = await this.prisma.transaction.findMany({
       where: {
         userId,
         accountId: { not: null },
@@ -714,9 +563,10 @@ export class ReportsService {
         date: { lt: startDate },
         type: 'EXPENSE',
       },
-      _sum: { amount: true },
+      select: { amount: true },
     });
-    let runningBalance = (Number(incomeBefore._sum.amount) || 0) - (Number(expenseBefore._sum.amount) || 0);
+    let runningBalance = incomeBeforeTxs.reduce((s, t) => s + this.dec(t.amount), 0)
+      - expenseBeforeTxs.reduce((s, t) => s + this.dec(t.amount), 0);
 
     for (let i = 0; i < 30; i++) {
       const day = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
@@ -726,7 +576,6 @@ export class ReportsService {
 
       const events: string[] = [];
 
-      // Past transactions on this day
       const dayTxs = txByDate.get(dayKey) || [];
       for (const tx of dayTxs) {
         if (tx.type === 'INCOME') {
@@ -738,13 +587,12 @@ export class ReportsService {
         }
       }
 
-      // Future: recurring items due on this day (only for future days)
       if (day >= now) {
         const dayItems = activeRecurring.filter(
           (r) => r.dueDay === dayDueDay && !confirmedSet.has(r.description.toLowerCase().trim()),
         );
         for (const item of dayItems) {
-          const val = Number(item.amount);
+          const val = this.dec(item.amount);
           if (item.type === 'INCOME') {
             runningBalance += val;
             events.push(`+ ${item.description}: R$${val.toFixed(2)}`);
@@ -754,14 +602,10 @@ export class ReportsService {
           }
         }
 
-        // Invoice due dates
         for (const inv of unpaidInvoices) {
           const dueDate = new Date(inv.dueDate);
-          if (
-            dueDate.getDate() === dayDueDay &&
-            dueDate.getMonth() + 1 === dayMonth
-          ) {
-            const remaining = Number(inv.totalAmount) - Number(inv.paidAmount);
+          if (dueDate.getDate() === dayDueDay && dueDate.getMonth() + 1 === dayMonth) {
+            const remaining = this.dec(inv.totalAmount) - this.dec(inv.paidAmount);
             if (remaining > 0) {
               events.push(`Fatura cartão vence: R$${remaining.toFixed(2)}`);
             }
@@ -769,11 +613,7 @@ export class ReportsService {
         }
       }
 
-      days.push({
-        date: dayKey,
-        balance: runningBalance,
-        events,
-      });
+      days.push({ date: dayKey, balance: runningBalance, events });
     }
 
     return {
@@ -787,7 +627,7 @@ export class ReportsService {
         .filter((r) => !confirmedSet.has(r.description.toLowerCase().trim()))
         .map((r) => ({
           description: r.description,
-          amount: Number(r.amount),
+          amount: this.dec(r.amount),
           type: r.type,
           dueDay: r.dueDay,
         })),
@@ -795,7 +635,7 @@ export class ReportsService {
         id: inv.id,
         referenceMonth: inv.referenceMonth,
         referenceYear: inv.referenceYear,
-        remaining: Number(inv.totalAmount) - Number(inv.paidAmount),
+        remaining: this.dec(inv.totalAmount) - this.dec(inv.paidAmount),
         dueDate: inv.dueDate,
       })),
     };

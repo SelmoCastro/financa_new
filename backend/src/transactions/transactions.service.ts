@@ -8,6 +8,8 @@ import { SocialService } from '../social/social.service';
 import { AuditService, AuditAction } from '../audit/audit.service';
 import { ImportTransactionData, AiSuggestion, AccountLockRow } from './interfaces/import-transaction.interface';
 import { Prisma } from '@prisma/client';
+import { EncryptionService } from '../common/services/encryption.service';
+import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
 
 @Injectable()
 export class TransactionsService {
@@ -16,6 +18,7 @@ export class TransactionsService {
     private aiService: AiService,
     private socialService: SocialService,
     private auditService: AuditService,
+    private encryption: EncryptionService,
   ) {}
 
   async create(createTransactionDto: CreateTransactionDto, userId: string) {
@@ -57,10 +60,13 @@ export class TransactionsService {
         }
       }
 
+      const { amount: _amount, ...dtoRest } = createTransactionDto;
+      const encryptedAmount = encryptAmount(amount, this.encryption);
+
       const transaction = await tx.transaction.create({
         data: {
-          ...createTransactionDto,
-          amount,
+          ...dtoRest,
+          amount: encryptedAmount,
           date,
           userId,
         },
@@ -71,10 +77,7 @@ export class TransactionsService {
         const adjustment =
           type === 'INCOME' ? amount : type === 'EXPENSE' ? -amount : 0;
         if (adjustment !== 0) {
-          await tx.account.updateMany({
-            where: { id: accountId, userId },
-            data: { balance: { increment: adjustment } },
-          });
+          await atomicBalanceUpdate(tx, accountId, userId, adjustment, this.encryption);
         }
       }
 
@@ -286,7 +289,7 @@ export class TransactionsService {
         .toLowerCase()
         .trim();
       if (suggestedLow) {
-        for (const [name, id] of categoryNameToId.entries()) {
+        for (const [name, id] of Array.from(categoryNameToId.entries())) {
           if (name.includes(suggestedLow) || suggestedLow.includes(name)) {
             matchedCategoryId = id;
             break;
@@ -373,9 +376,9 @@ export class TransactionsService {
     }
 
     // Validate FK ownership for all imported transactions
-    const uniqueAccountIds = [...new Set(transactionsData.map((t) => t.accountId).filter(Boolean))] as string[];
-    const uniqueCategoryIds = [...new Set(transactionsData.map((t) => t.categoryId).filter(Boolean))] as string[];
-    const uniqueCreditCardIds = [...new Set(transactionsData.map((t) => t.creditCardId).filter(Boolean))] as string[];
+    const uniqueAccountIds = Array.from(new Set(transactionsData.map((t) => t.accountId).filter(Boolean))) as string[];
+    const uniqueCategoryIds = Array.from(new Set(transactionsData.map((t) => t.categoryId).filter(Boolean))) as string[];
+    const uniqueCreditCardIds = Array.from(new Set(transactionsData.map((t) => t.creditCardId).filter(Boolean))) as string[];
 
     if (uniqueAccountIds.length > 0) {
       const ownedAccounts = await this.prisma.account.findMany({
@@ -429,7 +432,7 @@ export class TransactionsService {
         .filter((t) => !(t.fitId && existingFitIds.has(t.fitId)))
         .map((t) => ({
           description: t.description,
-          amount: Number(t.amount),
+          amount: encryptAmount(Number(t.amount), this.encryption),
           date: new Date(t.date),
           type: t.type,
           isFixed: t.isFixed || false,
@@ -486,10 +489,7 @@ export class TransactionsService {
 
       for (const [accId, delta] of Object.entries(accountDeltas)) {
         if (delta !== 0) {
-          await tx.account.updateMany({
-            where: { id: accId, userId },
-            data: { balance: { increment: delta } },
-          });
+          await atomicBalanceUpdate(tx, accId, userId, delta, this.encryption);
         }
       }
 
@@ -724,10 +724,7 @@ export class TransactionsService {
               ? oldAmount
               : 0;
         if (revertAdj !== 0) {
-          await tx.account.updateMany({
-            where: { id: oldTx.accountId, userId },
-            data: { balance: { increment: revertAdj } },
-          });
+          await atomicBalanceUpdate(tx, oldTx.accountId, userId, revertAdj, this.encryption);
         }
       }
 
@@ -758,13 +755,12 @@ export class TransactionsService {
         }
       }
 
+      const { amount: updateAmount, ...updateRest } = updateTransactionDto;
       await tx.transaction.updateMany({
         where: { id, userId },
         data: {
-          ...updateTransactionDto,
-          amount: updateTransactionDto.amount
-            ? Number(updateTransactionDto.amount)
-            : undefined,
+          ...updateRest,
+          amount: updateAmount ? encryptAmount(Number(updateAmount), this.encryption) : undefined,
           date: updateTransactionDto.date
             ? new Date(updateTransactionDto.date)
             : undefined,
@@ -780,10 +776,7 @@ export class TransactionsService {
               ? -newAmount
               : 0;
         if (applyAdj !== 0) {
-          await tx.account.updateMany({
-            where: { id: newAccountId, userId },
-            data: { balance: { increment: applyAdj } },
-          });
+          await atomicBalanceUpdate(tx, newAccountId, userId, applyAdj, this.encryption);
         }
       }
 
@@ -852,11 +845,8 @@ export class TransactionsService {
               const revertAdj =
                 sibTx.type === 'INCOME' ? -sibAmount : sibTx.type === 'EXPENSE' ? sibAmount : 0;
               if (revertAdj !== 0) {
-                await tx.account.updateMany({
-                  where: { id: sibTx.accountId, userId },
-                  data: { balance: { increment: revertAdj } },
-                });
-              }
+          await atomicBalanceUpdate(tx, sibTx.accountId, userId, revertAdj, this.encryption);
+        }
             }
           }
         }
@@ -871,10 +861,7 @@ export class TransactionsService {
               ? oldAmount
               : 0;
         if (revertAdj !== 0) {
-          await tx.account.updateMany({
-            where: { id: oldTx.accountId, userId },
-            data: { balance: { increment: revertAdj } },
-          });
+          await atomicBalanceUpdate(tx, oldTx.accountId, userId, revertAdj, this.encryption);
         }
       }
 
@@ -939,7 +926,7 @@ export class TransactionsService {
       const outTx = await tx.transaction.create({
         data: {
           description: `${txDescription} (Saída)`,
-          amount,
+          amount: encryptAmount(amount, this.encryption),
           date,
           type: 'EXPENSE',
           categoryId: transferCat.id,
@@ -953,7 +940,7 @@ export class TransactionsService {
       const inTx = await tx.transaction.create({
         data: {
           description: `${txDescription} (Entrada)`,
-          amount,
+          amount: encryptAmount(amount, this.encryption),
           date,
           type: 'INCOME',
           categoryId: transferCat.id,
@@ -964,15 +951,8 @@ export class TransactionsService {
       });
 
       // 4. Update balances
-      await tx.account.updateMany({
-        where: { id: sourceAccountId, userId },
-        data: { balance: { decrement: amount } },
-      });
-
-      await tx.account.updateMany({
-        where: { id: destinationAccountId, userId },
-        data: { balance: { increment: amount } },
-      });
+      await atomicBalanceUpdate(tx, sourceAccountId, userId, -amount, this.encryption);
+      await atomicBalanceUpdate(tx, destinationAccountId, userId, amount, this.encryption);
 
       // Audit log
       this.auditService.logAction(userId, AuditAction.TRANSFER, 'Transaction', undefined, undefined, { sourceAccountId, destinationAccountId, amount });

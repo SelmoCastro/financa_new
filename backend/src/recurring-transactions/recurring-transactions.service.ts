@@ -2,10 +2,15 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRecurringTransactionDto } from './dto/create-recurring-transaction.dto';
 import { UpdateRecurringTransactionDto } from './dto/update-recurring-transaction.dto';
+import { EncryptionService } from '../common/services/encryption.service';
+import { encryptAmount, decryptAmount } from '../common/services/balance-helper';
 
 @Injectable()
 export class RecurringTransactionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryption: EncryptionService,
+  ) {}
 
   async create(dto: CreateRecurringTransactionDto, userId: string) {
     // Validate FK ownership
@@ -28,9 +33,11 @@ export class RecurringTransactionsService {
       if (!card) throw new BadRequestException('Cartão não encontrado ou não pertence a este usuário');
     }
 
+    const { amount, ...rest } = dto;
     return this.prisma.recurringTransaction.create({
       data: {
-        ...dto,
+        ...rest,
+        amount: encryptAmount(amount, this.encryption),
         userId,
       },
       include: { category: true, account: true, creditCard: true },
@@ -56,9 +63,13 @@ export class RecurringTransactionsService {
 
   async update(id: string, dto: UpdateRecurringTransactionDto, userId: string) {
     await this.findOne(id, userId);
+    const { amount, ...rest } = dto;
     return this.prisma.recurringTransaction.update({
       where: { id },
-      data: dto,
+      data: {
+        ...rest,
+        ...(amount !== undefined ? { amount: encryptAmount(amount, this.encryption) } : {}),
+      },
       include: { category: true, account: true, creditCard: true },
     });
   }
@@ -99,11 +110,11 @@ export class RecurringTransactionsService {
     ]);
 
     const totalFixedExpense = recorrentes.reduce(
-      (sum, r) => sum + Number(r.amount),
+      (sum, r) => sum + decryptAmount(r.amount, this.encryption),
       0,
     );
     const monthlyIncome = transactions.reduce(
-      (sum, t) => sum + Number(t.amount),
+      (sum, t) => sum + decryptAmount(t.amount, this.encryption),
       0,
     ) || 1;
 

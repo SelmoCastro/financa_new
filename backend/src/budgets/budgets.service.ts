@@ -3,12 +3,15 @@ import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
+import { EncryptionService } from '../common/services/encryption.service';
+import { encryptAmount, decryptAmount } from '../common/services/balance-helper';
 
 @Injectable()
 export class BudgetsService {
   constructor(
     private prisma: PrismaService,
     private subscriptionService: SubscriptionService,
+    private encryption: EncryptionService,
   ) {}
 
   async create(createBudgetDto: CreateBudgetDto, userId: string) {
@@ -42,11 +45,11 @@ export class BudgetsService {
           categoryId,
         },
       },
-      update: { amount: Number(amount) },
+      update: { amount: encryptAmount(Number(amount), this.encryption) },
       create: {
         userId,
         categoryId,
-        amount: Number(amount),
+        amount: encryptAmount(Number(amount), this.encryption),
       },
     });
   }
@@ -70,8 +73,8 @@ export class BudgetsService {
     // Calculate usage for each budget
     const budgetsWithUsage = await Promise.all(
       budgets.map(async (budget) => {
-        const expenses = await this.prisma.transaction.aggregate({
-          _sum: { amount: true },
+        // Aggregate amounts via raw query since amount is now an encrypted string
+        const expenseRows = await this.prisma.transaction.findMany({
           where: {
             userId,
             type: 'EXPENSE',
@@ -82,14 +85,15 @@ export class BudgetsService {
               lte: endOfMonth,
             },
           },
+          select: { amount: true },
         });
-
-        const spent = Number(expenses._sum.amount || 0);
-        const budgetAmount = Number(budget.amount);
-        const percentage = (spent / budgetAmount) * 100;
+        const spent = expenseRows.reduce((sum, t) => sum + decryptAmount(t.amount, this.encryption), 0);
+        const budgetAmount = decryptAmount(budget.amount, this.encryption);
+        const percentage = budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0;
 
         return {
           ...budget,
+          amount: budgetAmount, // Return decrypted value to frontend
           spent,
           percentage: Math.min(percentage, 100),
           isOverBudget: spent > budgetAmount,
@@ -104,14 +108,15 @@ export class BudgetsService {
     await this.subscriptionService.checkNotExceeding(userId, 'budget', id);
     const data: Record<string, unknown> = { ...updateBudgetDto };
 
-    if (data.amount) {
-      data.amount = Number(data.amount);
+    // Encrypt amount if provided (now a String field)
+    if (data.amount !== undefined && data.amount !== null) {
+      data.amount = encryptAmount(Number(data.amount), this.encryption);
     }
 
     // If categoryId is being updated, verify it exists, belongs to user, and is not soft-deleted
     if (data.categoryId) {
       const cat = await this.prisma.category.findFirst({
-        where: { id: data.categoryId, userId, deletedAt: null },
+        where: { id: data.categoryId as string, userId, deletedAt: null },
       });
       if (!cat) {
         throw new BadRequestException('Category not found');

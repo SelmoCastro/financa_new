@@ -92,17 +92,7 @@ export class CreditCardsController {
 
   @Get('installments/:id/schedule')
   getInstallmentSchedule(@Param('id') id: string, @Request() req) {
-    return this.creditCardsService.findOneInstallment(id, req.user.userId).then(inst => {
-      return this.creditCardsService.getInstallmentSchedule({
-        ...inst,
-        totalAmount: Number(inst.totalAmount),
-        amountPerMonth: Number(inst.amountPerMonth),
-        entryAmount: inst.entryAmount ? Number(inst.entryAmount) : null,
-        startDate: inst.startDate,
-        dueDay: inst.dueDay,
-        installmentCount: inst.installmentCount,
-      });
-    });
+    return this.creditCardsService.getInstallmentScheduleForUser(id, req.user.userId);
   }
 
   @Patch('installments/:id')

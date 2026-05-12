@@ -1,9 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EncryptionService } from '../common/services/encryption.service';
+import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryption: EncryptionService,
+  ) {}
 
   async create(
     userId: string,
@@ -86,42 +91,44 @@ export class NotificationsService {
         const result = await this.prisma.$transaction(async (tx) => {
           // 1. Lock and verify the account
           const rows = await tx.$queryRaw<
-            { id: string; balance: number }[]
+            { id: string; balance: string }[]
           >`SELECT id, balance FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE`;
 
           if (!rows[0]) {
             throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
           }
-          if (Number(rows[0].balance) < amount) {
+          const currentBalance = decryptAmount(rows[0].balance, this.encryption);
+          if (currentBalance < amount) {
             throw new BadRequestException('Saldo insuficiente para pagar a fatura');
           }
 
-          // 2. Debit the account
-          await tx.account.updateMany({
-            where: { id: accountId, userId },
-            data: { balance: { decrement: amount } },
-          });
+          // 2. Debit the account using atomic encrypted balance update
+          await atomicBalanceUpdate(tx, accountId, userId, -amount, this.encryption);
 
-          // 3. Update the invoice
+          // 3. Update the invoice (paidAmount is now a String field)
           const invoice = await tx.creditCardInvoice.update({
             where: { id: invoiceId },
             data: {
-              paidAmount: { increment: amount },
+              paidAmount: encryptAmount(
+                (await tx.creditCardInvoice.findUnique({ where: { id: invoiceId } }))!
+                  ? decryptAmount((await tx.creditCardInvoice.findUnique({ where: { id: invoiceId } }))!.paidAmount, this.encryption) + amount
+                  : amount,
+                this.encryption,
+              ),
               isPaid: true,
               paidAt: new Date(),
             },
-            include: { creditCard: true },
           });
 
-          // 4. Create a traceability transaction
+          // 4. Create a traceability transaction (amount is now encrypted string)
+          const ccInvoice = await tx.creditCardInvoice.findUnique({ where: { id: invoiceId } });
           await tx.transaction.create({
             data: {
-              description: meta.description || `Pagamento fatura ${invoice.creditCard?.name || ''}`,
-              amount,
+              description: meta.description || `Pagamento fatura`,
+              amount: encryptAmount(amount, this.encryption),
               date: new Date(),
               type: 'EXPENSE',
               accountId,
-              invoiceId,
               userId,
             },
           });
@@ -147,29 +154,30 @@ export class NotificationsService {
         notif.type === 'ACTION_INSTALLMENT'
       ) {
         const amount = meta.amount;
-        const type = meta.transactionType || 'EXPENSE'; // Use transactionType from scheduler, fallback to EXPENSE for installments
+        const type = meta.transactionType || 'EXPENSE';
 
-        // Use interactive transaction for true atomicity — locks are held
-        // throughout, preventing race conditions on balance and installment state
         const [transaction] = await this.prisma.$transaction(async (tx) => {
           // 1. If accountId present, verify ownership AND sufficient balance (atomic)
           if (meta.accountId) {
-            const account = await tx.account.findFirst({
-              where: { id: meta.accountId, userId },
-            });
-            if (!account) {
+            const lockedRows = await tx.$queryRaw<
+              { id: string; balance: string }[]
+            >`SELECT id, balance FROM "Account" WHERE id = ${meta.accountId} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE`;
+            if (!lockedRows[0]) {
               throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
             }
-            if (type === 'EXPENSE' && Number(account.balance) < Number(amount)) {
-              throw new BadRequestException('Saldo insuficiente para esta operação');
+            if (type === 'EXPENSE') {
+              const bal = decryptAmount(lockedRows[0].balance, this.encryption);
+              if (bal < Number(amount)) {
+                throw new BadRequestException('Saldo insuficiente para esta operação');
+              }
             }
           }
 
-          // 2. Create the transaction
+          // 2. Create the transaction (amount is now encrypted string)
           const txn = await tx.transaction.create({
             data: {
               description: meta.description,
-              amount,
+              amount: encryptAmount(Number(amount), this.encryption),
               date: new Date(),
               type,
               categoryId: meta.categoryId || null,
@@ -177,7 +185,6 @@ export class NotificationsService {
               creditCardId: meta.creditCardId || null,
               userId,
               isFixed: true,
-              // Copy installment tracking fields when confirming a parcel
               currentInstallment: meta.currentInstallment || null,
               installmentCount: meta.installmentCount || null,
             },
@@ -185,14 +192,8 @@ export class NotificationsService {
 
           // 3. Update account balance if needed
           if (meta.accountId) {
-            await tx.account.update({
-              where: { id: meta.accountId },
-              data: {
-                balance: type === 'INCOME'
-                  ? { increment: Number(amount) }
-                  : { decrement: Number(amount) },
-              },
-            });
+            const adjustment = type === 'INCOME' ? Number(amount) : -Number(amount);
+            await atomicBalanceUpdate(tx, meta.accountId as string, userId, adjustment, this.encryption);
           }
 
           // 4. If installment, advance the tracker

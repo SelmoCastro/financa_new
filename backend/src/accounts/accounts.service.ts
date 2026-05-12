@@ -4,12 +4,15 @@ import { UpdateAccountDto } from './dto/update-account.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
 import { Prisma } from '@prisma/client';
+import { EncryptionService } from '../common/services/encryption.service';
+import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
 
 @Injectable()
 export class AccountsService {
   constructor(
     private prisma: PrismaService,
     private subscriptionService: SubscriptionService,
+    private encryption: EncryptionService,
   ) {}
 
   async create(createAccountDto: CreateAccountDto, userId: string) {
@@ -25,13 +28,13 @@ export class AccountsService {
       );
     }
     return this.prisma.$transaction(async (tx) => {
-      // 1. Create the account — balance starts at 0; the increment below applies the initial balance.
-      // Using ...createAccountDto would set balance twice (once from DTO, once from increment).
+      // 1. Create the account — balance starts at 0; the atomicBalanceUpdate below applies the initial balance.
+      // Using ...createAccountDto would set balance twice (once from DTO, once from update).
       const { balance: _dtoBalance, ...accountData } = createAccountDto;
       const account = await tx.account.create({
         data: {
           ...accountData,
-          balance: 0,
+          balance: encryptAmount(0, this.encryption),
           userId,
         },
       });
@@ -61,7 +64,7 @@ export class AccountsService {
             accountId: account.id,
             categoryId: category.id,
             description: 'Saldo Inicial',
-            amount: Math.abs(initialBalance),
+            amount: encryptAmount(Math.abs(initialBalance), this.encryption),
             type: initialBalance > 0 ? 'INCOME' : 'EXPENSE',
             date: new Date(), // Current date as starting point
             classificationRule: 20, // Objectives/Savings by default
@@ -69,10 +72,7 @@ export class AccountsService {
         });
 
         // 3. Update account balance with the initial balance
-        await tx.account.update({
-          where: { id: account.id },
-          data: { balance: { increment: initialBalance } },
-        });
+        await atomicBalanceUpdate(tx, account.id, userId, initialBalance, this.encryption);
       }
 
       return account;
@@ -113,20 +113,17 @@ export class AccountsService {
       // V8: Reverse balance contributions from all active transactions BEFORE soft-deleting them
       const transactions = await tx.transaction.findMany({
         where: { accountId: id, userId, deletedAt: null },
-        select: { amount: true, type: true },
+        select: { id: true, amount: true, type: true },
       });
       let delta = 0;
       for (const t of transactions) {
-        if (t.type === 'INCOME') delta += Number(t.amount);
-        else if (t.type === 'EXPENSE') delta -= Number(t.amount);
+        if (t.type === 'INCOME') delta += decryptAmount(t.amount, this.encryption);
+        else if (t.type === 'EXPENSE') delta -= decryptAmount(t.amount, this.encryption);
         // TRANSFER handled by the other side
       }
       // Reverse the delta to bring account balance back to zero net contribution
       if (delta !== 0) {
-        await tx.account.updateMany({
-          where: { id, userId },
-          data: { balance: { increment: -delta } },
-        });
+        await atomicBalanceUpdate(tx, id, userId, -delta, this.encryption);
       }
 
       // Soft-delete all transactions belonging to this account
@@ -165,38 +162,38 @@ export class AccountsService {
     await this.subscriptionService.checkNotExceeding(userId, 'account', id);
     // V18: Lock the account row to prevent concurrent balance changes during reconciliation
     return this.prisma.$transaction(async (tx) => {
-      const accounts = await tx.$queryRaw<Array<{ id: string; balance: number }>>`
+      const accounts = await tx.$queryRaw<Array<{ id: string; balance: string }>>`
         SELECT id, balance FROM "Account" WHERE id = ${id} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE
       `;
       if (accounts.length === 0) throw new NotFoundException('Conta não encontrada');
 
-      // Sum all active transactions for this account using Decimal arithmetic to avoid float drift
+      // Sum all active transactions for this account
       const transactions = await tx.transaction.findMany({
         where: { accountId: id, userId, deletedAt: null },
         select: { amount: true, type: true },
       });
 
-      let calculatedBalance = new Prisma.Decimal(0);
+      let calculatedBalance = 0;
       for (const t of transactions) {
-        if (t.type === 'INCOME') calculatedBalance = calculatedBalance.plus(t.amount);
-        else if (t.type === 'EXPENSE') calculatedBalance = calculatedBalance.minus(t.amount);
+        if (t.type === 'INCOME') calculatedBalance += decryptAmount(t.amount, this.encryption);
+        else if (t.type === 'EXPENSE') calculatedBalance -= decryptAmount(t.amount, this.encryption);
       }
 
-      const currentBalance = Number(accounts[0].balance);
-      const calculatedBalanceNumber = Number(calculatedBalance);
-      const drift = Number(calculatedBalance.minus(new Prisma.Decimal(accounts[0].balance)));
+      const currentBalance = decryptAmount(accounts[0].balance, this.encryption);
+      const drift = calculatedBalance - currentBalance;
 
       if (drift !== 0) {
+        // Set the balance directly to the calculated value
         await tx.account.update({
           where: { id },
-          data: { balance: { increment: drift } },
+          data: { balance: encryptAmount(calculatedBalance, this.encryption) },
         });
       }
 
       return {
         accountId: id,
         previousBalance: currentBalance,
-        calculatedBalance: calculatedBalanceNumber,
+        calculatedBalance,
         drift,
         fixed: drift !== 0,
         transactionCount: transactions.length,

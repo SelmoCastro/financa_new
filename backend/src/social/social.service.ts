@@ -5,12 +5,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EncryptionService } from '../common/services/encryption.service';
+import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
 
 @Injectable()
 export class SocialService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private encryption: EncryptionService,
   ) {}
 
   async sendInvite(
@@ -39,10 +42,10 @@ export class SocialService {
       where: { email: data.recipientEmail },
     });
 
-    // 3. Create the invite (even if recipient doesn't exist yet, we store the email)
+    // 3. Create the invite (amount is now encrypted string)
     const invite = await this.prisma.transactionInvite.create({
       data: {
-        amount: data.amount,
+        amount: encryptAmount(data.amount, this.encryption),
         description: data.description,
         date: new Date(data.date),
         type: data.type,
@@ -92,10 +95,10 @@ export class SocialService {
     return this.prisma.$transaction(async (tx) => {
       // Verify that accountId belongs to this user AND lock the row (FOR UPDATE)
       // CRITICAL: Use SELECT ... FOR UPDATE to prevent concurrent overdraft
-      let account: { id: string; userId: string; balance: number; deletedAt: Date | null } | null = null;
+      let account: { id: string; userId: string; balance: string; deletedAt: Date | null } | null = null;
       if (accountId) {
         const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE`;
-        account = (rows as Array<{ id: string; userId: string; balance: number; deletedAt: Date | null }>)[0] || null;
+        account = (rows as Array<{ id: string; userId: string; balance: string; deletedAt: Date | null }>)[0] || null;
         if (!account || account.deletedAt) {
           throw new BadRequestException('Conta não encontrada ou não pertence ao usuário');
         }
@@ -112,36 +115,30 @@ export class SocialService {
       }
 
       // Overdraft check: if EXPENSE, verify sufficient balance
+      const inviteAmount = decryptAmount(invite.amount, this.encryption);
       if (invite.type === 'EXPENSE' && account) {
-        const inviteAmount = Number(invite.amount);
-        if (Number(account.balance) < inviteAmount) {
+        const currentBalance = decryptAmount(account.balance, this.encryption);
+        if (currentBalance < inviteAmount) {
           throw new BadRequestException('Saldo insuficiente na conta para esta despesa');
         }
       }
 
-      // 1. Create the mirrored transaction
-      // Mantemos o mesmo tipo original: uma Despesa de Pizza compartilhada é Despesa para ambos.
-
+      // 1. Create the mirrored transaction (amount encrypted)
       await tx.transaction.create({
         data: {
           userId,
           accountId,
           categoryId,
-          amount: Number(invite.amount),
+          amount: encryptAmount(inviteAmount, this.encryption),
           description: invite.description,
           date: invite.date,
           type: invite.type,
         },
       });
 
-      // Atualizar Saldo da Conta
-      const inviteAmount = Number(invite.amount);
-      const adjustment =
-        invite.type === 'INCOME' ? inviteAmount : -inviteAmount;
-      await tx.account.updateMany({
-        where: { id: accountId, userId },
-        data: { balance: { increment: adjustment } },
-      });
+      // Atualizar Saldo da Conta atomicamente
+      const adjustment = invite.type === 'INCOME' ? inviteAmount : -inviteAmount;
+      await atomicBalanceUpdate(tx, accountId, userId, adjustment, this.encryption);
 
       // 2. Update invite status
       await tx.transactionInvite.update({

@@ -5,12 +5,15 @@ import { CreateInstallmentDto } from './dto/create-installment.dto';
 import { UpdateInstallmentDto } from './dto/update-installment.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
+import { EncryptionService } from '../common/services/encryption.service';
+import { encryptAmount, decryptAmount } from '../common/services/balance-helper';
 
 @Injectable()
 export class CreditCardsService {
   constructor(
     private prisma: PrismaService,
     private subscriptionService: SubscriptionService,
+    private encryption: EncryptionService,
   ) {}
 
   async create(createCreditCardDto: CreateCreditCardDto, userId: string) {
@@ -38,7 +41,7 @@ export class CreditCardsService {
     return this.prisma.creditCard.create({
       data: {
         name: createCreditCardDto.name,
-        limit: createCreditCardDto.limit,
+        limit: encryptAmount(createCreditCardDto.limit, this.encryption),
         closingDay: createCreditCardDto.closingDay,
         dueDay: createCreditCardDto.dueDay,
         userId,
@@ -81,9 +84,15 @@ export class CreditCardsService {
         throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
       }
     }
+    // Extract limit if provided and encrypt it
+    const { limit, ...rest } = updateCreditCardDto;
+    const data: Record<string, unknown> = { ...rest };
+    if (limit !== undefined) {
+      data.limit = encryptAmount(limit, this.encryption);
+    }
     const result = await this.prisma.creditCard.updateMany({
       where: { id, userId, deletedAt: null },
-      data: updateCreditCardDto,
+      data: data as any,
     });
     if (result.count === 0) throw new NotFoundException('Cartão de crédito não encontrado');
     // IDOR fix: include userId in findFirst to prevent cross-tenant data access
@@ -150,10 +159,10 @@ export class CreditCardsService {
     const installment = await this.prisma.creditCardInstallment.create({
       data: {
         description: dto.description,
-        totalAmount: dto.totalAmount,
+        totalAmount: encryptAmount(dto.totalAmount, this.encryption),
         installmentCount: dto.installmentCount,
-        amountPerMonth,
-        entryAmount: dto.entryAmount ?? null,
+        amountPerMonth: encryptAmount(amountPerMonth, this.encryption),
+        entryAmount: dto.entryAmount != null ? encryptAmount(dto.entryAmount, this.encryption) : null,
         startDate: new Date(),
         dueDay: dto.dueDay,
         accountId: dto.accountId,
@@ -179,7 +188,7 @@ export class CreditCardsService {
 
       transactionData.push({
         description: `${dto.description}${installmentCount > 1 ? ` (${i + 1}/${installmentCount})` : ''}`,
-        amount: amounts[i],
+        amount: encryptAmount(amounts[i], this.encryption),
         date: dueDate,
         type: 'EXPENSE',
         creditCardId,
@@ -229,9 +238,15 @@ export class CreditCardsService {
   async updateInstallment(id: string, dto: UpdateInstallmentDto, userId: string) {
     const inst = await this.findOneInstallment(id, userId);
     await this.subscriptionService.checkNotExceeding(userId, 'creditCard', inst.creditCardId);
+    // Extract financial fields and encrypt them
+    const { totalAmount, ...rest } = dto;
+    const data: Record<string, unknown> = { ...rest };
+    if (totalAmount !== undefined) {
+      data.totalAmount = encryptAmount(totalAmount, this.encryption);
+    }
     const result = await this.prisma.creditCardInstallment.updateMany({
       where: { id, userId },
-      data: dto,
+      data: data as any,
     });
     if (result.count === 0) throw new NotFoundException('Parcela não encontrada');
     // IDOR fix: include userId in findFirst to prevent cross-tenant data access
@@ -262,18 +277,35 @@ export class CreditCardsService {
   }
 
   /**
+   * Controller-facing method: fetches installment, decrypts financial fields,
+   * and returns the schedule with numeric amounts.
+   */
+  async getInstallmentScheduleForUser(id: string, userId: string) {
+    const inst = await this.findOneInstallment(id, userId);
+    return this.getInstallmentSchedule({
+      ...inst,
+      totalAmount: inst.totalAmount,
+      amountPerMonth: inst.amountPerMonth,
+      entryAmount: inst.entryAmount,
+      startDate: inst.startDate,
+      dueDay: inst.dueDay,
+      installmentCount: inst.installmentCount,
+    });
+  }
+
+  /**
    * Returns the payment schedule for an installment:
    * list of { month, year, dueDate, amount } for each installment
    */
   getInstallmentSchedule(inst: {
     installmentCount: number;
-    totalAmount: number; // Serialized from Prisma Decimal by TransformInterceptor
-    amountPerMonth: number; // Serialized from Prisma Decimal
-    entryAmount: number | null; // Serialized from Prisma Decimal | null
+    totalAmount: string; // Now a string (encrypted or plaintext)
+    amountPerMonth: string; // Now a string (encrypted or plaintext)
+    entryAmount: string | null; // Now a string | null (encrypted or plaintext)
     startDate: Date;
     dueDay: number;
   }) {
-    const entryAmount = inst.entryAmount ? Number(inst.entryAmount) : 0;
+    const entryAmount = inst.entryAmount ? decryptAmount(inst.entryAmount, this.encryption) : 0;
     const schedule: { installmentNumber: number; month: number; year: number; dueDate: string; amount: number }[] = [];
     const start = new Date(inst.startDate);
 
@@ -289,7 +321,7 @@ export class CreditCardsService {
         dueDate.setDate(0); // goes to last day of previous month (which is the expected month)
       }
 
-      const amount = (entryAmount > 0 && i === 1) ? entryAmount : Number(inst.amountPerMonth);
+      const amount = (entryAmount > 0 && i === 1) ? entryAmount : decryptAmount(inst.amountPerMonth, this.encryption);
 
       schedule.push({
         installmentNumber: i,

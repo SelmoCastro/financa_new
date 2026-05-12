@@ -7,6 +7,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { PayInvoiceDto } from './dto/pay-invoice.dto';
 import { Prisma } from '@prisma/client';
+import { EncryptionService } from '../common/services/encryption.service';
+import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
 
 /**
  * Serviço de faturas de cartão de crédito.
@@ -19,7 +21,10 @@ import { Prisma } from '@prisma/client';
  */
 @Injectable()
 export class CreditCardInvoiceService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryption: EncryptionService,
+  ) {}
 
   // ─── Helpers internos ───
 
@@ -202,7 +207,7 @@ export class CreditCardInvoiceService {
     });
 
     const totalAmount = transactions.reduce(
-      (sum, t) => sum + Number(t.amount),
+      (sum, t) => sum + decryptAmount(t.amount, this.encryption),
       0,
     );
 
@@ -270,7 +275,7 @@ export class CreditCardInvoiceService {
           referenceYear: refYear,
           closingDate,
           dueDate,
-          totalAmount: 0, // será atualizado após vincular transações
+          totalAmount: encryptAmount(0, this.encryption), // será atualizado após vincular transações
           userId,
         },
       });
@@ -305,14 +310,14 @@ export class CreditCardInvoiceService {
 
       // 4. Calcula totalAmount
       const totalAmount = transactions.reduce(
-        (sum, t) => sum + Number(t.amount),
+        (sum, t) => sum + decryptAmount(t.amount, this.encryption),
         0,
       );
 
       // 5. Atualiza totalAmount na fatura
       await tx.creditCardInvoice.update({
         where: { id: invoice.id },
-        data: { totalAmount },
+        data: { totalAmount: encryptAmount(totalAmount, this.encryption) },
       });
 
       // 6. Retorna fatura completa
@@ -351,7 +356,7 @@ export class CreditCardInvoiceService {
       throw new NotFoundException('Conta não encontrada ou não pertence a este usuário');
     }
 
-    const remaining = Number(invoice.totalAmount) - Number(invoice.paidAmount);
+    const remaining = decryptAmount(invoice.totalAmount, this.encryption) - decryptAmount(invoice.paidAmount, this.encryption);
     const payAmount = dto.amount !== undefined ? dto.amount : remaining;
 
     if (payAmount <= 0) {
@@ -365,32 +370,17 @@ export class CreditCardInvoiceService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Lock da conta para evitar concorrência
-      const rows = await tx.$queryRaw<
-        { id: string; balance: number }[]
-      >`SELECT id, balance FROM "Account" WHERE id = ${dto.accountId} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE`;
+      // Debita da conta using atomic balance update with overdraft check
+      await atomicBalanceUpdate(tx, dto.accountId, userId, -payAmount, this.encryption, true);
 
-      if (!rows[0]) {
-        throw new NotFoundException('Conta não encontrada');
-      }
-      if (Number(rows[0].balance) < payAmount) {
-        throw new BadRequestException('Saldo insuficiente para pagar a fatura');
-      }
-
-      // Debita da conta
-      await tx.account.updateMany({
-        where: { id: dto.accountId, userId },
-        data: { balance: { decrement: payAmount } },
-      });
-
-      const newPaidAmount = Number(invoice.paidAmount) + payAmount;
-      const isPaid = newPaidAmount >= Number(invoice.totalAmount);
+      const newPaidAmount = decryptAmount(invoice.paidAmount, this.encryption) + payAmount;
+      const isPaid = newPaidAmount >= decryptAmount(invoice.totalAmount, this.encryption);
 
       // Atualiza a fatura
       const updated = await tx.creditCardInvoice.update({
         where: { id: invoiceId },
         data: {
-          paidAmount: newPaidAmount,
+          paidAmount: encryptAmount(newPaidAmount, this.encryption),
           isPaid,
           paidAt: isPaid ? new Date() : null,
         },
@@ -401,7 +391,7 @@ export class CreditCardInvoiceService {
       await tx.transaction.create({
         data: {
           description: `Pagamento fatura ${invoice.creditCard.name} - ${String(invoice.referenceMonth).padStart(2, '0')}/${invoice.referenceYear}`,
-          amount: payAmount,
+          amount: encryptAmount(payAmount, this.encryption),
           date: new Date(),
           type: 'EXPENSE',
           accountId: dto.accountId,
@@ -520,20 +510,9 @@ export class CreditCardInvoiceService {
       // 2. Para cada pagamento, reverte o débito na conta (com lock)
       for (const p of paymentTxs) {
         if (p.accountId) {
-          const payAmount = Number(p.amount);
-
-          // Lock da conta
-          const rows = await tx.$queryRaw<
-            { id: string; balance: number }[]
-          >`SELECT id, balance FROM "Account" WHERE id = ${p.accountId} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE`;
-
-          if (rows[0]) {
-            // Reverte: pagamento é EXPENSE que decrementou → agora incrementa
-            await tx.account.updateMany({
-              where: { id: p.accountId, userId },
-              data: { balance: { increment: payAmount } },
-            });
-          }
+          const payAmount = decryptAmount(p.amount, this.encryption);
+          // Reverte: pagamento é EXPENSE que decrementou → agora incrementa
+          await atomicBalanceUpdate(tx, p.accountId, userId, payAmount, this.encryption);
         }
       }
 
@@ -558,7 +537,7 @@ export class CreditCardInvoiceService {
 
       return {
         deleted: true,
-        revertedAmount: paymentTxs.reduce((sum, t) => sum + Number(t.amount), 0),
+        revertedAmount: paymentTxs.reduce((sum, t) => sum + decryptAmount(t.amount, this.encryption), 0),
         revertedPayments: paymentTxs.length,
       };
     });
