@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -29,6 +29,8 @@ import { AuditModule } from './audit/audit.module';
 import { AdminModule } from './admin/admin.module';
 import { AppVersionModule } from './app-version/app-version.module';
 import { ErrorsModule } from './errors/errors.module';
+import { DecryptInterceptor } from './common/interceptors/decrypt.interceptor';
+import { EncryptionService } from './common/services/encryption.service';
 import { RecurringTransactionsModule } from './recurring-transactions/recurring-transactions.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -84,6 +86,10 @@ import { BehavioralThrottleMiddleware } from './common/middleware/behavioral-thr
     {
       provide: APP_GUARD,
       useClass: VerifiedEmailGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: DecryptInterceptor,
     },
   ],
 })
