@@ -56,6 +56,73 @@ export class RefreshTokenService {
    * Rotate a refresh token. Invalidates the old one, creates a new one in the same family.
    * Returns new token. Throws if reuse detected (replay attack).
    */
+  /**
+   * Pilar 1: Rotate by token only (no userId needed — opaque tokens are unique).
+   * Looks up the token hash, validates family/reuse/expiry, rotates.
+   * Used by AuthController.refresh() where userId is unknown upfront.
+   */
+  async rotateByToken(refreshToken: string): Promise<{ token: string; accessToken: string; userId: string }> {
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    const stored = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      include: { user: { select: { id: true, email: true, isEmailVerified: true, isAdmin: true } } },
+    });
+
+    if (!stored) {
+      // Token not found — could be legacy JWT or replay
+      throw new Error('REFRESH_TOKEN_INVALID');
+    }
+
+    if (stored.expiresAt < new Date()) {
+      await this.revokeFamily(stored.userId, stored.familyId);
+      throw new Error('REFRESH_TOKEN_EXPIRED');
+    }
+
+    if (!stored.active) {
+      // Replay detected!
+      this.logger.warn(`⚠️ Refresh token reuse detected! Revoking family ${stored.familyId.substring(0, 8)}.`);
+      await this.revokeFamily(stored.userId, stored.familyId);
+      await this.prisma.user.update({
+        where: { id: stored.userId },
+        data: { hashedRefreshToken: null },
+      });
+      throw new Error('REFRESH_TOKEN_REUSE');
+    }
+
+    const userId = stored.userId;
+    const user = stored.user;
+
+    // Valid rotation: invalidate old, create new in same family
+    await this.prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { active: false },
+    });
+
+    const newToken = crypto.randomBytes(48).toString('hex');
+    const newTokenHash = crypto.createHash('sha256').update(newToken).digest('hex');
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        familyId: stored.familyId,
+        tokenHash: newTokenHash,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    // Update legacy field for backward compat
+    const hashedLegacy = await bcrypt.hash(newToken, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { hashedRefreshToken: hashedLegacy },
+    });
+
+    this.logger.log(`Rotated token in family ${stored.familyId.substring(0, 8)} for user ${userId.substring(0, 8)}`);
+
+    return { token: newToken, accessToken: stored.familyId, userId: user.id };
+  }
+
   async rotate(userId: string, refreshToken: string): Promise<{ token: string; accessToken: string } | never> {
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
 

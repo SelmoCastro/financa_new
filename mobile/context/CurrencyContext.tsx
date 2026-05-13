@@ -40,7 +40,11 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
     }, []);
 
     const formatCurrency = React.useCallback((value: number | string, options?: Intl.NumberFormatOptions) => {
+        // Proteção contra NaN/undefined/encrypted strings não descriptografados
+        if (value === undefined || value === null) return 'R$ 0,00';
         const numValue = typeof value === 'string' ? Number(value) : value;
+        // Se o valor é string criptografada não descriptografada, retorna 0
+        if (typeof value === 'string' && value.startsWith('enc:')) return 'R$ 0,00';
         const safeValue = isNaN(numValue) ? 0 : numValue;
 
         let currentLocale = 'pt-BR';

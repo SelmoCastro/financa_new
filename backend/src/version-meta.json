@@ -1,6 +1,6 @@
 {
-  "version": "1.8.63",
-  "mobileVersion": "1.8.63",
+  "version": "1.8.64",
+  "mobileVersion": "1.8.64",
   "minRequiredVersion": "1.7.0",
   "releaseNotes": "QA Audit: 16 bug fixes - ChatWidget mounted, dedup encryption fix, Escape handler, privacy mode, OFX case-insensitive, throttle 404 fix, empty states, skeleton dark, isSubmitting guard, revokeObjectURL cleanup, REJECTED upsert guard"
 }

@@ -14,6 +14,8 @@ import { EmailService } from '../email/email.service';
 import { AuditService } from '../audit/audit.service';
 import * as crypto from 'crypto';
 
+import { RefreshTokenService } from './refresh-token.service';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -22,6 +24,7 @@ export class AuthService {
     private prisma: PrismaService,
     private emailService: EmailService,
     private auditService: AuditService,
+    private refreshTokenService: RefreshTokenService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -72,24 +75,19 @@ export class AuthService {
     throw new UnauthorizedException('Credenciais inválidas');
   }
 
+  /**
+   * Pilar 1: Generate access token (JWT 15min) + opaque refresh token via RefreshTokenService.
+   * The refresh token is NOT a JWT — it's a random opaque token tracked in the RefreshToken table.
+   * This enables token rotation and replay detection (RFC 6819).
+   */
   async generateTokens(userId: string, email: string, isEmailVerified: boolean, isAdmin: boolean = false) {
     const payload = { sub: userId, email, isEmailVerified, isAdmin };
-
-    // Build separate tokens
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '30d' });
 
-    // Store a hashed version of the refresh token in the database to allow remote invalidation
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 12);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { hashedRefreshToken },
-    });
+    // Use RefreshTokenService for opaque refresh tokens (Pilar 1: token family)
+    const { token: refreshToken } = await this.refreshTokenService.createFamily(userId);
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return { accessToken, refreshToken };
   }
 
   async login(user: { id: string; email: string; password?: string; name?: string | null; isEmailVerified: boolean; isAdmin: boolean }) {
@@ -116,35 +114,46 @@ export class AuthService {
     return { message: 'Desconectado com sucesso' };
   }
 
+  /**
+   * Pilar 1: Rotate refresh token via RefreshTokenService.
+   * Accepts both opaque tokens (new, via RefreshTokenService) and legacy JWTs.
+   */
   async refreshTokens(userId: string, refreshToken: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    // Try RefreshTokenService first (Pilar 1: opaque token rotation)
+    try {
+      const result = await this.refreshTokenService.rotate(userId, refreshToken);
+      // Generate new access token
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (!user) throw new Error('User not found');
+      const accessToken = this.jwtService.sign(
+        { sub: userId, email: user.email, isEmailVerified: user.isEmailVerified, isAdmin: user.isAdmin },
+        { expiresIn: '15m' },
+      );
+      return {
+        access_token: accessToken,
+        refreshToken: result.token,
+      };
+    } catch (err: any) {
+      if (err.message === 'REFRESH_TOKEN_INVALID' || err.message === 'REFRESH_TOKEN_EXPIRED' || err.message === 'REFRESH_TOKEN_REUSE') {
+        throw new UnauthorizedException('Access Denied: ' + err.message);
+      }
+    }
 
+    // Fallback: legacy JWT refresh token (backward compat during migration)
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.hashedRefreshToken) {
       throw new UnauthorizedException('Access Denied');
     }
-
-    const refreshTokenMatches = await bcrypt.compare(
-      refreshToken,
-      user.hashedRefreshToken,
-    );
-
+    const refreshTokenMatches = await bcrypt.compare(refreshToken, user.hashedRefreshToken);
     if (!refreshTokenMatches) {
-      // Reuse detection: se o refresh token nao bate, possivel roubo.
-      // Invalidar TODOS os tokens do usuario para forcar re-login.
       await this.prisma.user.update({
         where: { id: userId },
         data: { hashedRefreshToken: null },
       });
       throw new UnauthorizedException('Access Denied: Invalid Refresh Token');
     }
-
     const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified, user.isAdmin);
-    return {
-      access_token: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-    };
+    return { access_token: tokens.accessToken, refreshToken: tokens.refreshToken };
   }
 
   async register(createUserDto: CreateUserDto) {

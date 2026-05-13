@@ -19,6 +19,11 @@ export const formatCurrencyInput = (value: string, currencyCode: string = 'BRL')
 export const parseCurrencyToNumber = (value: string) => {
     if (!value) return 0;
     
+    // Proteção contra NaN / valores inválidos vindos de campos criptografados não descriptografados
+    if (typeof value === 'string' && (value.startsWith('enc:') || value === 'NaN' || value === 'null' || value === 'undefined')) {
+        return 0;
+    }
+
     // Identifica se usa vírgula ou ponto como decimal
     // Se tiver vírgula e estiver no final (ou perto do final), provavelmente é o decimal
     const hasComma = value.includes(',');

@@ -10,9 +10,11 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto, ChangeEmailDto, ChangeNameDto, DeleteAccountDto } from './dto/account-settings.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
+import { JwtService } from '@nestjs/jwt';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { Response, Request as ExpressRequest } from 'express';
-import { AdminGuard } from '../common/guards/admin.guard'; // V11
+import { AdminGuard } from '../common/guards/admin.guard';
+import { RefreshTokenService } from './refresh-token.service';
 
 @Controller({
   path: 'auth',
@@ -21,6 +23,8 @@ import { AdminGuard } from '../common/guards/admin.guard'; // V11
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly refreshTokenService: RefreshTokenService,
+    private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -123,7 +127,40 @@ export class AuthController {
       throw new UnauthorizedException('Refresh Token ausente');
     }
 
-    // Extrair userId do proprio JWT decodificado (nunca confiar no body)
+    // Pilar 1: Try opaque token rotation first (via RefreshTokenService)
+    try {
+      const result = await this.refreshTokenService.rotateByToken(refreshToken);
+      // Generate new access token
+      const user = await this.prisma.user.findUnique({ where: { id: result.userId } });
+      if (!user) throw new UnauthorizedException('User not found');
+      const accessToken = this.jwtService.sign(
+        { sub: result.userId, email: user.email, isEmailVerified: user.isEmailVerified, isAdmin: user.isAdmin },
+        { expiresIn: '15m' },
+      );
+      this.setCookies(res, accessToken, result.token);
+
+      const isMobile = request.headers['x-platform'] === 'mobile' ||
+                       request.headers['x-platform'] === 'react-native';
+      return {
+        access_token: accessToken,
+        ...(isMobile && { refreshToken: result.token }),
+      };
+    } catch (err: any) {
+      if (err.message === 'REFRESH_TOKEN_REUSE' || err.message === 'REFRESH_TOKEN_EXPIRED') {
+        const isMobile = request.headers['x-platform'] === 'mobile' ||
+                         request.headers['x-platform'] === 'react-native';
+        if (!isMobile) {
+          // Web: clear cookies on token reuse — force re-login
+          const isProduction = process.env.NODE_ENV === 'production';
+          res.clearCookie('access_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
+          res.clearCookie('refresh_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
+        }
+        throw new UnauthorizedException('Session expired or compromised. Please login again.');
+      }
+      // REFRESH_TOKEN_INVALID → fall through to legacy JWT path
+    }
+
+    // Legacy JWT flow: extract userId from JWT payload
     let userId: string;
     try {
       const decoded = this.authService.decodeJwt(refreshToken);
@@ -136,15 +173,9 @@ export class AuthController {
       throw new UnauthorizedException('Refresh Token inválido: userId ausente');
     }
 
-    const responseData = await this.authService.refreshTokens(
-      userId,
-      refreshToken,
-    );
+    const responseData = await this.authService.refreshTokens(userId, refreshToken);
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
 
-    // V1: Use x-platform header for reliable mobile detection.
-    // Web: refreshToken stays in HttpOnly cookie only (never in body).
-    // Mobile: refreshToken in body because SecureStore can't access cookies.
     const isMobile = request.headers['x-platform'] === 'mobile' ||
                      request.headers['x-platform'] === 'react-native';
     return {

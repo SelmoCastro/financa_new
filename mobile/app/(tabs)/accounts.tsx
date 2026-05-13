@@ -256,7 +256,18 @@ export default function AccountsScreen() {
         );
     };
 
-    const totalBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
+    const totalBalance = accounts.reduce((s, a) => {
+        const bal = Number(a.balance);
+        return s + (isNaN(bal) ? 0 : bal);
+    }, 0);
+
+    // Helper: safe number conversion (protects against encrypted strings not yet decrypted)
+    const safeNum = (v: any): number => {
+        if (v === null || v === undefined) return 0;
+        if (typeof v === 'string' && v.startsWith('enc:')) return 0;
+        const n = Number(v);
+        return isNaN(n) ? 0 : n;
+    };
 
     return (
         <>
