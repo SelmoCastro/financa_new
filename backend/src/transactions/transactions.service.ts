@@ -5,7 +5,7 @@ import { TransferTransactionDto } from './dto/transfer-transaction.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { SocialService } from '../social/social.service';
-import { AuditService, AuditAction } from '../audit/audit.service';
+import { AuditService } from '../audit/audit.service';
 import { ImportTransactionData, AiSuggestion, AccountLockRow } from './interfaces/import-transaction.interface';
 import { Prisma } from '@prisma/client';
 import { EncryptionService } from '../common/services/encryption.service';
@@ -94,7 +94,7 @@ export class TransactionsService {
       }
 
       // Audit log
-      this.auditService.logAction(userId, AuditAction.CREATE, 'Transaction', transaction.id);
+      this.auditService.log({ action: 'transaction.create', actorId: userId, targetType: 'Transaction', targetId: transaction.id });
 
       return transaction;
     });
@@ -500,7 +500,7 @@ export class TransactionsService {
       await this.saveImportHistory(userId, acceptedFitIds, rejectedFitIds, tx);
 
       // Audit log
-      this.auditService.logAction(userId, AuditAction.IMPORT, 'Transaction', undefined, undefined, { importedCount: result.count });
+      this.auditService.log({ action: 'transaction.import', actorId: userId, targetType: 'Transaction', details: { importedCount: result.count } });
 
       return { importedCount: result.count };
     });
@@ -781,7 +781,7 @@ export class TransactionsService {
       }
 
       // Audit log
-      this.auditService.logAction(userId, AuditAction.UPDATE, 'Transaction', id);
+      this.auditService.log({ action: 'transaction.update', actorId: userId, targetType: 'Transaction', targetId: id });
 
       return tx.transaction.findFirst({
         where: { id, userId, deletedAt: null },
@@ -869,7 +869,7 @@ export class TransactionsService {
       // (future enhancement — currently no installmentId on transactions)
 
       // Audit log
-      this.auditService.logAction(userId, AuditAction.DELETE, 'Transaction', id);
+      this.auditService.log({ action: 'transaction.delete', actorId: userId, targetType: 'Transaction', targetId: id, severity: 'warn' });
 
       return { count: deleteResult.count + siblingCount, deletedIds };
     });
@@ -955,7 +955,7 @@ export class TransactionsService {
       await atomicBalanceUpdate(tx, destinationAccountId, userId, amount, this.encryption);
 
       // Audit log
-      this.auditService.logAction(userId, AuditAction.TRANSFER, 'Transaction', undefined, undefined, { sourceAccountId, destinationAccountId, amount });
+      this.auditService.log({ action: 'transaction.transfer', actorId: userId, targetType: 'Transaction', details: { sourceAccountId, destinationAccountId, amount } });
 
       return { outTx, inTx };
     });
