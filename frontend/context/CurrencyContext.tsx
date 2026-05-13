@@ -28,7 +28,10 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
 
     const formatCurrency = (value: number | string, options?: Intl.NumberFormatOptions) => {
+        // Proteção contra null/undefined/NaN (campos criptografados ou NULL do banco)
+        if (value === null || value === undefined) return 'R$ 0,00';
         const numValue = typeof value === 'string' ? Number(value) : value;
+        if (isNaN(numValue)) return 'R$ 0,00';
 
         let currentLocale = 'pt-BR';
         if (currency === 'USD') currentLocale = 'en-US';

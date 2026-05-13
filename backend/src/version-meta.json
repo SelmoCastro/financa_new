@@ -1,6 +1,6 @@
 {
-  "version": "1.8.65",
-  "mobileVersion": "1.8.65",
+  "version": "1.8.66",
+  "mobileVersion": "1.8.66",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.8.65 - Hotfix: corrige falso-positivo replay attack que impedia login web + dados mobile"
+  "releaseNotes": "v1.8.66 - Hotfix: formatCurrency null guard no frontend + hashedRefreshToken no createFamily"
 }
