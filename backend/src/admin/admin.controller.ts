@@ -56,4 +56,10 @@ export class AdminController {
       dto.duration,
     );
   }
+
+  /** GET /v1/admin/security — Security stats: behavioral throttle, audit summary */
+  @Get('security')
+  getSecurityStats(@Request() req) {
+    return this.adminService.getSecurityStats(req.user.userId);
+  }
 }

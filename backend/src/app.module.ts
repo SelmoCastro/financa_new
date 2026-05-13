@@ -38,6 +38,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AutoTransactionScheduler } from './scheduler/auto-transaction.scheduler';
 import { EncryptionModule } from './common/services/encryption.module';
 import { BehavioralThrottleMiddleware } from './common/middleware/behavioral-throttle.middleware';
+import { SecurityLoggerMiddleware } from './common/middleware/security-logger.middleware';
 
 @Module({
   imports: [
@@ -101,7 +102,7 @@ import { BehavioralThrottleMiddleware } from './common/middleware/behavioral-thr
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(BehavioralThrottleMiddleware)
+      .apply(SecurityLoggerMiddleware, BehavioralThrottleMiddleware)
       .forRoutes('*');
   }
 }

@@ -21,8 +21,8 @@ import { Request, Response, NextFunction } from 'express';
 export class BehavioralThrottleMiddleware implements NestMiddleware {
   private readonly logger = new Logger(BehavioralThrottleMiddleware.name);
 
-  // Track error counts per IP
-  private ipTracker = new Map<string, {
+  // Track error counts per IP — public for admin monitoring
+  public ipTracker = new Map<string, {
     errorCount: number;
     lastActivity: number;
     penaltyUntil: number;

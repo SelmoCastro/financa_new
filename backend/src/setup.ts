@@ -119,6 +119,15 @@ export function configureApp(app: INestApplication) {
     }),
   );
 
+  // Additional security headers not covered by Helmet
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    // Disable browser features we don't use (camera, mic, geolocation, etc.)
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self)');
+    // Prevent MIME-type sniffing (redundant with helmet noSniff but explicit)
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    next();
+  });
+
   // Cookie Parser (necessário para CSRF e auth cookies)
   app.use(cookieParser());
 

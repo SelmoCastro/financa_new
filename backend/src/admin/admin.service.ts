@@ -285,4 +285,47 @@ export class AdminService {
       expiringSoon,
     };
   }
+
+  /** Security stats: audit log counts, behavioral throttle penalized IPs */
+  async getSecurityStats(adminUserId: string) {
+    await this.verifyAdmin(adminUserId);
+
+    const [
+      totalAuditLogs,
+      criticalLogs,
+      loginLogs,
+      loginFailedLogs,
+      recentAuditLogs,
+    ] = await Promise.all([
+      this.prisma.auditLog.count(),
+      this.prisma.auditLog.count({ where: { severity: 'critical' } }),
+      this.prisma.auditLog.count({ where: { action: 'auth.login' } }),
+      this.prisma.auditLog.count({ where: { action: 'auth.login_failed' } }),
+      this.prisma.auditLog.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          action: true,
+          actorId: true,
+          targetType: true,
+          targetId: true,
+          severity: true,
+          ip: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    // Throttle stats returned separately if needed
+    return {
+      audit: {
+        total: totalAuditLogs,
+        critical: criticalLogs,
+        logins: loginLogs,
+        loginFailed: loginFailedLogs,
+        recentLogs: recentAuditLogs,
+      },
+    };
+  }
 }
