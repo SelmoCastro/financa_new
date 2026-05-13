@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.60](https://github.com/SelmoCastro/financa_new/compare/v1.8.49...v1.8.60) (2026-05-13)
+
+
+### 🐛 Bug Fixes
+
+* correct import path in DecryptInterceptor ([4d7cb74](https://github.com/SelmoCastro/financa_new/commit/4d7cb740bdd061716b847ab84e2db8c902f4bdcd))
+* **docs:** correct Free plan limits in terms.html ([31b152c](https://github.com/SelmoCastro/financa_new/commit/31b152c7bb39dd95e0f4100afe9752b2e4208762))
+* **payments:** remover badge apoiador, acesso antecipado e cancelamento ambiguo ([36c0601](https://github.com/SelmoCastro/financa_new/commit/36c06014673700ab21637e48f3297b9ab10a36b8))
+* **payments:** replace axios with native fetch to avoid missing dependency ([f71c8be](https://github.com/SelmoCastro/financa_new/commit/f71c8beab34a5f4d0e2a27ed14052be351825409))
+* **payments:** sandbox mode detection + webhook error handling ([16f6f77](https://github.com/SelmoCastro/financa_new/commit/16f6f776da7b23721d011e78124bb046f2c8ae03))
+* **payments:** usar init_point ao inves de sandbox_init_point — sandbox MP fora do ar ([5e87fb5](https://github.com/SelmoCastro/financa_new/commit/5e87fb529d77a0d95220398c4b6e3686edf9313f))
+* **prisma:** add reverse relation payments on User model ([ce859d6](https://github.com/SelmoCastro/financa_new/commit/ce859d6c998ee9f440a29967f0f035233799d5bd))
+* **security:** add DecryptInterceptor to auto-decrypt financial fields in API responses ([df2e9a3](https://github.com/SelmoCastro/financa_new/commit/df2e9a3fd86c938c9c20ea5e9dd04713e79eec4a))
+* **security:** IDOR prevention - add userId to all Prisma write operations ([80441cb](https://github.com/SelmoCastro/financa_new/commit/80441cb079273829278f2848d426b5d453a6f0b0))
+* **security:** payment race condition mutex, remove getPaymentById IDOR risk ([b5a171a](https://github.com/SelmoCastro/financa_new/commit/b5a171a8646511c4ff965e2fd97ea9c63336f1ea))
+* **security:** webhook hardening, CSP on nginx, NODE_ENV production ([57c82f0](https://github.com/SelmoCastro/financa_new/commit/57c82f0593d2ae24fb5369cf65b0525fcb102e9a))
+
+
+### ✨ Features
+
+* **payments:** 4 planos — mensal R9.90, trimestral R4.90, semestral R9.90, anual R79.90 ([6e434e8](https://github.com/SelmoCastro/financa_new/commit/6e434e801652a246225821ba3ad9ea4455ef836e))
+* **payments:** add Mercado Pago integration with subscription upgrade flow ([79868c7](https://github.com/SelmoCastro/financa_new/commit/79868c7c3a649fde44948b8d5df1d8d63318a3e8))
+* **payments:** add premium return pages + fix webhook CSRF and throttle ([5c8e33a](https://github.com/SelmoCastro/financa_new/commit/5c8e33a6702b1528ce9adb42c6d3d5a8c703da3c))
+* **security:** complete Decimal→String encryption refactor for all financial fields ([e654246](https://github.com/SelmoCastro/financa_new/commit/e654246b77d7607b9fbea13f331e9799821a0a5e))
+* **security:** Defense-in-Depth — all 4 sprints implemented ([090526d](https://github.com/SelmoCastro/financa_new/commit/090526d44a7d802546b39ef096d5730c47100acb))
+* **security:** encrypt all financial data at rest with AES-256-GCM ([d57e50d](https://github.com/SelmoCastro/financa_new/commit/d57e50de73b85a0e4a45344bf1fc15cf6444d8dd))
+* **security:** Pilar 4 - AuditLog SIEM with hash chain integrity ([ecad0e7](https://github.com/SelmoCastro/financa_new/commit/ecad0e72979ebabe5f880eb3307bfeaa3d80ef8e))
+* **subscription:** read-only mode for exceeding resources when plan expires ([5b686a6](https://github.com/SelmoCastro/financa_new/commit/5b686a6f08fa96403ff70d927d88298235cbc3bd))
+
 ### [1.8.59](https://github.com/SelmoCastro/financa_new/compare/v1.8.49...v1.8.59) (2026-05-13)
 
 
