@@ -64,29 +64,29 @@ export class RecurringTransactionsService {
   async update(id: string, dto: UpdateRecurringTransactionDto, userId: string) {
     await this.findOne(id, userId);
     const { amount, ...rest } = dto;
-    return this.prisma.recurringTransaction.update({
-      where: { id },
+    const [updated] = await this.prisma.recurringTransaction.updateMany({
+      where: { id, userId },
       data: {
         ...rest,
         ...(amount !== undefined ? { amount: encryptAmount(amount, this.encryption) } : {}),
       },
-      include: { category: true, account: true, creditCard: true },
     });
+    return this.prisma.recurringTransaction.findFirst({ where: { id, userId }, include: { category: true, account: true, creditCard: true } });
   }
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    await this.prisma.recurringTransaction.delete({ where: { id } });
+    await this.prisma.recurringTransaction.deleteMany({ where: { id, userId } });
     return { deleted: true };
   }
 
   async toggle(id: string, userId: string) {
     const rt = await this.findOne(id, userId);
-    return this.prisma.recurringTransaction.update({
-      where: { id },
+    await this.prisma.recurringTransaction.updateMany({
+      where: { id, userId },
       data: { isActive: !rt.isActive },
-      include: { category: true, account: true, creditCard: true },
     });
+    return this.prisma.recurringTransaction.findFirst({ where: { id, userId }, include: { category: true, account: true, creditCard: true } });
   }
 
   /**

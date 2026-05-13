@@ -105,14 +105,18 @@ export class NotificationsService {
           // 2. Debit the account using atomic encrypted balance update
           await atomicBalanceUpdate(tx, accountId, userId, -amount, this.encryption);
 
-          // 3. Update the invoice (paidAmount is now a String field)
-          const invoice = await tx.creditCardInvoice.update({
-            where: { id: invoiceId },
+          // 3. Update the invoice (paidAmount is now a String field, verify ownership first)
+          const existingInvoice = await tx.creditCardInvoice.findFirst({
+            where: { id: invoiceId, userId },
+          });
+          if (!existingInvoice) {
+            throw new BadRequestException('Fatura não encontrada ou não pertence a este usuário');
+          }
+          const invoice = await tx.creditCardInvoice.updateMany({
+            where: { id: invoiceId, userId },
             data: {
               paidAmount: encryptAmount(
-                (await tx.creditCardInvoice.findUnique({ where: { id: invoiceId } }))!
-                  ? decryptAmount((await tx.creditCardInvoice.findUnique({ where: { id: invoiceId } }))!.paidAmount, this.encryption) + amount
-                  : amount,
+                decryptAmount(existingInvoice.paidAmount, this.encryption) + amount,
                 this.encryption,
               ),
               isPaid: true,
@@ -133,9 +137,9 @@ export class NotificationsService {
             },
           });
 
-          // 5. Mark notification as read
-          await tx.notification.update({
-            where: { id },
+          // 5. Mark notification as read (scoped to user)
+          await tx.notification.updateMany({
+            where: { id, userId },
             data: { isRead: true },
           });
 
@@ -203,8 +207,8 @@ export class NotificationsService {
             });
             if (inst) {
               const next = inst.currentInstallment + 1;
-              await tx.creditCardInstallment.update({
-                where: { id: meta.installmentId },
+              await tx.creditCardInstallment.updateMany({
+                where: { id: meta.installmentId, userId },
                 data: {
                   currentInstallment: next,
                   isActive: next < inst.installmentCount,
@@ -213,9 +217,9 @@ export class NotificationsService {
             }
           }
 
-          // 5. Mark notification as read
-          await tx.notification.update({
-            where: { id },
+          // 5. Mark notification as read (scoped to user)
+          await tx.notification.updateMany({
+            where: { id, userId },
             data: { isRead: true },
           });
 
@@ -231,8 +235,8 @@ export class NotificationsService {
     }
 
     if (action === 'postpone') {
-      await this.prisma.notification.update({
-        where: { id },
+      await this.prisma.notification.updateMany({
+        where: { id, userId },
         data: { isRead: true },
       });
       return {

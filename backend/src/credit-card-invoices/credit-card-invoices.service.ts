@@ -314,9 +314,9 @@ export class CreditCardInvoiceService {
         0,
       );
 
-      // 5. Atualiza totalAmount na fatura
-      await tx.creditCardInvoice.update({
-        where: { id: invoice.id },
+      // 5. Atualiza totalAmount na fatura (scoped to userId)
+      await tx.creditCardInvoice.updateMany({
+        where: { id: invoice.id, userId },
         data: { totalAmount: encryptAmount(totalAmount, this.encryption) },
       });
 
@@ -377,8 +377,8 @@ export class CreditCardInvoiceService {
       const isPaid = newPaidAmount >= decryptAmount(invoice.totalAmount, this.encryption);
 
       // Atualiza a fatura
-      const updated = await tx.creditCardInvoice.update({
-        where: { id: invoiceId },
+      const updated = await tx.creditCardInvoice.updateMany({
+        where: { id: invoiceId, userId },
         data: {
           paidAmount: encryptAmount(newPaidAmount, this.encryption),
           isPaid,
@@ -530,9 +530,9 @@ export class CreditCardInvoiceService {
         data: { invoiceId: null },
       });
 
-      // 5. Deleta a fatura
-      await tx.creditCardInvoice.delete({
-        where: { id: invoiceId },
+      // 5. Deleta a fatura (scoped to userId)
+      await tx.creditCardInvoice.deleteMany({
+        where: { id: invoiceId, userId },
       });
 
       return {

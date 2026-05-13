@@ -166,8 +166,8 @@ export class SocialService {
 
     if (!invite) throw new NotFoundException('Convite não encontrado');
 
-    return this.prisma.transactionInvite.update({
-      where: { id: inviteId },
+    return this.prisma.transactionInvite.updateMany({
+      where: { id: inviteId, recipientId: userId },
       data: { status: 'REJECTED' },
     });
   }
