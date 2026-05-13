@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.64](https://github.com/SelmoCastro/financa_new/compare/v1.8.63...v1.8.64) (2026-05-13)
+
 ### [1.8.62](https://github.com/SelmoCastro/financa_new/compare/v1.8.49...v1.8.62) (2026-05-13)
 
 
