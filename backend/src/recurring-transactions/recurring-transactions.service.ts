@@ -64,7 +64,7 @@ export class RecurringTransactionsService {
   async update(id: string, dto: UpdateRecurringTransactionDto, userId: string) {
     await this.findOne(id, userId);
     const { amount, ...rest } = dto;
-    const [updated] = await this.prisma.recurringTransaction.updateMany({
+    await this.prisma.recurringTransaction.updateMany({
       where: { id, userId },
       data: {
         ...rest,

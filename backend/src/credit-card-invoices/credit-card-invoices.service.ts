@@ -376,14 +376,18 @@ export class CreditCardInvoiceService {
       const newPaidAmount = decryptAmount(invoice.paidAmount, this.encryption) + payAmount;
       const isPaid = newPaidAmount >= decryptAmount(invoice.totalAmount, this.encryption);
 
-      // Atualiza a fatura
-      const updated = await tx.creditCardInvoice.updateMany({
+      // Atualiza a fatura (updateMany não aceita include, fazemos em seguida)
+      await tx.creditCardInvoice.updateMany({
         where: { id: invoiceId, userId },
         data: {
           paidAmount: encryptAmount(newPaidAmount, this.encryption),
           isPaid,
           paidAt: isPaid ? new Date() : null,
         },
+      });
+
+      const updated = await tx.creditCardInvoice.findUnique({
+        where: { id: invoiceId },
         include: { transactions: { include: { category: true } }, creditCard: true },
       });
 
