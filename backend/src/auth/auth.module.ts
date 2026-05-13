@@ -11,6 +11,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { VerifiedEmailGuard } from './verified-email.guard';
 import { AdminGuard } from '../common/guards/admin.guard'; // V11
+import { RefreshTokenService } from './refresh-token.service';
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { AdminGuard } from '../common/guards/admin.guard'; // V11
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, VerifiedEmailGuard, AdminGuard], // V11
+  providers: [AuthService, JwtStrategy, VerifiedEmailGuard, AdminGuard, RefreshTokenService], // V11
   exports: [AuthService, VerifiedEmailGuard, AdminGuard], // V11
 })
 export class AuthModule {}

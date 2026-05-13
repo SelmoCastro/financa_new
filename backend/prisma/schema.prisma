@@ -41,6 +41,7 @@ model User {
   creditCardInstallments CreditCardInstallment[]
   creditCardInvoices    CreditCardInvoice[]
   payments              Payment[]
+  refreshTokens        RefreshToken[]
 }
 
 model Account {
@@ -422,4 +423,21 @@ model CreditCardInvoice {
   @@index([userId])
   @@index([creditCardId])
   @@index([creditCardId, isPaid])
+}
+
+// Pilar 1: Refresh Token Rotation — token family pattern (RFC 6819)
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  familyId  String   // Groups tokens from same login session
+  tokenHash String   // SHA-256 hash of the refresh token
+  active    Boolean  @default(true) // false = already rotated or revoked
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenHash])
+  @@index([userId])
+  @@index([userId, familyId])
+  @@index([expiresAt])
 }
