@@ -1,6 +1,6 @@
 {
-  "version": "1.8.66",
-  "mobileVersion": "1.8.66",
+  "version": "1.8.67",
+  "mobileVersion": "1.8.67",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.8.66 - Hotfix: formatCurrency null guard no frontend + hashedRefreshToken no createFamily"
+  "releaseNotes": "v1.8.67 - Pilar 1 completo: token family com backward compat + null guards mobile/frontend"
 }

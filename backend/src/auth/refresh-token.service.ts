@@ -48,6 +48,13 @@ export class RefreshTokenService {
       },
     });
 
+    // Update legacy hashedRefreshToken for backward compat with old mobile APKs
+    const hashedLegacy = await bcrypt.hash(token, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { hashedRefreshToken: hashedLegacy },
+    });
+
     this.logger.log(`Created token family ${familyId.substring(0, 8)}... for user ${userId.substring(0, 8)}`);
     return { familyId, tokenHash, token };
   }
