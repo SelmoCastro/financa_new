@@ -6,7 +6,7 @@ interface SkeletonProps {
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({ className = '', variant = 'rectangular' }) => {
-    const baseClass = "bg-slate-200 animate-pulse";
+    const baseClass = "bg-slate-200 dark:bg-slate-700 animate-pulse";
 
     if (variant === 'circular') {
         return <div className={`rounded-full ${baseClass} ${className}`} />;

@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Edit3, Trash2, ArrowUpRight, ArrowDownLeft, Repeat, Search } from 'lucide-react';
+import { Edit3, Trash2, ArrowUpRight, ArrowDownLeft, Repeat, Search, Inbox } from 'lucide-react';
 import { Transaction, TransactionType } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -40,7 +40,16 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
 
             {/* Mobile/Card View */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 lg:hidden">
-                {filteredHistory.map((tx) => (
+                {filteredHistory.length === 0 ? (
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 px-6">
+                        <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-6">
+                            <Inbox className="w-10 h-10 text-slate-300 dark:text-slate-600" />
+                        </div>
+                        <p className="text-slate-400 dark:text-slate-500 font-bold text-lg mb-1">Nenhuma movimentação</p>
+                        <p className="text-slate-300 dark:text-slate-600 text-sm text-center">As transações aparecerão aqui conforme você adicioná-las.</p>
+                    </div>
+                ) : (
+                filteredHistory.map((tx) => (
                     <div key={tx.id} className="glass-card p-6 rounded-[2rem] relative overflow-hidden group hover:translate-y-[-2px] transition-all duration-300">
                         <div className={`absolute top-0 left-0 w-1.5 h-full ${tx.type === 'INCOME' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
                         <div className="flex items-center justify-between gap-4">
@@ -70,7 +79,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                             </div>
                         </div>
                     </div>
-                ))}
+                ))
+                )}
             </div>
 
             {/* Desktop/Table View */}
@@ -97,6 +107,15 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                     </div>
                 </div>
                 <div className="overflow-x-auto">
+                    {filteredHistory.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 px-6">
+                            <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-6">
+                                <Inbox className="w-10 h-10 text-slate-300 dark:text-slate-600" />
+                            </div>
+                            <p className="text-slate-400 dark:text-slate-500 font-bold text-lg mb-1">Nenhuma movimentação</p>
+                            <p className="text-slate-300 dark:text-slate-600 text-sm text-center">As transações aparecerão aqui conforme você adicioná-las.</p>
+                        </div>
+                    ) : (
                     <table className="w-full border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 text-[10px] uppercase font-black tracking-[0.2em] border-b border-slate-100 dark:border-slate-800">
@@ -137,6 +156,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                             ))}
                         </tbody>
                     </table>
+                    )}
                 </div>
             </div>
         </div>

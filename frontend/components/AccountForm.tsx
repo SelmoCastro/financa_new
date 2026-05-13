@@ -23,6 +23,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
         return '';
     });
     const [isLoading, setIsLoading] = useState(false);
+    const { addToast } = useToast();
     const { currencySymbol, locale } = useCurrency();
 
     const formatCurrency = (value: string) => {

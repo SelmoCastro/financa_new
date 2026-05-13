@@ -1,6 +1,6 @@
 {
-  "version": "1.8.39",
-  "mobileVersion": "1.8.39",
+  "version": "1.8.63",
+  "mobileVersion": "1.8.63",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Projecao: grafico mostra ultimos 15 dias + previstos 15 dias. Inclui transacoes reais no grafico, nao so recorrentes."
+  "releaseNotes": "QA Audit: 16 bug fixes - ChatWidget mounted, dedup encryption fix, Escape handler, privacy mode, OFX case-insensitive, throttle 404 fix, empty states, skeleton dark, isSubmitting guard, revokeObjectURL cleanup, REJECTED upsert guard"
 }

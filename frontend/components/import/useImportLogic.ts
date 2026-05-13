@@ -5,6 +5,10 @@ import { parseOFX } from '../../utils/ofxParser';
 import { toYYYYMMDD } from '../../utils/dateUtils';
 import { ParsedTransaction, ImportMode, FilterMode, ERROR_MESSAGES } from './types';
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_OFX_TYPES = ['.ofx', '.qfx'];
+const ALLOWED_RECEIPT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/pdf'];
+
 interface UseImportLogicReturn {
     step: 1 | 2;
     file: File | null;
@@ -55,6 +59,7 @@ export function useImportLogic(
     const [filterMode, setFilterMode] = useState<FilterMode>('all');
     const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     const [categories, setCategories] = useState<Category[]>(propCategories || []);
     useEffect(() => {
@@ -63,16 +68,63 @@ export function useImportLogic(
             .catch(() => setCategories(propCategories || []));
     }, []);
 
+    // Cleanup: revoke object URL and abort pending requests on unmount
+    useEffect(() => {
+        return () => {
+            if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+            abortControllerRef.current?.abort();
+        };
+    }, []);
+
     const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            setFile(e.dataTransfer.files[0]);
+            const droppedFile = e.dataTransfer.files[0];
+            // Validate by extension for OFX, or MIME type for receipts
+            if (importMode === 'ofx') {
+                const ext = '.' + (droppedFile.name.split('.').pop() || '').toLowerCase();
+                if (!ALLOWED_OFX_TYPES.includes(ext)) {
+                    alert('Formato inválido. Use arquivos .ofx ou .qfx.');
+                    return;
+                }
+            } else {
+                if (!ALLOWED_RECEIPT_TYPES.includes(droppedFile.type) && !droppedFile.type.startsWith('image/')) {
+                    alert('Formato inválido. Use imagens (JPG, PNG, WebP, HEIC) ou PDF.');
+                    return;
+                }
+            }
+            if (droppedFile.size > MAX_FILE_SIZE) {
+                alert('Arquivo muito grande. O limite é 10MB.');
+                return;
+            }
+            setFile(droppedFile);
         }
     };
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
+            const selectedFile = e.target.files[0];
+            if (importMode === 'ofx') {
+                const ext = '.' + (selectedFile.name.split('.').pop() || '').toLowerCase();
+                if (!ALLOWED_OFX_TYPES.includes(ext)) {
+                    alert('Formato inválido. Use arquivos .ofx ou .qfx.');
+                    e.target.value = '';
+                    return;
+                }
+            } else {
+                if (!ALLOWED_RECEIPT_TYPES.includes(selectedFile.type) && !selectedFile.type.startsWith('image/')) {
+                    alert('Formato inválido. Use imagens (JPG, PNG, WebP, HEIC) ou PDF.');
+                    e.target.value = '';
+                    return;
+                }
+            }
+            if (selectedFile.size > MAX_FILE_SIZE) {
+                alert('Arquivo muito grande. O limite é 10MB.');
+                e.target.value = '';
+                return;
+            }
+            setFile(selectedFile);
             if (receiptPreviewUrl) {
                 URL.revokeObjectURL(receiptPreviewUrl);
                 setReceiptPreviewUrl(null);
@@ -83,6 +135,11 @@ export function useImportLogic(
     const switchMode = (mode: ImportMode) => {
         setImportMode(mode);
         setFile(null);
+        if (receiptPreviewUrl) {
+            URL.revokeObjectURL(receiptPreviewUrl);
+            setReceiptPreviewUrl(null);
+        }
+        abortControllerRef.current?.abort();
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -107,7 +164,12 @@ export function useImportLogic(
                 ...t, accountId, creditCardId: creditCardId || undefined
             }));
             setAiStatus('✨ A IA está analisando seus gastos...');
-            const response = await api.post('/transactions/import/validate', payload);
+            abortControllerRef.current?.abort();
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
+            const response = await api.post('/transactions/import/validate', payload, {
+                signal: controller.signal,
+            });
             const { preview, skippedCount } = response.data;
             if (skippedCount > 0) {
                 console.log(`Silent Skip: ${skippedCount} transações ignoradas (FITID já existia).`);
@@ -140,8 +202,12 @@ export function useImportLogic(
             formData.append('accountId', accountId);
             if (creditCardId) formData.append('creditCardId', creditCardId);
             setAiStatus('🤖 IA extraindo dados do comprovante...');
+            abortControllerRef.current?.abort();
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
             const response = await api.post('/transactions/import/receipt', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' },
+                signal: controller.signal,
             });
             const { preview, message, errorCode } = response.data;
             if (!preview || preview.length === 0) {

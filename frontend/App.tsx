@@ -10,6 +10,7 @@ import { ImportOverlay } from './components/import/ImportOverlay';
 import { FeedbackModal } from './components/FeedbackModal';
 import { SmartBanner } from './components/SmartBanner';
 import { UpgradeModal } from './components/UpgradeModal';
+import { ChatWidget } from './components/ChatWidget';
 import { AppProviders } from './components/AppProviders';
 import { ViewRouter } from './components/ViewRouter';
 import { ToastProvider, useToast } from './context/ToastContext';
@@ -48,6 +49,20 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { selectedDate } = useMonth();
+
+  // Close any open modal/overlay on Esc key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isFormOpen) { setIsFormOpen(false); setEditingTransaction(null); }
+        else if (isImportOpen) setIsImportOpen(false);
+        else if (isFeedbackOpen) setIsFeedbackOpen(false);
+        else if (isUpgradeOpen) setIsUpgradeOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isFormOpen, isImportOpen, isFeedbackOpen, isUpgradeOpen]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -293,6 +308,8 @@ const AppContent: React.FC = () => {
           <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
         </button>
       )}
+
+      <ChatWidget />
     </div>
     </>
     </ExceedingProvider>

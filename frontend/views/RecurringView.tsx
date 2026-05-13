@@ -6,7 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { Skeleton } from '../components/Skeleton';
 import { Plus, Edit3, Trash2, X, ChevronDown, Calendar } from 'lucide-react';
 
-export const RecurringView: React.FC = () => {
+export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivacyEnabled }) => {
   const { accounts, categories, refreshData } = useData();
   const { formatCurrency } = useCurrency();
   const { addToast } = useToast();
@@ -138,11 +138,11 @@ export const RecurringView: React.FC = () => {
             💰 Comprometimento da Renda
           </p>
           <div className="flex items-end justify-between gap-4 mb-4">
-            <span className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
-              {pct}%
+            <span className={`text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+              {isPrivacyEnabled ? '••••' : `${pct}%`}
             </span>
-            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium text-right">
-              {formatCurrency(weight.totalFixedExpense)} de {formatCurrency(weight.monthlyIncome)}
+            <span className={`text-xs text-slate-400 dark:text-slate-500 font-medium text-right ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
+              {isPrivacyEnabled ? '••••' : `${formatCurrency(weight.totalFixedExpense)} de ${formatCurrency(weight.monthlyIncome)}`}
             </span>
           </div>
           <div className="w-full h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
@@ -200,10 +200,10 @@ export const RecurringView: React.FC = () => {
                 <div className="flex items-center gap-3 mt-1 flex-wrap">
                   <span
                     className={`font-black text-base tracking-tight ${
-                      r.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                      isPrivacyEnabled ? 'blur-sm select-none' : (r.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')
                     }`}
                   >
-                    {formatCurrency(Number(r.amount))}
+                    {isPrivacyEnabled ? '••••' : formatCurrency(Number(r.amount))}
                   </span>
                   <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <Calendar className="w-3 h-3" /> Dia {r.dueDay}

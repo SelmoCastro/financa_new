@@ -10,6 +10,7 @@ import { ImportTransactionData, AiSuggestion, AccountLockRow } from './interface
 import { Prisma } from '@prisma/client';
 import { EncryptionService } from '../common/services/encryption.service';
 import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
+import { normalizeDesc } from '../common/utils/normalize';
 
 @Injectable()
 export class TransactionsService {
@@ -122,6 +123,8 @@ export class TransactionsService {
       'closing balance',
       'saldo inicial',
       'saldo final',
+      'resgate automatico',
+      'aplicacao',
     ];
     transactionsData = transactionsData.filter((t) => {
       const desc = (t.description || '').toLowerCase().trim();
@@ -187,11 +190,13 @@ export class TransactionsService {
       },
     });
 
-    // Set para busca ultra-rápida de duplicatas exatas por conteúdo
+    // BUG-C1.02: Descriptografar amount antes de comparar (campo pode estar criptografado)
+    // BUG-C1.08: normalizeDesc importado de common/utils/normalize para deduplicação robusta
+
     const contentSet = new Set(
       existingContent.map(
         (t) =>
-          `${t.date.toISOString().split('T')[0]}_${t.amount}_${t.description.toUpperCase().trim()}`,
+          `${t.date.toISOString().split('T')[0]}_${decryptAmount(t.amount, this.encryption)}_${normalizeDesc(t.description)}`,
       ),
     );
 
@@ -199,7 +204,7 @@ export class TransactionsService {
     const fuzzySet = new Set(
       existingContent
         .filter((t) => t.accountId === targetAccountId)
-        .map((t) => `${t.date.toISOString().split('T')[0]}_${t.amount}`),
+        .map((t) => `${t.date.toISOString().split('T')[0]}_${decryptAmount(t.amount, this.encryption)}`),
     );
 
     const toReview: ImportTransactionData[] = [];
@@ -208,7 +213,7 @@ export class TransactionsService {
     for (const raw of transactionsData) {
       const txDate = new Date(raw.date);
       const dateStr = txDate.toISOString().split('T')[0];
-      const contentKey = `${dateStr}_${raw.amount}_${raw.description.toUpperCase().trim()}`;
+      const contentKey = `${dateStr}_${raw.amount}_${normalizeDesc(raw.description)}`;
       const fuzzyKey = `${dateStr}_${raw.amount}`;
 
       // A. Silent Skip: FITID já existe
@@ -530,12 +535,13 @@ export class TransactionsService {
     }
 
     for (const fitId of rejectedFitIds) {
-      // Só gravamos REJECTED se não foi ACCEPTED antes (não sobreescrevemos uma confirmação)
+      // BUG-C1.05: Nunca rebaixar ACCEPTED para REJECTED — upsert cria como REJECTED,
+      // mas se já existe mantém o status (não sobreescreve confirmação anterior)
       upserts.push(
         client.importedFitId.upsert({
           where: { userId_fitId: { userId, fitId } },
           create: { fitId, userId, status: 'REJECTED' },
-          update: { status: 'REJECTED' }, // Se um dia foi aceito e o usuário deletou, não mudamos o status retroativamente
+          update: {},  // Não atualiza se já existe — preserva ACCEPTED
         }),
       );
     }

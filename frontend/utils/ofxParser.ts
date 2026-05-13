@@ -23,7 +23,7 @@ export async function parseOFX(content: string): Promise<ParsedOFXTransaction[]>
     const transactions: ParsedOFXTransaction[] = [];
 
     // Extrai as blocos <STMTTRN> (Statement Transaction) do corpo OFX/SGML
-    const trnRegex = /<STMTTRN>[\s\S]*?<\/STMTTRN>/g;
+    const trnRegex = /<STMTTRN>[\s\S]*?<\/STMTTRN>/gi;
     const matches = content.match(trnRegex);
 
     if (!matches) {

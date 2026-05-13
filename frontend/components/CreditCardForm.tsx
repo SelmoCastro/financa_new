@@ -26,6 +26,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
     const [dueDay, setDueDay] = useState(cardToEdit?.dueDay ? String(cardToEdit.dueDay) : '');
     const [accountId, setAccountId] = useState(cardToEdit?.accountId || '');
     const [isLoading, setIsLoading] = useState(false);
+    const { addToast } = useToast();
     const { currencySymbol, locale } = useCurrency();
 
     const formatCurrency = (value: string) => {
@@ -81,6 +82,7 @@ export const CreditCardForm: React.FC<CreditCardFormProps> = ({ accounts, cardTo
             } else {
                 addToast('Erro ao salvar cartão. Verifique os dados.', 'error');
             }
+        } finally {
             setIsLoading(false);
         }
     };

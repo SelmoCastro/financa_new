@@ -6,9 +6,10 @@ import { useCurrency } from '../context/CurrencyContext';
 
 interface TimelineViewProps {
     transactions: Transaction[];
+    isPrivacyEnabled: boolean;
 }
 
-export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
+export const TimelineView: React.FC<TimelineViewProps> = ({ transactions, isPrivacyEnabled }) => {
     const { formatCurrency, locale } = useCurrency();
     const transactionsGroupedByDate = useMemo(() => {
         if (!Array.isArray(transactions)) return [];
@@ -61,8 +62,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions }) => {
                                                             </div>
                                                             <h4 className="font-black text-slate-800 dark:text-white text-lg md:text-xl tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors truncate">{tx.description}</h4>
                                                         </div>
-                                                        <p className={`font-black text-lg md:text-xl tracking-tighter whitespace-nowrap ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'}`}>
-                                                            {tx.type === 'INCOME' ? '+' : '-'} {formatCurrency(Number(tx.amount))}
+                                                        <p className={`font-black text-lg md:text-xl tracking-tighter whitespace-nowrap ${isPrivacyEnabled ? 'blur-sm select-none' : ''} ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'}`}>
+                                                            {isPrivacyEnabled ? '••••' : `${tx.type === 'INCOME' ? '+' : '-'} ${formatCurrency(Number(tx.amount))}`}
                                                         </p>
                                                     </div>
                                                 </div>

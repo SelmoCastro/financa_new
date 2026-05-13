@@ -49,9 +49,9 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
     case 'goals':
       return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
     case 'timeline':
-      return <TimelineView transactions={transactions} />;
+      return <TimelineView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} />;
     case 'fixed':
-      return <RecurringView />;
+      return <RecurringView isPrivacyEnabled={isPrivacyEnabled} />;
     case 'history':
       return <HistoryView transactions={monthFilteredTransactions} isPrivacyEnabled={isPrivacyEnabled} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />;
     case 'feedbacks':
