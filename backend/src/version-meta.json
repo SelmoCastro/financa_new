@@ -1,6 +1,6 @@
 {
-  "version": "1.8.64",
-  "mobileVersion": "1.8.64",
+  "version": "1.8.65",
+  "mobileVersion": "1.8.65",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "QA Audit: 16 bug fixes - ChatWidget mounted, dedup encryption fix, Escape handler, privacy mode, OFX case-insensitive, throttle 404 fix, empty states, skeleton dark, isSubmitting guard, revokeObjectURL cleanup, REJECTED upsert guard"
+  "releaseNotes": "v1.8.65 - Hotfix: corrige falso-positivo replay attack que impedia login web + dados mobile"
 }

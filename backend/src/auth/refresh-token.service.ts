@@ -132,24 +132,8 @@ export class RefreshTokenService {
     });
 
     if (!stored) {
-      // Token not found — could be expired, already rotated, or from another user
-      // Check if this is a reuse of an already-rotated token in any family for this user
-      // We detect this by checking if there's an ACTIVE token in the same family
-      // If yes, this is a REPLAY ATTACK
-      const possibleFamily = await this.prisma.refreshToken.findFirst({
-        where: { userId, active: true },
-      });
-
-      if (possibleFamily) {
-        // Replay detected! Revoke entire family
-        this.logger.warn(`⚠️ Refresh token reuse detected for user ${userId.substring(0, 8)}! Revoking family.`);
-        await this.revokeFamily(userId, possibleFamily.familyId);
-        await this.prisma.user.update({
-          where: { id: userId },
-          data: { hashedRefreshToken: null },
-        });
-      }
-
+      // Token not found — this is a legacy JWT that was never stored as opaque token.
+      // NOT a replay attack. Just signal to caller to try legacy path.
       throw new Error('REFRESH_TOKEN_INVALID');
     }
 

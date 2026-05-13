@@ -134,9 +134,10 @@ export class AuthService {
         refreshToken: result.token,
       };
     } catch (err: any) {
-      if (err.message === 'REFRESH_TOKEN_INVALID' || err.message === 'REFRESH_TOKEN_EXPIRED' || err.message === 'REFRESH_TOKEN_REUSE') {
+      if (err.message === 'REFRESH_TOKEN_EXPIRED' || err.message === 'REFRESH_TOKEN_REUSE') {
         throw new UnauthorizedException('Access Denied: ' + err.message);
       }
+      // REFRESH_TOKEN_INVALID → fall through to legacy JWT path below
     }
 
     // Fallback: legacy JWT refresh token (backward compat during migration)
