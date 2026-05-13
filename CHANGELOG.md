@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.66](https://github.com/SelmoCastro/financa_new/compare/v1.8.63...v1.8.66) (2026-05-13)
+
+
+### ✨ Features
+
+* Pilar 1 Refresh Token Rotation (RFC 6819) + crash fix na tela Conta ([7f1ac2b](https://github.com/SelmoCastro/financa_new/commit/7f1ac2b1aa98778303a6f513901d3af456e734e6))
+
+
+### 🐛 Bug Fixes
+
+* corrige erros TS pre-existentes em invoice e recurring transaction ([faaffc9](https://github.com/SelmoCastro/financa_new/commit/faaffc9051fb13933a6be90fefb9d03e899d2d2f))
+* remove falso-positivo replay detection que quebrava login web ([b0f247e](https://github.com/SelmoCastro/financa_new/commit/b0f247e2a5fb32c1bf95a6ebbb4b456093378b47))
+
 ### [1.8.65](https://github.com/SelmoCastro/financa_new/compare/v1.8.63...v1.8.65) (2026-05-13)
 
 
