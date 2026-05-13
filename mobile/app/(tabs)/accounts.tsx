@@ -1159,7 +1159,7 @@ function CardInvoiceSection({ creditCardId, creditCardName, accounts, refreshKey
                 {!invoice.isPaid && remaining > 0 && (
                     <Pressable
                         onPress={() => {
-                            setPayAmount(formatCurrencyInput(String(remaining)));
+                            setPayAmount(formatCurrencyInput(String(Math.round(remaining * 100))));
                             if (accounts.length > 0) setSelectedAccountId(accounts[0].id);
                             setShowPayModal(true);
                         }}

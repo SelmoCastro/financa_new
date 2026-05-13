@@ -1,6 +1,6 @@
 {
-  "version": "1.8.68",
-  "mobileVersion": "1.8.68",
+  "version": "1.8.69",
+  "mobileVersion": "1.8.69",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.8.68 - Corrige saldos corrompidos (NaN) + prote\u00e7\u00e3o encryptDecimal"
+  "releaseNotes": "v1.8.69 - Corrige formatCurrencyInput ao editar: valores mostravam centavos errados"
 }

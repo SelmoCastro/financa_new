@@ -60,7 +60,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
         if (visible) {
             if (transactionToEdit) {
                 setDescription(transactionToEdit.description || '');
-                setAmount(formatCurrencyInput(String(transactionToEdit.amount || 0)));
+                setAmount(formatCurrencyInput(String(Math.round(transactionToEdit.amount * 100))));
                 setCategory(transactionToEdit.category?.name || transactionToEdit.categoryLegacy || '');
                 setSelectedCategory(transactionToEdit.category || null);
                 setDate(new Date(transactionToEdit.date));

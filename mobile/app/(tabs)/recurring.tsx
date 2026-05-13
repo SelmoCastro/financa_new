@@ -60,7 +60,7 @@ export default function RecurringScreen() {
   const openEdit = (r: RecurringTransactionDTO) => {
     setEditing(r);
     setDesc(r.description);
-    setAmount(formatCurrencyInput(String(Number(r.amount)), currency));
+    setAmount(formatCurrencyInput(String(Math.round(Number(r.amount) * 100)), currency));
     setTrType(r.type);
     setDueDay(String(r.dueDay));
     setModalVisible(true);
