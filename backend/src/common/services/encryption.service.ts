@@ -161,8 +161,12 @@ export class EncryptionService implements OnModuleInit {
       return String(value);
     }
     if (value === null || value === undefined) return null;
-    // Use toFixed(2) for money to avoid floating point issues
+    // CRITICAL: never encrypt NaN — it destroys the balance permanently
     const normalized = typeof value === 'number' ? value.toFixed(2) : String(value);
+    if (normalized === 'NaN' || normalized === 'null' || normalized === 'undefined') {
+      console.error('[EncryptionService] encryptDecimal received invalid value: ' + String(value) + ' — storing as "0.00"');
+      return this.encrypt('0.00');
+    }
     return this.encrypt(normalized);
   }
 
