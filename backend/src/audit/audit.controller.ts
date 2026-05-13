@@ -1,59 +1,69 @@
-import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Req } from '@nestjs/common';
 import { AuditService } from './audit.service';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../common/guards/admin.guard';
+import { Request } from 'express';
 
-interface RequestWithUser {
-  user: { userId: string; isAdmin: boolean };
+interface RequestWithUser extends Request {
+  user: { userId: string; email: string };
 }
 
-@Controller({ path: 'audit', version: '1' })
-@UseGuards(AuthGuard('jwt'))
+@Controller('v1/audit')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
-  @Get()
-  async getMyLogs(
-    @Request() req: RequestWithUser,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('resource') resource?: string,
-    @Query('action') action?: string,
-  ) {
-    return this.auditService.findByUser(
-      req.user.userId,
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 50,
-      resource,
-      action,
-    );
-  }
-
-  @Get('admin')
+  /**
+   * GET /v1/audit/logs — Query audit logs (admin only)
+   * Query params: actorId, action, targetType, targetId, severity, from, to, limit, offset
+   */
+  @Get('logs')
   @UseGuards(AdminGuard)
-  async getAllLogs(
-    @Request() req: RequestWithUser,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('resource') resource?: string,
+  async queryLogs(
+    @Query('actorId') actorId?: string,
     @Query('action') action?: string,
+    @Query('targetType') targetType?: string,
+    @Query('targetId') targetId?: string,
+    @Query('severity') severity?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
   ) {
-    return this.auditService.findAll(
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 50,
-      resource,
+    return this.auditService.query({
+      actorId,
       action,
-    );
+      targetType,
+      targetId,
+      severity,
+      from: from ? new Date(from) : undefined,
+      to: to ? new Date(to) : undefined,
+      limit: limit ? parseInt(limit, 10) : 50,
+      offset: offset ? parseInt(offset, 10) : 0,
+    });
   }
 
   /**
-   * Verify the integrity of the audit chain.
-   * Returns whether the hash chain is intact and where it breaks (if it does).
-   * Admin-only endpoint for forensic investigations.
+   * GET /v1/audit/my — Get audit logs for the current user
    */
-  @Get('verify-integrity')
+  @Get('my')
+  async getMyLogs(
+    @Req() req: RequestWithUser,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    return this.auditService.query({
+      actorId: req.user.userId,
+      limit: limit ? parseInt(limit, 10) : 50,
+      offset: offset ? parseInt(offset, 10) : 0,
+    });
+  }
+
+  /**
+   * GET /v1/audit/verify — Verify the integrity of the audit log chain (admin only)
+   */
+  @Get('verify')
   @UseGuards(AdminGuard)
-  async verifyIntegrity() {
+  async verifyChain() {
     return this.auditService.verifyChain();
   }
 }

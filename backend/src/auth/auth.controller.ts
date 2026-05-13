@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
+import { AuditLog } from '../common/decorators/audit-log.decorator';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -41,6 +42,7 @@ export class AuthController {
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @AuditLog({ action: 'auth.register', targetType: 'User' })
   @Post('register')
   async register(
     @Body() createUserDto: CreateUserDto,
@@ -71,6 +73,7 @@ export class AuthController {
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @AuditLog({ action: 'auth.login', targetType: 'User' })
   @Post('login')
   async login(@Body() body: LoginDto, @Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
     // V5: No PII in production logs
@@ -217,6 +220,7 @@ export class AuthController {
     return this.authService.changeName(req.user.userId, dto.name || '');
   }
 
+  @AuditLog({ action: 'auth.password_change', targetType: 'User', severity: 'warn' })
   @Post('change-password')
   @UseGuards(AuthGuard('jwt'))
   async changePassword(@Request() req, @Body() dto: ChangePasswordDto, @Res({ passthrough: true }) res: Response) {
@@ -239,6 +243,7 @@ export class AuthController {
     return { message: 'E-mail alterado. Verifique seu novo endereço para confirmar.' };
   }
 
+  @AuditLog({ action: 'user.delete_account', targetType: 'User', severity: 'critical' })
   @Delete('delete-account')
   @UseGuards(AuthGuard('jwt'))
   async deleteAccount(@Request() req, @Body() body: DeleteAccountDto) { // V13: Proper DTO

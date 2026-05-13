@@ -30,6 +30,7 @@ import { AdminModule } from './admin/admin.module';
 import { AppVersionModule } from './app-version/app-version.module';
 import { ErrorsModule } from './errors/errors.module';
 import { DecryptInterceptor } from './common/interceptors/decrypt.interceptor';
+import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { EncryptionService } from './common/services/encryption.service';
 import { RecurringTransactionsModule } from './recurring-transactions/recurring-transactions.module';
 import { PaymentsModule } from './payments/payments.module';
@@ -90,6 +91,10 @@ import { BehavioralThrottleMiddleware } from './common/middleware/behavioral-thr
     {
       provide: APP_INTERCEPTOR,
       useClass: DecryptInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
   ],
 })

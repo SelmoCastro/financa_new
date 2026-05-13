@@ -1,250 +1,202 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as crypto from 'crypto';
+import { createHash } from 'crypto';
 
-export enum AuditAction {
-  CREATE = 'CREATE',
-  UPDATE = 'UPDATE',
-  DELETE = 'DELETE',
-  IMPORT = 'IMPORT',
-  TRANSFER = 'TRANSFER',
-  LOGIN = 'LOGIN',
-  LOGIN_FAILED = 'LOGIN_FAILED',
-  LOGOUT = 'LOGOUT',
-  PASSWORD_RESET = 'PASSWORD_RESET',
-  ACCOUNT_DELETE = 'ACCOUNT_DELETE',
-  BALANCE_CHANGE = 'BALANCE_CHANGE',
-  PERMISSION_CHANGE = 'PERMISSION_CHANGE',
-}
+export type AuditAction =
+  | 'auth.login'
+  | 'auth.login_failed'
+  | 'auth.logout'
+  | 'auth.register'
+  | 'auth.password_change'
+  | 'auth.email_verified'
+  | 'transaction.create'
+  | 'transaction.update'
+  | 'transaction.delete'
+  | 'account.create'
+  | 'account.update'
+  | 'account.delete'
+  | 'account.balance_change'
+  | 'budget.create'
+  | 'budget.update'
+  | 'budget.delete'
+  | 'goal.create'
+  | 'goal.update'
+  | 'goal.delete'
+  | 'credit_card.create'
+  | 'credit_card.update'
+  | 'credit_card.delete'
+  | 'invoice.pay'
+  | 'invoice.delete'
+  | 'user.update'
+  | 'user.delete_account'
+  | 'admin.action';
 
-export interface AuditLogEntry {
-  userId: string;
+export type AuditSeverity = 'info' | 'warn' | 'critical';
+
+export interface AuditLogInput {
   action: AuditAction | string;
-  resource: string;
-  resourceId?: string;
-  ip?: string;
-  userAgent?: string;
-  sessionId?: string;
-  previousState?: Record<string, any> | null;
-  newState?: Record<string, any> | null;
-  details?: Record<string, any>;
+  actorId?: string | null;
+  targetType?: string | null;
+  targetId?: string | null;
+  previousState?: Record<string, unknown> | null;
+  newState?: Record<string, unknown> | null;
+  details?: Record<string, unknown>;
+  ip?: string | null;
+  userAgent?: string | null;
+  severity?: AuditSeverity;
 }
 
-/**
- * AuditService — Immutable audit logging with SHA-256 integrity chain.
- *
- * Every audit log entry is cryptographically chained to the previous entry
- * via previousHash/currentHash, making it impossible to tamper with or
- * delete entries without breaking the chain.
- *
- * Features:
- * - SHA-256 hash chain (each entry references the hash of the previous one)
- * - Context capture (IP, userAgent, sessionId)
- * - Before/after state snapshots for mutations
- * - Graceful degradation: never fails the main operation
- * - Integrity verification API
- */
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
-  private lastKnownHash: string = 'GENESIS'; // Initial hash for the chain
 
-  constructor(private prisma: PrismaService) {
-    this.initializeChain();
-  }
+  constructor(private prisma: PrismaService) {}
 
   /**
-   * Load the last hash from the DB on service startup to resume the chain.
+   * Log an audit event with hash chain integrity.
+   * Each entry links to the previous entry via previousHash,
+   * creating a tamper-evident chain. Deleting or modifying any
+   * entry breaks the chain and can be detected via verifyChain().
    */
-  private async initializeChain() {
+  async log(input: AuditLogInput): Promise<void> {
     try {
+      // Get the last audit log entry for hash chain
       const lastEntry = await this.prisma.auditLog.findFirst({
         orderBy: { createdAt: 'desc' },
-        select: { currentHash: true },
+        select: { hash: true },
       });
-      if (lastEntry?.currentHash) {
-        this.lastKnownHash = lastEntry.currentHash;
-      }
-    } catch {
-      this.logger.warn('Could not load last audit hash — starting fresh chain');
-    }
-  }
 
-  /**
-   * Log an audit entry with integrity chain.
-   * This method NEVER throws — audit logging must not block the main operation.
-   */
-  async log(entry: AuditLogEntry): Promise<void> {
-    try {
-      const previousHash = this.lastKnownHash;
+      const previousHash = lastEntry?.hash || null;
 
-      // Sanitize: remove sensitive fields before storage
-      const safePrevious = this.sanitize(entry.previousState);
-      const safeNew = this.sanitize(entry.newState);
+      // Generate a deterministic ID for hash computation
+      const id = crypto.randomUUID();
 
-      // Compute current hash: SHA-256(userId + action + resource + resourceId + previousHash + timestamp)
-      const content = [
-        entry.userId,
-        entry.action,
-        entry.resource,
-        entry.resourceId || '',
-        previousHash,
-        Date.now().toString(),
+      // Compute hash: SHA256(id + action + actorId + targetId + previousHash + timestamp)
+      const timestamp = new Date();
+      const hashInput = [
+        id,
+        input.action,
+        input.actorId || '',
+        input.targetId || '',
+        previousHash || '',
+        timestamp.toISOString(),
       ].join('|');
 
-      const currentHash = crypto.createHash('sha256').update(content).digest('hex');
+      const hash = createHash('sha256').update(hashInput).digest('hex');
 
       await this.prisma.auditLog.create({
         data: {
-          userId: entry.userId,
-          action: entry.action,
-          resource: entry.resource,
-          resourceId: entry.resourceId,
-          ip: entry.ip,
-          userAgent: entry.userAgent,
-          sessionId: entry.sessionId,
-          previousState: safePrevious ? JSON.stringify(safePrevious) : null,
-          newState: safeNew ? JSON.stringify(safeNew) : null,
-          details: entry.details ? JSON.stringify(this.sanitize(entry.details)) : null,
+          id,
+          action: input.action,
+          actorId: input.actorId || null,
+          targetType: input.targetType || null,
+          targetId: input.targetId || null,
+          previousState: input.previousState as any ?? undefined,
+          newState: input.newState as any ?? undefined,
+          details: input.details as any ?? {},
+          ip: input.ip || null,
+          userAgent: input.userAgent || null,
+          severity: input.severity || 'info',
           previousHash,
-          currentHash,
+          hash,
+          createdAt: timestamp,
         },
       });
-
-      // Update chain pointer
-      this.lastKnownHash = currentHash;
-    } catch (error: any) {
-      // Audit logging is non-critical; never fail the main operation
-      this.logger.error(`Audit log failed: ${error?.message}`, error?.stack);
+    } catch (error) {
+      // Audit logging must NEVER block the main operation.
+      // Log the error but don't throw.
+      this.logger.error(`Failed to write audit log: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
-   * Convenience: log a simple action without state snapshots.
+   * Verify the integrity of the audit log chain.
+   * Returns { valid: boolean, brokenAt: string | null }
+   * If the chain is broken, brokenAt contains the ID of the first invalid entry.
    */
-  async logAction(
-    userId: string,
-    action: AuditAction | string,
-    resource: string,
-    resourceId?: string,
-    ip?: string,
-    details?: Record<string, any>,
-  ): Promise<void> {
-    return this.log({
-      userId,
-      action,
-      resource,
-      resourceId,
-      ip,
-      details,
-    });
-  }
-
-  /**
-   * Verify the integrity of the audit chain.
-   * Returns { valid: boolean, brokenAt?: string } where brokenAt is the ID of the first broken entry.
-   */
-  async verifyChain(limit = 10000): Promise<{ valid: boolean; brokenAt?: string; totalEntries: number; checkedEntries: number }> {
+  async verifyChain(limit = 1000): Promise<{ valid: boolean; brokenAt: string | null; checked: number }> {
     const entries = await this.prisma.auditLog.findMany({
       orderBy: { createdAt: 'asc' },
-      select: { id: true, userId: true, action: true, resource: true, resourceId: true, previousHash: true, currentHash: true, createdAt: true },
       take: limit,
+      select: {
+        id: true,
+        action: true,
+        actorId: true,
+        targetId: true,
+        previousHash: true,
+        hash: true,
+        createdAt: true,
+      },
     });
 
-    // First entry should have previousHash = 'GENESIS' or null (pre-chain entries)
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i];
-      const expectedPrevious = i === 0 ? 'GENESIS' : entries[i - 1].currentHash;
+    let previousHash: string | null = null;
 
-      // Skip entries before chain was introduced (previousHash will be null)
-      if (entry.previousHash === null && entry.currentHash === null) continue;
-
-      // Verify hash chain continuity
-      if (entry.previousHash !== expectedPrevious && entry.previousHash !== null) {
-        return {
-          valid: false,
-          brokenAt: entry.id,
-          totalEntries: entries.length,
-          checkedEntries: i + 1,
-        };
+    for (const entry of entries) {
+      // Verify chain linkage
+      if (entry.previousHash !== previousHash) {
+        return { valid: false, brokenAt: entry.id, checked: entries.indexOf(entry) + 1 };
       }
+
+      // Verify hash integrity
+      const hashInput = [
+        entry.id,
+        entry.action,
+        entry.actorId || '',
+        entry.targetId || '',
+        entry.previousHash || '',
+        entry.createdAt.toISOString(),
+      ].join('|');
+
+      const expectedHash = createHash('sha256').update(hashInput).digest('hex');
+
+      if (entry.hash !== expectedHash) {
+        return { valid: false, brokenAt: entry.id, checked: entries.indexOf(entry) + 1 };
+      }
+
+      previousHash = entry.hash;
     }
 
-    return { valid: true, totalEntries: entries.length, checkedEntries: entries.length };
+    return { valid: true, brokenAt: null, checked: entries.length };
   }
 
   /**
-   * Find audit logs for a specific user (paginated).
+   * Query audit logs with filters.
    */
-  async findByUser(
-    userId: string,
-    page = 1,
-    limit = 50,
-    resource?: string,
-    action?: string,
-  ) {
-    const where: { userId: string; action?: string; resource?: string } = { userId };
-    if (resource) where.resource = resource;
-    if (action) where.action = action;
+  async query(filters: {
+    actorId?: string;
+    action?: string;
+    targetType?: string;
+    targetId?: string;
+    severity?: string;
+    from?: Date;
+    to?: Date;
+    limit?: number;
+    offset?: number;
+  }) {
+    const where: Record<string, unknown> = {};
+
+    if (filters.actorId) where.actorId = filters.actorId;
+    if (filters.action) where.action = filters.action;
+    if (filters.targetType) where.targetType = filters.targetType;
+    if (filters.targetId) where.targetId = filters.targetId;
+    if (filters.severity) where.severity = filters.severity;
+    if (filters.from || filters.to) {
+      where.createdAt = {
+        ...(filters.from && { gte: filters.from }),
+        ...(filters.to && { lte: filters.to }),
+      };
+    }
 
     const [logs, total] = await Promise.all([
       this.prisma.auditLog.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
+        take: filters.limit || 50,
+        skip: filters.offset || 0,
       }),
       this.prisma.auditLog.count({ where }),
     ]);
 
-    return { logs, total, page, limit };
-  }
-
-  /**
-   * Find all audit logs (admin only, paginated).
-   */
-  async findAll(page = 1, limit = 50, resource?: string, action?: string) {
-    const where: { resource?: string; action?: string } = {};
-    if (resource) where.resource = resource;
-    if (action) where.action = action;
-
-    const [logs, total] = await Promise.all([
-      this.prisma.auditLog.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.auditLog.count({ where }),
-    ]);
-
-    return { logs, total, page, limit };
-  }
-
-  /**
-   * Remove sensitive fields from state snapshots before storing.
-   */
-  private sanitize(data: Record<string, any> | null | undefined): Record<string, any> | null {
-    if (!data) return null;
-    if (typeof data !== 'object') return data;
-
-    const SENSITIVE_KEYS = [
-      'password',
-      'hashedRefreshToken',
-      'token',
-      'secret',
-      'accessToken',
-      'refreshToken',
-      'cardNumber',
-      'cvv',
-    ];
-
-    const sanitized = { ...data };
-    for (const key of SENSITIVE_KEYS) {
-      if (key in sanitized) {
-        sanitized[key] = '[REDACTED]';
-      }
-    }
-    return sanitized;
+    return { logs, total };
   }
 }
