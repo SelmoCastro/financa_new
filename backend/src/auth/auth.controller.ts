@@ -280,4 +280,14 @@ export class AuthController {
   async deleteAccount(@Request() req, @Body() body: DeleteAccountDto) { // V13: Proper DTO
     return this.authService.deleteAccount(req.user.userId, body.password);
   }
+
+  // LGPD: Direito de portabilidade — exportação completa de dados pessoais
+  @Get('export-data')
+  @UseGuards(AuthGuard('jwt'))
+  async exportData(@Request() req, @Res() res: Response) {
+    const data = await this.authService.exportAllData(req.user.userId);
+    res.header('Content-Type', 'application/json; charset=utf-8');
+    res.header('Content-Disposition', 'attachment; filename=finanza-dados-pessoais.json');
+    res.send(JSON.stringify(data, null, 2));
+  }
 }

@@ -6,6 +6,7 @@ import { ResetPassword } from './components/ResetPassword';
 import { VerifyEmail } from './components/VerifyEmail';
 import LandingView from './views/LandingView';
 import PremiumReturn from './components/PremiumReturn';
+import { CookieBanner } from './components/CookieBanner';
 import api from './services/api';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -71,6 +72,7 @@ const Main = () => {
                 <Route path="/premium/pending" element={<PremiumReturn />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            <CookieBanner />
         </BrowserRouter>
     );
 };

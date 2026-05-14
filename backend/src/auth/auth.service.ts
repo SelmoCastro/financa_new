@@ -445,6 +445,34 @@ export class AuthService {
     return { message: 'Conta excluída com sucesso' };
   }
 
+  // LGPD: Direito de portabilidade — exportação completa de dados pessoais
+  async exportAllData(userId: string) {
+    const [user, accounts, creditCards, transactions, categories, budgets, goals, notifications, aiLogs] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, createdAt: true } }),
+      this.prisma.account.findMany({ where: { userId } }),
+      this.prisma.creditCard.findMany({ where: { userId } }),
+      this.prisma.transaction.findMany({ where: { userId }, orderBy: { date: 'desc' } }),
+      this.prisma.category.findMany({ where: { userId } }),
+      this.prisma.budget.findMany({ where: { userId } }),
+      this.prisma.goal.findMany({ where: { userId } }),
+      this.prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.aiRequestLog.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } }),
+    ]);
+
+    return {
+      exportedAt: new Date().toISOString(),
+      user,
+      accounts,
+      creditCards,
+      transactions,
+      categories,
+      budgets,
+      goals,
+      notifications,
+      aiRequestLogs: aiLogs,
+    };
+  }
+
   async resendVerification(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CurrencyProvider } from '../context/CurrencyContext';
 import { UpdateDialog } from '../components/UpdateDialog';
+import { ConsentModal } from '../components/ConsentModal';
 import { initErrorReporter, reportReactError } from '../utils/errorReporter';
 import '../global.css';
 
@@ -117,6 +118,7 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <UpdateDialog />
+      <ConsentModal />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="signup" />

@@ -126,6 +126,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
         }
     };
 
+    // LGPD: Direito de portabilidade — exportação completa de dados pessoais (JSON)
+    const handleExportAllData = async () => {
+        try {
+            const response = await api.get('/auth/export-data', { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'finanza-dados-pessoais.json');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            showFeedback('success', 'Dados pessoais exportados com sucesso (LGPD — portabilidade)');
+        } catch (error) {
+            showFeedback('error', 'Erro ao exportar dados pessoais');
+        }
+    };
+
     const isPremium = userPlan === 'premium';
 
     return (
@@ -391,18 +408,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                     {/* DADOS */}
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                         <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-6 ml-1">Manutenção & Dados</h4>
-                        <button
-                            onClick={handleExportData}
-                            className="flex items-center gap-6 p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group shadow-sm active:scale-95 w-full"
-                        >
-                            <div className="w-14 h-14 bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                            </div>
-                            <div className="text-left">
-                                <p className="font-black text-slate-800 dark:text-white text-sm tracking-tight">Exportar Tudo</p>
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-1">Backup em CSV</p>
-                            </div>
-                        </button>
+                        <div className="space-y-4">
+                            <button
+                                onClick={handleExportData}
+                                className="flex items-center gap-6 p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group shadow-sm active:scale-95 w-full"
+                            >
+                                <div className="w-14 h-14 bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-black text-slate-800 dark:text-white text-sm tracking-tight">Exportar Transações</p>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-1">Backup em CSV</p>
+                                </div>
+                            </button>
+                            <button
+                                onClick={handleExportAllData}
+                                className="flex items-center gap-6 p-6 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-[2rem] hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group shadow-sm active:scale-95 w-full"
+                            >
+                                <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-black text-slate-800 dark:text-white text-sm tracking-tight">Exportar Dados Pessoais</p>
+                                    <p className="text-[10px] text-indigo-400 dark:text-indigo-500 font-bold uppercase tracking-widest mt-1">LGPD — Portabilidade completa (JSON)</p>
+                                </div>
+                            </button>
+                        </div>
                     </div>
 
                     {/* LOGOUT */}
