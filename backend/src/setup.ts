@@ -97,16 +97,19 @@ export function configureApp(app: INestApplication) {
             "'self'",
             // Dynamic nonce — Helmet replaces this function with the actual nonce per request
             (req: Request, res: Response) => `'nonce-${res.locals.nonce}'`,
+            // Google Tag Manager (LGPD consent mode — blocked until user accepts)
+            'https://www.googletagmanager.com',
+            'https://www.google-analytics.com',
             // Swagger in dev needs unpkg/esm.sh, never in production
             ...(process.env.NODE_ENV !== 'production' ? ['https://unpkg.com', 'https://esm.sh'] : []),
           ],
           styleSrc: [
             "'self'",
             "'unsafe-inline'", // Tailwind needs inline styles
-            ...(process.env.NODE_ENV !== 'production' ? ['https://fonts.googleapis.com'] : []),
+            'https://fonts.googleapis.com',
           ],
           imgSrc: ["'self'", 'data:', 'https:'],
-          connectSrc: ["'self'", ...allowedOriginsCSP],
+          connectSrc: ["'self'", ...allowedOriginsCSP, 'https://www.google-analytics.com'],
           fontSrc: ["'self'", 'https://fonts.gstatic.com'],
           objectSrc: ["'none'"],
           baseUri: ["'self'"],
