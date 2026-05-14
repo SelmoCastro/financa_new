@@ -18,7 +18,8 @@ export const CookieBanner: React.FC = () => {
     };
 
     const handleDecline = () => {
-        // Even declining, essential cookies (auth) still work — this is about transparency
+        // Recusar: cookies essenciais (auth) continuam funcionando.
+        // Não utilizamos cookies de rastreamento ou publicidade.
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ accepted: false, ts: Date.now() }));
         setVisible(false);
     };
@@ -31,7 +32,7 @@ export const CookieBanner: React.FC = () => {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <div className="flex-1">
                         <p className="text-sm text-gray-700 dark:text-gray-300">
-                            🍪 Utilizamos cookies essenciais para autenticação e segurança do aplicativo.
+                            🍪 Utilizamos apenas cookies essenciais para autenticação e segurança.
                             Não utilizamos cookies de rastreamento ou publicidade.{' '}
                             <a
                                 href="https://finanzaai.tech/legal/privacy.html"
@@ -60,5 +61,24 @@ export const CookieBanner: React.FC = () => {
                 </div>
             </div>
         </div>
+    );
+};
+
+/** Link para reabrir as preferências de cookies — colocar no rodapé */
+export const CookiePrefsLink: React.FC = () => {
+    const handleClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.reload();
+    };
+
+    return (
+        <a
+            href="#cookie-preferences"
+            onClick={handleClick}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-xs underline transition-colors"
+        >
+            Preferências de Cookies
+        </a>
     );
 };

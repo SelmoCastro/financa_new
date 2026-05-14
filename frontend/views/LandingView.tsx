@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
+import { CookiePrefsLink } from '../components/CookieBanner';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -175,6 +176,7 @@ const LandingPage: React.FC = () => {
             <a href="mailto:contato@finanzaai.tech" className="hover:text-cyan-400 transition-colors">Contato</a>
             <a href="/legal/privacy.html" className="hover:text-cyan-400 transition-colors">Privacidade</a>
             <a href="/legal/terms.html" className="hover:text-cyan-400 transition-colors">Termos</a>
+            <CookiePrefsLink />
           </div>
         </div>
       </footer>
