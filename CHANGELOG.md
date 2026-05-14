@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.71](https://github.com/SelmoCastro/financa_new/compare/v1.8.63...v1.8.71) (2026-05-14)
+
+
+### ✨ Features
+
+* Pilar 1 Refresh Token Rotation (RFC 6819) + crash fix na tela Conta ([7f1ac2b](https://github.com/SelmoCastro/financa_new/commit/7f1ac2b1aa98778303a6f513901d3af456e734e6))
+
+
+### 🐛 Bug Fixes
+
+* category icons now show emoji instead of Lucide name text ([3fd6959](https://github.com/SelmoCastro/financa_new/commit/3fd69596602be2e60bf794913f580e0af8982e41))
+* corrige erros TS pre-existentes em invoice e recurring transaction ([faaffc9](https://github.com/SelmoCastro/financa_new/commit/faaffc9051fb13933a6be90fefb9d03e899d2d2f))
+* createFamily agora persiste hashedRefreshToken para backward compat ([021493b](https://github.com/SelmoCastro/financa_new/commit/021493bb563c9cd91ccc5f89b23fc0424811d027))
+* encryptDecimal rejeita NaN + saldos recalculados do DB real ([eb68781](https://github.com/SelmoCastro/financa_new/commit/eb68781e6a9da6bb4e265e163b9fc7b545660d23))
+* formatCurrency null guard no frontend CurrencyContext ([427d88e](https://github.com/SelmoCastro/financa_new/commit/427d88e5cbc6401aa1a800cf3a91b319f974f2ed))
+* formatCurrencyInput ao editar — valores mostravam centavos errados (ex: R$90 virava R$0,90) ([7bac1a5](https://github.com/SelmoCastro/financa_new/commit/7bac1a51404032ec7b47f473a0a2fdefc5c430f2))
+* remove falso-positivo replay detection que quebrava login web ([b0f247e](https://github.com/SelmoCastro/financa_new/commit/b0f247e2a5fb32c1bf95a6ebbb4b456093378b47))
+
 ### [1.8.70](https://github.com/SelmoCastro/financa_new/compare/v1.8.63...v1.8.70) (2026-05-14)
 
 
