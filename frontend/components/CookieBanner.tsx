@@ -2,25 +2,55 @@ import React, { useState, useEffect } from 'react';
 
 const STORAGE_KEY = 'finanza_cookie_consent';
 
+/** Atualiza o Google Consent Mode conforme escolha do usuário */
+function updateConsent(accepted: boolean) {
+    if (typeof window !== 'undefined' && typeof (window as any).gtag === 'function') {
+        if (accepted) {
+            (window as any).gtag('consent', 'update', {
+                'analytics_storage': 'granted',
+                'ad_storage': 'denied', // nunca ads
+            });
+        } else {
+            (window as any).gtag('consent', 'update', {
+                'analytics_storage': 'denied',
+                'ad_storage': 'denied',
+            });
+        }
+    }
+}
+
+/** Lê o consentimento salvo */
+function getSavedConsent(): { accepted: boolean; ts: number } | null {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
 export const CookieBanner: React.FC = () => {
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
-        const consent = localStorage.getItem(STORAGE_KEY);
-        if (!consent) {
+        const saved = getSavedConsent();
+        if (!saved) {
             setVisible(true);
+        } else {
+            // Re-aplica consentimento salvo (ex: após reload)
+            updateConsent(saved.accepted);
         }
     }, []);
 
     const handleAccept = () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ accepted: true, ts: Date.now() }));
+        updateConsent(true);
         setVisible(false);
     };
 
     const handleDecline = () => {
-        // Recusar: cookies essenciais (auth) continuam funcionando.
-        // Não utilizamos cookies de rastreamento ou publicidade.
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ accepted: false, ts: Date.now() }));
+        updateConsent(false);
         setVisible(false);
     };
 
@@ -32,8 +62,8 @@ export const CookieBanner: React.FC = () => {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <div className="flex-1">
                         <p className="text-sm text-gray-700 dark:text-gray-300">
-                            🍪 Utilizamos apenas cookies essenciais para autenticação e segurança.
-                            Não utilizamos cookies de rastreamento ou publicidade.{' '}
+                            🍪 Utilizamos cookies essenciais para autenticação e segurança, e cookies de análise para melhorar sua experiência.
+                            Você pode aceitar ou recusar os cookies de análise a qualquer momento.{' '}
                             <a
                                 href="https://finanzaai.tech/legal/privacy.html"
                                 target="_blank"
