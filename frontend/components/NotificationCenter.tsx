@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, Check, X, ArrowUpRight, ArrowDownLeft, Wallet, Tag, ChevronDown } from 'lucide-react';
 import api from '../services/api';
+import { getCategoryEmoji } from '../utils/categoryIcons';
 import { useData } from '../context/DataProvider';
 import { useToast } from '../context/ToastContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -277,7 +278,7 @@ export const NotificationCenter: React.FC = () => {
                                                             >
                                                                 <option value="">Selecione...</option>
                                                                 {categories.filter(c => c.type === invite.type).map(cat => (
-                                                                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                                                                    <option key={cat.id} value={cat.id}>{getCategoryEmoji(cat.icon)} {cat.name}</option>
                                                                 ))}
                                                             </select>
                                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getCategoryEmoji } from '../../utils/categoryIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
@@ -347,7 +348,7 @@ export default function BudgetsScreen() {
                                                         borderColor: categoryId === cat.id ? '#e2e8f0' : 'transparent'
                                                     }}
                                                 >
-                                                    <Text style={{ fontSize: 18, marginRight: 12 }}>{cat.icon}</Text>
+                                                    <Text style={{ fontSize: 18, marginRight: 12 }}>{getCategoryEmoji(cat.icon)}</Text>
                                                     <Text style={{ fontSize: 16, fontWeight: '700', color: categoryId === cat.id ? '#4f46e5' : '#475569', flex: 1 }}>{cat.name}</Text>
                                                     {categoryId === cat.id && <MaterialIcons name="check" size={20} color="#4f46e5" />}
                                                 </Pressable>

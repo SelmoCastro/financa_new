@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import { getCategoryEmoji } from '../utils/categoryIcons';
 import { useToast } from '../context/ToastContext';
 import { useData } from '../context/DataProvider';
 import { useMonth } from '../context/MonthContext';
@@ -258,7 +259,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
 
                                         <optgroup label="Entradas (Rendas)">
                                             {categories.filter(c => c.type === 'INCOME').map(c => (
-                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                <option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>
                                             ))}
                                         </optgroup>
 
@@ -267,7 +268,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                                 ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
                                                     .includes(c.name)
                                             ).map(c => (
-                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                <option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>
                                             ))}
                                         </optgroup>
 
@@ -276,7 +277,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                                 ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
                                                     .includes(c.name)
                                             ).map(c => (
-                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                <option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>
                                             ))}
                                         </optgroup>
 
@@ -285,7 +286,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                                                 ['Aplicações / Poupança', 'Pagamento de Dívidas']
                                                     .includes(c.name)
                                             ).map(c => (
-                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                                <option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>
                                             ))}
                                         </optgroup>
                                     </select>

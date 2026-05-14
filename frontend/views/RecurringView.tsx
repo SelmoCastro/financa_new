@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { recurringService, RecurringTransactionDTO, WeightData } from '../services/recurringService';
+import { getCategoryEmoji } from '../utils/categoryIcons';
 import { useData } from '../context/DataProvider';
 import { useCurrency } from '../context/CurrencyContext';
 import { useToast } from '../context/ToastContext';
@@ -321,7 +322,7 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
                   >
                     <option value="">Nenhuma</option>
                     {filteredCategories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                      <option key={cat.id} value={cat.id}>{getCategoryEmoji(cat.icon)} {cat.name}</option>
                     ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />

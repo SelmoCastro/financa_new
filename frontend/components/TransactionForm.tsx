@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown, Check } from 'lucide-react';
+import { getCategoryEmoji } from '../utils/categoryIcons';
 import { TransactionType, Transaction, Account, CreditCard, Category, ACCOUNT_TYPE_LABELS } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { toYYYYMMDD } from '../utils/dateUtils';
@@ -242,7 +243,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                     {externalCategories.filter(c => c.type === 'INCOME').length > 0 && type === 'INCOME' && (
                       <optgroup label="Entradas (Rendas)" className="dark:bg-slate-900">
                         {externalCategories.filter(c => c.type === 'INCOME').map(c => (
-                          <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                          <option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>
                         ))}
                       </optgroup>
                     )}
@@ -254,7 +255,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                             ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
                               .includes(c.name)
                           ).map(c => (
-                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                            <option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>
                           ))}
                         </optgroup>
 
@@ -263,7 +264,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                             ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
                               .includes(c.name)
                           ).map(c => (
-                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                            <option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>
                           ))}
                         </optgroup>
 
@@ -272,7 +273,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                             ['Aplicações / Poupança', 'Pagamento de Dívidas']
                               .includes(c.name)
                           ).map(c => (
-                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                            <option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>
                           ))}
                         </optgroup>
                       </>

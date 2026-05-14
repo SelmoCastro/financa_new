@@ -4,6 +4,7 @@ import {
     ScrollView, SafeAreaView, Platform, Alert, Image, Switch, TextInput
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getCategoryEmoji } from '../utils/categoryIcons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
@@ -353,7 +354,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
                                 color={cat ? '#4f46e5' : '#94a3b8'}
                             />
                             <Text style={[styles.selectInputText, !cat && styles.selectInputPlaceholder]}>
-                                {cat ? `${cat.icon} ${cat.name}` : 'Selecione uma categoria'}
+                                {cat ? `${getCategoryEmoji(cat.icon)} ${cat.name}` : 'Selecione uma categoria'}
                             </Text>
                         </View>
                         <MaterialIcons
@@ -397,7 +398,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
                                                             borderColor: tx.categoryId === c.id ? '#e2e8f0' : 'transparent'
                                                         }}
                                                     >
-                                                        <Text style={{ fontSize: 18, marginRight: 12 }}>{c.icon}</Text>
+                                                        <Text style={{ fontSize: 18, marginRight: 12 }}>{getCategoryEmoji(c.icon)}</Text>
                                                         <Text style={{ fontSize: 16, fontWeight: '700', color: tx.categoryId === c.id ? '#4f46e5' : '#475569', flex: 1 }}>{c.name}</Text>
                                                         {tx.categoryId === c.id && <MaterialIcons name="check" size={20} color="#4f46e5" />}
                                                     </Pressable>

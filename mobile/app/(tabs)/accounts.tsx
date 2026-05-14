@@ -4,6 +4,7 @@ import {
     Pressable, Modal, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getCategoryEmoji } from '../../utils/categoryIcons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
 import api from '../../services/api';
@@ -814,7 +815,7 @@ export default function AccountsScreen() {
                                         style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: purchaseCategoryId === c.id ? '#f1f5f9' : 'transparent', borderRadius: 16, borderWidth: 1, borderColor: purchaseCategoryId === c.id ? '#e2e8f0' : 'transparent', marginBottom: 8 }}
                                     >
                                         <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: c.color || '#e2e8f0', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                                            <Text style={{ fontSize: 14 }}>{c.icon || '📎'}</Text>
+                                            <Text style={{ fontSize: 14 }}>{getCategoryEmoji(c.icon)}</Text>
                                         </View>
                                         <Text style={{ fontSize: 16, fontWeight: '700', color: purchaseCategoryId === c.id ? '#4f46e5' : '#475569', flex: 1 }}>{c.name}</Text>
                                         {purchaseCategoryId === c.id && <MaterialIcons name="check" size={20} color="#4f46e5" />}

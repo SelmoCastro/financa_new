@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Modal, Alert, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getCategoryEmoji } from '../utils/categoryIcons';
 import api from '../services/api';
 import * as Haptics from 'expo-haptics';
 
@@ -154,7 +155,7 @@ export function InviteNotification() {
                                                         onPress={() => setSelectedCategory(cat.id)}
                                                         style={[styles.chip, selectedCategory === cat.id && styles.chipActive]}
                                                     >
-                                                        <Text style={[styles.chipText, selectedCategory === cat.id && styles.chipTextActive]}>{cat.icon} {cat.name}</Text>
+                                                        <Text style={[styles.chipText, selectedCategory === cat.id && styles.chipTextActive]}>{getCategoryEmoji(cat.icon)} {cat.name}</Text>
                                                     </Pressable>
                                                 ))}
                                             </ScrollView>

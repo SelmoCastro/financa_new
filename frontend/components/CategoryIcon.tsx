@@ -1,5 +1,6 @@
 import React from 'react';
 import * as LucideIcons from 'lucide-react';
+import { getCategoryEmoji } from '../utils/categoryIcons';
 
 interface CategoryIconProps {
   iconName: string;
@@ -12,8 +13,8 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({ iconName, className 
   const IconComponent = LucideIcons[iconName];
 
   if (!IconComponent) {
-    // Fallback if iconName is an emoji or invalid
-    return <span className={className}>{iconName}</span>;
+    // Fallback to emoji if iconName is not a valid Lucide icon
+    return <span className={className}>{getCategoryEmoji(iconName)}</span>;
   }
 
   return <IconComponent className={className} style={{ color }} />;

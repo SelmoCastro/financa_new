@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, Modal, Pressable, TextInput, ScrollView, Platform, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { getCategoryEmoji } from '../utils/categoryIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../services/api';
 import { triggerHaptic } from '../utils/haptics';
@@ -386,7 +387,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                                                                             borderColor: category === cat.name ? '#e2e8f0' : 'transparent'
                                                                         }}
                                                                     >
-                                                                        <Text style={{ fontSize: 18, marginRight: 12 }}>{cat.icon}</Text>
+                                                                        <Text style={{ fontSize: 18, marginRight: 12 }}>{getCategoryEmoji(cat.icon)}</Text>
                                                                         <Text style={{ fontSize: 16, fontWeight: '700', color: category === cat.name ? '#4f46e5' : '#475569', flex: 1 }}>{cat.name}</Text>
                                                                         {category === cat.name && <MaterialIcons name="check" size={20} color="#4f46e5" />}
                                                                     </Pressable>

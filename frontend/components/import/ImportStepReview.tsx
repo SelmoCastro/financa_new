@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, Inbox, CheckSquare, X, Sparkles, Check, Loader2, ChevronDown } from 'lucide-react';
 import { Category } from '../../types';
+import { getCategoryEmoji } from '../../utils/categoryIcons';
 import { ParsedTransaction, FilterMode } from './types';
 import { useCurrency } from '../../context/CurrencyContext';
 
@@ -196,7 +197,7 @@ const TransactionRow: React.FC<TransactionRowProps> = ({
                     <option value="" disabled>Selecione a categoria...</option>
                     <optgroup label="Entradas (Rendas)">
                         {categories.filter(c => c.type === 'INCOME').map(c => (
-                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                            <option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>
                         ))}
                     </optgroup>
                     {tx.type === 'EXPENSE' && (
@@ -204,17 +205,17 @@ const TransactionRow: React.FC<TransactionRowProps> = ({
                             <optgroup label="Necessidades (Essencial)">
                                 {categories.filter(c =>
                                     ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais'].includes(c.name)
-                                ).map(c => (<option key={c.id} value={c.id}>{c.icon} {c.name}</option>))}
+                                ).map(c => (<option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>))}
                             </optgroup>
                             <optgroup label="Desejos (Estilo de Vida)">
                                 {categories.filter(c =>
                                     ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens'].includes(c.name)
-                                ).map(c => (<option key={c.id} value={c.id}>{c.icon} {c.name}</option>))}
+                                ).map(c => (<option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>))}
                             </optgroup>
                             <optgroup label="Objetivos (Quitação e Reserva)">
                                 {categories.filter(c =>
                                     ['Aplicações / Poupança', 'Pagamento de Dívidas'].includes(c.name)
-                                ).map(c => (<option key={c.id} value={c.id}>{c.icon} {c.name}</option>))}
+                                ).map(c => (<option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>))}
                             </optgroup>
                         </>
                     )}
