@@ -81,10 +81,27 @@ export class NotificationsService {
       if (notif.type === 'ACTION_INVOICE_DUE') {
         const invoiceId = meta.invoiceId as string;
         const accountId = meta.accountId as string;
-        const amount = meta.amount as number;
+        let amount = meta.amount as number;
 
         if (!invoiceId || !accountId) {
           throw new BadRequestException('Dados da fatura incompletos');
+        }
+
+        // If amount is null/NaN (from old notifications with encrypted values),
+        // recalculate from the invoice itself
+        if (!amount || isNaN(amount)) {
+          const invoice = await this.prisma.creditCardInvoice.findFirst({
+            where: { id: invoiceId, userId },
+          });
+          if (invoice) {
+            const total = decryptAmount(invoice.totalAmount, this.encryption);
+            const paid = decryptAmount(invoice.paidAmount, this.encryption);
+            amount = total - paid;
+          }
+        }
+
+        if (!amount || isNaN(amount)) {
+          throw new BadRequestException('Valor da fatura indisponível — exclua esta notificação');
         }
 
         // Use interactive transaction for atomicity
@@ -157,8 +174,14 @@ export class NotificationsService {
         notif.type === 'ACTION_RECURRING' ||
         notif.type === 'ACTION_INSTALLMENT'
       ) {
-        const amount = meta.amount;
+        let amount = meta.amount;
         const type = meta.transactionType || 'EXPENSE';
+
+        // Guard against null/NaN amount (from old notifications)
+        if (amount == null || isNaN(Number(amount))) {
+          throw new BadRequestException('Valor da notificação indisponível — exclua e aguarde a próxima');
+        }
+        const numericAmount = Number(amount);
 
         const [transaction] = await this.prisma.$transaction(async (tx) => {
           // 1. If accountId present, verify ownership AND sufficient balance (atomic)
@@ -171,7 +194,7 @@ export class NotificationsService {
             }
             if (type === 'EXPENSE') {
               const bal = decryptAmount(lockedRows[0].balance, this.encryption);
-              if (bal < Number(amount)) {
+              if (bal < numericAmount) {
                 throw new BadRequestException('Saldo insuficiente para esta operação');
               }
             }
@@ -181,7 +204,7 @@ export class NotificationsService {
           const txn = await tx.transaction.create({
             data: {
               description: meta.description,
-              amount: encryptAmount(Number(amount), this.encryption),
+              amount: encryptAmount(numericAmount, this.encryption),
               date: new Date(),
               type,
               categoryId: meta.categoryId || null,
@@ -196,7 +219,7 @@ export class NotificationsService {
 
           // 3. Update account balance if needed
           if (meta.accountId) {
-            const adjustment = type === 'INCOME' ? Number(amount) : -Number(amount);
+            const adjustment = type === 'INCOME' ? numericAmount : -numericAmount;
             await atomicBalanceUpdate(tx, meta.accountId as string, userId, adjustment, this.encryption);
           }
 

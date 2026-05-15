@@ -69,7 +69,19 @@ export const NotificationCenter: React.FC = () => {
             fetchInvites();
             fetchActionNotifications();
         }, 60000); // 1 minute polling
-        return () => clearInterval(interval);
+
+        // Refresh when user returns to tab (fixes stale invites)
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                fetchInvites();
+                fetchActionNotifications();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
     }, []);
 
     const handleAccept = async (inviteId: string) => {
@@ -187,7 +199,13 @@ export const NotificationCenter: React.FC = () => {
     return (
         <div className="relative">
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => {
+                    if (!isOpen) {
+                        fetchInvites();
+                        fetchActionNotifications();
+                    }
+                    setIsOpen(!isOpen);
+                }}
                 className="relative p-2 md:p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all active:scale-95 shadow-sm"
             >
                 <Bell className="w-4 h-4 md:w-5 h-5" />

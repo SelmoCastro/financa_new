@@ -3,6 +3,8 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreditCardInvoiceService } from '../credit-card-invoices/credit-card-invoices.service';
+import { EncryptionService } from '../common/services/encryption.service';
+import { decryptAmount } from '../common/services/balance-helper';
 
 @Injectable()
 export class AutoTransactionScheduler {
@@ -12,6 +14,7 @@ export class AutoTransactionScheduler {
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
     private invoiceService: CreditCardInvoiceService,
+    private encryption: EncryptionService,
   ) {}
 
   /**
@@ -74,15 +77,16 @@ export class AutoTransactionScheduler {
       }
 
       const isIncome = r.type === 'INCOME';
+      const rawAmount = decryptAmount(r.amount, this.encryption);
       await this.notificationsService.create(r.userId, {
         title: isIncome ? '📥 Receita Recorrente' : '💰 Despesa Recorrente',
-        message: `"${r.description}" de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(r.amount))} ${isIncome ? 'prevista para hoje. Já recebeu?' : 'vence hoje. Já foi pago?'}`,
+        message: `"${r.description}" de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rawAmount)} ${isIncome ? 'prevista para hoje. Já recebeu?' : 'vence hoje. Já foi pago?'}`,
         type: 'ACTION_RECURRING',
         actionType: 'CONFIRM_PAYMENT',
         actionMeta: {
           recurringTransactionId: r.id,
           description: r.description,
-          amount: Number(r.amount),
+          amount: rawAmount,
           transactionType: r.type, // INCOME or EXPENSE — used by handleAction
           accountId: r.accountId,
           categoryId: r.categoryId,
@@ -91,7 +95,7 @@ export class AutoTransactionScheduler {
       });
 
       this.logger.log(
-        `  🔔 Notified: "${r.description}" — R$ ${Number(r.amount).toFixed(2)}`,
+        `  🔔 Notified: "${r.description}" — R$ ${rawAmount.toFixed(2)}`,
       );
       notified++;
     }
@@ -130,8 +134,8 @@ export class AutoTransactionScheduler {
       // For the first installment, use entryAmount if it exists (down payment)
       const installmentAmount =
         inst.currentInstallment === 0 && inst.entryAmount
-          ? Number(inst.entryAmount)
-          : Number(inst.amountPerMonth);
+          ? decryptAmount(inst.entryAmount, this.encryption)
+          : decryptAmount(inst.amountPerMonth, this.encryption);
 
       // Check if already notified this month for THIS installment
       const existing = await this.prisma.notification.findFirst({
@@ -174,7 +178,7 @@ export class AutoTransactionScheduler {
       });
 
       this.logger.log(
-        `  💳 Parcela ${nextInstallment}/${inst.installmentCount} "${inst.description}" — R$ ${Number(inst.amountPerMonth).toFixed(2)}`,
+        `  💳 Parcela ${nextInstallment}/${inst.installmentCount} "${inst.description}" — R$ ${installmentAmount.toFixed(2)}`,
       );
       notified++;
     }
@@ -247,9 +251,13 @@ export class AutoTransactionScheduler {
         continue;
       }
 
+      const invoiceTotalAmount = decryptAmount(invoice.totalAmount, this.encryption);
+      const invoicePaidAmount = decryptAmount(invoice.paidAmount, this.encryption);
+      const invoiceRemaining = invoiceTotalAmount - invoicePaidAmount;
+
       await this.notificationsService.create(invoice.userId, {
         title: '📄 Fatura do Cartão Vence Hoje',
-        message: `Fatura de ${invoice.creditCard.name} — ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(invoice.totalAmount))} vence hoje. Já pagou?`,
+        message: `Fatura de ${invoice.creditCard.name} — ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(invoiceTotalAmount)} vence hoje. Já pagou?`,
         type: 'ACTION_INVOICE_DUE',
         actionType: 'CONFIRM_PAYMENT',
         actionMeta: {
@@ -257,7 +265,7 @@ export class AutoTransactionScheduler {
           creditCardId: invoice.creditCardId,
           creditCardName: invoice.creditCard.name,
           accountId: invoice.creditCard.accountId,
-          amount: Number(invoice.totalAmount) - Number(invoice.paidAmount),
+          amount: invoiceRemaining > 0 ? invoiceRemaining : invoiceTotalAmount,
           description: `Pagamento fatura ${invoice.creditCard.name} - ${String(invoice.referenceMonth).padStart(2, '0')}/${invoice.referenceYear}`,
           referenceMonth: invoice.referenceMonth,
           referenceYear: invoice.referenceYear,
@@ -265,7 +273,7 @@ export class AutoTransactionScheduler {
       });
 
       this.logger.log(
-        `  📄 Invoice due: ${invoice.creditCard.name} — R$ ${Number(invoice.totalAmount).toFixed(2)}`,
+        `  📄 Invoice due: ${invoice.creditCard.name} — R$ ${invoiceTotalAmount.toFixed(2)}`,
       );
       notified++;
     }

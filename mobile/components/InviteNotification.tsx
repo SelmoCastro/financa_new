@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Modal, Alert, ActivityIndicator, AppState } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getCategoryEmoji } from '../utils/categoryIcons';
 import api from '../services/api';
@@ -34,7 +34,16 @@ export function InviteNotification() {
     useEffect(() => {
         fetchData();
         const interval = setInterval(fetchData, 60000);
-        return () => clearInterval(interval);
+
+        // Refresh when app comes to foreground (fixes stale invites)
+        const subscription = AppState.addEventListener('change', (nextState) => {
+            if (nextState === 'active') fetchData();
+        });
+
+        return () => {
+            clearInterval(interval);
+            subscription.remove();
+        };
     }, []);
 
     const handleAccept = async () => {
