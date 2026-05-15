@@ -24,7 +24,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 64,
+      "versionCode": 65,
       "permissions": []
     },
     "web": {
@@ -55,6 +55,6 @@
       }
     }
   },
-  "version": "1.8.63",
-  "versionCode": 90
+  "version": "1.8.72",
+  "versionCode": 91
 }

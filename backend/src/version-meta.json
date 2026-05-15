@@ -1,6 +1,6 @@
 {
-  "version": "1.8.69",
-  "mobileVersion": "1.8.69",
+  "version": "1.8.72",
+  "mobileVersion": "1.8.72",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.8.69 - Corrige formatCurrencyInput ao editar: valores mostravam centavos errados"
+  "releaseNotes": "v1.8.72 - Fix NaN em notificações + invites não somem ao trocar plataforma"
 }
