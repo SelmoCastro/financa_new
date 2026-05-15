@@ -56,7 +56,8 @@ export class TransactionsService {
         const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
         const account = rows[0];
         if (!account) throw new NotFoundException('Account not found');
-        if (Number(account.balance) < amount) {
+        const currentBalance = decryptAmount(account.balance, this.encryption);
+        if (currentBalance < amount) {
           throw new BadRequestException('Saldo insuficiente');
         }
       }
@@ -483,10 +484,11 @@ export class TransactionsService {
           select: { id: true, balance: true },
         });
         for (const acc of currentBalances) {
-          const projected = Number(acc.balance) + (accountDeltas[acc.id] || 0);
+          const currentBal = decryptAmount(acc.balance, this.encryption);
+          const projected = currentBal + (accountDeltas[acc.id] || 0);
           if (projected < 0) {
             throw new BadRequestException(
-              `Import would cause negative balance on account ${acc.id}. Current: ${acc.balance}, projected: ${projected}`
+              `Import would cause negative balance on account ${acc.id}. Current: ${currentBal}, projected: ${projected}`
             );
           }
         }
@@ -629,11 +631,11 @@ export class TransactionsService {
       else if (t.type === 'EXPENSE') m.expense += Number(t.amount);
     });
 
-    const balance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
+    const balance = accounts.reduce((sum, a) => sum + decryptAmount(a.balance, this.encryption), 0);
     const creditCardDebt = creditCards.reduce(
       (sum, c) =>
         sum + c.invoices.reduce(
-          (invSum, inv) => invSum + Number(inv.totalAmount) - Number(inv.paidAmount),
+          (invSum, inv) => invSum + decryptAmount(inv.totalAmount, this.encryption) - decryptAmount(inv.paidAmount, this.encryption),
           0,
         ),
       0,
@@ -643,11 +645,11 @@ export class TransactionsService {
       exportedAt: new Date().toISOString(),
       balance,
       creditCardDebt,
-      accounts: accounts.map((a) => ({ name: a.name, balance: Number(a.balance) })),
+      accounts: accounts.map((a) => ({ name: a.name, balance: decryptAmount(a.balance, this.encryption) })),
       creditCards: creditCards.map((c) => ({
         name: c.name,
         limit: Number(c.limit),
-        debt: c.invoices.reduce((s, i) => s + Number(i.totalAmount) - Number(i.paidAmount), 0),
+        debt: c.invoices.reduce((s, i) => s + decryptAmount(i.totalAmount, this.encryption) - decryptAmount(i.paidAmount, this.encryption), 0),
       })),
       monthlySummary: Array.from(byMonth.entries())
         .sort(([a], [b]) => b.localeCompare(a))
@@ -655,9 +657,9 @@ export class TransactionsService {
       invoices: invoices.map((i) => ({
         creditCardName: i.creditCard.name,
         reference: `${String(i.referenceMonth).padStart(2, '0')}/${i.referenceYear}`,
-        totalAmount: Number(i.totalAmount),
-        paidAmount: Number(i.paidAmount),
-        remaining: Number(i.totalAmount) - Number(i.paidAmount),
+        totalAmount: decryptAmount(i.totalAmount, this.encryption),
+        paidAmount: decryptAmount(i.paidAmount, this.encryption),
+        remaining: decryptAmount(i.totalAmount, this.encryption) - decryptAmount(i.paidAmount, this.encryption),
         isPaid: i.isPaid,
         dueDate: i.dueDate,
       })),
@@ -756,7 +758,7 @@ export class TransactionsService {
         const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
         const account = rows[0];
         if (!account) throw new NotFoundException('Account not found');
-        if (Number(account.balance) < newAmount) {
+        if (decryptAmount(account.balance, this.encryption) < newAmount) {
           throw new BadRequestException('Saldo insuficiente');
         }
       }
@@ -894,7 +896,7 @@ export class TransactionsService {
       const sourceRows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${sourceAccountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
       const sourceAccount = sourceRows[0];
       if (!sourceAccount) throw new NotFoundException('Conta de origem não encontrada');
-      if (Number(sourceAccount.balance) < amount) {
+      if (decryptAmount(sourceAccount.balance, this.encryption) < amount) {
         throw new BadRequestException('Saldo insuficiente para transferência');
       }
 

@@ -39,6 +39,6 @@ export interface AiSuggestion {
 export interface AccountLockRow {
   id: string;
   userId: string;
-  balance: number;
+  balance: string;
   deletedAt: Date | null;
 }
