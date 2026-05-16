@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.8.74](https://github.com/SelmoCastro/financa_new/compare/v1.8.63...v1.8.74) (2026-05-16)
+
+
+### ✨ Features
+
+* add Google Tag Manager with LGPD consent mode, update cookie banner for analytics ([eb4eee3](https://github.com/SelmoCastro/financa_new/commit/eb4eee3da6a13520e5795d6511ae8b18b171bd28))
+* add GTM and GA domains to CSP for analytics with LGPD consent mode ([8d81334](https://github.com/SelmoCastro/financa_new/commit/8d81334e344e7cb994587bb3310c4ec3b3109cb3))
+* **legal:** LGPD compliance - cookie banner, DPO, export-data, refund policy, consent modal ([3e921ed](https://github.com/SelmoCastro/financa_new/commit/3e921edc5cfdb1add6238478efb5af0ffe802d91))
+* Pilar 1 Refresh Token Rotation (RFC 6819) + crash fix na tela Conta ([7f1ac2b](https://github.com/SelmoCastro/financa_new/commit/7f1ac2b1aa98778303a6f513901d3af456e734e6))
+
+
+### 🐛 Bug Fixes
+
+* all Number() on encrypted balance/amount fields → decryptAmount() (was causing NaN→0 balance corruption) ([ad64ffe](https://github.com/SelmoCastro/financa_new/commit/ad64ffed51c4ec36d30c1b56e312c325ef7b99eb))
+* category icons now show emoji instead of Lucide name text ([3fd6959](https://github.com/SelmoCastro/financa_new/commit/3fd69596602be2e60bf794913f580e0af8982e41))
+* corrige erros TS pre-existentes em invoice e recurring transaction ([faaffc9](https://github.com/SelmoCastro/financa_new/commit/faaffc9051fb13933a6be90fefb9d03e899d2d2f))
+* createFamily agora persiste hashedRefreshToken para backward compat ([021493b](https://github.com/SelmoCastro/financa_new/commit/021493bb563c9cd91ccc5f89b23fc0424811d027))
+* encryptDecimal rejeita NaN + saldos recalculados do DB real ([eb68781](https://github.com/SelmoCastro/financa_new/commit/eb68781e6a9da6bb4e265e163b9fc7b545660d23))
+* formatCurrency null guard no frontend CurrencyContext ([427d88e](https://github.com/SelmoCastro/financa_new/commit/427d88e5cbc6401aa1a800cf3a91b319f974f2ed))
+* formatCurrencyInput ao editar — valores mostravam centavos errados (ex: R$90 virava R$0,90) ([7bac1a5](https://github.com/SelmoCastro/financa_new/commit/7bac1a51404032ec7b47f473a0a2fdefc5c430f2))
+* improve LGPD cookie banner - add preferences link in footer, clarify essential-only cookies ([8044b9e](https://github.com/SelmoCastro/financa_new/commit/8044b9edf6d668f52e5649d721fcd30f28653eb0))
+* NaN in notification amounts + stale invite refresh ([e4a40b1](https://github.com/SelmoCastro/financa_new/commit/e4a40b1a822e6e47390713872e1afc59eaf37366))
+* remove falso-positivo replay detection que quebrava login web ([b0f247e](https://github.com/SelmoCastro/financa_new/commit/b0f247e2a5fb32c1bf95a6ebbb4b456093378b47))
+* sync build.gradle versionName to 1.8.72 (was 1.8.69 — caused update loop) ([00804eb](https://github.com/SelmoCastro/financa_new/commit/00804ebda6db8e97c36ad78fb32221cbebfb6dff))
+
 ### [1.8.73](https://github.com/SelmoCastro/financa_new/compare/v1.8.63...v1.8.73) (2026-05-15)
 
 
