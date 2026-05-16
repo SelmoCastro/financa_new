@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Users, Receipt, CreditCard, BarChart3, Target, Bot, MessagesSquare,
   Clock, Eye, ChevronDown, ChevronUp, CheckCircle, AlertTriangle,
-  Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight
+  Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, Trash2
 } from 'lucide-react';
 import type { AdminLogic } from './useAdminLogic';
 import { formatDate } from './utils';
@@ -18,7 +18,7 @@ export const UsersSection: React.FC<{ logic: AdminLogic }> = ({ logic }) => {
     filteredUsers, paginatedUsers, userTotalPages,
     expandedUser, setExpandedUser,
     planEditing, setPlanEditing, planForm, setPlanForm,
-    isSavingPlan, handleSavePlan,
+    isSavingPlan, handleSavePlan, handleDeleteUser,
   } = logic;
 
   return (
@@ -223,17 +223,17 @@ export const UsersSection: React.FC<{ logic: AdminLogic }> = ({ logic }) => {
                               </select>
                             </div>
                             <div>
-                              <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">Duracao</label>
+                              <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">Duração</label>
                               <select
                                 value={planForm.duration}
                                 onChange={e => setPlanForm({ ...planForm, duration: e.target.value })}
                                 className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-white focus:ring-2 focus:ring-cyan-500 outline-none"
                               >
-                                <option value="lifetime">Vitalicio</option>
+                                <option value="lifetime">Vitalício</option>
                                 <option value="30d">30 dias</option>
                                 <option value="60d">60 dias</option>
                                 <option value="90d">90 dias</option>
-                                <option value="custom">Manter expiracao atual</option>
+                                <option value="custom">Manter expiração atual</option>
                               </select>
                             </div>
                           </div>
@@ -242,11 +242,25 @@ export const UsersSection: React.FC<{ logic: AdminLogic }> = ({ logic }) => {
                             disabled={isSavingPlan || planForm.plan === 'free' && planForm.duration !== 'lifetime'}
                             className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {isSavingPlan ? 'Salvando...' : 'Salvar Alteracao'}
+                            {isSavingPlan ? 'Salvando...' : 'Salvar Alteração'}
                           </button>
                         </div>
                       )}
                     </div>
+
+                    {/* Delete User (non-admin only) */}
+                    {!user.isAdmin && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Excluir usuário ${user.name || user.email} e todos os seus dados? Esta ação é irreversível.`)) {
+                            handleDeleteUser(user.id);
+                          }
+                        }}
+                        className="flex items-center gap-2 mt-4 px-4 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Excluir Usuário
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

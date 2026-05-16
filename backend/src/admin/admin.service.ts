@@ -253,6 +253,40 @@ export class AdminService {
     });
   }
 
+  /** Delete user and all their data (admin only) */
+  async deleteUser(adminUserId: string, targetUserId: string) {
+    await this.verifyAdmin(adminUserId);
+
+    // Cannot delete self or another admin
+    if (adminUserId === targetUserId) {
+      throw new ForbiddenException('Administradores não podem excluir a própria conta pelo painel');
+    }
+    const target = await this.prisma.user.findUnique({ where: { id: targetUserId }, select: { isAdmin: true } });
+    if (target?.isAdmin) {
+      throw new ForbiddenException('Não é possível excluir outro administrador');
+    }
+
+    // Delete in dependency order (same order as Prisma schema requires)
+    await this.prisma.creditCardInstallment.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.creditCardInvoice.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.transaction.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.recurringTransaction.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.creditCard.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.account.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.budget.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.goal.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.category.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.notification.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.aiRequestLog.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.feedback.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.subscription.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.refreshToken.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.auditLog.deleteMany({ where: { actorId: targetUserId } });
+    await this.prisma.user.delete({ where: { id: targetUserId } });
+
+    return { success: true, deletedUserId: targetUserId };
+  }
+
   /** Stats de planos */
   async getPlanStats(adminUserId: string) {
     await this.verifyAdmin(adminUserId);

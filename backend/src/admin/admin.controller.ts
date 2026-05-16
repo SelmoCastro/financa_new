@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Body, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Param, Body, Request, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { AdminService } from './admin.service';
@@ -61,5 +61,11 @@ export class AdminController {
   @Get('security')
   getSecurityStats(@Request() req) {
     return this.adminService.getSecurityStats(req.user.userId);
+  }
+
+  /** DELETE /v1/admin/users/:id — Delete a user and all their data */
+  @Delete('users/:id')
+  deleteUser(@Param('id') userId: string, @Request() req) {
+    return this.adminService.deleteUser(req.user.userId, userId);
   }
 }

@@ -102,6 +102,17 @@ export function useAdminLogic() {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await api.delete(`/admin/users/${userId}`);
+      addToast('Usuário excluído com sucesso.', 'success');
+      setExpandedUser(null);
+      loadAll();
+    } catch (error: any) {
+      addToast(error?.response?.data?.message || 'Erro ao excluir usuário.', 'error');
+    }
+  };
+
   useEffect(() => { loadAll(); }, []);
 
   return {
@@ -120,6 +131,7 @@ export function useAdminLogic() {
     userPage, setUserPage,
     filteredUsers, paginatedUsers, userTotalPages, planCounts,
     USERS_PER_PAGE,
+    handleDeleteUser,
   };
 }
 
