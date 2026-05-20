@@ -1,5 +1,38 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+## [1.8.75](https://github.com/SelmoCastro/financa_new/compare/v1.8.74...v1.8.75) (2026-05-20)
+
+### ✨ Features
+
+* add GTM and GA domains to CSP for analytics with LGPD consent mode
+* add Google Tag Manager with LGPD consent mode, update cookie banner for analytics
+* (legal) LGPD compliance - cookie banner, DPO, export-data, refund policy, consent modal
+
+### 🐛 Bug Fixes
+
+* all Number() on encrypted balance/amount fields → decryptAmount() (was causing NaN→0 balance corruption)
+* sync build.gradle versionName to 1.8.72 (was 1.8.69 — caused update loop)
+* NaN in notification amounts + stale invite refresh
+* improve LGPD cookie banner - add preferences link in footer, clarify essential-only cookies
+* category icons now show emoji instead of Lucide name text
+* formatCurrencyInput ao editar — valores mostravam centavos errados (ex: R$90 virava R$0,90)
+* encryptDecimal rejeita NaN + saldos recalculados do DB real
+* createFamily agora persiste hashedRefreshToken para backward compat
+
+### 🧹 Chores
+
+* sync versions 1.8.74
+* (release) 1.8.74
+* (release) 1.8.73
+* bump version to 1.8.72 (APK)
+* (release) 1.8.72
+* (release) 1.8.71
+* (release) 1.8.70
+* (release) 1.8.69
+* (release) 1.8.68
+
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
 ### [1.8.74](https://github.com/SelmoCastro/financa_new/compare/v1.8.63...v1.8.74) (2026-05-16)

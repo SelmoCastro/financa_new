@@ -10,7 +10,6 @@ import { ImportOverlay } from './components/import/ImportOverlay';
 import { FeedbackModal } from './components/FeedbackModal';
 import { SmartBanner } from './components/SmartBanner';
 import { UpgradeModal } from './components/UpgradeModal';
-import { ChatWidget } from './components/ChatWidget';
 import { AppProviders } from './components/AppProviders';
 import { ViewRouter } from './components/ViewRouter';
 import { ToastProvider, useToast } from './context/ToastContext';
@@ -309,7 +308,6 @@ const AppContent: React.FC = () => {
         </button>
       )}
 
-      <ChatWidget />
     </div>
     </>
     </ExceedingProvider>

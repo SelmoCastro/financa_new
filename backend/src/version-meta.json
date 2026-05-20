@@ -1,6 +1,6 @@
 {
-  "version": "1.8.73",
-  "mobileVersion": "1.8.73",
+  "version": "1.8.75",
+  "mobileVersion": "1.8.75",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.8.73 - Fix NaN em saldos + painel admin com gerenciamento de usuários"
+  "releaseNotes": "Remove assistente de IA do app web"
 }
