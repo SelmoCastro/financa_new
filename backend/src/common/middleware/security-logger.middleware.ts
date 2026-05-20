@@ -33,7 +33,7 @@ export class SecurityLoggerMiddleware implements NestMiddleware {
       if (isError || isMutating || isAuthRoute || duration > 5000) {
         const severity = status >= 500 ? 'CRITICAL' : status >= 400 ? 'WARN' : 'INFO';
         this.logger.log(
-          `${severity} ${method} ${originalUrl} ${status} ${duration}ms ip=${ip}`
+          `${severity} ${method} ${this.sanitizeUrl(originalUrl)} ${status} ${duration}ms ip=${ip}`
         );
       }
     });
@@ -45,5 +45,12 @@ export class SecurityLoggerMiddleware implements NestMiddleware {
     const forwarded = req.headers['x-forwarded-for'];
     if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
     return (req.headers['x-real-ip'] as string) || req.ip || 'unknown';
+  }
+
+  private sanitizeUrl(url: string): string {
+    return url.replace(
+      /([?&](?:token|refreshToken|access_token|password|email)=)[^&]*/gi,
+      '$1[REDACTED]',
+    );
   }
 }

@@ -27,6 +27,7 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
     lastActivity: number;
     penaltyUntil: number;
     totalRequests: number;
+    windowStart: number;
   }>();
 
   // Cleanup stale entries every 10 minutes
@@ -40,8 +41,16 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
     const ip = this.getClientIp(req);
     const tracker = this.getOrCreateTracker(ip);
 
+    // Reset per-minute request counter. Without this, totalRequests grows until
+    // cleanup and a penalized IP can stay blocked far longer than intended.
+    const now = Date.now();
+    if (now - tracker.windowStart >= this.WINDOW_MS) {
+      tracker.totalRequests = 0;
+      tracker.windowStart = now;
+    }
+
     // Check if IP is currently penalized
-    if (Date.now() < tracker.penaltyUntil) {
+    if (now < tracker.penaltyUntil) {
       const multiplier = this.calculateMultiplier(tracker.errorCount);
       const effectiveLimit = Math.max(1, Math.floor(this.BASE_LIMIT / multiplier));
 
@@ -114,7 +123,13 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
   private getOrCreateTracker(ip: string) {
     let tracker = this.ipTracker.get(ip);
     if (!tracker) {
-      tracker = { errorCount: 0, lastActivity: Date.now(), penaltyUntil: 0, totalRequests: 0 };
+      tracker = {
+        errorCount: 0,
+        lastActivity: Date.now(),
+        penaltyUntil: 0,
+        totalRequests: 0,
+        windowStart: Date.now(),
+      };
       this.ipTracker.set(ip, tracker);
     }
     return tracker;

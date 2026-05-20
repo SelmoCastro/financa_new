@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanId } from './dto/payment.dto';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { AuditService } from '../audit/audit.service';
 import * as crypto from 'crypto';
 
 const MP_API = 'https://api.mercadopago.com';
@@ -39,6 +40,7 @@ export class PaymentsService {
     private configService: ConfigService,
     private prisma: PrismaService,
     private subscriptionService: SubscriptionService,
+    private auditService: AuditService,
   ) {
     this.accessToken = this.configService.get<string>('MERCADOPAGO_ACCESS_TOKEN') || '';
     this.webhookSecret = this.configService.get<string>('MERCADOPAGO_WEBHOOK_SECRET') || '';
@@ -186,12 +188,21 @@ export class PaymentsService {
 
     const paymentId = webhookData.data?.id;
     if (!paymentId) {
+      this.logPaymentAlert('payments.webhook_missing_payment_id', 'warn', {
+        type: webhookData.type,
+        action: webhookData.action,
+        requestId: xRequestId,
+      });
       return { received: true, processed: false };
     }
 
     // Verify x-signature before processing any payment. Fail closed when secret/header is missing.
     if (!xSignature || !this.verifyWebhookSignature(paymentId, xSignature)) {
       this.logger.warn(`Webhook signature verification failed for payment ${paymentId}`);
+      this.logPaymentAlert('payments.webhook_signature_failed', 'critical', {
+        mpPaymentId: paymentId,
+        requestId: xRequestId,
+      });
       return { received: true, processed: false };
     }
 
@@ -236,6 +247,7 @@ export class PaymentsService {
       const validPlans = ['premium_monthly', 'premium_quarterly', 'premium_semiannual', 'premium_annual'];
       if (!validPlans.includes(planId)) {
         this.logger.warn(`Invalid planId from MP payment ${mpPaymentId}: ${planId}, defaulting to premium_monthly`);
+        this.logPaymentAlert('payments.invalid_plan', 'warn', { mpPaymentId, planId });
       }
       const safePlanId = validPlans.includes(planId) ? planId : 'premium_monthly';
 
@@ -249,6 +261,12 @@ export class PaymentsService {
       const expectedAmount = prices[safePlanId];
       if (expectedAmount && Math.abs(amount - expectedAmount) > 1) {
         this.logger.warn(`Amount mismatch for payment ${mpPaymentId}: expected ${expectedAmount}, got ${amount}`);
+        this.logPaymentAlert('payments.amount_mismatch', 'critical', {
+          mpPaymentId,
+          expectedAmount,
+          receivedAmount: amount,
+          planId: safePlanId,
+        });
         // Don't upgrade — suspicious payment
         return { processed: true, upgraded: false };
       }
@@ -290,6 +308,10 @@ export class PaymentsService {
         }
 
         this.logger.log(`User ${userId} upgraded to ${safePlanId}`);
+        this.logPaymentAlert('payments.approved', 'info', {
+          mpPaymentId,
+          planId: safePlanId,
+        }, userId);
       }
 
       return {
@@ -298,9 +320,29 @@ export class PaymentsService {
       };
     } catch (error: any) {
       this.logger.error(`Failed to process payment ${mpPaymentId}: ${error.message}`);
+      this.logPaymentAlert('payments.processing_failed', 'critical', {
+        mpPaymentId,
+        error: error?.message || 'unknown',
+      });
       // Don't throw — webhook must always return 200 so MP doesn't retry
       return { processed: false, error: true };
     }
+  }
+
+  private logPaymentAlert(
+    action: string,
+    severity: 'info' | 'warn' | 'critical',
+    details: Record<string, unknown>,
+    actorId?: string,
+  ) {
+    this.auditService.log({
+      action,
+      actorId,
+      targetType: 'Payment',
+      targetId: typeof details.mpPaymentId === 'string' ? details.mpPaymentId : undefined,
+      severity,
+      details,
+    });
   }
 
   async getUserPayments(userId: string) {

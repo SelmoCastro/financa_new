@@ -42,9 +42,11 @@ export class AiController {
     // Obtém o perfil financeiro completo para insights mais inteligentes
     const profile = await this.reportsService.getFinancialProfile(userId, y, m);
 
+    // Conta a requisição antes da chamada externa para evitar bypass por chamadas lentas/falhas.
+    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'insights' } });
+
     // Gera os insights usando o perfil como contexto (ajustando para o mês se necessário)
     const insights = await this.aiService.getFinancialInsights(profile);
-    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'insights' } });
 
     return { insights };
   }
@@ -58,8 +60,9 @@ export class AiController {
     // Contexto completo: metas, orçamentos e gastos
     const profile = await this.reportsService.getFinancialProfile(userId);
 
-    const response = await this.aiService.chat(message, profile);
     await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'chat' } });
+
+    const response = await this.aiService.chat(message, profile);
 
     return { response };
   }
@@ -70,8 +73,9 @@ export class AiController {
 
     const historicalData =
       await this.reportsService.getHistoricalSpending(userId);
-    const forecast = await this.aiService.getSpendingForecast(historicalData);
     await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'forecast' } });
+
+    const forecast = await this.aiService.getSpendingForecast(historicalData);
 
     return { forecast };
   }
@@ -82,9 +86,10 @@ export class AiController {
 
     const recentTxs =
       await this.reportsService.getRecentTransactionsForAudit(userId);
+    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'subscriptions' } });
+
     const auditResult =
       await this.aiService.findRecurringSubscriptions(recentTxs);
-    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'subscriptions' } });
 
     return { subscriptions: auditResult };
   }

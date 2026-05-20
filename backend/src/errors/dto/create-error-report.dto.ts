@@ -3,17 +3,17 @@ import { IsString, IsOptional, IsDateString, IsNotEmpty, MaxLength, IsUUID } fro
 export class CreateErrorReportDto {
   @IsString()
   @IsNotEmpty()
-  @MaxLength(10000)
+  @MaxLength(2000)
   message: string;
 
   @IsString()
   @IsOptional()
-  @MaxLength(20000)
+  @MaxLength(8000)
   stack?: string;
 
   @IsString()
   @IsOptional()
-  @MaxLength(20000)
+  @MaxLength(8000)
   componentStack?: string;
 
   @IsString()

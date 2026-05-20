@@ -41,9 +41,8 @@ async function sendReport(payload: {
 }) {
   try {
     await api.post('/errors/report', payload);
-  } catch (err) {
+  } catch {
     // Silently fail - don't create infinite error loops
-    console.warn('[ErrorReporter] Failed to send report:', err);
   }
 }
 
@@ -52,8 +51,11 @@ export function reportError(
   componentStack?: string,
   userId?: string,
 ) {
-  const message = typeof error === 'string' ? error : error.message || String(error);
-  const stack = typeof error === 'string' ? undefined : error.stack;
+  const rawMessage = typeof error === 'string' ? error : error.message || String(error);
+  const rawStack = typeof error === 'string' ? undefined : error.stack;
+  const message = sanitizeErrorText(rawMessage).slice(0, 2000);
+  const stack = rawStack ? sanitizeErrorText(rawStack).slice(0, 8000) : undefined;
+  const safeComponentStack = componentStack ? sanitizeErrorText(componentStack).slice(0, 8000) : undefined;
 
   const key = debounceKey(message, stack);
   const now = Date.now();
@@ -74,13 +76,19 @@ export function reportError(
   sendReport({
     message,
     stack,
-    componentStack,
+    componentStack: safeComponentStack,
     platform: Platform.OS,
     appVersion: getAppVersion(),
     deviceId: getDeviceId(),
     userId,
     timestamp: new Date().toISOString(),
   });
+}
+
+function sanitizeErrorText(value: string): string {
+  return value
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[REDACTED_EMAIL]')
+    .replace(/(access_token|refreshToken|authorization|password|senha)=?\s*[^\s&]+/gi, '$1=[REDACTED]');
 }
 
 // Convenience wrapper for React ErrorBoundary (catches componentStack)
