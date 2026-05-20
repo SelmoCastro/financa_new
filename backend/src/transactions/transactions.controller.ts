@@ -13,6 +13,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  ParseArrayPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TransactionsService } from './transactions.service';
@@ -60,7 +61,7 @@ export class TransactionsController {
   @Post('import/validate')
   @RequireVerifiedEmail()
   validateImport(
-    @Body() importData: ImportValidateTransactionDto[],
+    @Body(new ParseArrayPipe({ items: ImportValidateTransactionDto })) importData: ImportValidateTransactionDto[],
     @Request() req,
   ) {
     if (importData && importData.length > 500) {

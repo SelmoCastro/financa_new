@@ -53,10 +53,9 @@ export class GoalsService {
   }
 
   update(id: string, updateGoalDto: UpdateGoalDto, userId: string) {
-    const { targetAmount, currentAmount, ...rest } = updateGoalDto;
+    const { targetAmount, ...rest } = updateGoalDto;
     const data: Record<string, any> = { ...rest };
     if (targetAmount !== undefined) data.targetAmount = encryptAmount(targetAmount, this.encryption);
-    if (currentAmount !== undefined) data.currentAmount = encryptAmount(currentAmount, this.encryption);
     
     return this.subscriptionService.checkNotExceeding(userId, 'goal', id).then(() =>
       this.prisma.goal.updateMany({

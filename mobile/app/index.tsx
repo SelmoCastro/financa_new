@@ -13,8 +13,6 @@ export default function LoginScreen() {
     const router = useRouter();
     const { login } = useAuth();
 
-    console.log('[LoginScreen] Componente renderizado. Loading:', loading);
-
     const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert('Erro', 'Por favor, preencha todos os campos');
@@ -24,15 +22,12 @@ export default function LoginScreen() {
         const sanitizedEmail = email.trim().toLowerCase();
         const sanitizedPassword = password.trim();
 
-        console.log('[Login] Iniciando tentativa de login para:', sanitizedEmail);
         setLoading(true);
         try {
-            console.log('[Login] Fazendo POST para /auth/login...');
             const response = await api.post('/auth/login', {
                 email: sanitizedEmail,
                 password: sanitizedPassword
             });
-            console.log('[Login] Resposta recebida:', JSON.stringify(response.data, null, 2));
 
             const data = response.data;
             const access_token = data.access_token || data.data?.access_token;
@@ -40,22 +35,20 @@ export default function LoginScreen() {
             const user = data.user || data.data?.user;
 
             if (!access_token || !refreshToken || !user?.id) {
-                console.error('[Login] access_token, refreshToken ou user.id não encontrados na resposta!');
+                if (__DEV__) console.error('[Login] auth payload incompleto na resposta.');
                 throw new Error('tokens or user info missing');
             }
 
             // Desmarcar loading ANTES do redirect para evitar conflito de estado
             setLoading(false);
-            console.log('[Login] Chamando login() no contexto...');
             await login(access_token, refreshToken, user.id);
         } catch (error: any) {
-            console.error('[Login] Erro detectado:', error.message || error);
+            if (__DEV__) console.error('[Login] Erro detectado:', error.message || error);
             if (error.response) {
-                console.error('[Login] Detalhes do erro (Data):', JSON.stringify(error.response.data, null, 2));
-                console.error('[Login] Status do erro:', error.response.status);
+                if (__DEV__) console.error('[Login] Status do erro:', error.response.status);
                 Alert.alert('Erro', 'Falha no login. Verifique suas credenciais.');
             } else {
-                console.error('[Login] Erro de rede ou servidor inacessível');
+                if (__DEV__) console.error('[Login] Erro de rede ou servidor inacessível');
                 Alert.alert('Erro de Rede', 'Não foi possível conectar ao servidor. Verifique sua internet ou se o backend está rodando.');
             }
             setLoading(false);
@@ -101,7 +94,6 @@ export default function LoginScreen() {
                             style={styles.button}
                             android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
                             onPress={() => {
-                                console.log('[LoginScreen] Botão entrar pressionado');
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                                 handleLogin();
                             }}

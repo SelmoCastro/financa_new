@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const authSubscription = DeviceEventEmitter.addListener('auth:unauthorized', () => {
             if (isLoggingOut) return;
             isLoggingOut = true;
-            console.log('[AuthContext] Session expired. Logging out...');
+            if (__DEV__) console.log('[AuthContext] Session expired. Logging out...');
             setToken(null);
             setUser(null);
             router.replace('/');
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Keep AuthContext in sync when the API interceptor refreshes tokens
         const tokenRefreshedSubscription = DeviceEventEmitter.addListener('auth:token-refreshed', (newToken: string) => {
-            console.log('[AuthContext] Token refreshed via interceptor. Updating state...');
+            if (__DEV__) console.log('[AuthContext] Token refreshed via interceptor. Updating state...');
             setToken(newToken);
             fetchProfile().catch(() => {});
         });
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (!wasBackground || !becameActive || !token) return;
 
-            console.log('[AuthContext] App came back from background. Checking session...');
+            if (__DEV__) console.log('[AuthContext] App came back from background. Checking session...');
             // Poke the API. Interceptor handles 401 -> refresh if needed.
             await fetchProfile();
         };
@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [token, fetchProfile]);
 
     const login = React.useCallback(async (newToken: string, newRefreshToken: string, newUserId: string) => {
-        console.log('[AuthContext] Logging in...');
+        if (__DEV__) console.log('[AuthContext] Logging in...');
         await SecureStore.setItemAsync('token', newToken);
         await SecureStore.setItemAsync('refreshToken', newRefreshToken);
         await SecureStore.setItemAsync('userId', newUserId);
@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [fetchProfile]);
 
     const logout = React.useCallback(async () => {
-        console.log('[AuthContext] Logging out...');
+        if (__DEV__) console.log('[AuthContext] Logging out...');
         setToken(null);
         setUser(null);
         router.replace('/');

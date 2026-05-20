@@ -107,10 +107,7 @@ export class AuthService {
   }
 
   async logout(userId: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { hashedRefreshToken: null },
-    });
+    await this.refreshTokenService.revokeAll(userId);
     return { message: 'Desconectado com sucesso' };
   }
 
@@ -306,6 +303,7 @@ export class AuthService {
       where: { id: verificationToken.userId },
       data: { password: hashedPassword, hashedRefreshToken: null },
     });
+    await this.refreshTokenService.revokeAll(verificationToken.userId);
 
     // Revoke token
     await this.prisma.verificationToken.deleteMany({
@@ -377,6 +375,7 @@ export class AuthService {
       where: { id: userId },
       data: { password: hashedPassword, hashedRefreshToken: null },
     });
+    await this.refreshTokenService.revokeAll(userId);
 
     this.auditService.log({ action: 'auth.password_change', actorId: userId, targetType: 'User', targetId: userId, severity: 'warn' });
 
@@ -405,6 +404,7 @@ export class AuthService {
       where: { id: userId },
       data: { email: newEmail, isEmailVerified: false, hashedRefreshToken: null },
     });
+    await this.refreshTokenService.revokeAll(userId);
 
     // Send verification email to the new address
     const verifyToken = crypto.randomBytes(32).toString('hex');
@@ -440,6 +440,7 @@ export class AuthService {
       throw new BadRequestException('Senha incorreta');
     }
 
+    await this.refreshTokenService.revokeAll(userId);
     await this.usersService.remove(userId);
 
     return { message: 'Conta excluída com sucesso' };

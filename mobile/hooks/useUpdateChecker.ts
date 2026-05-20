@@ -86,10 +86,10 @@ export function useUpdateChecker(): UpdateStatus {
             setChecking(true);
             const response = await api.get('/app/version');
             const data = response.data?.data || response.data;
-            console.log('[UpdateChecker] currentVersion:', currentVersion, 'serverVersion:', data?.mobileVersion, 'hasUpdate:', data ? compareVersions(data.mobileVersion, currentVersion) > 0 : 'no data');
+            if (__DEV__) console.log('[UpdateChecker] currentVersion:', currentVersion, 'serverVersion:', data?.mobileVersion, 'hasUpdate:', data ? compareVersions(data.mobileVersion, currentVersion) > 0 : 'no data');
             setVersionInfo(data);
         } catch (error: any) {
-            console.log('[UpdateChecker] Failed to check for updates:', error?.message || error);
+            if (__DEV__) console.log('[UpdateChecker] Failed to check for updates:', error?.message || error);
         } finally {
             setChecking(false);
         }
@@ -155,7 +155,7 @@ export function useUpdateChecker(): UpdateStatus {
         try {
             await Linking.openURL(url);
         } catch (error: any) {
-            console.log('[UpdateChecker] Failed to open URL:', error?.message || error);
+            if (__DEV__) console.log('[UpdateChecker] Failed to open URL:', error?.message || error);
             setErrorMessage('Não foi possível abrir a página de download. Acesse finanzaai.tech/downloads manualmente.');
         }
     }, []);

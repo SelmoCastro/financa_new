@@ -1,4 +1,5 @@
-import { PartialType } from '@nestjs/swagger';
+import { OmitType, PartialType } from '@nestjs/swagger';
 import { CreateGoalDto } from './create-goal.dto';
 
-export class UpdateGoalDto extends PartialType(CreateGoalDto) {}
+// currentAmount must only change through the dedicated deposit endpoint.
+export class UpdateGoalDto extends OmitType(PartialType(CreateGoalDto), ['currentAmount'] as const) {}

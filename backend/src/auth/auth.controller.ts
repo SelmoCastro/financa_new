@@ -53,13 +53,13 @@ export class AuthController {
     @Req() req: ExpressRequest,
     @Res({ passthrough: true }) res: Response,
   ) {
-    // V5: No PII in production logs
+    // V5: No PII in logs
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[AUTH] REGISTER - email: ${createUserDto.email}, name: ${createUserDto.name}`);
+      console.log('[AUTH] REGISTER attempt');
     }
     const responseData = await this.authService.register(createUserDto);
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[AUTH] REGISTER OK - userId: ${responseData.userId}, isEmailVerified: ${responseData.user?.isEmailVerified}`);
+      console.log(`[AUTH] REGISTER OK - isEmailVerified: ${responseData.user?.isEmailVerified}`);
     }
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
     // V1: Use x-platform header for reliable mobile detection.
@@ -80,20 +80,20 @@ export class AuthController {
   @AuditLog({ action: 'auth.login', targetType: 'User' })
   @Post('login')
   async login(@Body() body: LoginDto, @Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
-    // V5: No PII in production logs
+    // V5: No PII in logs
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[AUTH] LOGIN ATTEMPT - email: ${body.email}`);
+      console.log('[AUTH] LOGIN ATTEMPT');
     }
     const user = await this.authService.validateUser(body.email, body.password);
     if (!user) {
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`[AUTH] LOGIN FAILED - email: ${body.email}`);
+        console.log('[AUTH] LOGIN FAILED');
       }
       throw new UnauthorizedException('Credenciais inválidas');
     }
     const responseData = await this.authService.login(user);
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[AUTH] LOGIN OK - userId: ${responseData.user?.id}, isEmailVerified: ${responseData.user?.isEmailVerified}`);
+      console.log(`[AUTH] LOGIN OK - isEmailVerified: ${responseData.user?.isEmailVerified}`);
     }
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
 

@@ -477,7 +477,7 @@ export class CreditCardInvoiceService {
         closed++;
       } catch (error) {
         // Log but don't fail the batch — one failing card shouldn't block others
-        console.error(`Failed to close invoice for card ${card.name} (${card.id}):`, (error as Error).message);
+        console.error(`Failed to close invoice for card ${card.id.slice(0, 8)}...:`, (error as Error).message);
         skipped++;
       }
     }

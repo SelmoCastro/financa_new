@@ -56,9 +56,8 @@ export class PaymentsService {
    */
   verifyWebhookSignature(dataId: string, xSignature: string): boolean {
     if (!this.webhookSecret) {
-      // If no secret configured, skip verification (dev mode)
-      this.logger.warn('No MERCADOPAGO_WEBHOOK_SECRET set — skipping signature verification');
-      return true;
+      this.logger.warn('No MERCADOPAGO_WEBHOOK_SECRET set — rejecting webhook signature verification');
+      return false;
     }
 
     const parts = xSignature.split(',');
@@ -190,12 +189,10 @@ export class PaymentsService {
       return { received: true, processed: false };
     }
 
-    // Verify x-signature in production
-    if (this.webhookSecret && xSignature) {
-      if (!this.verifyWebhookSignature(paymentId, xSignature)) {
-        this.logger.warn(`Webhook signature verification failed for payment ${paymentId}`);
-        return { received: true, processed: false };
-      }
+    // Verify x-signature before processing any payment. Fail closed when secret/header is missing.
+    if (!xSignature || !this.verifyWebhookSignature(paymentId, xSignature)) {
+      this.logger.warn(`Webhook signature verification failed for payment ${paymentId}`);
+      return { received: true, processed: false };
     }
 
     return this.processPayment(paymentId);

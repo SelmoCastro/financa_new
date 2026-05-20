@@ -95,16 +95,16 @@ function RootLayoutNav() {
     const isSignup = segments[0] === 'signup';
     const isPublicRoute = isIndex || isSignup;
 
-    console.log(`[Router Protection] Token: ${!!token} | isPublic: ${isPublicRoute} | Path: ${segments.join('/')}`);
+    if (__DEV__) console.log(`[Router Protection] Token: ${!!token} | isPublic: ${isPublicRoute} | Path: ${segments.join('/')}`);
 
     if (!token && !isPublicRoute) {
-      console.log('[Router Protection] Deslogado em área protegida. Redirecionando para login...');
+      if (__DEV__) console.log('[Router Protection] Deslogado em área protegida. Redirecionando para login...');
       // Small timeout to avoid Expo Router race conditions during re-renders or background recovery
       setTimeout(() => {
         router.replace('/');
       }, 0);
     } else if (token && isPublicRoute) {
-      console.log('[Router Protection] Logado em área pública. Redirecionando para dashboard...');
+      if (__DEV__) console.log('[Router Protection] Logado em área pública. Redirecionando para dashboard...');
       setTimeout(() => {
         router.replace('/(tabs)');
       }, 0);

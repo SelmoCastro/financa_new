@@ -8,6 +8,7 @@ export class CreateRecurringTransactionDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0.01)
+  @Max(99999999.99)
   amount: number;
 
   @IsIn(['INCOME', 'EXPENSE'])

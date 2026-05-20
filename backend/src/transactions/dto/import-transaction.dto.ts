@@ -6,11 +6,14 @@ import {
   IsOptional,
   IsBoolean,
   IsArray,
+  ArrayMaxSize,
   Min,
   IsIn,
   Max,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class ImportValidateTransactionDto {
   @IsString()
@@ -92,9 +95,15 @@ export class ImportConfirmTransactionDto {
  */
 export class ImportConfirmPayloadDto {
   @IsArray()
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => ImportConfirmTransactionDto)
   transactions: ImportConfirmTransactionDto[];
 
   @IsArray()
   @IsOptional()
+  @ArrayMaxSize(500)
+  @IsString({ each: true })
+  @MaxLength(128, { each: true })
   rejectedFitIds?: string[];
 }

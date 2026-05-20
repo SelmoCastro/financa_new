@@ -13,6 +13,7 @@ import {
 import { GoalsService } from './goals.service';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
+import { DepositGoalDto } from './dto/deposit-goal.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 import { PlanGuard, REQUIRED_PLAN_KEY } from '../subscription/plan.guard';
@@ -38,7 +39,7 @@ export class GoalsController {
   @RequireVerifiedEmail()
   async deposit(
     @Param('id') id: string,
-    @Body() body: { amount: number },
+    @Body() body: DepositGoalDto,
     @Request() req,
   ) {
     const goal = await this.goalsService.findOne(id, req.user.userId);

@@ -40,6 +40,16 @@ yarn-error.*
 
 # generated native folders
 /ios
-/android
+
+# Keep Android mostly generated/ignored, but track versionName/versionCode source of truth.
+# Finanza APK version is read from android/app/build.gradle, not app.json.
+/android/*
+!/android/app/
+/android/app/*
+!/android/app/build.gradle
 .vercel
-mobile/build-*.apk.gz
+build-*.apk.gz
+*.apk
+*.apk.gz
+*.apk.idsig
+*.idsig

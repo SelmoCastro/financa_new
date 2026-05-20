@@ -12,8 +12,7 @@ export class RecurringTransactionsService {
     private encryption: EncryptionService,
   ) {}
 
-  async create(dto: CreateRecurringTransactionDto, userId: string) {
-    // Validate FK ownership
+  private async validateFkOwnership(dto: { accountId?: string; categoryId?: string; creditCardId?: string }, userId: string) {
     if (dto.accountId) {
       const account = await this.prisma.account.findFirst({
         where: { id: dto.accountId, userId, deletedAt: null },
@@ -32,6 +31,11 @@ export class RecurringTransactionsService {
       });
       if (!card) throw new BadRequestException('Cartão não encontrado ou não pertence a este usuário');
     }
+  }
+
+  async create(dto: CreateRecurringTransactionDto, userId: string) {
+    // Validate FK ownership
+    await this.validateFkOwnership(dto, userId);
 
     const { amount, ...rest } = dto;
     return this.prisma.recurringTransaction.create({
@@ -63,6 +67,7 @@ export class RecurringTransactionsService {
 
   async update(id: string, dto: UpdateRecurringTransactionDto, userId: string) {
     await this.findOne(id, userId);
+    await this.validateFkOwnership(dto, userId);
     const { amount, ...rest } = dto;
     await this.prisma.recurringTransaction.updateMany({
       where: { id, userId },

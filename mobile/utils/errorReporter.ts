@@ -111,5 +111,5 @@ export function initErrorReporter(userIdGetter?: () => string | undefined) {
     }
   });
 
-  console.log('[ErrorReporter] Global error handler initialized');
+  if (__DEV__) console.log('[ErrorReporter] Global error handler initialized');
 }

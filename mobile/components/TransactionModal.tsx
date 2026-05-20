@@ -217,12 +217,13 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
             onClose();
         } catch (error: any) {
             triggerHaptic.error();
-            console.error('Erro ao salvar transação:');
-            if (error.response) {
-                console.error('Status:', error.response.status);
-                console.error('Data:', JSON.stringify(error.response.data, null, 2));
-            } else {
-                console.error('Message:', error.message);
+            if (__DEV__) {
+                console.error('Erro ao salvar transação:');
+                if (error.response) {
+                    console.error('Status:', error.response.status);
+                } else {
+                    console.error('Message:', error.message);
+                }
             }
             Alert.alert('Erro', 'Não foi possível salvar a transação.');
         } finally {

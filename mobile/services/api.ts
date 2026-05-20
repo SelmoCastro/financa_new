@@ -107,7 +107,7 @@ api.interceptors.response.use(
                 const refreshStatus = refreshError?.response?.status;
                 if (refreshStatus === 401 || refreshStatus === 403) {
                     // Refresh token is truly expired — must re-login
-                    console.log('[API] Refresh token expired. Triggering logout...');
+                    if (__DEV__) console.log('[API] Refresh token expired. Triggering logout...');
                     await SecureStore.deleteItemAsync('token');
                     await SecureStore.deleteItemAsync('refreshToken');
                     await SecureStore.deleteItemAsync('userId');

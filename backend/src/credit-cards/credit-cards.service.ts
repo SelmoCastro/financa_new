@@ -16,6 +16,25 @@ export class CreditCardsService {
     private encryption: EncryptionService,
   ) {}
 
+  private async validateInstallmentFkOwnership(dto: { accountId?: string | null; categoryId?: string | null }, userId: string) {
+    if (dto.accountId) {
+      const account = await this.prisma.account.findFirst({
+        where: { id: dto.accountId, userId, deletedAt: null },
+      });
+      if (!account) {
+        throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+      }
+    }
+    if (dto.categoryId) {
+      const category = await this.prisma.category.findFirst({
+        where: { id: dto.categoryId, userId, deletedAt: null },
+      });
+      if (!category) {
+        throw new BadRequestException('Categoria não encontrada ou não pertence a este usuário');
+      }
+    }
+  }
+
   async create(createCreditCardDto: CreateCreditCardDto, userId: string) {
     // V15: Check credit card limit based on plan
     const plan = await this.subscriptionService.getPlan(userId);
@@ -117,6 +136,7 @@ export class CreditCardsService {
     await this.subscriptionService.checkNotExceeding(userId, 'creditCard', creditCardId);
     // Validate card belongs to user
     const card = await this.findOne(creditCardId, userId);
+    await this.validateInstallmentFkOwnership(dto, userId);
 
     const totalAmount = Number(dto.totalAmount);
     const installmentCount = dto.installmentCount;
@@ -238,6 +258,7 @@ export class CreditCardsService {
   async updateInstallment(id: string, dto: UpdateInstallmentDto, userId: string) {
     const inst = await this.findOneInstallment(id, userId);
     await this.subscriptionService.checkNotExceeding(userId, 'creditCard', inst.creditCardId);
+    await this.validateInstallmentFkOwnership(dto, userId);
     // Extract financial fields and encrypt them
     const { totalAmount, ...rest } = dto;
     const data: Record<string, unknown> = { ...rest };
