@@ -2,7 +2,7 @@
   "expo": {
     "name": "Financa New",
     "slug": "mobile",
-    "version": "1.8.75",
+    "version": "1.8.77",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
@@ -24,7 +24,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 66,
+      "versionCode": 93,
       "permissions": []
     },
     "web": {
@@ -55,6 +55,6 @@
       }
     }
   },
-  "version": "1.8.72",
-  "versionCode": 91
+  "version": "1.8.77",
+  "versionCode": 93
 }

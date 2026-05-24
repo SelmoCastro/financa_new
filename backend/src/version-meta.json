@@ -1,6 +1,6 @@
 {
-  "version": "1.8.75",
-  "mobileVersion": "1.8.75",
+  "version": "1.8.77",
+  "mobileVersion": "1.8.77",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Remove assistente de IA do app web"
+  "releaseNotes": "v1.8.77 — APK com versionCode 93 para atualizar corretamente quem está na 1.8.73"
 }

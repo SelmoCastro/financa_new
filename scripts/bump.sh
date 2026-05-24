@@ -63,16 +63,29 @@ for PKG in package.json backend/package.json frontend/package.json mobile/packag
   fi
 done
 
-# --- Bump app.json (Expo) ---
+# --- Bump app.json (Expo + root compatibility fields) ---
 if [[ -f mobile/app.json ]]; then
   node -e "
     const fs = require('fs');
     const d = JSON.parse(fs.readFileSync('mobile/app.json', 'utf8'));
     d.expo.version = '$NEW_VERSION';
-    if (d.expo.android && d.expo.android.versionCode !== undefined) {
-      d.expo.android.versionCode += 1;
-      console.log('  ✓ mobile/app.json → $NEW_VERSION (versionCode: ' + d.expo.android.versionCode + ')');
-    }
+    let gradleCode = 0;
+    try {
+      const gradle = fs.readFileSync('mobile/android/app/build.gradle', 'utf8');
+      gradleCode = Number((gradle.match(/versionCode\s+(\d+)/) || [])[1] || 0);
+    } catch {}
+    const currentCode = Math.max(
+      Number(d.expo.android?.versionCode || 0),
+      Number(d.versionCode || 0),
+      gradleCode
+    );
+    const nextCode = currentCode + 1;
+    if (!d.expo.android) d.expo.android = {};
+    d.expo.android.versionCode = nextCode;
+    // Keep legacy/root fields in sync too. Some Expo/EAS tooling and past configs read them.
+    d.version = '$NEW_VERSION';
+    d.versionCode = nextCode;
+    console.log('  ✓ mobile/app.json → $NEW_VERSION (versionCode: ' + nextCode + ')');
     fs.writeFileSync('mobile/app.json', JSON.stringify(d, null, 2) + '\\n');
   "
 fi
@@ -101,7 +114,7 @@ if [[ -n "$NOTES_FILE" && -f "$NOTES_FILE" ]]; then
   rm -f "$NOTES_FILE"
 fi
 
-# --- Update versionCode in build.gradle (for local builds) ---
+# --- Update versionCode and versionName in build.gradle (for local builds) ---
 GRADLE_FILE="mobile/android/app/build.gradle"
 if [[ -f "$GRADLE_FILE" ]]; then
   node -e "
@@ -109,9 +122,11 @@ if [[ -f "$GRADLE_FILE" ]]; then
     let content = fs.readFileSync('$GRADLE_FILE', 'utf8');
     const appJson = JSON.parse(fs.readFileSync('mobile/app.json', 'utf8'));
     const vc = appJson.expo.android.versionCode;
+    const vv = appJson.expo.version;
     content = content.replace(/versionCode\\s+\\d+/, 'versionCode ' + vc);
+    content = content.replace(/versionName\\s+\"[^\"]+\"/, 'versionName \"' + vv + '\"');
     fs.writeFileSync('$GRADLE_FILE', content);
-    console.log('  ✓ build.gradle versionCode → ' + vc);
+    console.log('  ✓ build.gradle versionCode → ' + vc + ', versionName → ' + vv);
   "
 fi
 
