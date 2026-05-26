@@ -120,50 +120,69 @@ export class TransactionsController {
 
     let result;
     const isImage = mimeType.startsWith('image/');
+    const fileBase64 = fileBuffer.toString('base64');
 
-    // Tenta OCR local primeiro (privacidade total — imagem nao sai do servidor)
-    // Para imagens muito pequenas/complexas, o OCR pode perder detalhes; nesse caso
-    // fazemos fallback para visão diretamente.
-    const ocrText = await this.ocrService.extractText(fileBuffer, mimeType);
-    if (ocrText && (!isImage || ocrText.length >= 80)) {
-      this.logger.log('OCR local OK, enviando texto para IA...');
-      result = await this.aiService.extractFromOcrText(
-        ocrText,
-        categoryNames,
-      );
-
-      // Se o OCR não conseguiu extrair nada útil de uma imagem, tenta visão
-      // antes de devolver erro de "comprovante nítido".
-      if (
-        isImage &&
-        (result.error === 'no_data_found' || result.error === 'unknown_error')
-      ) {
-        this.logger.log(
-          'OCR em imagem ficou fraco/sem dados, tentando modelo de visão... ',
-        );
-        const fileBase64 = fileBuffer.toString('base64');
-        const visionResult = await this.aiService.extractFromReceipt(
-          fileBase64,
-          mimeType,
-          categoryNames,
-        );
-        if (
-          visionResult.transactions.length > 0 ||
-          !visionResult.error ||
-          visionResult.error !== 'no_data_found'
-        ) {
-          result = visionResult;
-        }
-      }
-    } else {
-      // Fallback: envia imagem/PDF diretamente para modelo de visao (OpenRouter)
-      this.logger.log('OCR falhou/indisponivel ou ficou fraco, usando modelo de visao...');
-      const fileBase64 = fileBuffer.toString('base64');
+    // Para imagens, a rota que funcionava melhor antes era visão direta.
+    // Mantemos OCR como segunda chance, não como caminho principal.
+    if (isImage) {
+      this.logger.log('Imagem detectada, usando modelo de visão primeiro...');
       result = await this.aiService.extractFromReceipt(
         fileBase64,
         mimeType,
         categoryNames,
       );
+
+      if (
+        result.error === 'no_data_found' ||
+        result.error === 'unknown_error'
+      ) {
+        this.logger.log(
+          'Visão não conseguiu extrair dados, tentando OCR local como fallback... ',
+        );
+        const ocrText = await this.ocrService.extractText(fileBuffer, mimeType);
+        if (ocrText) {
+          this.logger.log('OCR local OK, enviando texto para IA...');
+          const ocrResult = await this.aiService.extractFromOcrText(
+            ocrText,
+            categoryNames,
+          );
+          if (ocrResult.transactions.length > 0) {
+            result = ocrResult;
+          }
+        }
+      }
+    } else {
+      // PDF continua com OCR primeiro; se ficar fraco, cai para visão.
+      const ocrText = await this.ocrService.extractText(fileBuffer, mimeType);
+      if (ocrText && ocrText.length >= 80) {
+        this.logger.log('OCR local OK, enviando texto para IA...');
+        result = await this.aiService.extractFromOcrText(
+          ocrText,
+          categoryNames,
+        );
+
+        if (
+          result.error === 'no_data_found' ||
+          result.error === 'unknown_error'
+        ) {
+          this.logger.log(
+            'OCR em PDF ficou fraco/sem dados, tentando modelo de visão... ',
+          );
+          result = await this.aiService.extractFromReceipt(
+            fileBase64,
+            mimeType,
+            categoryNames,
+          );
+        }
+      } else {
+        // Fallback: envia PDF diretamente para modelo de visão (OpenRouter)
+        this.logger.log('OCR falhou/indisponivel ou ficou fraco, usando modelo de visao...');
+        result = await this.aiService.extractFromReceipt(
+          fileBase64,
+          mimeType,
+          categoryNames,
+        );
+      }
     }
 
     if (result.error) {
