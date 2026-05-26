@@ -13,6 +13,7 @@ import {
   IsEmail,
   MaxLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export enum TransactionType {
   INCOME = 'INCOME',
@@ -26,8 +27,7 @@ export class CreateTransactionDto {
   @MaxLength(500)
   description: string;
 
-  @IsNumber()
-  @IsNotEmpty()
+  @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
   @Min(0.01, { message: 'O valor deve ser positivo' })
   @Max(99999999.99, { message: 'O valor deve ser menor que R$ 100.000.000' })
   amount: number;

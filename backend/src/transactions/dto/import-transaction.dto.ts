@@ -1,7 +1,6 @@
 import {
   IsString,
   IsUUID,
-  IsNumber,
   IsDateString,
   IsOptional,
   IsBoolean,
@@ -13,16 +12,14 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class ImportValidateTransactionDto {
   @IsString()
   @MaxLength(500)
   description: string;
 
-  @IsNumber()
-  @Min(0.01)
-  @Max(99999999.99)
+  @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
   amount: number;
 
   @IsDateString()
@@ -46,9 +43,7 @@ export class ImportConfirmTransactionDto {
   @MaxLength(500)
   description: string;
 
-  @IsNumber()
-  @Min(0.01)
-  @Max(99999999.99)
+  @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
   amount: number;
 
   @IsDateString()
@@ -75,7 +70,7 @@ export class ImportConfirmTransactionDto {
   @MaxLength(100)
   categoryLegacy?: string;
 
-  @IsNumber()
+  @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
   @IsOptional()
   classificationRule?: number;
 
@@ -86,6 +81,46 @@ export class ImportConfirmTransactionDto {
   @IsUUID()
   @IsOptional()
   creditCardId?: string;
+
+  // Campos extras que o mobile envia do spread ...t (vindos do preview do OCR)
+  @IsString()
+  @IsOptional()
+  cnpj?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isFuzzyDuplicate?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isPreviouslyRejected?: boolean;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  originalDescription?: string;
+
+  @IsString()
+  @IsOptional()
+  suggestedCategory?: string;
+
+  @IsUUID()
+  @IsOptional()
+  suggestedCategoryId?: string;
+
+  @IsOptional()
+  suggestedRule?: number;
+
+  @IsString()
+  @IsOptional()
+  suggestedIcon?: string;
+
+  @IsOptional()
+  confidence?: number;
+
+  @IsString()
+  @IsOptional()
+  sharedWithEmail?: string;
 }
 
 /**
