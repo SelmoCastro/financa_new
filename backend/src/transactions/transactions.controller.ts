@@ -105,59 +105,31 @@ export class TransactionsController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req,
   ) {
-    if (!file) {
-      throw new BadRequestException('Nenhum arquivo enviado.');
-    }
-
-    const fileBuffer = file.buffer;
-    const mimeType = file.mimetype;
-
-    // Busca categorias do usuário para a IA saber o que sugerir
-    const userCategories = await this.transactionsService.getUserCategories(
-      req.user.userId,
-    );
-    const categoryNames = userCategories.map((c) => c.name);
-
-    let result;
-    const isImage = mimeType.startsWith('image/');
-    const fileBase64 = fileBuffer.toString('base64');
-
-    // Para imagens, a rota que funcionava melhor antes era visão direta.
-    // Mantemos OCR como segunda chance, não como caminho principal.
-    if (isImage) {
-      this.logger.log('Imagem detectada, usando modelo de visão primeiro...');
-      result = await this.aiService.extractFromReceipt(
-        fileBase64,
-        mimeType,
-        categoryNames,
-      );
-
-      if (
-        result.error === 'no_data_found' ||
-        result.error === 'unknown_error'
-      ) {
-        this.logger.log(
-          'Visão não conseguiu extrair dados, tentando OCR local como fallback... ',
-        );
-        const ocrText = await this.ocrService.extractText(fileBuffer, mimeType);
-        if (ocrText) {
-          this.logger.log('OCR local OK, enviando texto para IA...');
-          const ocrResult = await this.aiService.extractFromOcrText(
-            ocrText,
-            categoryNames,
-          );
-          if (ocrResult.transactions.length > 0) {
-            result = ocrResult;
-          }
-        }
+    try {
+      if (!file) {
+        throw new BadRequestException('Nenhum arquivo enviado.');
       }
-    } else {
-      // PDF continua com OCR primeiro; se ficar fraco, cai para visão.
-      const ocrText = await this.ocrService.extractText(fileBuffer, mimeType);
-      if (ocrText && ocrText.length >= 80) {
-        this.logger.log('OCR local OK, enviando texto para IA...');
-        result = await this.aiService.extractFromOcrText(
-          ocrText,
+
+      const fileBuffer = file.buffer;
+      const mimeType = file.mimetype;
+
+      // Busca categorias do usuário para a IA saber o que sugerir
+      const userCategories = await this.transactionsService.getUserCategories(
+        req.user.userId,
+      );
+      const categoryNames = userCategories.map((c) => c.name);
+
+      let result;
+      const isImage = mimeType.startsWith('image/');
+      const fileBase64 = fileBuffer.toString('base64');
+
+      // Para imagens, a rota que funcionava melhor antes era visão direta.
+      // Mantemos OCR como segunda chance, não como caminho principal.
+      if (isImage) {
+        this.logger.log('Imagem detectada, usando modelo de visão primeiro...');
+        result = await this.aiService.extractFromReceipt(
+          fileBase64,
+          mimeType,
           categoryNames,
         );
 
@@ -166,78 +138,116 @@ export class TransactionsController {
           result.error === 'unknown_error'
         ) {
           this.logger.log(
-            'OCR em PDF ficou fraco/sem dados, tentando modelo de visão... ',
+            'Visão não conseguiu extrair dados, tentando OCR local como fallback... ',
           );
+          const ocrText = await this.ocrService.extractText(fileBuffer, mimeType);
+          if (ocrText) {
+            this.logger.log('OCR local OK, enviando texto para IA...');
+            const ocrResult = await this.aiService.extractFromOcrText(
+              ocrText,
+              categoryNames,
+            );
+            if (ocrResult.transactions.length > 0) {
+              result = ocrResult;
+            }
+          }
+        }
+      } else {
+        // PDF continua com OCR primeiro; se ficar fraco, cai para visão.
+        const ocrText = await this.ocrService.extractText(fileBuffer, mimeType);
+        if (ocrText && ocrText.length >= 80) {
+          this.logger.log('OCR local OK, enviando texto para IA...');
+          result = await this.aiService.extractFromOcrText(
+            ocrText,
+            categoryNames,
+          );
+
+          if (
+            result.error === 'no_data_found' ||
+            result.error === 'unknown_error'
+          ) {
+            this.logger.log(
+              'OCR em PDF ficou fraco/sem dados, tentando modelo de visão... ',
+            );
+            result = await this.aiService.extractFromReceipt(
+              fileBase64,
+              mimeType,
+              categoryNames,
+            );
+          }
+        } else {
+          // Fallback: envia PDF diretamente para modelo de visão (OpenRouter)
+          this.logger.log('OCR falhou/indisponivel ou ficou fraco, usando modelo de visao...');
           result = await this.aiService.extractFromReceipt(
             fileBase64,
             mimeType,
             categoryNames,
           );
         }
-      } else {
-        // Fallback: envia PDF diretamente para modelo de visão (OpenRouter)
-        this.logger.log('OCR falhou/indisponivel ou ficou fraco, usando modelo de visao...');
-        result = await this.aiService.extractFromReceipt(
-          fileBase64,
-          mimeType,
-          categoryNames,
-        );
       }
-    }
 
-    if (result.error) {
-      const errorMessages: Record<string, string> = {
-        service_unavailable:
-          'Serviço de IA indisponível no momento. Tente novamente mais tarde.',
-        no_data_found:
-          'Não foi possível identificar transações neste documento. Verifique se é um comprovante financeiro válido e tente novamente.',
-        unsupported_format:
-          'Formato de arquivo não suportado pelo modelo de IA. Use JPG, PNG, WEBP ou PDF.',
-        rate_limit:
-          'Muitas solicitações em sequência. Aguarde um momento e tente novamente.',
-        api_error:
-          'Erro temporário no serviço de IA. Tente novamente em alguns instantes.',
-        unknown_error:
-          'Erro inesperado ao processar o documento. Tente novamente.',
-      };
-      return {
-        preview: [],
-        message:
-          errorMessages[result.error] ||
-          'Não foi possível processar este documento.',
-        errorCode: result.error,
-      };
-    }
+      if (result.error) {
+        const errorMessages: Record<string, string> = {
+          service_unavailable:
+            'Serviço de IA indisponível no momento. Tente novamente mais tarde.',
+          no_data_found:
+            'Não foi possível identificar transações neste documento. Verifique se é um comprovante financeiro válido e tente novamente.',
+          unsupported_format:
+            'Formato de arquivo não suportado pelo modelo de IA. Use JPG, PNG, WEBP ou PDF.',
+          rate_limit:
+            'Muitas solicitações em sequência. Aguarde um momento e tente novamente.',
+          api_error:
+            'Erro temporário no serviço de IA. Tente novamente em alguns instantes.',
+          unknown_error:
+            'Erro inesperado ao processar o documento. Tente novamente.',
+        };
+        return {
+          preview: [],
+          message:
+            errorMessages[result.error] ||
+            'Não foi possível processar este documento.',
+          errorCode: result.error,
+        };
+      }
 
-    if (result.transactions.length === 0) {
-      return {
-        preview: [],
-        message:
-          'Nenhuma transação encontrada neste documento. Tente com um comprovante mais nítido.',
-        errorCode: 'no_data_found',
-      };
-    }
+      if (result.transactions.length === 0) {
+        return {
+          preview: [],
+          message:
+            'Nenhuma transação encontrada neste documento. Tente com um comprovante mais nítido.',
+          errorCode: 'no_data_found',
+        };
+      }
 
-    // Mapeia os nomes sugeridos pela IA para os IDs reais do banco usando o novo helper
-    const categoryNameToId = new Map(
-      userCategories.map((c) => [c.name.toLowerCase().trim(), c.id]),
-    );
-    const enrichedPreview = result.transactions.map((t) => {
-      const suggestion = {
-        category: t.suggestedCategory,
-        rule: t.suggestedRule,
-        icon: t.suggestedIcon,
-        confidence: t.confidence,
-      };
-      return this.transactionsService.enrichTransactionWithAi(
-        { ...t, cnpj: t.cnpj },
-        suggestion,
-        t.description,
-        categoryNameToId,
+      // Mapeia os nomes sugeridos pela IA para os IDs reais do banco usando o novo helper
+      const categoryNameToId = new Map(
+        userCategories.map((c) => [c.name.toLowerCase().trim(), c.id]),
       );
-    });
+      const enrichedPreview = result.transactions.map((t) => {
+        const suggestion = {
+          category: t.suggestedCategory,
+          rule: t.suggestedRule,
+          icon: t.suggestedIcon,
+          confidence: t.confidence,
+        };
+        return this.transactionsService.enrichTransactionWithAi(
+          { ...t, cnpj: t.cnpj },
+          suggestion,
+          t.description,
+          categoryNameToId,
+        );
+      });
 
-    return { preview: enrichedPreview };
+      return { preview: enrichedPreview };
+    } catch (error) {
+      this.logger.error('Erro inesperado ao processar comprovante:', error);
+      return {
+        preview: [],
+        message:
+          'Falha ao processar o comprovante. Verifique se a imagem está legível.',
+        errorCode: 'unknown_error',
+      };
+    }
   }
 
   @Post('import/confirm')
