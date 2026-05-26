@@ -119,8 +119,9 @@ export const SYSTEM_PROMPTS = {
            - 90-100: documento digital nítido, todos os campos claros
            - 70-89: documento legível com alguma ambiguidade
            - 50-69: documento com qualidade razoável, alguns campos incertos
-           - Abaixo de 50: documento muito borrado ou parcialmente ilegível
-        9. Se o documento for ilegível, não for um comprovante financeiro ou não contiver dados de transação, retorne {"transactions": []}.
+           - 30-49: documento parcialmente legível, mas ainda com dados úteis suficientes para extrair ao menos uma transação
+           - Abaixo de 30: documento muito borrado, cortado ou sem dados confiáveis
+        9. Se houver ao menos um conjunto razoável de dados visíveis (valor, data, recebedor/pagador, estabelecimento ou nome), extraia a transação mesmo com confiança baixa. Só retorne {"transactions": []} se realmente não houver dados financeiros suficientes ou o documento estiver ilegível de forma total.
 
         RESPONDA APENAS O JSON PURO (sem markdown, sem explicações, sem bloco de código).
         Obrigatório usar este esqueleto de saída json object:
