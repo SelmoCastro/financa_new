@@ -26,23 +26,31 @@ export class AiService {
     process.env.AI_TEXT_MODEL || 'openai/gpt-4o-mini';
 
   constructor() {
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    // Prioridade: AI_API_KEY > OPENROUTER_API_KEY
+    const apiKey = process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY;
+    const baseURL =
+      process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1';
+
     if (apiKey) {
+      const isZen = baseURL.includes('opencode.ai');
+      const headers: Record<string, string> = {};
+      if (!isZen) {
+        headers['HTTP-Referer'] = 'https://finanzaai.tech';
+        headers['X-Title'] = 'Finanza AI';
+      }
+
       this.openai = new OpenAI({
-        apiKey: apiKey,
-        baseURL: 'https://openrouter.ai/api/v1',
-        timeout: 25000, // 25s — VPS propria, sem limite Vercel. Vision/receipt precisa de mais tempo.
-        defaultHeaders: {
-          'HTTP-Referer': 'https://finanzaai.tech',
-          'X-Title': 'Finanza AI',
-        },
+        apiKey,
+        baseURL,
+        timeout: 60000,
+        defaultHeaders: headers,
       });
       this.logger.log(
-        `OpenRouter Service inicializado. Timeout: 25s. Models: ${this.TEXT_MODEL} | ${this.VISION_MODEL}`,
+        `${isZen ? 'ZEN' : 'OpenRouter'} Service inicializado. Timeout: 60s. Models: ${this.TEXT_MODEL} | ${this.VISION_MODEL}`,
       );
     } else {
       this.logger.warn(
-        'OPENROUTER_API_KEY não configurada. Serviço AI rodará em modo Fallback (Desativado).',
+        'AI_API_KEY / OPENROUTER_API_KEY não configurada. Serviço AI rodará em modo Fallback (Desativado).',
       );
     }
   }
@@ -113,25 +121,83 @@ export class AiService {
       return 'Serviço AI não disponível no momento.';
     }
 
-    const prompt = SYSTEM_PROMPTS.INSIGHTS(JSON.stringify(summary, null, 2));
+    const compactSummary = this.buildInsightsSummary(summary);
+    const prompt = SYSTEM_PROMPTS.INSIGHTS(compactSummary);
 
     try {
-      this.logger.log('OpenRouter: Gerando insights financeiros...');
+      this.logger.log(
+        `AI: Gerando insights financeiros (${compactSummary.length} chars de contexto)...`,
+      );
 
       const response = await this.openai.chat.completions.create({
         model: this.TEXT_MODEL,
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-      });
+        temperature: 0.2,
+        reasoning_effort: 'low',
+      } as any);
 
       return (
         response.choices[0]?.message?.content ||
         'Não foi possível gerar insights agora. Tente novamente mais tarde.'
       );
     } catch (error) {
-      this.logger.error('Erro ao gerar insights via OpenRouter:', error);
+      this.logger.error('Erro ao gerar insights via IA:', error);
       return 'Erro na conexão com a inteligência artificial.';
     }
+  }
+
+  /**
+   * Keep dashboard insights fast and reliable on free reasoning models.
+   * The full financial profile can be large and may include raw encrypted values
+   * from direct Prisma reads. Insights only need dashboard aggregates + top risks.
+   */
+  private buildInsightsSummary(summary: Record<string, unknown> | unknown[]): string {
+    const profile = Array.isArray(summary)
+      ? { data: summary }
+      : (summary as Record<string, any>);
+    const userSummary = profile?.userSummary || profile || {};
+    const currentMonth = userSummary?.currentMonth || {};
+    const rule503020 = userSummary?.rule503020 || userSummary?.rule50_30_20 || {};
+    const categorySummary = Array.isArray(userSummary?.categorySummary)
+      ? userSummary.categorySummary.slice(0, 6)
+      : [];
+    const topMonthlyExpenses = Array.isArray(profile?.topMonthlyExpenses)
+      ? profile.topMonthlyExpenses.slice(0, 5)
+      : [];
+    const monthlyHistory = Array.isArray(userSummary?.monthlyHistory)
+      ? userSummary.monthlyHistory.slice(-4)
+      : [];
+
+    const activeGoalsCount = Array.isArray(profile?.activeGoals)
+      ? profile.activeGoals.length
+      : 0;
+    const activeBudgetsCount = Array.isArray(profile?.activeBudgets)
+      ? profile.activeBudgets.length
+      : 0;
+
+    return JSON.stringify(
+      {
+        currentMonth: {
+          income: currentMonth.income ?? userSummary.currentIncome ?? 0,
+          expenses: currentMonth.expenses ?? userSummary.currentExpense ?? 0,
+          balance: userSummary.balance ?? 0,
+          available: userSummary.available ?? userSummary.availableReal ?? undefined,
+          creditCardDebt: userSummary.creditCardDebt ?? 0,
+        },
+        trends: {
+          incomeTrend: userSummary.incomeTrend ?? 0,
+          expenseTrend: userSummary.expenseTrend ?? 0,
+        },
+        rule503020,
+        topMonthlyExpenses,
+        categorySummary,
+        monthlyHistory,
+        activeGoalsCount,
+        activeBudgetsCount,
+      },
+      null,
+      2,
+    );
   }
 
   /**
@@ -360,6 +426,56 @@ export class AiService {
         return { transactions: [], error: 'api_error' };
       }
 
+      return { transactions: [], error: 'unknown_error' };
+    }
+  }
+
+  /**
+   * Extrai dados de transação de texto OCR (comprovante lido localmente).
+   * Envia apenas o texto extraído para o modelo de IA (sem imagem).
+   */
+  async extractFromOcrText(
+    ocrText: string,
+    categories: string[] = [],
+  ): Promise<ReceiptExtractionResult> {
+    if (!this.openai) {
+      return { transactions: [], error: 'service_unavailable' };
+    }
+
+    try {
+      this.logger.log(
+        `OpenRouter: Processando texto OCR (${ocrText.length} chars) com ${this.TEXT_MODEL}...`,
+      );
+
+      const prompt = `${SYSTEM_PROMPTS.OCR_EXTRACTOR(categories)}\n\nTEXTO EXTRAÍDO DO COMPROVANTE:\n${ocrText}`;
+
+      const response = await this.openai.chat.completions.create({
+        model: this.TEXT_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        max_tokens: 4096,
+      });
+
+      const responseText = response.choices[0]?.message?.content || '{}';
+      const cleanJson = responseText.replace(/```json|```/g, '').trim();
+      const rawData = JSON.parse(cleanJson);
+
+      const parsed = Array.isArray(rawData)
+        ? rawData
+        : rawData.transactions ||
+          rawData.data ||
+          rawData.items ||
+          rawData.results ||
+          [];
+
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        return { transactions: [], error: 'no_data_found' };
+      }
+
+      return { transactions: parsed, error: null };
+    } catch (error: unknown) {
+      const err = error as Error & { status?: number };
+      this.logger.error('Erro ao extrair via OCR + IA:', err?.message || String(error));
       return { transactions: [], error: 'unknown_error' };
     }
   }
