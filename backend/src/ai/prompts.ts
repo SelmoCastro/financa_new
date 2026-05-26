@@ -91,6 +91,7 @@ export const SYSTEM_PROMPTS = {
         - [Emoji Temático] **[Título Curto e Chamativo]:** [Seu conselho empático e direto ao ponto].
         - [Emoji Temático] **[Título Curto e Chamativo]:** [Seu conselho empático e direto ao ponto].`,
 
+
   // Prompt para extração de dados de fotos/comprovantes (imagens e PDFs)
   VISION_EXTRACTOR: (
     categories: string[],
@@ -181,4 +182,41 @@ export const SYSTEM_PROMPTS = {
         3. Capitalize corretamente: "IFOOD" → "iFood", "NUBANK" → "Nubank".
         4. Mantenha nomes de pessoas como estão (apenas capitalize).
         5. Retorne um JSON onde a CHAVE é a descrição ORIGINAL EXATA e o VALOR é a descrição limpa.`,
+
+  // Prompt para extrair transacoes de texto OCR (comprovante lido localmente)
+  OCR_EXTRACTOR: (
+    categories: string[],
+  ) => `Você é um especialista em interpretar texto extraído de OCR de documentos bancários brasileiros.
+        O texto abaixo foi extraído automaticamente de um comprovante/imagem via OCR.
+        Pode conter erros de leitura, linhas bagunçadas ou caracteres estranhos.
+        Ignore ruídos e extraia APENAS as transações financeiras encontradas.
+
+        CATEGORIAS DISPONÍVEIS (ENCAIXE CADA TRANSAÇÃO EM UMA DELAS):
+        ${categories.join(', ')}
+
+        REGRAS DE EXTRAÇÃO:
+        1. "type": "EXPENSE" para pagamentos/saídas, "INCOME" para recebimentos/depósitos.
+        2. "amount": valor numérico positivo. Procure por "VALOR TOTAL", "R$", "TOTAL", "RS". Converta formato brasileiro (1.234,56 → 1234.56).
+        3. "date": formato YYYY-MM-DD. Se o ano estiver incompleto, use ${new Date().getFullYear()}.
+        4. "description": nome do estabelecimento, pessoa ou serviço. Remova lixo OCR.
+        5. "suggestedCategory": use a categoria mais adequada da lista. Se não encaixar, "Outros".
+        6. "suggestedRule": 50 (Necessidades), 30 (Desejos), 20 (Poupança).
+        7. "confidence": 0-100 baseado na qualidade do OCR.
+        Se o texto não contiver dados financeiros, retorne {"transactions": []}.
+
+        RESPONDA APENAS JSON PURO:
+        {
+          "transactions": [
+            {
+              "date": "YYYY-MM-DD",
+              "amount": 0.0,
+              "description": "Nome Limpo",
+              "type": "EXPENSE",
+              "suggestedCategory": "Nome da Categoria",
+              "suggestedRule": 30,
+              "suggestedIcon": "🏷️",
+              "confidence": 85
+            }
+          ]
+        }`,
 };
