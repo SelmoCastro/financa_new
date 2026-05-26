@@ -365,8 +365,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </div>
                                 <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-1000 ${rule503020.needs.percent > 55 ? 'bg-rose-600 animate-pulse' : rule503020.needs.percent > 50 ? 'bg-rose-500' : 'bg-cyan-500'}`}
-                                        style={{ width: `${Math.min(rule503020.needs.percent, 100)}%` }}
+                                        className={`h-full rounded-full transition-all duration-500 ${rule503020.needs.percent > 55 ? 'bg-rose-600 animate-pulse' : rule503020.needs.percent > 50 ? 'bg-rose-500' : 'bg-cyan-500'}`}
+                                        style={{ width: `${Math.max(Math.min(rule503020.needs.percent || 0, 100), rule503020.needs.value > 0 ? 2 : 0)}%` }}
                                     />
                                 </div>
                                 <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.5)}</p>
@@ -382,8 +382,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </div>
                                 <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-1000 ${rule503020.wants.percent > 35 ? 'bg-amber-600 animate-pulse' : rule503020.wants.percent > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                                        style={{ width: `${Math.min(rule503020.wants.percent, 100)}%` }}
+                                        className={`h-full rounded-full transition-all duration-500 ${rule503020.wants.percent > 35 ? 'bg-amber-600 animate-pulse' : rule503020.wants.percent > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                        style={{ width: `${Math.max(Math.min(rule503020.wants.percent || 0, 100), rule503020.wants.value > 0 ? 2 : 0)}%` }}
                                     />
                                 </div>
                                 <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.3)}</p>
@@ -399,8 +399,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </div>
                                 <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
                                     <div
-                                        className="h-full bg-blue-500 rounded-full transition-all duration-1000"
-                                        style={{ width: `${Math.min(rule503020.savings.percent, 100)}%` }}
+                                        className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                                        style={{ width: `${Math.max(Math.min(rule503020.savings.percent || 0, 100), rule503020.savings.value > 0 ? 2 : 0)}%` }}
                                     />
                                 </div>
                                 <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.2)}</p>
@@ -417,8 +417,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     </div>
                                     <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
                                         <div
-                                            className="h-full bg-slate-400 dark:bg-slate-500 rounded-full transition-all duration-1000"
-                                            style={{ width: `${Math.min(rule503020.uncategorized.percent, 100)}%` }}
+                                            className="h-full bg-slate-400 dark:bg-slate-500 rounded-full transition-all duration-500"
+                                            style={{ width: `${Math.max(Math.min(rule503020.uncategorized.percent || 0, 100), rule503020.uncategorized.value > 0 ? 2 : 0)}%` }}
                                         />
                                     </div>
                                     <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Categorias não classificadas na regra</p>

@@ -229,9 +229,7 @@ export class ReportsService {
       else uncategorized += val;
     }
 
-    const expenseBase = (needs + wants + savings + uncategorized) > 0
-      ? (needs + wants + savings + uncategorized)
-      : 1;
+    const expenseBase = needs + wants + savings + uncategorized;
 
     // 4. Category Summary (Pie Chart)
     const categorySummary: { name: string; value: number }[] = [];
@@ -375,19 +373,19 @@ export class ReportsService {
       rule503020: {
         needs: {
           value: needs,
-          percent: expenseBase > 1 ? (needs / expenseBase) * 100 : 0,
+          percent: expenseBase > 0 ? Math.round((needs / expenseBase) * 1000) / 10 : 0,
         },
         wants: {
           value: wants,
-          percent: expenseBase > 1 ? (wants / expenseBase) * 100 : 0,
+          percent: expenseBase > 0 ? Math.round((wants / expenseBase) * 1000) / 10 : 0,
         },
         savings: {
           value: savings,
-          percent: expenseBase > 1 ? (savings / expenseBase) * 100 : 0,
+          percent: expenseBase > 0 ? Math.round((savings / expenseBase) * 1000) / 10 : 0,
         },
         uncategorized: {
           value: uncategorized,
-          percent: expenseBase > 1 ? (uncategorized / expenseBase) * 100 : 0,
+          percent: expenseBase > 0 ? Math.round((uncategorized / expenseBase) * 1000) / 10 : 0,
         },
       },
       categorySummary,
