@@ -18,6 +18,9 @@ coverage
 # BMad
 **/.opencode/
 _bmad-output/
+
+# Agent skills (nested git repo breaks CI/CD submodule cleanup)
+mobile/.agent/skills/
 _bmad/
 BACKLOG.md
 BMAD-GUIDE.md
