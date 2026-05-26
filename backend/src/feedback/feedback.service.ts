@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -7,7 +7,7 @@ export class FeedbackService {
 
   async submitFeedback(userId: string, content: string, platform: string) {
     if (!content || !content.trim()) {
-      throw new Error('Feedback content is required');
+      throw new BadRequestException('Feedback content is required');
     }
     return this.prisma.feedback.create({
       data: {

@@ -15,30 +15,20 @@ export class BudgetsService {
   ) {}
 
   async create(createBudgetDto: CreateBudgetDto, userId: string) {
-    // V15: Check budget limit based on plan
-    const plan = await this.subscriptionService.getPlan(userId);
-    const limits = PLAN_LIMITS[plan];
-    const currentCount = await this.prisma.budget.count({
-      where: { userId },
-    });
-    if (limits.maxBudgets !== -1 && currentCount >= limits.maxBudgets) {
-      throw new ForbiddenException(
-        `Limite de ${limits.maxBudgets} orçamentos atingido. Faça upgrade para Premium para orçamentos ilimitados.`,
-      );
-    }
+    // V15: Atomic limit check + create to prevent race conditions
+    return this.subscriptionService.createWithLimitCheck(userId, 'budget', async () => {
+      const { categoryId, amount } = createBudgetDto;
 
-    const { categoryId, amount } = createBudgetDto;
+      // Verify category exists, belongs to user, and is not soft-deleted
+      const cat = await this.prisma.category.findFirst({
+        where: { id: categoryId, userId, deletedAt: null },
+      });
+      if (!cat) {
+        throw new BadRequestException('Category not found');
+      }
 
-    // Verify category exists, belongs to user, and is not soft-deleted
-    const cat = await this.prisma.category.findFirst({
-      where: { id: categoryId, userId, deletedAt: null },
-    });
-    if (!cat) {
-      throw new BadRequestException('Category not found');
-    }
-
-    // Upsert: update amount if budget for this category already exists, or create new
-    return this.prisma.budget.upsert({
+      // Upsert: update amount if budget for this category already exists, or create new
+      return this.prisma.budget.upsert({
       where: {
         userId_categoryId: {
           userId,
@@ -51,6 +41,7 @@ export class BudgetsService {
         categoryId,
         amount: encryptAmount(Number(amount), this.encryption),
       },
+      });
     });
   }
 

@@ -8,9 +8,12 @@ import {
   UseGuards,
   Param,
   BadRequestException,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { NotificationsService } from './notifications.service';
+import { HandleActionDto } from '../payments/dto/payment.dto';
 
 @Controller({
   path: 'notifications',
@@ -42,17 +45,15 @@ export class NotificationsController {
   }
 
   @Post(':id/action')
+  @UsePipes(new ValidationPipe({ transform: true }))
   async handleAction(
     @Param('id') id: string,
-    @Body() body: { action: string },
+    @Body() dto: HandleActionDto,
     @Request() req,
   ) {
-    if (!['confirm', 'postpone'].includes(body.action)) {
-      throw new BadRequestException('Ação inválida. Use: confirm ou postpone');
-    }
     return this.notificationsService.handleAction(
       id,
-      body.action,
+      dto.action,
       req.user.userId,
     );
   }

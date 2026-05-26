@@ -11,7 +11,20 @@ export const PLAN_LIMITS: Record<PlanType, { aiRequestsPerDay: number; maxAccoun
 
 @Injectable()
 export class SubscriptionService {
+  // In-memory mutex to prevent race conditions on resource creation for free users
+  private readonly resourceLocks = new Map<string, Promise<any>>();
+
   constructor(private prisma: PrismaService) {}
+
+  /** Execute a function with a per-user lock to prevent race conditions */
+  private async withUserLock<T>(userId: string, fn: () => Promise<T>): Promise<T> {
+    const previousLock = this.resourceLocks.get(userId);
+    const lock = (previousLock || Promise.resolve()).finally(() => {
+      this.resourceLocks.delete(userId);
+    }).then(fn);
+    this.resourceLocks.set(userId, lock);
+    return lock;
+  }
 
   async getSubscription(userId: string) {
     let sub = await this.prisma.subscription.findUnique({ where: { userId } });
@@ -83,6 +96,55 @@ export class SubscriptionService {
   }
 
   /**
+   * Atomic check + create: prevents race condition where two concurrent requests
+   * both pass the limit check before either creates. Uses per-user in-memory mutex.
+   */
+  async createWithLimitCheck<T>(
+    userId: string,
+    resourceType: ResourceType,
+    createFn: () => Promise<T>,
+  ): Promise<T> {
+    return this.withUserLock(userId, async () => {
+      const plan = await this.getPlan(userId);
+      if (plan === 'premium') return createFn();
+
+      const limit = this.getLimitForType(plan, resourceType);
+      if (limit === -1) return createFn();
+
+      // Count existing resources (excluding soft-deleted)
+      let count: number;
+      switch (resourceType) {
+        case 'account':
+          count = await this.prisma.account.count({ where: { userId, deletedAt: null } });
+          break;
+        case 'budget':
+          count = await this.prisma.budget.count({ where: { userId, deletedAt: null } });
+          break;
+        case 'creditCard':
+          count = await this.prisma.creditCard.count({ where: { userId, deletedAt: null } });
+          break;
+        case 'goal':
+          count = await this.prisma.goal.count({ where: { userId, deletedAt: null } });
+          break;
+      }
+
+      if (count >= limit) {
+        const resourceLabels: Record<ResourceType, string> = {
+          account: 'contas',
+          budget: 'orçamentos',
+          creditCard: 'cartões',
+          goal: 'metas',
+        };
+        throw new ForbiddenException(
+          `Plano Free permite até ${limit} ${resourceLabels[resourceType]}. Faça upgrade para Premium para criar mais.`,
+        );
+      }
+
+      return createFn();
+    });
+  }
+
+  /**
    * Retorna os IDs dos recursos excedentes (read-only) para um tipo.
    * Recursos criados primeiro = dentro do limite; os demais = excedentes.
    */
@@ -104,7 +166,7 @@ export class SubscriptionService {
         break;
       case 'budget':
         resources = await this.prisma.budget.findMany({
-          where: { userId },
+          where: { userId, deletedAt: null },
           orderBy: { createdAt: 'asc' },
           select: { id: true },
         });

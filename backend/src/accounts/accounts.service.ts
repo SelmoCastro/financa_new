@@ -16,18 +16,9 @@ export class AccountsService {
   ) {}
 
   async create(createAccountDto: CreateAccountDto, userId: string) {
-    // V15: Check account limit based on plan
-    const plan = await this.subscriptionService.getPlan(userId);
-    const limits = PLAN_LIMITS[plan];
-    const currentCount = await this.prisma.account.count({
-      where: { userId, deletedAt: null },
-    });
-    if (limits.maxAccounts !== -1 && currentCount >= limits.maxAccounts) {
-      throw new ForbiddenException(
-        `Limite de ${limits.maxAccounts} contas atingido. Faça upgrade para Premium para contas ilimitadas.`,
-      );
-    }
-    return this.prisma.$transaction(async (tx) => {
+    // V15: Atomic limit check + create to prevent race conditions
+    return this.subscriptionService.createWithLimitCheck(userId, 'account', async () => {
+      return this.prisma.$transaction(async (tx) => {
       // 1. Create the account — balance starts at 0; the atomicBalanceUpdate below applies the initial balance.
       // Using ...createAccountDto would set balance twice (once from DTO, once from update).
       const { balance: _dtoBalance, ...accountData } = createAccountDto;
@@ -76,6 +67,7 @@ export class AccountsService {
       }
 
       return account;
+      });
     });
   }
 

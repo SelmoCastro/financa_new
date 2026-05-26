@@ -19,7 +19,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
     const filteredHistory = useMemo(() => {
         if (!Array.isArray(transactions)) return [];
         return transactions.filter(tx => {
-            const matchesSearch = tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            const matchesSearch = (tx.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (tx.category?.name || tx.categoryLegacy || '').toLowerCase().includes(searchTerm.toLowerCase());
             const matchesType = filterType === 'ALL' || tx.type === filterType;
             return matchesSearch && matchesType;

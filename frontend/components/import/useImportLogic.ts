@@ -66,7 +66,7 @@ export function useImportLogic(
         api.get<Category[]>('/categories')
             .then(res => setCategories(res.data))
             .catch(() => setCategories(propCategories || []));
-    }, []);
+    }, [propCategories]);
 
     // Cleanup: revoke object URL and abort pending requests on unmount
     useEffect(() => {
@@ -74,7 +74,7 @@ export function useImportLogic(
             if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
             abortControllerRef.current?.abort();
         };
-    }, []);
+    }, [receiptPreviewUrl]);
 
     const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 

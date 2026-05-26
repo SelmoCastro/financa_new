@@ -129,6 +129,10 @@ if [[ "$BACKEND_ONLY" == false ]]; then
     rsync -a --exclude='node_modules' --exclude='.expo' --exclude='android' "$MOBILE_DIR/" "$BUILD_DIR/" 2>&1 | tail -1
     
     cd "$BUILD_DIR"
+
+    # Ensure Android SDK is found (needed by both prebuild and Gradle)
+    export ANDROID_HOME=/home/selmo/Android/Sdk
+
     log "Installing mobile deps on SSD..."
     npm install 2>&1 | tail -3
 
@@ -139,7 +143,7 @@ if [[ "$BACKEND_ONLY" == false ]]; then
     cd android
     
     # OOM-safe Gradle flags
-    export GRADLE_OPTS="-Xmx1536m -XX:MaxMetaspaceSize=256m"
+    export GRADLE_OPTS="-Xmx2048m -XX:MaxMetaspaceSize=512m"
     ./gradlew assembleRelease -Parallel=false --no-daemon 2>&1 | tail -10
 
     APK_PATH="$BUILD_DIR/android/app/build/outputs/apk/release/app-release.apk"

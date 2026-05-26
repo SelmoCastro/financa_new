@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { PlanId } from './dto/payment.dto';
+import { PlanId, MercadoPagoWebhookDto } from './dto/payment.dto';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { AuditService } from '../audit/audit.service';
 import * as crypto from 'crypto';
@@ -175,22 +175,18 @@ export class PaymentsService {
     }
   }
 
-  async handleWebhook(webhookData: {
-    type?: string;
-    action?: string;
-    data?: { id?: string };
-  }, xSignature?: string, xRequestId?: string) {
-    this.logger.log(`Webhook received: type=${webhookData.type}, action=${webhookData.action}`);
+  async handleWebhook(dto: MercadoPagoWebhookDto, xSignature?: string, xRequestId?: string) {
+    this.logger.log(`Webhook received: type=${dto.type}, action=${dto.action}`);
 
-    if (webhookData.type !== 'payment') {
+    if (dto.type !== 'payment') {
       return { received: true, processed: false };
     }
 
-    const paymentId = webhookData.data?.id;
+    const paymentId = dto.data_id || dto.id?.toString();
     if (!paymentId) {
       this.logPaymentAlert('payments.webhook_missing_payment_id', 'warn', {
-        type: webhookData.type,
-        action: webhookData.action,
+        type: dto.type,
+        action: dto.action,
         requestId: xRequestId,
       });
       return { received: true, processed: false };

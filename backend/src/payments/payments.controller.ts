@@ -8,12 +8,14 @@ import {
   UseGuards,
   HttpStatus,
   UnauthorizedException,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { PaymentsService } from './payments.service';
-import { CreatePreferenceDto } from './dto/payment.dto';
+import { CreatePreferenceDto, MercadoPagoWebhookDto } from './dto/payment.dto';
 
 interface RequestWithUser {
   user: { userId: string };
@@ -53,7 +55,8 @@ export class PaymentsController {
    */
   @SkipThrottle()
   @Post('webhook')
-  async webhook(@Body() body: any, @Req() req: Request, @Res() res: Response) {
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: false }))
+  async webhook(@Body() dto: MercadoPagoWebhookDto, @Req() req: Request, @Res() res: Response) {
     // Verify x-signature in production to prevent webhook forgery
     const xSignature = req.headers['x-signature'] as string;
     const xRequestId = req.headers['x-request-id'] as string;
@@ -65,7 +68,7 @@ export class PaymentsController {
     }
 
     try {
-      const result = await this.paymentsService.handleWebhook(body, xSignature, xRequestId);
+      const result = await this.paymentsService.handleWebhook(dto, xSignature, xRequestId);
       return res.status(HttpStatus.OK).json({ received: true });
     } catch {
       // Always return 200 — never expose errors to caller

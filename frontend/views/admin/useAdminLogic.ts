@@ -40,7 +40,7 @@ export function useAdminLogic() {
       const q = userSearch.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       list = list.filter(u => {
         const name = (u.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        const email = u.email.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const email = (u.email || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         return name.includes(q) || email.includes(q);
       });
     }

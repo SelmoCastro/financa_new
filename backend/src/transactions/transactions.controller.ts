@@ -14,6 +14,8 @@ import {
   UploadedFile,
   BadRequestException,
   ParseArrayPipe,
+  ParseUUIDPipe,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TransactionsService } from './transactions.service';
@@ -27,6 +29,7 @@ import {
 } from './dto/import-transaction.dto';
 import { TransferTransactionDto } from './dto/transfer-transaction.dto';
 import { AiService } from '../ai/ai.service';
+import { OcrService } from '../common/services/ocr.service';
 import { ReportsService } from '../reports/reports.service';
 import { memoryStorage } from 'multer';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
@@ -37,10 +40,12 @@ import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 })
 @UseGuards(AuthGuard('jwt'))
 export class TransactionsController {
+  private readonly logger = new Logger(TransactionsController.name);
   constructor(
     private readonly transactionsService: TransactionsService,
     private readonly aiService: AiService,
     private readonly reportsService: ReportsService,
+    private readonly ocrService: OcrService,
   ) {}
 
   @Post()
@@ -104,7 +109,8 @@ export class TransactionsController {
       throw new BadRequestException('Nenhum arquivo enviado.');
     }
 
-    const fileBase64 = file.buffer.toString('base64');
+    const fileBuffer = file.buffer;
+    const mimeType = file.mimetype;
 
     // Busca categorias do usuário para a IA saber o que sugerir
     const userCategories = await this.transactionsService.getUserCategories(
@@ -112,11 +118,26 @@ export class TransactionsController {
     );
     const categoryNames = userCategories.map((c) => c.name);
 
-    const result = await this.aiService.extractFromReceipt(
-      fileBase64,
-      file.mimetype,
-      categoryNames,
-    );
+    let result;
+
+    // Tenta OCR local primeiro (privacidade total — imagem nao sai do servidor)
+    const ocrText = await this.ocrService.extractText(fileBuffer, mimeType);
+    if (ocrText) {
+      this.logger.log('OCR local OK, enviando texto para IA...');
+      result = await this.aiService.extractFromOcrText(
+        ocrText,
+        categoryNames,
+      );
+    } else {
+      // Fallback: envia imagem para modelo de visao (OpenRouter)
+      this.logger.log('OCR falhou/indisponivel, usando modelo de visao...');
+      const fileBase64 = fileBuffer.toString('base64');
+      result = await this.aiService.extractFromReceipt(
+        fileBase64,
+        mimeType,
+        categoryNames,
+      );
+    }
 
     if (result.error) {
       const errorMessages: Record<string, string> = {
@@ -189,10 +210,12 @@ export class TransactionsController {
     @Query('year') year?: string,
     @Query('month') month?: string,
   ) {
+    const parsedYear = year ? parseInt(year, 10) : undefined;
+    const parsedMonth = month ? parseInt(month, 10) : undefined;
     return this.transactionsService.findAll(
       req.user.userId,
-      year ? parseInt(year, 10) : undefined,
-      month ? parseInt(month, 10) : undefined,
+      parsedYear && !isNaN(parsedYear) ? parsedYear : undefined,
+      parsedMonth && !isNaN(parsedMonth) ? parsedMonth : undefined,
     );
   }
 
@@ -207,10 +230,12 @@ export class TransactionsController {
     @Query('year') year?: string,
     @Query('month') month?: string,
   ) {
+    const parsedYear = year ? parseInt(year, 10) : undefined;
+    const parsedMonth = month ? parseInt(month, 10) : undefined;
     return this.reportsService.getDashboardSummary(
       req.user.userId,
-      year ? parseInt(year, 10) : undefined,
-      month ? parseInt(month, 10) : undefined,
+      parsedYear && !isNaN(parsedYear) ? parsedYear : undefined,
+      parsedMonth && !isNaN(parsedMonth) ? parsedMonth : undefined,
     );
   }
 
@@ -229,14 +254,14 @@ export class TransactionsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Request() req) {
+  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Request() req) {
     return this.transactionsService.findOne(id, req.user.userId);
   }
 
   @Patch(':id')
   @RequireVerifiedEmail()
   update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateTransactionDto: UpdateTransactionDto,
     @Request() req,
   ) {
@@ -249,7 +274,7 @@ export class TransactionsController {
 
   @Delete(':id')
   @RequireVerifiedEmail()
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Request() req) {
     return this.transactionsService.remove(id, req.user.userId);
   }
 }

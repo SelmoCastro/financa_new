@@ -162,7 +162,7 @@ export function useInvoicesLogic() {
         grouped[i.creditCardId].push(i);
       });
       setCardInstallments(grouped);
-    } catch {}
+    } catch (e) { console.error('Erro ao buscar parcelas:', e); }
   }, []);
 
   useEffect(() => { fetchInstallments(); }, [creditCards]);

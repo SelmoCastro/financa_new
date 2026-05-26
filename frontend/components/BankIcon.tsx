@@ -24,7 +24,7 @@ interface BankIconProps {
 }
 
 export const BankIcon: React.FC<BankIconProps> = ({ name, type = 'CHECKING', className = "w-12 h-12 rounded-2xl" }) => {
-    const normalizedName = name.toLowerCase();
+    const normalizedName = (name || '').toLowerCase();
     const bank = bankData.find(b => b.keywords.some(k => normalizedName.includes(k)));
 
 

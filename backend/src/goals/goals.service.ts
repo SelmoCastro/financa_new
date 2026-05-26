@@ -15,27 +15,18 @@ export class GoalsService {
   ) {}
 
   async create(createGoalDto: CreateGoalDto, userId: string) {
-    // V16: Check goal limit based on plan
-    const plan = await this.subscriptionService.getPlan(userId);
-    const limits = PLAN_LIMITS[plan];
-    const currentCount = await this.prisma.goal.count({
-      where: { userId, deletedAt: null },
-    });
-    if (limits.maxGoals !== -1 && currentCount >= limits.maxGoals) {
-      throw new ForbiddenException(
-        `Limite de ${limits.maxGoals} metas atingido. Faça upgrade para Premium para metas ilimitadas.`,
-      );
-    }
-
-    const { deadline, targetAmount, currentAmount, ...rest } = createGoalDto;
-    return this.prisma.goal.create({
-      data: {
-        ...rest,
-        targetAmount: encryptAmount(targetAmount, this.encryption),
-        currentAmount: currentAmount ? encryptAmount(currentAmount, this.encryption) : encryptAmount(0, this.encryption),
-        deadline: deadline ? new Date(deadline) : undefined,
-        userId,
-      },
+    // V16: Atomic limit check + create to prevent race conditions
+    return this.subscriptionService.createWithLimitCheck(userId, 'goal', async () => {
+      const { deadline, targetAmount, currentAmount, ...rest } = createGoalDto;
+      return this.prisma.goal.create({
+        data: {
+          ...rest,
+          targetAmount: encryptAmount(targetAmount, this.encryption),
+          currentAmount: currentAmount ? encryptAmount(currentAmount, this.encryption) : encryptAmount(0, this.encryption),
+          deadline: deadline ? new Date(deadline) : undefined,
+          userId,
+        },
+      });
     });
   }
 

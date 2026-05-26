@@ -6,6 +6,7 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+  // DIRECT_URL is optional - only required for Neon serverless with connection pooling
 }
 
 model User {

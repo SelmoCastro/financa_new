@@ -36,36 +36,27 @@ export class CreditCardsService {
   }
 
   async create(createCreditCardDto: CreateCreditCardDto, userId: string) {
-    // V15: Check credit card limit based on plan
-    const plan = await this.subscriptionService.getPlan(userId);
-    const limits = PLAN_LIMITS[plan];
-    const currentCount = await this.prisma.creditCard.count({
-      where: { userId, deletedAt: null },
-    });
-    if (limits.maxCreditCards !== -1 && currentCount >= limits.maxCreditCards) {
-      throw new ForbiddenException(
-        `Limite de ${limits.maxCreditCards} cartões atingido. Faça upgrade para Premium para cartões ilimitados.`,
-      );
-    }
-
-    // V4: Validate accountId ownership
-    if (createCreditCardDto.accountId) {
-      const account = await this.prisma.account.findFirst({
-        where: { id: createCreditCardDto.accountId, userId, deletedAt: null },
-      });
-      if (!account) {
-        throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+    // V15: Atomic limit check + create to prevent race conditions
+    return this.subscriptionService.createWithLimitCheck(userId, 'creditCard', async () => {
+      // V4: Validate accountId ownership
+      if (createCreditCardDto.accountId) {
+        const account = await this.prisma.account.findFirst({
+          where: { id: createCreditCardDto.accountId, userId, deletedAt: null },
+        });
+        if (!account) {
+          throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+        }
       }
-    }
-    return this.prisma.creditCard.create({
-      data: {
-        name: createCreditCardDto.name,
-        limit: encryptAmount(createCreditCardDto.limit, this.encryption),
-        closingDay: createCreditCardDto.closingDay,
-        dueDay: createCreditCardDto.dueDay,
-        userId,
-        ...(createCreditCardDto.accountId ? { accountId: createCreditCardDto.accountId } : {}),
-      },
+      return this.prisma.creditCard.create({
+        data: {
+          name: createCreditCardDto.name,
+          limit: encryptAmount(createCreditCardDto.limit, this.encryption),
+          closingDay: createCreditCardDto.closingDay,
+          dueDay: createCreditCardDto.dueDay,
+          userId,
+          ...(createCreditCardDto.accountId ? { accountId: createCreditCardDto.accountId } : {}),
+        },
+      });
     });
   }
 

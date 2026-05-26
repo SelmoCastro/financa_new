@@ -45,3 +45,9 @@ export class MercadoPagoWebhookDto {
   @IsOptional()
   live_mode?: boolean;
 }
+
+export class HandleActionDto {
+  @IsString()
+  @IsIn(['confirm', 'postpone'])
+  action!: string;
+}
