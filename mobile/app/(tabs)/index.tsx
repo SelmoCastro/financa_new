@@ -325,7 +325,7 @@ export default function DashboardScreen() {
                                             <Text style={styles.ruleValue}>{rule503020.needs?.percent.toFixed(1)}%</Text>
                                         </View>
                                         <View style={styles.ruleProgressBar}>
-                                            <View style={[styles.ruleProgressFill, { width: `${Math.min(rule503020.needs?.percent || 0, 100)}%`, backgroundColor: (rule503020.needs?.percent || 0) > 50 ? '#f43f5e' : '#10b981' }]} />
+                                            <View style={[styles.ruleProgressFill, { width: `${Math.max(Math.min(rule503020.needs?.percent || 0, 100), (rule503020.needs?.value || 0) > 0 ? 2 : 0)}%`, backgroundColor: (rule503020.needs?.percent || 0) > 50 ? '#f43f5e' : '#10b981' }]} />
                                         </View>
                                     </View>
 
@@ -336,7 +336,7 @@ export default function DashboardScreen() {
                                             <Text style={styles.ruleValue}>{rule503020.wants?.percent.toFixed(1)}%</Text>
                                         </View>
                                         <View style={styles.ruleProgressBar}>
-                                            <View style={[styles.ruleProgressFill, { width: `${Math.min(rule503020.wants?.percent || 0, 100)}%`, backgroundColor: (rule503020.wants?.percent || 0) > 30 ? '#eab308' : '#6366f1' }]} />
+                                            <View style={[styles.ruleProgressFill, { width: `${Math.max(Math.min(rule503020.wants?.percent || 0, 100), (rule503020.wants?.value || 0) > 0 ? 2 : 0)}%`, backgroundColor: (rule503020.wants?.percent || 0) > 30 ? '#eab308' : '#6366f1' }]} />
                                         </View>
                                     </View>
 
@@ -347,7 +347,7 @@ export default function DashboardScreen() {
                                             <Text style={styles.ruleValue}>{rule503020.savings?.percent.toFixed(1)}%</Text>
                                         </View>
                                         <View style={styles.ruleProgressBar}>
-                                            <View style={[styles.ruleProgressFill, { width: `${Math.min(rule503020.savings?.percent || 0, 100)}%`, backgroundColor: '#3b82f6' }]} />
+                                            <View style={[styles.ruleProgressFill, { width: `${Math.max(Math.min(rule503020.savings?.percent || 0, 100), (rule503020.savings?.value || 0) > 0 ? 2 : 0)}%`, backgroundColor: '#3b82f6' }]} />
                                         </View>
                                     </View>
 
@@ -359,7 +359,7 @@ export default function DashboardScreen() {
                                                 <Text style={styles.ruleValue}>{rule503020.uncategorized.percent.toFixed(1)}%</Text>
                                             </View>
                                             <View style={styles.ruleProgressBar}>
-                                                <View style={[styles.ruleProgressFill, { width: `${Math.min(rule503020.uncategorized.percent || 0, 100)}%`, backgroundColor: '#94a3b8' }]} />
+                                                <View style={[styles.ruleProgressFill, { width: `${Math.max(Math.min(rule503020.uncategorized.percent || 0, 100), rule503020.uncategorized.value > 0 ? 2 : 0)}%`, backgroundColor: '#94a3b8' }]} />
                                             </View>
                                             <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>Categorias não classificadas na regra</Text>
                                         </View>
