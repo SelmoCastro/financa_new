@@ -1,6 +1,7 @@
 import {
   IsString,
   IsUUID,
+  IsNumber,
   IsDateString,
   IsOptional,
   IsBoolean,
@@ -20,6 +21,7 @@ export class ImportValidateTransactionDto {
   description: string;
 
   @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
+  @IsNumber()
   amount: number;
 
   @IsDateString()
@@ -44,6 +46,7 @@ export class ImportConfirmTransactionDto {
   description: string;
 
   @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
+  @IsNumber()
   amount: number;
 
   @IsDateString()
