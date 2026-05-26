@@ -5,14 +5,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useAuth } from '../../context/AuthContext';
+import * as WebBrowser from 'expo-web-browser';
 import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Goal } from '../../types';
 import * as Haptics from 'expo-haptics';
+
+const PREMIUM_URL = 'https://finanzaai.tech/premium';
 
 export default function GoalsScreen() {
     const insets = useSafeAreaInsets();
     const { isPrivacyEnabled, togglePrivacy } = useTransactions();
     const { formatCurrency, currencySymbol } = useCurrency();
+    const { user } = useAuth();
     const [goals, setGoals] = useState<Goal[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -25,6 +30,9 @@ export default function GoalsScreen() {
     const [title, setTitle] = useState('');
     const [targetAmount, setTargetAmount] = useState('');
     const [depositAmount, setDepositAmount] = useState('');
+
+    const isFree = user?.plan !== 'premium';
+    const isGoalLimitReached = isFree && goals.length >= 3;
 
     const fetchGoals = async () => {
         try {
@@ -49,6 +57,14 @@ export default function GoalsScreen() {
     }, []);
 
     const handleSave = async () => {
+        if (isGoalLimitReached) {
+            Alert.alert('Plano Gratuito', 'O plano Free permite apenas 3 metas. Faça upgrade para Premium para criar mais metas.', [
+                { text: 'Entendi', style: 'cancel' },
+                { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) },
+            ]);
+            return;
+        }
+
         if (!title || !targetAmount) {
             Alert.alert('Atenção', 'Preencha todos os campos.');
             return;
@@ -149,11 +165,24 @@ export default function GoalsScreen() {
                         </View>
                         <View className="rounded-full overflow-hidden shadow-lg shadow-indigo-200">
                             <Pressable
-                                onPress={() => { setModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                onPress={() => {
+                                    if (isGoalLimitReached) {
+                                        Alert.alert(
+                                            'Plano Gratuito',
+                                            'O plano Free permite apenas 3 metas. Faça upgrade para Premium para criar mais metas.',
+                                            [
+                                                { text: 'Entendi', style: 'cancel' },
+                                                { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) },
+                                            ]
+                                        );
+                                        return;
+                                    }
+                                    setModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                }}
                                 android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
                                 className="bg-indigo-600 p-3"
                             >
-                                <MaterialIcons name="add" size={24} color="white" />
+                                <MaterialIcons name={isGoalLimitReached ? 'lock' : 'add'} size={24} color="white" />
                             </Pressable>
                         </View>
                     </View>
@@ -171,8 +200,28 @@ export default function GoalsScreen() {
                     </View>
                 ) : (
                     <View className="px-4 space-y-4">
+                        {isGoalLimitReached && (
+                            <View className="px-4 mb-4">
+                                <View className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex-row items-center gap-3">
+                                    <MaterialIcons name="lock-outline" size={20} color="#f59e0b" />
+                                    <View className="flex-1">
+                                        <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
+                                        <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa as 3 metas incluídas no Free. Para criar mais, faça upgrade.</Text>
+                                    </View>
+                                    <Pressable onPress={() => WebBrowser.openBrowserAsync(PREMIUM_URL)} className="bg-amber-500 px-3 py-2 rounded-xl">
+                                        <Text className="text-white text-xs font-black uppercase">Upgrade</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        )}
                         {goals.map(goal => (
                             <View key={goal.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                                {isGoalLimitReached && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                                        <MaterialIcons name="lock-outline" size={14} color="#f59e0b" />
+                                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: 0.5 }}>Somente leitura</Text>
+                                    </View>
+                                )}
                                 <View className="flex-row justify-between items-start mb-3">
                                     <View>
                                         <Text className="text-lg font-bold text-slate-700">{goal.title}</Text>
@@ -183,12 +232,16 @@ export default function GoalsScreen() {
                                     <View className="rounded-lg overflow-hidden border border-emerald-100 bg-emerald-50">
                                         <Pressable
                                             onPress={() => {
+                                                if (isGoalLimitReached) {
+                                                    Alert.alert('Plano Gratuito', 'Depósito disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]);
+                                                    return;
+                                                }
                                                 setSelectedGoal(goal);
                                                 setDepositModalVisible(true);
                                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                             }}
                                             android_ripple={{ color: 'rgba(16,185,129,0.2)' }}
-                                            className="px-3 py-1.5"
+                                            className={`px-3 py-1.5 ${isGoalLimitReached ? 'opacity-50' : ''}`}
                                         >
                                             <Text className="text-emerald-700 font-bold text-xs">+ Depositar</Text>
                                         </Pressable>
@@ -224,20 +277,28 @@ export default function GoalsScreen() {
                                 <View className="flex-row justify-between mt-3 pt-3 border-t border-slate-100">
                                     <Pressable
                                         onPress={() => {
+                                            if (isGoalLimitReached) {
+                                                Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]);
+                                                return;
+                                            }
                                             openEditGoal(goal);
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                         }}
-                                        className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-indigo-50 mr-2"
+                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-indigo-50 mr-2 ${isGoalLimitReached ? 'opacity-50' : ''}`}
                                     >
                                         <MaterialIcons name="edit" size={18} color="#4f46e5" />
                                         <Text className="text-indigo-600 font-bold text-xs ml-2">Editar</Text>
                                     </Pressable>
                                     <Pressable
                                         onPress={() => {
+                                            if (isGoalLimitReached) {
+                                                Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]);
+                                                return;
+                                            }
                                             handleDeleteGoal(goal);
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                         }}
-                                        className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-rose-50"
+                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-rose-50 ${isGoalLimitReached ? 'opacity-50' : ''}`}
                                     >
                                         <MaterialIcons name="delete-outline" size={18} color="#ef4444" />
                                         <Text className="text-rose-600 font-bold text-xs ml-2">Excluir</Text>

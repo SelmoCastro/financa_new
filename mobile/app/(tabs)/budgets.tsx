@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useAuth } from '../../context/AuthContext';
+import * as WebBrowser from 'expo-web-browser';
 import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Budget } from '../../types';
 import * as Haptics from 'expo-haptics';
@@ -25,9 +27,11 @@ const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
 };
 
 export default function BudgetsScreen() {
+    const PREMIUM_URL = 'https://finanzaai.tech/premium';
     const insets = useSafeAreaInsets();
     const { isPrivacyEnabled, togglePrivacy } = useTransactions();
     const { formatCurrency, currencySymbol } = useCurrency();
+    const { user } = useAuth();
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -40,6 +44,8 @@ export default function BudgetsScreen() {
     const [amount, setAmount] = useState('');
     const [categories, setCategories] = useState<any[]>([]);
     const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
+    const isFree = user?.plan !== 'premium';
+    const isBudgetLimitReached = isFree && budgets.length >= 3;
 
     const fetchBudgets = async () => {
         try {
@@ -173,15 +179,43 @@ export default function BudgetsScreen() {
                         </View>
                         <View className="rounded-full overflow-hidden shadow-lg shadow-indigo-200">
                             <Pressable
-                                onPress={() => { setModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                onPress={() => {
+                                    if (isBudgetLimitReached) {
+                                        Alert.alert(
+                                            'Plano Gratuito',
+                                            'O plano Free permite apenas 3 orçamentos. Faça upgrade para Premium para criar mais orçamentos.',
+                                            [
+                                                { text: 'Entendi', style: 'cancel' },
+                                                { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) },
+                                            ]
+                                        );
+                                        return;
+                                    }
+                                    setModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                }}
                                 android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
                                 className="bg-indigo-600 p-3"
                             >
-                                <MaterialIcons name="add" size={24} color="white" />
+                                <MaterialIcons name={isBudgetLimitReached ? 'lock' : 'add'} size={24} color="white" />
                             </Pressable>
                         </View>
                     </View>
                 </View>
+
+                {isBudgetLimitReached && (
+                    <View className="px-4 mb-4">
+                        <View className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex-row items-center gap-3">
+                            <MaterialIcons name="lock-outline" size={20} color="#f59e0b" />
+                            <View className="flex-1">
+                                <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
+                                <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa os 3 orçamentos incluídos no Free. Para criar mais tetos, faça upgrade.</Text>
+                            </View>
+                            <Pressable onPress={() => WebBrowser.openBrowserAsync(PREMIUM_URL)} className="bg-amber-500 px-3 py-2 rounded-xl">
+                                <Text className="text-white text-xs font-black uppercase">Upgrade</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                )}
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#4f46e5" className="mt-10" />
@@ -223,23 +257,38 @@ export default function BudgetsScreen() {
                                     </Text>
                                 </View>
 
+                                {isBudgetLimitReached && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                                        <MaterialIcons name="lock-outline" size={14} color="#f59e0b" />
+                                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: 0.5 }}>Somente leitura</Text>
+                                    </View>
+                                )}
+
                                 <View className="flex-row justify-between mt-3 pt-3 border-t border-slate-100">
                                     <Pressable
                                         onPress={() => {
+                                            if (isBudgetLimitReached) {
+                                                Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]);
+                                                return;
+                                            }
                                             openEditBudget(budget);
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                         }}
-                                        className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-indigo-50 mr-2"
+                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-indigo-50 mr-2 ${isBudgetLimitReached ? 'opacity-50' : ''}`}
                                     >
                                         <MaterialIcons name="edit" size={18} color="#4f46e5" />
                                         <Text className="text-indigo-600 font-bold text-xs ml-2">Editar</Text>
                                     </Pressable>
                                     <Pressable
                                         onPress={() => {
+                                            if (isBudgetLimitReached) {
+                                                Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]);
+                                                return;
+                                            }
                                             handleDeleteBudget(budget);
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                         }}
-                                        className="flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-rose-50"
+                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-rose-50 ${isBudgetLimitReached ? 'opacity-50' : ''}`}
                                     >
                                         <MaterialIcons name="delete-outline" size={18} color="#ef4444" />
                                         <Text className="text-rose-600 font-bold text-xs ml-2">Excluir</Text>

@@ -7,13 +7,17 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { getCategoryEmoji } from '../../utils/categoryIcons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import api from '../../services/api';
 import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Account, CreditCard } from '../../types';
 import { BankIcon } from '../../components/BankIcon';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useAuth } from '../../context/AuthContext';
 import { invoiceService, InvoiceDTO } from '../../services/invoiceService';
 import { creditCardService, CreditCardInstallmentDTO } from '../../services/creditCardService';
+
+const PREMIUM_URL = 'https://finanzaai.tech/premium';
 
 const BANKS = [
     'Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander',
@@ -35,6 +39,9 @@ export default function AccountsScreen() {
     const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
     const [loading, setLoading] = useState(true);
     const { formatCurrency, currency } = useCurrency();
+    const { user } = useAuth();
+    const isFree = user?.plan !== 'premium';
+    const isAccountLimitReached = isFree && accounts.length >= 1;
     const [invoiceData, setInvoiceData] = useState<Record<string, InvoiceDTO | null>>({});
 
     // Criação
@@ -129,6 +136,17 @@ export default function AccountsScreen() {
 
     // ---- CRIAR ----
     const openCreate = () => {
+        if (isAccountLimitReached) {
+            Alert.alert(
+                'Plano Gratuito',
+                'O plano Free permite apenas 1 conta. Faça upgrade para Premium para criar mais contas.',
+                [
+                    { text: 'Entendi', style: 'cancel' },
+                    { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) },
+                ]
+            );
+            return;
+        }
         setName(BANKS[0]); setType('CHECKING'); setBalance('0,00');
         setCreateModal(true);
     };
@@ -282,8 +300,8 @@ export default function AccountsScreen() {
                         <Text className="text-2xl font-black text-slate-800">Contas e Cartões</Text>
                         <Text className="text-sm text-slate-500 font-medium mt-1">Gerencie seu saldo e faturas</Text>
                     </View>
-                    <Pressable onPress={openCreate} style={styles.addButton} android_ripple={{ color: 'rgba(255,255,255,0.3)', borderless: true }}>
-                        <MaterialIcons name="add" size={24} color="white" />
+                    <Pressable onPress={openCreate} style={[styles.addButton, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: 'rgba(255,255,255,0.3)', borderless: true }}>
+                        <MaterialIcons name={isAccountLimitReached ? 'lock' : 'add'} size={24} color="white" />
                     </Pressable>
                 </View>
 
@@ -299,6 +317,21 @@ export default function AccountsScreen() {
                         </Text>
                     </View>
                 </View>
+
+                {isAccountLimitReached && (
+                    <View className="px-6 mb-4">
+                        <View className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex-row items-center gap-3">
+                            <MaterialIcons name="lock-outline" size={20} color="#f59e0b" />
+                            <View className="flex-1">
+                                <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
+                                <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa a 1 conta incluída no Free. Para criar mais contas, faça upgrade.</Text>
+                            </View>
+                            <Pressable onPress={() => WebBrowser.openBrowserAsync(PREMIUM_URL)} className="bg-amber-500 px-3 py-2 rounded-xl">
+                                <Text className="text-white text-xs font-black uppercase">Upgrade</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                )}
 
                 {/* Contas */}
                 <View className="px-6 mb-8">
@@ -324,12 +357,18 @@ export default function AccountsScreen() {
                                 </Text>
                             </View>
                             {/* Ações */}
+                            {isAccountLimitReached && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                                    <MaterialIcons name="lock-outline" size={14} color="#f59e0b" />
+                                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: 0.5 }}>Somente leitura</Text>
+                                </View>
+                            )}
                             <View style={styles.actionRow}>
-                                <Pressable onPress={() => openEdit(acc)} style={styles.btnEdit} android_ripple={{ color: '#e0e7ff' }}>
+                                <Pressable onPress={() => { if (isAccountLimitReached) { Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]); return; } openEdit(acc); }} style={[styles.btnEdit, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: '#e0e7ff' }}>
                                     <MaterialIcons name="edit" size={16} color="#4f46e5" />
                                     <Text style={styles.btnEditText}>Editar</Text>
                                 </Pressable>
-                                <Pressable onPress={() => handleDelete(acc)} style={styles.btnDelete} android_ripple={{ color: '#fee2e2' }}>
+                                <Pressable onPress={() => { if (isAccountLimitReached) { Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]); return; } handleDelete(acc); }} style={[styles.btnDelete, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: '#fee2e2' }}>
                                     <MaterialIcons name="delete-outline" size={16} color="#ef4444" />
                                     <Text style={styles.btnDeleteText}>Excluir</Text>
                                 </Pressable>
