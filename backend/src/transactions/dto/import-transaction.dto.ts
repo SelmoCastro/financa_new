@@ -121,6 +121,15 @@ export class ImportConfirmTransactionDto {
   @IsString()
   @IsOptional()
   sharedWithEmail?: string;
+
+  // Mobile-only fields (sent via spread ...t from OCR preview)
+  @IsBoolean()
+  @IsOptional()
+  selected?: boolean;
+
+  @IsString()
+  @IsOptional()
+  id?: string;
 }
 
 /**
