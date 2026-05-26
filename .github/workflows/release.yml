@@ -43,7 +43,7 @@ jobs:
           SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
 
           echo "📦 Pulling latest code on VPS..."
-          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && git fetch origin && git checkout master && git pull origin master"
+          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && git fetch origin master:refs/remotes/origin/master --force && git reset --hard origin/master"
 
           echo "📦 Installing dependencies..."
           $SSH "cd ${{ env.VPS_BACKEND_PATH }} && npm install --production=false"
