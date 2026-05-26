@@ -1,6 +1,6 @@
 {
-  "version": "1.8.77",
-  "mobileVersion": "1.8.77",
+  "version": "1.8.79",
+  "mobileVersion": "1.8.79",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.8.77 — APK com versionCode 93 para atualizar corretamente quem está na 1.8.73"
+  "releaseNotes": "v1.8.79 — Premium plan checks (accounts, budgets, goals) + barra 50/30/20 fix"
 }
