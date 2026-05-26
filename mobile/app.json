@@ -2,7 +2,7 @@
   "expo": {
     "name": "Financa New",
     "slug": "mobile",
-    "version": "1.8.78",
+    "version": "1.8.79",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
@@ -14,7 +14,10 @@
       "backgroundColor": "#000000"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "package": "com.selmo.financa",
@@ -25,7 +28,11 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "versionCode": 95,
-      "permissions": []
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "bundler": "metro",
@@ -53,8 +60,9 @@
       "eas": {
         "projectId": "c9801d6e-4636-4c78-ae32-9702a4b93bd0"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c9801d6e-4636-4c78-ae32-9702a4b93bd0"
     }
-  },
-  "version": "1.8.77",
-  "versionCode": 93
+  }
 }
