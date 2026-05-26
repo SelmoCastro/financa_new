@@ -22,9 +22,11 @@ interface Budget {
 
 interface BudgetsViewProps {
     isPrivacyEnabled: boolean;
+    userPlan: string;
+    onUpgrade: () => void;
 }
 
-export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) => {
+export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, userPlan, onUpgrade }) => {
     const { categories } = useData();
     const { selectedDate } = useMonth();
     const { addToast } = useToast();
@@ -35,6 +37,12 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [form, setForm] = useState({ categoryId: '', amount: '' });
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+    const isBudgetLimitReached = userPlan !== 'premium' && budgets.length >= 3;
+
+    const showBudgetLimitNotice = () => {
+        addToast('Plano Free permite 3 orçamentos. Faça upgrade para Premium para criar mais orçamentos.', 'info');
+        onUpgrade();
+    };
     
     const fetchBudgets = async () => {
         try {
@@ -83,6 +91,10 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                 });
                 addToast('Orçamento atualizado com sucesso!', 'success');
             } else {
+                if (isBudgetLimitReached) {
+                    showBudgetLimitNotice();
+                    return;
+                }
                 await api.post('/budgets', {
                     categoryId: form.categoryId,
                     amount: rawAmount
@@ -97,7 +109,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
         } catch (error: any) {
             console.error('Erro ao salvar:', error);
             const message = error.response?.data?.message || '';
-            if (error.response?.status === 403 && message.includes('Limite')) {
+            if (error.response?.status === 403 && (message.includes('Limite') || message.includes('Plano Free'))) {
                 addToast(`${message} 🚀`, 'error');
             } else {
                 addToast('Erro ao salvar orçamento', 'error');
@@ -142,6 +154,10 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                 </div>
                 <button
                     onClick={() => {
+                        if (isBudgetLimitReached) {
+                            showBudgetLimitNotice();
+                            return;
+                        }
                         setEditingBudget(null);
                         setForm({ categoryId: '', amount: '' });
                         setIsModalOpen(true);
@@ -149,9 +165,26 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled }) =>
                     className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-cyan-600/20 transition-all active:scale-95 flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
-                    Definir Teto
+                    {isBudgetLimitReached ? 'Upgrade para criar mais' : 'Definir Teto'}
                 </button>
             </div>
+
+            {isBudgetLimitReached && (
+                <div className="glass-card border border-cyan-100 dark:border-cyan-500/20 bg-cyan-50/70 dark:bg-cyan-500/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400 mb-1">Limite do plano Free</p>
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                            O Free permite até 3 orçamentos. Para criar mais tetos de gastos, faça upgrade para o plano Premium.
+                        </p>
+                    </div>
+                    <button
+                        onClick={onUpgrade}
+                        className="px-5 py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 whitespace-nowrap"
+                    >
+                        Ver Premium
+                    </button>
+                </div>
+            )}
 
             {isLoading ? (
                 <div className="text-center py-12 text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-xs">Carregando orçamentos...</div>

@@ -75,7 +75,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
         } catch (error: any) {
             console.error('Erro ao salvar conta', error);
             const message = error.response?.data?.message || '';
-            if (error.response?.status === 403 && message.includes('Limite')) {
+            if (error.response?.status === 403 && (message.includes('Limite') || message.includes('Plano Free'))) {
                 addToast(`${message} 🚀`, 'error');
             } else {
                 addToast('Erro ao salvar conta. Verifique os dados.', 'error');

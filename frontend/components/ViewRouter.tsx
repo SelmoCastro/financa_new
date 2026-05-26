@@ -43,9 +43,9 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
     case 'dashboard':
       return <DashboardView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} onAddAccount={onAddAccount} onAddTransaction={onAddTransaction} onAddBudget={onAddBudget} />;
     case 'accounts':
-      return <AccountsView isPrivacyEnabled={isPrivacyEnabled} />;
+      return <AccountsView isPrivacyEnabled={isPrivacyEnabled} userPlan={userPlan} onUpgrade={onUpgrade} />;
     case 'budgets':
-      return <BudgetsView isPrivacyEnabled={isPrivacyEnabled} />;
+      return <BudgetsView isPrivacyEnabled={isPrivacyEnabled} userPlan={userPlan} onUpgrade={onUpgrade} />;
     case 'goals':
       return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
     case 'timeline':
