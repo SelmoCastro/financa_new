@@ -59,6 +59,10 @@ fi
 if [[ "$APK_ONLY" == false ]]; then
   log "=== BACKEND DEPLOY ==="
 
+  # 0. Backup .env BEFORE any VPS operation (protect secrets from accidental loss)
+  log "Backing up VPS .env..."
+  ssh "$VPS" "cp -p $VPS_BACKEND/.env $VPS_BACKEND/.env.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null && echo 'Backup OK' || echo 'No .env to backup'"
+
   # 1. Push to GitHub (triggers VPS pull)
   log "Pushing to GitHub..."
   git push origin master --tags 2>&1 || true
@@ -66,6 +70,32 @@ if [[ "$APK_ONLY" == false ]]; then
   # 2. Pull on VPS
   log "Pulling on VPS..."
   ssh "$VPS" "cd $VPS_BACKEND && git pull origin master 2>&1"
+
+  # 2.5 Validate .env survived the deploy (critical vars must exist)
+  log "Validating .env critical variables..."
+  ssh "$VPS" "
+    MISSING=''
+    for VAR in DATABASE_URL JWT_SECRET ENCRYPTION_KEY RESEND_API_KEY EMAIL_FROM FRONTEND_URL; do
+      if ! grep -q \"^\${VAR}=\" $VPS_BACKEND/.env 2>/dev/null; then
+        MISSING=\"\$MISSING \$VAR\"
+      fi
+    done
+    if [ -n \"\$MISSING\" ]; then
+      echo 'ERROR: Missing critical env vars:' \$MISSING
+      # Restore from latest backup
+      LATEST=\$(ls -t $VPS_BACKEND/.env.backup.* 2>/dev/null | head -1)
+      if [ -n \"\$LATEST\" ]; then
+        echo 'Restoring from backup:' \$LATEST
+        cp \$LATEST $VPS_BACKEND/.env
+        echo '.env restored from backup'
+      else
+        echo 'NO BACKUP FOUND! Abort deploy manually.'
+        exit 1
+      fi
+    else
+      echo 'All critical vars present'
+    fi
+  "
 
   # 3. Install deps & build
   if [[ "$SKIP_BUILD" == false ]]; then
@@ -84,13 +114,12 @@ if [[ "$APK_ONLY" == false ]]; then
     fi
   fi
 
-  # 5. Restart PM2 with correct entry point
+  # 5. Restart PM2 with correct entry point (--update-env recarrega variáveis do .env)
   log "Restarting finanza-api..."
   ssh "$VPS" "
-    cd $VPS_BACKEND && \
-    pm2 delete finanza-api 2>/dev/null || true && \
-    pm2 start dist/main.js --name finanza-api && \
-    pm2 save
+    cd $VPS_BACKEND && \\
+    pm2 restart finanza-api --update-env 2>/dev/null || \\
+    (pm2 delete finanza-api 2>/dev/null; pm2 start dist/main.js --name finanza-api && pm2 save)
   " 2>&1 | tail -5
 
   # 6. Health check
