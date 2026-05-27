@@ -1,6 +1,6 @@
 {
-  "version": "1.8.80",
-  "mobileVersion": "1.8.80",
+  "version": "1.8.81",
+  "mobileVersion": "1.8.81",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Fix mobile checkout flow - direct MP payment redirect"
+  "releaseNotes": "Add plan picker modal with prices before MP checkout"
 }

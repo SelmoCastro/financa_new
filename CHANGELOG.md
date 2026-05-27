@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.81](https://github.com/SelmoCastro/financa_new/compare/v1.8.80...v1.8.81) (2026-05-27)
+
+### ✨ Features
+
+* (mobile) add plan picker modal with prices before MP checkout
+
+All notable changes to this project will be documented in this file.
+
 ## [1.8.80](https://github.com/SelmoCastro/financa_new/compare/v1.8.79...v1.8.80) (2026-05-27)
 
 ### 🐛 Bug Fixes
