@@ -8,6 +8,7 @@ import { useTransactions } from '../../hooks/useTransactions';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useAuth } from '../../context/AuthContext';
 import { openCheckout } from '../../services/paymentService';
+import { PlanPickerModal } from '../../components/PlanPickerModal';
 import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Budget } from '../../types';
 import * as Haptics from 'expo-haptics';
@@ -37,6 +38,7 @@ export default function BudgetsScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+    const [planPickerVisible, setPlanPickerVisible] = useState(false);
 
     // Form
     const [categoryId, setCategoryId] = useState('');
@@ -186,7 +188,7 @@ export default function BudgetsScreen() {
                                             'O plano Free permite apenas 3 orçamentos. Faça upgrade para Premium para criar mais orçamentos.',
                                             [
                                                 { text: 'Entendi', style: 'cancel' },
-                                                { text: 'Ver Premium', onPress: () => openCheckout() },
+                                                { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) },
                                             ]
                                         );
                                         return;
@@ -210,7 +212,7 @@ export default function BudgetsScreen() {
                                 <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
                                 <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa os 3 orçamentos incluídos no Free. Para criar mais tetos, faça upgrade.</Text>
                             </View>
-                            <Pressable onPress={() => openCheckout()} className="bg-amber-500 px-3 py-2 rounded-xl">
+                            <Pressable onPress={() => setPlanPickerVisible(true)} className="bg-amber-500 px-3 py-2 rounded-xl">
                                 <Text className="text-white text-xs font-black uppercase">Upgrade</Text>
                             </Pressable>
                         </View>
@@ -268,7 +270,7 @@ export default function BudgetsScreen() {
                                     <Pressable
                                         onPress={() => {
                                             if (isBudgetLimitReached) {
-                                                Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => openCheckout() }]);
+                                                Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) }]);
                                                 return;
                                             }
                                             openEditBudget(budget);
@@ -282,7 +284,7 @@ export default function BudgetsScreen() {
                                     <Pressable
                                         onPress={() => {
                                             if (isBudgetLimitReached) {
-                                                Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => openCheckout() }]);
+                                                Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) }]);
                                                 return;
                                             }
                                             handleDeleteBudget(budget);
@@ -410,6 +412,7 @@ export default function BudgetsScreen() {
                     </View>
                 </Modal>
             </Modal>
+            <PlanPickerModal visible={planPickerVisible} onClose={() => setPlanPickerVisible(false)} />
         </View>
     );
 }
