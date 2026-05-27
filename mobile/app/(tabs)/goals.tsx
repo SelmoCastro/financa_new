@@ -6,12 +6,12 @@ import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useAuth } from '../../context/AuthContext';
-import * as WebBrowser from 'expo-web-browser';
+import { openCheckout } from '../../services/paymentService';
 import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Goal } from '../../types';
 import * as Haptics from 'expo-haptics';
 
-const PREMIUM_URL = 'https://finanzaai.tech/premium';
+
 
 export default function GoalsScreen() {
     const insets = useSafeAreaInsets();
@@ -60,7 +60,7 @@ export default function GoalsScreen() {
         if (isGoalLimitReached) {
             Alert.alert('Plano Gratuito', 'O plano Free permite apenas 3 metas. Faça upgrade para Premium para criar mais metas.', [
                 { text: 'Entendi', style: 'cancel' },
-                { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) },
+                { text: 'Ver Premium', onPress: () => openCheckout() },
             ]);
             return;
         }
@@ -172,7 +172,7 @@ export default function GoalsScreen() {
                                             'O plano Free permite apenas 3 metas. Faça upgrade para Premium para criar mais metas.',
                                             [
                                                 { text: 'Entendi', style: 'cancel' },
-                                                { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) },
+                                                { text: 'Ver Premium', onPress: () => openCheckout() },
                                             ]
                                         );
                                         return;
@@ -208,7 +208,7 @@ export default function GoalsScreen() {
                                         <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
                                         <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa as 3 metas incluídas no Free. Para criar mais, faça upgrade.</Text>
                                     </View>
-                                    <Pressable onPress={() => WebBrowser.openBrowserAsync(PREMIUM_URL)} className="bg-amber-500 px-3 py-2 rounded-xl">
+                                    <Pressable onPress={() => openCheckout()} className="bg-amber-500 px-3 py-2 rounded-xl">
                                         <Text className="text-white text-xs font-black uppercase">Upgrade</Text>
                                     </Pressable>
                                 </View>
@@ -233,7 +233,7 @@ export default function GoalsScreen() {
                                         <Pressable
                                             onPress={() => {
                                                 if (isGoalLimitReached) {
-                                                    Alert.alert('Plano Gratuito', 'Depósito disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]);
+                                                    Alert.alert('Plano Gratuito', 'Depósito disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => openCheckout() }]);
                                                     return;
                                                 }
                                                 setSelectedGoal(goal);
@@ -278,7 +278,7 @@ export default function GoalsScreen() {
                                     <Pressable
                                         onPress={() => {
                                             if (isGoalLimitReached) {
-                                                Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]);
+                                                Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => openCheckout() }]);
                                                 return;
                                             }
                                             openEditGoal(goal);
@@ -292,7 +292,7 @@ export default function GoalsScreen() {
                                     <Pressable
                                         onPress={() => {
                                             if (isGoalLimitReached) {
-                                                Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]);
+                                                Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => openCheckout() }]);
                                                 return;
                                             }
                                             handleDeleteGoal(goal);

@@ -7,7 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { getCategoryEmoji } from '../../utils/categoryIcons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
+import { openCheckout } from '../../services/paymentService';
 import api from '../../services/api';
 import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Account, CreditCard } from '../../types';
@@ -17,7 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import { invoiceService, InvoiceDTO } from '../../services/invoiceService';
 import { creditCardService, CreditCardInstallmentDTO } from '../../services/creditCardService';
 
-const PREMIUM_URL = 'https://finanzaai.tech/premium';
+
 
 const BANKS = [
     'Nubank', 'Itaú', 'Bradesco', 'Banco do Brasil', 'Santander',
@@ -142,7 +142,7 @@ export default function AccountsScreen() {
                 'O plano Free permite apenas 1 conta. Faça upgrade para Premium para criar mais contas.',
                 [
                     { text: 'Entendi', style: 'cancel' },
-                    { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) },
+                    { text: 'Ver Premium', onPress: () => openCheckout() },
                 ]
             );
             return;
@@ -326,7 +326,7 @@ export default function AccountsScreen() {
                                 <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
                                 <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa a 1 conta incluída no Free. Para criar mais contas, faça upgrade.</Text>
                             </View>
-                            <Pressable onPress={() => WebBrowser.openBrowserAsync(PREMIUM_URL)} className="bg-amber-500 px-3 py-2 rounded-xl">
+                            <Pressable onPress={() => openCheckout()} className="bg-amber-500 px-3 py-2 rounded-xl">
                                 <Text className="text-white text-xs font-black uppercase">Upgrade</Text>
                             </Pressable>
                         </View>
@@ -364,11 +364,11 @@ export default function AccountsScreen() {
                                 </View>
                             )}
                             <View style={styles.actionRow}>
-                                <Pressable onPress={() => { if (isAccountLimitReached) { Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]); return; } openEdit(acc); }} style={[styles.btnEdit, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: '#e0e7ff' }}>
+                                <Pressable onPress={() => { if (isAccountLimitReached) { Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => openCheckout() }]); return; } openEdit(acc); }} style={[styles.btnEdit, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: '#e0e7ff' }}>
                                     <MaterialIcons name="edit" size={16} color="#4f46e5" />
                                     <Text style={styles.btnEditText}>Editar</Text>
                                 </Pressable>
-                                <Pressable onPress={() => { if (isAccountLimitReached) { Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => WebBrowser.openBrowserAsync(PREMIUM_URL) }]); return; } handleDelete(acc); }} style={[styles.btnDelete, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: '#fee2e2' }}>
+                                <Pressable onPress={() => { if (isAccountLimitReached) { Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => openCheckout() }]); return; } handleDelete(acc); }} style={[styles.btnDelete, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: '#fee2e2' }}>
                                     <MaterialIcons name="delete-outline" size={16} color="#ef4444" />
                                     <Text style={styles.btnDeleteText}>Excluir</Text>
                                 </Pressable>
