@@ -60,6 +60,7 @@ export function useImportLogic(
     const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const receiptPreviewUrlRef = useRef<string | null>(null);
 
     const [categories, setCategories] = useState<Category[]>(propCategories || []);
     useEffect(() => {
@@ -68,13 +69,13 @@ export function useImportLogic(
             .catch(() => setCategories(propCategories || []));
     }, [propCategories]);
 
-    // Cleanup: revoke object URL and abort pending requests on unmount
+    // Cleanup: revoke object URL and abort pending requests on unmount ONLY
     useEffect(() => {
         return () => {
-            if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+            if (receiptPreviewUrlRef.current) URL.revokeObjectURL(receiptPreviewUrlRef.current);
             abortControllerRef.current?.abort();
         };
-    }, [receiptPreviewUrl]);
+    }, []); // Empty deps — must NOT re-run on receiptPreviewUrl change (aborts in-flight request)
 
     const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
@@ -135,8 +136,9 @@ export function useImportLogic(
     const switchMode = (mode: ImportMode) => {
         setImportMode(mode);
         setFile(null);
-        if (receiptPreviewUrl) {
-            URL.revokeObjectURL(receiptPreviewUrl);
+        if (receiptPreviewUrlRef.current) {
+            URL.revokeObjectURL(receiptPreviewUrlRef.current);
+            receiptPreviewUrlRef.current = null;
             setReceiptPreviewUrl(null);
         }
         abortControllerRef.current?.abort();
@@ -193,7 +195,9 @@ export function useImportLogic(
         setIsLoading(true);
         setAiStatus('📷 Enviando comprovante para análise...');
         if (file.type.startsWith('image/')) {
+            if (receiptPreviewUrlRef.current) URL.revokeObjectURL(receiptPreviewUrlRef.current);
             const url = URL.createObjectURL(file);
+            receiptPreviewUrlRef.current = url;
             setReceiptPreviewUrl(url);
         }
         try {
@@ -206,7 +210,7 @@ export function useImportLogic(
             const controller = new AbortController();
             abortControllerRef.current = controller;
             const response = await api.post('/transactions/import/receipt', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
+                headers: { 'Content-Type': undefined },
                 signal: controller.signal,
             });
             const { preview, message, errorCode } = response.data;

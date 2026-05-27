@@ -109,6 +109,32 @@ if [[ "$APK_ONLY" == false ]]; then
 fi
 
 # =============================================
+# FRONTEND DEPLOY (web)
+# =============================================
+if [[ "$APK_ONLY" == false ]]; then
+  log "=== FRONTEND DEPLOY ==="
+
+  # 1. Build frontend locally
+  if [[ "$SKIP_BUILD" == false ]]; then
+    log "Building frontend..."
+    cd "$BACKEND_DIR/../frontend"
+    npm run build 2>&1 | tail -5
+    cd "$ROOT_DIR"
+  fi
+
+  # 2. Upload via tar (faster than scp -r for many small files)
+  log "Uploading frontend to VPS..."
+  tar czf /tmp/finanza-frontend.tar.gz -C frontend dist/
+  scp /tmp/finanza-frontend.tar.gz "$VPS:/tmp/" 2>&1
+  rm -f /tmp/finanza-frontend.tar.gz
+
+  # 3. Extract on VPS
+  ssh "$VPS" "rm -rf /opt/finanza/frontend/dist && tar xzf /tmp/finanza-frontend.tar.gz -C /opt/finanza/frontend/ && rm /tmp/finanza-frontend.tar.gz" 2>&1
+
+  log "=== FRONTEND DEPLOY COMPLETE ==="
+fi
+
+# =============================================
 # APK DEPLOY
 # =============================================
 if [[ "$BACKEND_ONLY" == false ]]; then
@@ -203,6 +229,7 @@ echo "  🚀 Finanza v$VERSION Deployed!"
 echo "========================================="
 if [[ "$APK_ONLY" == false ]]; then
   echo "  Backend: https://finanzaai.tech/api/v1"
+  echo "  Frontend: https://finanzaai.tech"
   echo "  Version: https://finanzaai.tech/api/v1/app/version"
 fi
 if [[ "$BACKEND_ONLY" == false ]]; then

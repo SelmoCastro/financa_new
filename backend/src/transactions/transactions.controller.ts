@@ -223,20 +223,36 @@ export class TransactionsController {
       const categoryNameToId = new Map(
         userCategories.map((c) => [c.name.toLowerCase().trim(), c.id]),
       );
-      const enrichedPreview = result.transactions.map((t) => {
-        const suggestion = {
-          category: t.suggestedCategory,
-          rule: t.suggestedRule,
-          icon: t.suggestedIcon,
-          confidence: t.confidence,
-        };
-        return this.transactionsService.enrichTransactionWithAi(
-          { ...t, cnpj: t.cnpj },
-          suggestion,
-          t.description,
-          categoryNameToId,
-        );
-      });
+
+      // Aprendizado: verifica se o usuário já categorizou cada descrição antes
+      const enrichedPreview = await Promise.all(
+        result.transactions.map(async (t) => {
+          const learnedCategory =
+            await this.transactionsService.findUserCategoryForDescription(
+              req.user.userId,
+              t.description,
+            );
+
+          // Se o usuário já categorizou essa mesma descrição antes, usa a categoria dele
+          // em vez da sugestão da IA (aprendizado por correção)
+          const effectiveCategory = learnedCategory
+            ? learnedCategory.name
+            : t.suggestedCategory;
+
+          const suggestion = {
+            category: effectiveCategory,
+            rule: t.suggestedRule,
+            icon: t.suggestedIcon,
+            confidence: t.confidence,
+          };
+          return this.transactionsService.enrichTransactionWithAi(
+            { ...t, cnpj: t.cnpj },
+            suggestion,
+            t.description,
+            categoryNameToId,
+          );
+        }),
+      );
 
       return { preview: enrichedPreview };
     } catch (error) {

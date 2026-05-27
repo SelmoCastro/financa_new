@@ -212,7 +212,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
             let res;
             try {
                 res = await api.post(endpoint, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
+                    headers: { 'Content-Type': undefined },
                     signal: controller.signal,
                 });
             } catch (abortError: any) {

@@ -109,6 +109,27 @@ export class TransactionsService {
     });
   }
 
+  /**
+   * Busca a categoria que o usuário usou anteriormente para a mesma descrição.
+   * Permite que a IA "aprenda" com as correções manuais do usuário.
+   */
+  async findUserCategoryForDescription(
+    userId: string,
+    description: string,
+  ): Promise<{ id: string; name: string } | null> {
+    const match = await this.prisma.transaction.findFirst({
+      where: {
+        userId,
+        description,
+        categoryId: { not: null },
+        deletedAt: null,
+      },
+      orderBy: { date: 'desc' },
+      select: { category: { select: { id: true, name: true } } },
+    });
+    return match?.category ?? null;
+  }
+
   async validateImport(transactionsData: ImportTransactionData[], userId: string) {
     if (!transactionsData || transactionsData.length === 0)
       return { valid: [], duplicateFitIds: [] };
