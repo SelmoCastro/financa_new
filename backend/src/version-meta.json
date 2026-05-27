@@ -1,6 +1,6 @@
 {
-  "version": "1.8.79",
-  "mobileVersion": "1.8.79",
+  "version": "1.8.80",
+  "mobileVersion": "1.8.80",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.8.79 — Premium plan checks (accounts, budgets, goals) + barra 50/30/20 fix"
+  "releaseNotes": "Fix mobile checkout flow - direct MP payment redirect"
 }

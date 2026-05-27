@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.80](https://github.com/SelmoCastro/financa_new/compare/v1.8.79...v1.8.80) (2026-05-27)
+
+### 🐛 Bug Fixes
+
+* (mobile) replace broken /premium redirect with direct MP checkout flow
+* (deploy) backup and validate .env critical vars during VPS deploy
+* receipt import - Content-Type race condition + AI category learning
+* (import) prevent receipt import exceptions from surfacing as generic web errors
+* (import) restore vision-first flow for images
+* (import) make receipt OCR more tolerant
+* (backend) restore @IsNumber() on amount (whitelist removes fields without validators)
+* (backend) add selected and id fields to import confirm DTO (forbidNonWhitelisted)
+* (backend) accept extra OCR fields in import confirm DTO (cnpj, suggested*, confidence, etc.)
+* (mobile) sync Expo version to stop update loop
+
+All notable changes to this project will be documented in this file.
+
 ## [1.8.75](https://github.com/SelmoCastro/financa_new/compare/v1.8.74...v1.8.75) (2026-05-20)
 
 ### ✨ Features

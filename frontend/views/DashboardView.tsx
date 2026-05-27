@@ -369,7 +369,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.max(Math.min(rule503020.needs.percent || 0, 100), rule503020.needs.value > 0 ? 2 : 0)}%` }}
                                     />
                                 </div>
-                                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.5)}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.5)}</p>
                             </div>
 
                             <div className="space-y-2 group cursor-help" title="Lazer, Hobbies, Assinaturas, Restaurantes e Compras não-essenciais. Limite sugerido: 30%.">
@@ -386,7 +386,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.max(Math.min(rule503020.wants.percent || 0, 100), rule503020.wants.value > 0 ? 2 : 0)}%` }}
                                     />
                                 </div>
-                                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.3)}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.3)}</p>
                             </div>
 
                             <div className="space-y-2 group cursor-help" title="Investimentos, Reserva de Emergência, Aposentadoria e Quitação de Dívidas. Mínimo sugerido: 20%.">
@@ -403,7 +403,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.max(Math.min(rule503020.savings.percent || 0, 100), rule503020.savings.value > 0 ? 2 : 0)}%` }}
                                     />
                                 </div>
-                                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.2)}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.2)}</p>
                             </div>
 
                             {rule503020.uncategorized && rule503020.uncategorized.value > 0 && (
@@ -430,6 +430,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                         <h3 className="text-lg font-black text-slate-800 dark:text-white mb-6">Alocação de Recursos</h3>
                         <div className="h-64 relative mx-auto">
                             {categorySummary.length > 0 ? (
+                            <>
                             <ResponsiveContainer width="100%" height="100%" minWidth={150} minHeight={150}>
                                 <PieChart>
                                     <Pie data={categorySummary} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value" isAnimationActive={false}>
@@ -442,15 +443,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     />
                                 </PieChart>
                             </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Despesas</span>
+                                <span className="text-xl font-black text-slate-800 dark:text-white">100%</span>
+                            </div>
+                            </>
                             ) : (
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <p className="text-sm text-slate-400 dark:text-slate-500">Sem dados de categorização</p>
                                 </div>
                             )}
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Despesas</span>
-                                <span className="text-xl font-black text-slate-800 dark:text-white">100%</span>
-                            </div>
                         </div>
                         <div className="mt-8 space-y-3">
                             {categorySummary.slice(0, 5).map((item, idx) => (
