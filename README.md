@@ -45,11 +45,66 @@ O projeto possui:
 
 | Camada | Tecnologias |
 |---|---|
-| Backend | NestJS, Prisma, PostgreSQL, JWT |
-| Frontend | React, Vite, TypeScript, Tailwind CSS |
-| Mobile | Expo, React Native, Expo Router |
-| IA | OpenRouter / OpenAI SDK |
+| Backend | NestJS 11, Prisma 5, PostgreSQL, JWT |
+| Frontend | React 19, Vite 6, TypeScript, Tailwind CSS 3 |
+| Mobile | Expo SDK 54, React Native 0.81, NativeWind |
+| IA | OpenRouter (Gemini 2.0 Flash) |
 | Infra | Nginx, PM2, Docker |
+
+---
+
+## Pré-requisitos
+
+- **Node.js 18+**
+- **PostgreSQL** — local ou Docker (`cd backend && docker-compose up -d`)
+- **OpenRouter API Key** para funcionalidades de IA (obter em [openrouter.ai](https://openrouter.ai))
+
+---
+
+## Configuração
+
+### 1. Clone e instale dependências
+
+```bash
+git clone <repo-url> && cd Financa_new
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
+cd mobile && npm install && cd ..
+```
+
+### 2. Configure as variáveis de ambiente
+
+Copie o arquivo de exemplo e ajuste os valores:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Edite `backend/.env` com suas credenciais:
+
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| `DATABASE_URL` | Sim | Conexão com PostgreSQL |
+| `JWT_SECRET` | Sim | Chave para assinar tokens JWT |
+| `JWT_REFRESH_SECRET` | Sim | Chave para refresh tokens |
+| `OPENROUTER_API_KEY` | Não (IA opcional) | Chave da API OpenRouter |
+| `FRONTEND_URL` | Sim | URL do frontend (ex: `http://localhost:5173`) |
+
+### 3. Prepare o banco de dados
+
+```bash
+cd backend
+npx prisma generate
+npx prisma db push   # ou: npx prisma migrate dev
+```
+
+### 4. Inicie em desenvolvimento
+
+```bash
+cd backend && npm run start:dev   # API em http://localhost:3000
+cd frontend && npm run dev        # Web em http://localhost:5173
+cd mobile && npx expo start       # App mobile
+```
 
 ---
 

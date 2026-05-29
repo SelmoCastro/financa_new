@@ -33,6 +33,7 @@ export class PaymentsService {
   private accessToken: string;
   private webhookSecret: string;
   private isSandbox: boolean;
+  private mpProxyUrl: string;
   // In-memory mutex to prevent race condition on payment processing
   private readonly processingPayments = new Set<string>();
 
@@ -44,6 +45,10 @@ export class PaymentsService {
   ) {
     this.accessToken = this.configService.get<string>('MERCADOPAGO_ACCESS_TOKEN') || '';
     this.webhookSecret = this.configService.get<string>('MERCADOPAGO_WEBHOOK_SECRET') || '';
+    this.mpProxyUrl = this.configService.get<string>('MP_PROXY_URL') || '';
+    if (this.mpProxyUrl) {
+      this.logger.log(`Using MP proxy: ${this.mpProxyUrl}`);
+    }
     // Sempre usar init_point (produção)
     this.isSandbox = false;
     if (!this.accessToken) {
@@ -95,7 +100,9 @@ export class PaymentsService {
       'Content-Type': 'application/json',
     };
 
-    const response = await fetch(`${MP_API}${path}`, {
+    const baseUrl = this.mpProxyUrl || MP_API;
+    const url = `${baseUrl}${path}`;
+    const response = await fetch(url, {
       ...options,
       headers: { ...headers, ...((options.headers as Record<string, string>) || {}) },
     });

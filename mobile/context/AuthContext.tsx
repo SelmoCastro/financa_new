@@ -3,6 +3,11 @@ import * as SecureStore from 'expo-secure-store';
 import { DeviceEventEmitter, AppState, AppStateStatus } from 'react-native';
 import { router } from 'expo-router';
 import api from '../services/api';
+import { clearCurrentUserApiCache } from '../services/cache';
+import { warmOfflineCache } from '../services/offlineWarmup';
+import { useNetworkStatus } from './NetworkContext';
+import { offlineTransactionQueue } from '../services/offlineTransactionQueue';
+import { offlineRecurringQueue } from '../services/offlineRecurringQueue';
 
 const API_URL = 'https://api.finanzaai.tech/v1';
 
@@ -32,6 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState<UserProfile | null>(null);
     const appStateRef = useRef(AppState.currentState);
+    const warmupDoneRef = useRef(false);
+    const syncInFlightRef = useRef(false);
+    const { isOnline } = useNetworkStatus();
 
     const fetchProfile = useCallback(async () => {
         try {
@@ -71,6 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // will catch the 401, refresh using refreshToken (7d), and then resolve this call.
                 // if it fails (refresh token expired), interceptor triggers logout event.
                 await fetchProfile();
+                if (!warmupDoneRef.current) {
+                    warmupDoneRef.current = true;
+                    warmOfflineCache().catch(() => {});
+                }
             } catch (e) {
                 console.warn('[AuthContext] Init profile fetch failed (expected if token expired):', e);
             } finally {
@@ -88,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
             router.replace('/');
 
+            clearCurrentUserApiCache().catch(() => {});
             SecureStore.deleteItemAsync('token').catch(() => {});
             SecureStore.deleteItemAsync('refreshToken').catch(() => {});
             SecureStore.deleteItemAsync('userId').catch(() => {});
@@ -134,8 +147,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await SecureStore.setItemAsync('refreshToken', newRefreshToken);
         await SecureStore.setItemAsync('userId', newUserId);
         setToken(newToken);
-        setTimeout(() => fetchProfile(), 200);
+        setTimeout(() => {
+            fetchProfile();
+            if (!warmupDoneRef.current) {
+                warmupDoneRef.current = true;
+                warmOfflineCache().catch(() => {});
+            }
+        }, 200);
     }, [fetchProfile]);
+
+    useEffect(() => {
+        if (!token || !isOnline || syncInFlightRef.current) return;
+
+        syncInFlightRef.current = true;
+        Promise.all([
+            offlineTransactionQueue.syncPendingTransactionQueue(),
+            offlineRecurringQueue.syncPendingRecurringQueue(),
+        ])
+            .catch((error) => {
+                if (__DEV__) console.warn('[AuthContext] Erro ao sincronizar filas offline:', error);
+            })
+            .finally(() => {
+                syncInFlightRef.current = false;
+            });
+    }, [token, isOnline]);
 
     const logout = React.useCallback(async () => {
         if (__DEV__) console.log('[AuthContext] Logging out...');
@@ -143,6 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         router.replace('/');
 
+        await clearCurrentUserApiCache().catch(() => {});
         SecureStore.deleteItemAsync('token').catch(() => {});
         SecureStore.deleteItemAsync('refreshToken').catch(() => {});
         SecureStore.deleteItemAsync('userId').catch(() => {});

@@ -3,6 +3,7 @@ import { DeviceEventEmitter } from 'react-native';
 import { Transaction } from '../types';
 import api from '../services/api';
 import { useAuth } from './AuthContext';
+import { offlineTransactionQueue } from '../services/offlineTransactionQueue';
 
 interface TransactionsContextData {
     transactions: Transaction[];
@@ -67,6 +68,13 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
     // above may not re-fire if the token value didn't actually change string
     useEffect(() => {
         const sub = DeviceEventEmitter.addListener('auth:token-refreshed', () => {
+            fetchTransactions();
+        });
+        return () => sub.remove();
+    }, [fetchTransactions]);
+
+    useEffect(() => {
+        const sub = DeviceEventEmitter.addListener(offlineTransactionQueue.syncEvent, () => {
             fetchTransactions();
         });
         return () => sub.remove();

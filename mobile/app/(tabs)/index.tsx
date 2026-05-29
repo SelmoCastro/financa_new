@@ -99,6 +99,13 @@ export default function DashboardScreen() {
         await fetchSummary();
     };
 
+    useEffect(() => {
+        const sub = DeviceEventEmitter.addListener('transactions:offline-queue-synced', () => {
+            handleRefresh();
+        });
+        return () => sub.remove();
+    }, [handleRefresh]);
+
     const totals = useMemo(() => {
         if (!dashboardSummary) return { balance: 0, income: 0, currentIncome: 0, currentExpense: 0, incomeTrend: 0, expenseTrend: 0 };
         return {
@@ -117,6 +124,19 @@ export default function DashboardScreen() {
         if (!forecast?.topVillains) return [];
         return forecast.topVillains.slice(0, 3);
     }, [forecast.topVillains]);
+
+    const pendingOfflineCount = useMemo(
+        () => {
+            const uniqueIds = new Set<string>();
+            transactions.forEach((transaction) => {
+                if (transaction.pendingSync) {
+                    uniqueIds.add(transaction.offlineLocalId || transaction.id);
+                }
+            });
+            return uniqueIds.size;
+        },
+        [transactions]
+    );
 
     const formatValue = (value: number | undefined | null) => {
         if (isPrivacyEnabled) return '••••';
@@ -208,6 +228,20 @@ export default function DashboardScreen() {
                             <View style={styles.proBadge}><MaterialIcons name="auto-awesome" size={10} color="#059669" /></View>
                         </Pressable>
                     </View>
+
+                    {pendingOfflineCount > 0 && (
+                        <View style={styles.pendingOfflineBanner}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.pendingOfflineTitle}>
+                                    {pendingOfflineCount} lançamento{pendingOfflineCount > 1 ? 's' : ''} aguardando sincronização
+                                </Text>
+                                <Text style={styles.pendingOfflineSubtitle}>
+                                    Eles foram salvos no aparelho e serão enviados quando a internet voltar.
+                                </Text>
+                            </View>
+                            <MaterialIcons name="cloud-upload" size={20} color="#b45309" />
+                        </View>
+                    )}
 
                     {/* Cards Grid */}
                     <View style={styles.cardsGrid}>
@@ -544,4 +578,7 @@ const styles = StyleSheet.create({
     // FAB - subido para ficar acima do AiChatWidget FAB
     fabButton: { position: 'absolute', right: 24, bottom: 96, width: 64, height: 64, borderRadius: 32, backgroundColor: '#4f46e5', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 10, zIndex: 9999 },
     fabButtonPressed: { transform: [{ scale: 0.92 }], opacity: 0.9 },
+    pendingOfflineBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fffbeb', borderColor: '#fcd34d', borderWidth: 1, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 14, marginTop: 16, marginBottom: 8 },
+    pendingOfflineTitle: { fontSize: 13, fontWeight: '900', color: '#92400e' },
+    pendingOfflineSubtitle: { fontSize: 11, color: '#b45309', marginTop: 2, lineHeight: 15 },
 });

@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform, Linking } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useAuth } from '../../context/AuthContext';
-import { openCheckout } from '../../services/paymentService';
-import { PlanPickerModal } from '../../components/PlanPickerModal';
+import { useOfflineActionGuard } from '../../hooks/useOfflineActionGuard';
 import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Goal } from '../../types';
 import * as Haptics from 'expo-haptics';
@@ -19,13 +18,14 @@ export default function GoalsScreen() {
     const { isPrivacyEnabled, togglePrivacy } = useTransactions();
     const { formatCurrency, currencySymbol } = useCurrency();
     const { user } = useAuth();
+    const { ensureOnline } = useOfflineActionGuard();
     const [goals, setGoals] = useState<Goal[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [depositModalVisible, setDepositModalVisible] = useState(false);
-    const [planPickerVisible, setPlanPickerVisible] = useState(false);
     const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+    // Estados de criação/edição de metas
     const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
     // Form
@@ -62,7 +62,7 @@ export default function GoalsScreen() {
         if (isGoalLimitReached) {
             Alert.alert('Plano Gratuito', 'O plano Free permite apenas 3 metas. Faça upgrade para Premium para criar mais metas.', [
                 { text: 'Entendi', style: 'cancel' },
-                { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) },
+                { text: 'Ver Premium', onPress: () => Linking.openURL('https://finanzaai.tech/premium') },
             ]);
             return;
         }
@@ -77,6 +77,8 @@ export default function GoalsScreen() {
             Alert.alert('Atenção', 'Valor inválido.');
             return;
         }
+
+        if (!ensureOnline(editingGoal ? 'atualizar esta meta' : 'criar esta meta')) return;
 
         try {
             if (editingGoal) {
@@ -113,6 +115,7 @@ export default function GoalsScreen() {
                     text: 'Excluir',
                     style: 'destructive',
                     onPress: async () => {
+                        if (!ensureOnline('excluir esta meta')) return;
                         try {
                             await api.delete(`/goals/${goal.id}`);
                             fetchGoals();
@@ -135,6 +138,8 @@ export default function GoalsScreen() {
             Alert.alert('Atenção', 'Valor inválido.');
             return;
         }
+
+        if (!ensureOnline('fazer este depósito')) return;
 
         try {
             await api.post(`/goals/${selectedGoal.id}/deposit`, { amount: rawAmount });
@@ -174,7 +179,7 @@ export default function GoalsScreen() {
                                             'O plano Free permite apenas 3 metas. Faça upgrade para Premium para criar mais metas.',
                                             [
                                                 { text: 'Entendi', style: 'cancel' },
-                                                { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) },
+                                                { text: 'Ver Premium', onPress: () => Linking.openURL('https://finanzaai.tech/premium') },
                                             ]
                                         );
                                         return;
@@ -210,7 +215,7 @@ export default function GoalsScreen() {
                                         <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
                                         <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa as 3 metas incluídas no Free. Para criar mais, faça upgrade.</Text>
                                     </View>
-                                    <Pressable onPress={() => setPlanPickerVisible(true)} className="bg-amber-500 px-3 py-2 rounded-xl">
+                                    <Pressable onPress={() => Linking.openURL('https://finanzaai.tech/premium')} className="bg-amber-500 px-3 py-2 rounded-xl">
                                         <Text className="text-white text-xs font-black uppercase">Upgrade</Text>
                                     </Pressable>
                                 </View>
@@ -235,7 +240,7 @@ export default function GoalsScreen() {
                                         <Pressable
                                             onPress={() => {
                                                 if (isGoalLimitReached) {
-                                                    Alert.alert('Plano Gratuito', 'Depósito disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) }]);
+                                                    Alert.alert('Plano Gratuito', 'Depósito disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => Linking.openURL('https://finanzaai.tech/premium') }]);
                                                     return;
                                                 }
                                                 setSelectedGoal(goal);
@@ -280,7 +285,7 @@ export default function GoalsScreen() {
                                     <Pressable
                                         onPress={() => {
                                             if (isGoalLimitReached) {
-                                                Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) }]);
+                                                Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => Linking.openURL('https://finanzaai.tech/premium') }]);
                                                 return;
                                             }
                                             openEditGoal(goal);
@@ -294,7 +299,7 @@ export default function GoalsScreen() {
                                     <Pressable
                                         onPress={() => {
                                             if (isGoalLimitReached) {
-                                                Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) }]);
+                                                Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => Linking.openURL('https://finanzaai.tech/premium') }]);
                                                 return;
                                             }
                                             handleDeleteGoal(goal);
@@ -422,7 +427,6 @@ export default function GoalsScreen() {
                     </View>
                 </View>
             </Modal>
-            <PlanPickerModal visible={planPickerVisible} onClose={() => setPlanPickerVisible(false)} />
         </View>
     );
 }

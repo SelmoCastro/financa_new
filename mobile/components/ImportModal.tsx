@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
 import { ACCOUNT_TYPE_LABELS } from '../types';
 import * as Haptics from 'expo-haptics';
+import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
 
 const ERROR_MESSAGES: Record<string, string> = {
     no_data_found: 'Não foi possível identificar transações neste documento. Verifique se é um comprovante financeiro válido e tente com uma imagem mais nítida.',
@@ -56,6 +57,7 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
     const [duplicateIds, setDuplicateIds] = useState<string[]>([]);
     const [activeTxId, setActiveTxId] = useState<string | null>(null);
     const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
+    const { ensureOnline } = useOfflineActionGuard();
 
     const getFilteredGroups = (type: 'INCOME' | 'EXPENSE') => {
         const groups: Record<string, any[]> = {
@@ -185,6 +187,8 @@ export function ImportModal({ visible, onClose, onSuccess, categories, accounts 
             Alert.alert('Erro', 'Selecione uma conta de destino primeiro.');
             return;
         }
+
+        if (!ensureOnline('enviar este arquivo para análise')) return;
 
         setLoading(true);
         try {

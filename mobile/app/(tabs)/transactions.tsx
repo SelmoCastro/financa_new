@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Alert, Platform, TextInput } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Alert, Platform, TextInput, DeviceEventEmitter } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,12 +13,15 @@ import TransactionModal from '../../components/TransactionModal';
 import { ImportModal } from '../../components/ImportModal';
 import { useEffect } from 'react';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useOfflineActionGuard } from '../../hooks/useOfflineActionGuard';
+import { offlineTransactionQueue } from '../../services/offlineTransactionQueue';
 
 export default function TransactionsScreen() {
     const insets = useSafeAreaInsets();
     const { selectedDate } = useMonth();
     const { transactions, loading, refreshing, onRefresh, setTransactions, isPrivacyEnabled, togglePrivacy } = useTransactions();
     const { formatCurrency } = useCurrency();
+    const { ensureOnline } = useOfflineActionGuard();
 
     const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +47,13 @@ export default function TransactionsScreen() {
         };
         fetchFiltersData();
     }, []);
+
+    useEffect(() => {
+        const sub = DeviceEventEmitter.addListener(offlineTransactionQueue.syncEvent, () => {
+            onRefresh();
+        });
+        return () => sub.remove();
+    }, [onRefresh]);
 
     // Derived
     const filteredTransactions = useMemo(() => {
@@ -74,9 +84,70 @@ export default function TransactionsScreen() {
         }, { income: 0, expense: 0 });
     }, [filteredTransactions]);
 
+    const pendingOfflineCount = useMemo(
+        () => {
+            const uniqueIds = new Set<string>();
+            filteredTransactions.forEach((transaction) => {
+                if (transaction.pendingSync) {
+                    uniqueIds.add(transaction.offlineLocalId || transaction.id);
+                }
+            });
+            return uniqueIds.size;
+        },
+        [filteredTransactions]
+    );
 
 
+    const handleEditTransaction = async (transaction: any) => {
+        try {
+            if (transaction.pendingSync && transaction.offlineLocalId) {
+                const snapshot = await offlineTransactionQueue.getPendingOfflineMutationSnapshot(transaction.offlineLocalId);
+                setEditingTransaction(snapshot || transaction);
+            } else {
+                setEditingTransaction(transaction);
+            }
+        } catch (error) {
+            setEditingTransaction(transaction);
+        }
+        setModalVisible(true);
+    };
 
+    const handleDelete = (transaction: any) => {
+        Alert.alert(
+            'Excluir Transação',
+            transaction.pendingSync ? 'Esta transação ainda está pendente no aparelho. Deseja removê-la da fila offline?' : 'Tem certeza?',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Excluir',
+                    style: 'destructive',
+                    onPress: async () => {
+                        if (transaction.pendingSync && transaction.offlineLocalId) {
+                            try {
+                                await offlineTransactionQueue.removePendingOfflineMutation(transaction.offlineLocalId);
+                                setTransactions((prev) => prev.filter((item) => item.offlineLocalId !== transaction.offlineLocalId));
+                            } catch (error) {
+                                Alert.alert('Erro', 'Falha ao excluir o lançamento pendente.');
+                            }
+                            return;
+                        }
+
+                        if (!ensureOnline('excluir esta transação')) return;
+                        try {
+                            const res = await api.delete(`/transactions/${transaction.id}`);
+                            // Backend may delete sibling installments too — remove all returned IDs
+                            // Interceptor already unwraps response.data.data → response.data
+                            const deletedIds: string[] = res.data?.deletedIds || [transaction.id];
+                            setTransactions(prev => prev.filter(t => !deletedIds.includes(t.id)));
+                        } catch (error) {
+                            Alert.alert('Erro', 'Falha ao excluir.');
+                        }
+                    }
+                },
+                { text: 'Cancelar', style: 'cancel' }
+            ]
+        );
+    };
 
     const handleLongPress = (transaction: any) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -87,41 +158,15 @@ export default function TransactionsScreen() {
                 {
                     text: 'Editar',
                     onPress: () => {
-                        setEditingTransaction(transaction);
-                        setModalVisible(true);
+                        void handleEditTransaction(transaction);
                     }
                 },
                 {
                     text: 'Excluir',
                     style: 'destructive',
-                    onPress: () => handleDelete(transaction.id)
+                    onPress: () => handleDelete(transaction)
                 },
                 { text: 'Cancelar', style: 'cancel' }
-            ]
-        );
-    };
-
-    const handleDelete = (id: string) => {
-        Alert.alert(
-            'Excluir Transação',
-            'Tem certeza?',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Excluir',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const res = await api.delete(`/transactions/${id}`);
-                            // Backend may delete sibling installments too — remove all returned IDs
-                            // Interceptor already unwraps response.data.data → response.data
-                            const deletedIds: string[] = res.data?.deletedIds || [id];
-                            setTransactions(prev => prev.filter(t => !deletedIds.includes(t.id)));
-                        } catch (error) {
-                            Alert.alert('Erro', 'Falha ao excluir.');
-                        }
-                    }
-                }
             ]
         );
     };
@@ -224,6 +269,18 @@ export default function TransactionsScreen() {
                     </View>
                 </ScrollView>
 
+                {pendingOfflineCount > 0 && (
+                    <View className="px-6 mt-4">
+                        <View className="flex-row items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                            <View className="flex-1">
+                                <Text className="text-amber-800 font-extrabold text-sm">{pendingOfflineCount} lançamento{pendingOfflineCount > 1 ? 's' : ''} aguardando sincronização</Text>
+                                <Text className="text-amber-700 text-xs mt-1">Foram salvos no aparelho e serão enviados quando a internet voltar.</Text>
+                            </View>
+                            <MaterialIcons name="cloud-upload" size={20} color="#b45309" />
+                        </View>
+                    </View>
+                )}
+
                 {/* Summary for Filter */}
                 {filter !== 'ALL' && (
                     <View className="px-6 mt-4">
@@ -272,10 +329,16 @@ export default function TransactionsScreen() {
                                         </View>
                                         <View className="flex-1">
                                             <Text className="font-bold text-slate-700 text-sm" numberOfLines={1}>{t.description}</Text>
-                                            <View className="flex-row items-center gap-2">
+                                            <View className="flex-row items-center gap-2 flex-wrap">
                                                 <Text className="text-xs text-slate-400 uppercase font-bold tracking-wider">{t.category?.name || t.categoryLegacy || 'Outros'}</Text>
                                                 <Text className="text-xs text-slate-300">•</Text>
                                                 <Text className="text-xs text-slate-400">{new Date(t.date).toLocaleDateString()}</Text>
+                                                {t.pendingSync && (
+                                                    <View className="flex-row items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5">
+                                                        <MaterialIcons name="cloud-upload" size={10} color="#b45309" />
+                                                        <Text className="text-[10px] font-bold text-amber-800 uppercase">Pendente</Text>
+                                                    </View>
+                                                )}
                                             </View>
                                         </View>
                                     </View>

@@ -12,6 +12,11 @@ export interface Transaction {
     userId: string;
     createdAt: string;
     updatedAt: string;
+    pendingSync?: boolean;
+    offlineLocalId?: string;
+    offlineTransferGroupId?: string;
+    transferGroupId?: string;
+    transferRole?: 'source' | 'destination';
 }
 
 export interface User {

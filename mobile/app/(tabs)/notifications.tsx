@@ -8,6 +8,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { notificationService, NotificationDTO } from '../../services/notificationService';
 import { useCurrency } from '../../context/CurrencyContext';
 import { refreshUnreadCount } from '../../hooks/useNotifications';
+import { useOfflineActionGuard } from '../../hooks/useOfflineActionGuard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TYPE_CONFIG: Record<string, { icon: keyof typeof MaterialIcons.glyphMap; color: string; bg: string }> = {
@@ -41,6 +42,7 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [actioning, setActioning] = useState<string | null>(null);
+  const { ensureOnline } = useOfflineActionGuard();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -60,6 +62,7 @@ export default function NotificationsScreen() {
   const handleConfirm = async (notif: NotificationDTO) => {
     setActioning(notif.id);
     try {
+      ensureOnline('confirmar esta notificação');
       const res = await notificationService.handleAction(notif.id, 'confirm');
       Alert.alert('Confirmado', res.data?.message || 'Transação lançada com sucesso!');
       await fetchData();
@@ -74,6 +77,7 @@ export default function NotificationsScreen() {
   const handlePostpone = async (notif: NotificationDTO) => {
     setActioning(notif.id);
     try {
+      ensureOnline('adiar esta notificação');
       await notificationService.handleAction(notif.id, 'postpone');
       await fetchData();
     } catch {
@@ -85,6 +89,7 @@ export default function NotificationsScreen() {
 
   const handleMarkAllRead = async () => {
     try {
+      ensureOnline('marcar notificações como lidas');
       await notificationService.markAllAsRead();
       await fetchData();
     } catch {}

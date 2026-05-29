@@ -6,8 +6,12 @@ import { getCategoryEmoji } from '../utils/categoryIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../services/api';
 import { triggerHaptic } from '../utils/haptics';
-import { Account, CreditCard, ACCOUNT_TYPE_LABELS } from '../types';
+import { Account, CreditCard, ACCOUNT_TYPE_LABELS, Transaction } from '../types';
 import { formatCurrencyInput, parseCurrencyToNumber } from '../utils/currencyUtils';
+import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
+import { useNetworkStatus } from '../context/NetworkContext';
+import { useTransactionsContext } from '../context/TransactionsContext';
+import { offlineTransactionQueue } from '../services/offlineTransactionQueue';
 
 const getCategoryGroup = (name: string, type: 'INCOME' | 'EXPENSE') => {
     if (type === 'INCOME') return 'Entradas (Rendas)';
@@ -55,6 +59,9 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
 
     const [categories, setCategories] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<any>(null);
+    const { ensureOnline } = useOfflineActionGuard();
+    const { isOnline } = useNetworkStatus();
+    const { setTransactions } = useTransactionsContext();
 
     // Reset form when modal opens or type changes
     useEffect(() => {
@@ -68,6 +75,7 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
                 setIsFixed(transactionToEdit.isFixed || false);
                 setType(transactionToEdit.type || initialType);
                 setAccountId(transactionToEdit.accountId || '');
+                setDestinationAccountId(transactionToEdit.destinationAccountId || '');
                 setCreditCardId(transactionToEdit.creditCardId || '');
                 setSharedWithEmail(transactionToEdit.sharedWithEmail || '');
             } else {
@@ -153,6 +161,15 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
         return cc ? cc.name : '';
     };
 
+    const mergeTransactions = (current: Transaction[], updated: Transaction[]): Transaction[] => {
+        const updatedIds = new Set(updated.map((item) => item.id));
+        const updatedOfflineIds = new Set(updated.map((item) => item.offlineLocalId).filter(Boolean));
+        return [
+            ...updated,
+            ...current.filter((item) => !updatedIds.has(item.id) && !updatedOfflineIds.has(item.offlineLocalId)),
+        ];
+    };
+
     const handleSave = async () => {
         const rawAmount = parseCurrencyToNumber(amount);
 
@@ -177,58 +194,171 @@ export default function TransactionModal({ visible, onClose, onSuccess, initialT
             }
         }
 
+        const payload = type === 'TRANSFER'
+            ? {
+                type: 'TRANSFER' as const,
+                description,
+                amount: rawAmount,
+                date: date.toISOString(),
+                sourceAccountId: accountId,
+                destinationAccountId,
+            }
+            : {
+                description,
+                amount: rawAmount,
+                type,
+                categoryId: selectedCategory?.id,
+                categoryLegacy: category,
+                date: date.toISOString(),
+                isFixed,
+                accountId: accountId || undefined,
+                creditCardId: creditCardId || undefined,
+                sharedWithEmail: sharedWithEmail.trim() || undefined,
+            };
+
+        const pendingLocalEdit = Boolean(transactionToEdit?.pendingSync && transactionToEdit?.offlineLocalId);
+        if (pendingLocalEdit) {
+            setLoading(true);
+            try {
+                const updatedTransactions = await offlineTransactionQueue.updatePendingOfflineMutation(
+                    transactionToEdit.offlineLocalId,
+                    payload as any
+                );
+                setTransactions((prev) => mergeTransactions(prev, updatedTransactions));
+                triggerHaptic.success();
+                Alert.alert(
+                    'Atualizado localmente',
+                    type === 'TRANSFER'
+                        ? 'A transferência pendente foi atualizada no aparelho e será enviada quando a internet voltar.'
+                        : 'O lançamento pendente foi atualizado no aparelho e será enviado quando a internet voltar.'
+                );
+                onClose();
+            } catch (error: any) {
+                triggerHaptic.error();
+                if (__DEV__) {
+                    console.error('Erro ao atualizar lançamento offline:', error?.message || error);
+                }
+                Alert.alert('Erro', 'Não foi possível atualizar o lançamento pendente.');
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
+        const canQueueOffline = !transactionToEdit && !isOnline;
+        if (canQueueOffline) {
+            setLoading(true);
+            try {
+                const optimisticTransactions = await offlineTransactionQueue.queueOfflineMutation(payload as any);
+                setTransactions((prev) => mergeTransactions(prev, optimisticTransactions));
+                triggerHaptic.success();
+                Alert.alert(
+                    'Salvo offline',
+                    type === 'TRANSFER'
+                        ? 'A transferência foi salva localmente e será sincronizada quando a internet voltar.'
+                        : 'O lançamento foi salvo localmente e será sincronizado quando a internet voltar.'
+                );
+                onSuccess();
+                onClose();
+            } catch (error: any) {
+                triggerHaptic.error();
+                if (__DEV__) {
+                    console.error('Erro ao salvar transação offline:', error?.message || error);
+                }
+                Alert.alert('Erro', 'Não foi possível salvar o lançamento offline.');
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
+        if (!ensureOnline(transactionToEdit ? 'atualizar esta transação' : 'salvar esta transação')) {
+            return;
+        }
+
         setLoading(true);
         try {
             if (type === 'TRANSFER') {
-                const payload = {
-                    description,
-                    amount: rawAmount,
-                    date: date.toISOString(),
-                    sourceAccountId: accountId,
-                    destinationAccountId
-                };
                 await api.post('/transactions/transfer', payload);
                 Alert.alert('Sucesso', 'Transferência realizada com sucesso!');
-            } else {
-                const payload = {
-                    description,
-                    amount: rawAmount,
-                    type,
-                    categoryId: selectedCategory?.id,
-                    categoryLegacy: category,
-                    date: date.toISOString(),
-                    isFixed,
-                    accountId: accountId || undefined,
-                    creditCardId: creditCardId || undefined,
-                    sharedWithEmail: sharedWithEmail.trim() || undefined
-                };
-
-                if (transactionToEdit) {
-                    await api.patch(`/transactions/${transactionToEdit.id}`, payload);
-                    Alert.alert('Sucesso', 'Transação atualizada com sucesso!');
-                } else {
-                    await api.post('/transactions', payload);
-                    Alert.alert('Sucesso', 'Transação salva com sucesso!');
-                }
+                triggerHaptic.success();
+                onSuccess();
+                onClose();
+                return;
             }
 
+            if (transactionToEdit) {
+                await api.patch(`/transactions/${transactionToEdit.id}`, payload);
+                Alert.alert('Sucesso', 'Transação atualizada com sucesso!');
+                triggerHaptic.success();
+                onSuccess();
+                onClose();
+                return;
+            }
+
+            await api.post('/transactions', payload);
+            Alert.alert('Sucesso', 'Transação salva com sucesso!');
             triggerHaptic.success();
             onSuccess();
             onClose();
         } catch (error: any) {
+            const errorCode = error?.code;
+            const status = error?.response?.status;
+            const isNetworkLikeError = !transactionToEdit && type !== 'TRANSFER' && (
+                !status ||
+                errorCode === 'ERR_NETWORK' ||
+                errorCode === 'ECONNABORTED' ||
+                String(error?.message || '').toLowerCase().includes('network') ||
+                String(error?.message || '').toLowerCase().includes('internet')
+            );
+
+            if (isNetworkLikeError) {
+                try {
+                    const optimisticTransactions = await offlineTransactionQueue.queueOfflineMutation(payload as any);
+                    setTransactions((prev) => mergeTransactions(prev, optimisticTransactions));
+                    triggerHaptic.success();
+
+                    // Tenta sincronizar imediatamente — se a rede já tiver voltado,
+                    // o sync resolve agora. Se falhar, fica na fila pro próximo
+                    // ciclo de reconexão (AuthContext escuta isOnline).
+                    const syncResult = await offlineTransactionQueue.syncPendingTransactionQueue();
+                    if (syncResult.synced > 0) {
+                        Alert.alert(
+                            'Sucesso',
+                            'Transação salva com sucesso!'
+                        );
+                    } else {
+                        Alert.alert(
+                            'Salvo offline',
+                            'O lançamento foi guardado no aparelho e será sincronizado automaticamente quando a conexão estabilizar.'
+                        );
+                    }
+
+                    onSuccess();
+                    onClose();
+                    return;
+                } catch (offlineError: any) {
+                    if (__DEV__) {
+                        console.error('Falha ao alternar para salvamento offline:', offlineError?.message || offlineError);
+                    }
+                }
+            }
+
             triggerHaptic.error();
             if (__DEV__) {
                 console.error('Erro ao salvar transação:');
-                if (error.response) {
-                    console.error('Status:', error.response.status);
-                } else {
-                    console.error('Message:', error.message);
+                if (status) {
+                    console.error('Status:', status);
                 }
+                console.error('Code:', errorCode);
+                console.error('Message:', error?.message);
+                console.error('Response data:', error?.response?.data);
             }
             Alert.alert('Erro', 'Não foi possível salvar a transação.');
         } finally {
             setLoading(false);
         }
+
     };
 
     const onChangeDate = (event: any, selectedDate?: Date) => {

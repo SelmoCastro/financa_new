@@ -8,6 +8,7 @@ import { useNotifications, refreshUnreadCount } from '../../hooks/useNotificatio
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
+import { OfflineBanner } from '../../components/OfflineBanner';
 
 function NotificationsBadge() {
   const { unreadCount } = useNotifications();
@@ -64,26 +65,29 @@ export default function TabLayout() {
   return (
     <MonthProvider>
       <TransactionsProvider>
-        <Tabs
-          screenOptions={{
-            headerShown: false,
-            tabBarStyle: {
-              paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0,
-              elevation: 0,
-            },
-            tabBarActiveTintColor: '#4f46e5',
-            tabBarInactiveTintColor: '#94a3b8',
-          }}
-        >
-          <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => <MaterialIcons name="grid-view" size={24} color={color} /> }} />
-          <Tabs.Screen name="notifications" options={{ href: null }} />
-          <Tabs.Screen name="accounts" options={{ title: 'Contas', tabBarIcon: ({ color }) => <MaterialIcons name="account-balance-wallet" size={24} color={color} /> }} />
-          <Tabs.Screen name="recurring" options={{ title: 'Fixo/Recorr.', tabBarIcon: ({ color }) => <MaterialIcons name="event-repeat" size={24} color={color} /> }} />
-          <Tabs.Screen name="transactions" options={{ title: 'Extrato', tabBarIcon: ({ color }) => <MaterialIcons name="receipt-long" size={24} color={color} /> }} />
-          <Tabs.Screen name="budgets" options={{ title: 'Orç.', tabBarIcon: ({ color }) => <MaterialIcons name="pie-chart" size={24} color={color} /> }} />
-          <Tabs.Screen name="goals" options={{ title: 'Metas', tabBarIcon: ({ color }) => <MaterialIcons name="track-changes" size={24} color={color} /> }} />
-          <Tabs.Screen name="reports" options={{ title: 'Relat.', tabBarIcon: ({ color }) => <MaterialIcons name="bar-chart" size={24} color={color} /> }} />
-        </Tabs>
+        <View style={{ flex: 1 }}>
+          <OfflineBanner />
+          <Tabs
+            screenOptions={{
+              headerShown: false,
+              tabBarStyle: {
+                paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0,
+                elevation: 0,
+              },
+              tabBarActiveTintColor: '#4f46e5',
+              tabBarInactiveTintColor: '#94a3b8',
+            }}
+          >
+            <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => <MaterialIcons name="grid-view" size={24} color={color} /> }} />
+            <Tabs.Screen name="notifications" options={{ href: null }} />
+            <Tabs.Screen name="accounts" options={{ title: 'Contas', tabBarIcon: ({ color }) => <MaterialIcons name="account-balance-wallet" size={24} color={color} /> }} />
+            <Tabs.Screen name="recurring" options={{ title: 'Fixo/Recorr.', tabBarIcon: ({ color }) => <MaterialIcons name="event-repeat" size={24} color={color} /> }} />
+            <Tabs.Screen name="transactions" options={{ title: 'Extrato', tabBarIcon: ({ color }) => <MaterialIcons name="receipt-long" size={24} color={color} /> }} />
+            <Tabs.Screen name="budgets" options={{ title: 'Orç.', tabBarIcon: ({ color }) => <MaterialIcons name="pie-chart" size={24} color={color} /> }} />
+            <Tabs.Screen name="goals" options={{ title: 'Metas', tabBarIcon: ({ color }) => <MaterialIcons name="track-changes" size={24} color={color} /> }} />
+            <Tabs.Screen name="reports" options={{ title: 'Relat.', tabBarIcon: ({ color }) => <MaterialIcons name="bar-chart" size={24} color={color} /> }} />
+          </Tabs>
+        </View>
       </TransactionsProvider>
     </MonthProvider>
   );

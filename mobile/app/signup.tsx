@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, Alert, Platform, StyleSheet, ScrollView, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../services/api';
+import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
 import { useAuth } from '../context/AuthContext';
 import * as Haptics from 'expo-haptics';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,6 +16,7 @@ export default function SignupScreen() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { login } = useAuth();
+    const { ensureOnline } = useOfflineActionGuard();
 
     const handleSignup = async () => {
         if (!email || !password || !name) {
@@ -40,6 +42,8 @@ export default function SignupScreen() {
         const sanitizedEmail = email.trim().toLowerCase();
         const sanitizedPassword = password.trim();
         const sanitizedName = name.trim();
+
+        if (!ensureOnline('criar sua conta')) return;
 
         setLoading(true);
         try {

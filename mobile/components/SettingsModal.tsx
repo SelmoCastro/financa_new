@@ -14,6 +14,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -22,6 +23,7 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const { logout, user, updateUserName, updateUserEmail } = useAuth();
+  const { ensureOnline } = useOfflineActionGuard();
 
   // Nome
   const [editingName, setEditingName] = useState(false);
@@ -54,6 +56,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
   const handleSaveName = async () => {
     if (!nameValue.trim()) return;
+    if (!ensureOnline('atualizar seu nome')) return;
     setNameSaving(true);
     try {
       await api.patch('/auth/change-name', { name: nameValue.trim() });
@@ -76,6 +79,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
       Alert.alert('Erro', 'A nova senha deve ter pelo menos 8 caracteres');
       return;
     }
+    if (!ensureOnline('alterar sua senha')) return;
     setPassSaving(true);
     try {
       await api.post('/auth/change-password', { currentPassword: currentPass, newPassword: newPass });
@@ -91,6 +95,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
   const handleChangeEmail = async () => {
     if (!newEmail.trim()) return;
+    if (!ensureOnline('alterar seu e-mail')) return;
     setEmailSaving(true);
     try {
       const res = await api.post('/auth/change-email', { newEmail: newEmail.trim(), password: emailPass });
@@ -110,6 +115,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
       Alert.alert('Erro', 'Digite EXCLUIR para confirmar');
       return;
     }
+    if (!ensureOnline('excluir sua conta')) return;
     setDeleteSaving(true);
     try {
       await api.delete('/auth/delete-account', { data: { password: deletePass } });

@@ -1,6 +1,6 @@
 {
-  "version": "1.8.81",
-  "mobileVersion": "1.8.81",
+  "version": "1.8.89",
+  "mobileVersion": "1.8.89",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Add plan picker modal with prices before MP checkout"
+  "releaseNotes": "Offline: sync imediato após fallback de rede para transações e recorrentes"
 }

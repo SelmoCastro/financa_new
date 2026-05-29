@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform, Linking } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getCategoryEmoji } from '../../utils/categoryIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,8 +7,7 @@ import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useAuth } from '../../context/AuthContext';
-import { openCheckout } from '../../services/paymentService';
-import { PlanPickerModal } from '../../components/PlanPickerModal';
+import { useOfflineActionGuard } from '../../hooks/useOfflineActionGuard';
 import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Budget } from '../../types';
 import * as Haptics from 'expo-haptics';
@@ -33,12 +32,12 @@ export default function BudgetsScreen() {
     const { isPrivacyEnabled, togglePrivacy } = useTransactions();
     const { formatCurrency, currencySymbol } = useCurrency();
     const { user } = useAuth();
+    const { ensureOnline } = useOfflineActionGuard();
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
-    const [planPickerVisible, setPlanPickerVisible] = useState(false);
 
     // Form
     const [categoryId, setCategoryId] = useState('');
@@ -51,12 +50,21 @@ export default function BudgetsScreen() {
 
     const fetchBudgets = async () => {
         try {
-            const [bRes, cRes] = await Promise.all([
+            const [bRes, cRes] = await Promise.allSettled([
                 api.get('/budgets'),
                 api.get('/categories')
             ]);
-            setBudgets(bRes.data);
-            setCategories(cRes.data);
+
+            if (bRes.status === 'fulfilled') {
+                setBudgets(bRes.value.data);
+            }
+            if (cRes.status === 'fulfilled') {
+                setCategories(cRes.value.data);
+            }
+
+            if (bRes.status === 'rejected' && cRes.status === 'rejected') {
+                throw bRes.reason || cRes.reason;
+            }
         } catch (error) {
             console.error('Erro ao buscar dados:', error);
             Alert.alert('Erro', 'Não foi possível carregar os dados.');
@@ -108,6 +116,8 @@ export default function BudgetsScreen() {
             return;
         }
 
+        if (!ensureOnline(editingBudget ? 'atualizar este orçamento' : 'criar este orçamento')) return;
+
         try {
             if (editingBudget) {
                 await api.patch(`/budgets/${editingBudget.id}`, { categoryId, amount: rawAmount });
@@ -143,6 +153,7 @@ export default function BudgetsScreen() {
                     text: 'Excluir',
                     style: 'destructive',
                     onPress: async () => {
+                        if (!ensureOnline('excluir este orçamento')) return;
                         try {
                             await api.delete(`/budgets/${budget.id}`);
                             fetchBudgets();
@@ -188,7 +199,7 @@ export default function BudgetsScreen() {
                                             'O plano Free permite apenas 3 orçamentos. Faça upgrade para Premium para criar mais orçamentos.',
                                             [
                                                 { text: 'Entendi', style: 'cancel' },
-                                                { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) },
+                                                { text: 'Ver Premium', onPress: () => Linking.openURL('https://finanzaai.tech/premium') },
                                             ]
                                         );
                                         return;
@@ -212,7 +223,7 @@ export default function BudgetsScreen() {
                                 <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
                                 <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa os 3 orçamentos incluídos no Free. Para criar mais tetos, faça upgrade.</Text>
                             </View>
-                            <Pressable onPress={() => setPlanPickerVisible(true)} className="bg-amber-500 px-3 py-2 rounded-xl">
+                            <Pressable onPress={() => Linking.openURL('https://finanzaai.tech/premium')} className="bg-amber-500 px-3 py-2 rounded-xl">
                                 <Text className="text-white text-xs font-black uppercase">Upgrade</Text>
                             </Pressable>
                         </View>
@@ -270,7 +281,7 @@ export default function BudgetsScreen() {
                                     <Pressable
                                         onPress={() => {
                                             if (isBudgetLimitReached) {
-                                                Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) }]);
+                                                Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => Linking.openURL('https://finanzaai.tech/premium') }]);
                                                 return;
                                             }
                                             openEditBudget(budget);
@@ -284,7 +295,7 @@ export default function BudgetsScreen() {
                                     <Pressable
                                         onPress={() => {
                                             if (isBudgetLimitReached) {
-                                                Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => setPlanPickerVisible(true) }]);
+                                                Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => Linking.openURL('https://finanzaai.tech/premium') }]);
                                                 return;
                                             }
                                             handleDeleteBudget(budget);
@@ -412,7 +423,6 @@ export default function BudgetsScreen() {
                     </View>
                 </Modal>
             </Modal>
-            <PlanPickerModal visible={planPickerVisible} onClose={() => setPlanPickerVisible(false)} />
         </View>
     );
 }

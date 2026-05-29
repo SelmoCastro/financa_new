@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, Modal, Alert, ActivityIn
 import { MaterialIcons } from '@expo/vector-icons';
 import { getCategoryEmoji } from '../utils/categoryIcons';
 import api from '../services/api';
+import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
 import * as Haptics from 'expo-haptics';
 
 export function InviteNotification() {
@@ -15,6 +16,7 @@ export function InviteNotification() {
     const [acceptingInvite, setAcceptingInvite] = useState<any>(null);
     const [selectedAccount, setSelectedAccount] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
+    const { ensureOnline } = useOfflineActionGuard();
 
     const fetchData = async () => {
         try {
@@ -52,6 +54,8 @@ export function InviteNotification() {
             return;
         }
 
+        if (!ensureOnline('aceitar este lançamento compartilhado')) return;
+
         setLoading(true);
         try {
             await api.post(`/social/invites/${acceptingInvite.id}/accept`, {
@@ -79,6 +83,7 @@ export function InviteNotification() {
                     text: 'Rejeitar',
                     style: 'destructive',
                     onPress: async () => {
+                        if (!ensureOnline('rejeitar este lançamento compartilhado')) return;
                         setLoading(true);
                         try {
                             await api.post(`/social/invites/${inviteId}/reject`);

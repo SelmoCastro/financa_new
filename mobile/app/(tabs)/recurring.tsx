@@ -12,12 +12,17 @@ import { useFixedTransactions } from '../../hooks/useFixedTransactions';
 import { formatCurrencyInput, parseCurrencyToNumber } from '../../utils/currencyUtils';
 import * as Haptics from 'expo-haptics';
 import api from '../../services/api';
+import { useOfflineActionGuard } from '../../hooks/useOfflineActionGuard';
+import { useNetworkStatus } from '../../context/NetworkContext';
+import { offlineRecurringQueue } from '../../services/offlineRecurringQueue';
 
 export default function RecurringScreen() {
   const [recorrentes, setRecorrentes] = useState<RecurringTransactionDTO[]>([]);
   const [weight, setWeight] = useState<WeightData | null>(null);
   const [loading, setLoading] = useState(true);
   const { formatCurrency, currency } = useCurrency();
+  const { ensureOnline } = useOfflineActionGuard();
+  const { isOnline } = useNetworkStatus();
 
   // Fixed items from transactions
   const { transactions, setTransactions } = useTransactions();
@@ -36,12 +41,21 @@ export default function RecurringScreen() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [rtRes, wRes] = await Promise.all([
+      const [rtRes, wRes] = await Promise.allSettled([
         recurringService.getAll(),
         recurringService.getWeight(),
       ]);
-      setRecorrentes(rtRes.data);
-      setWeight(wRes.data);
+
+      if (rtRes.status === 'fulfilled') {
+        setRecorrentes(rtRes.value.data);
+      }
+      if (wRes.status === 'fulfilled') {
+        setWeight(wRes.value.data);
+      }
+
+      if (rtRes.status === 'rejected' && wRes.status === 'rejected') {
+        throw rtRes.reason || wRes.reason;
+      }
     } catch {
       Alert.alert('Erro', 'Não foi possível carregar os recorrentes.');
     } finally {
@@ -71,6 +85,7 @@ export default function RecurringScreen() {
       Alert.alert('Atenção', 'Preencha descrição e valor.');
       return;
     }
+    
     setSaving(true);
     try {
       const payload = {
@@ -79,14 +94,71 @@ export default function RecurringScreen() {
         type: trType,
         dueDay: Number(dueDay),
       };
+      
       if (editing) {
-        await recurringService.update(editing.id, payload);
+        if (isOnline) {
+          await recurringService.update(editing.id, payload);
+          Alert.alert('Sucesso', 'Recorrente atualizado!');
+        } else {
+          await offlineRecurringQueue.queueRecurringUpdate(editing.id, payload);
+          Alert.alert('Salvo offline', 'O recorrente será atualizado quando a internet voltar.');
+        }
       } else {
-        await recurringService.create(payload);
+        if (isOnline) {
+          await recurringService.create(payload);
+          Alert.alert('Sucesso', 'Recorrente criado!');
+        } else {
+          await offlineRecurringQueue.queueRecurringCreate(payload);
+          Alert.alert('Salvo offline', 'O recorrente será criado quando a internet voltar.');
+        }
       }
+      
       setModalVisible(false);
       await fetchData();
-    } catch {
+    } catch (error: any) {
+      const errorCode = error?.code;
+      const status = error?.response?.status;
+      const isNetworkError = !status || 
+        errorCode === 'ERR_NETWORK' || 
+        errorCode === 'ECONNABORTED' ||
+        String(error?.message || '').toLowerCase().includes('network');
+      
+      if (isNetworkError) {
+        try {
+          if (editing) {
+            await offlineRecurringQueue.queueRecurringUpdate(editing.id, {
+              description: desc.trim(),
+              amount: parseCurrencyToNumber(amount),
+              type: trType,
+              dueDay: Number(dueDay),
+            });
+          } else {
+            await offlineRecurringQueue.queueRecurringCreate({
+              description: desc.trim(),
+              amount: parseCurrencyToNumber(amount),
+              type: trType,
+              dueDay: Number(dueDay),
+            });
+          }
+
+          // Tenta sincronizar imediatamente — se a rede já estiver de volta,
+          // o sync resolve agora. Se falhar, fica na fila pra quando reconectar.
+          const syncResult = await offlineRecurringQueue.syncPendingRecurringQueue();
+          if (syncResult.synced > 0) {
+            Alert.alert('Sucesso', editing ? 'Recorrente atualizado!' : 'Recorrente criado!');
+          } else {
+            Alert.alert('Salvo offline', 'O recorrente será sincronizado quando a conexão estabilizar.');
+          }
+          setModalVisible(false);
+          await fetchData();
+          return;
+        } catch (offlineError: any) {
+          if (__DEV__) {
+            console.error('Falha ao salvar recorrente offline:', offlineError);
+          }
+        }
+      }
+      
       Alert.alert('Erro', 'Não foi possível salvar.');
     } finally {
       setSaving(false);
@@ -95,8 +167,12 @@ export default function RecurringScreen() {
 
   const handleToggle = async (id: string) => {
     try {
-      await recurringService.toggle(id);
-      await fetchData();
+      if (isOnline) {
+        await recurringService.toggle(id);
+        await fetchData();
+      } else {
+        Alert.alert('Sem internet', 'Conecte-se à internet para alternar o status deste recorrente.');
+      }
     } catch {
       Alert.alert('Erro', 'Não foi possível alternar status.');
     }
@@ -109,9 +185,35 @@ export default function RecurringScreen() {
         text: 'Excluir', style: 'destructive',
         onPress: async () => {
           try {
-            await recurringService.remove(id);
+            if (isOnline) {
+              await recurringService.remove(id);
+              Alert.alert('Sucesso', 'Recorrente excluído!');
+            } else {
+              await offlineRecurringQueue.queueRecurringDelete(id);
+              Alert.alert('Salvo offline', 'O recorrente será excluído quando a internet voltar.');
+            }
             await fetchData();
-          } catch {
+          } catch (error: any) {
+            const errorCode = error?.code;
+            const status = error?.response?.status;
+            const isNetworkError = !status || 
+              errorCode === 'ERR_NETWORK' || 
+              errorCode === 'ECONNABORTED' ||
+              String(error?.message || '').toLowerCase().includes('network');
+            
+            if (isNetworkError) {
+              try {
+                await offlineRecurringQueue.queueRecurringDelete(id);
+                Alert.alert('Salvo offline', 'A internet caiu. O recorrente será excluído quando a conexão voltar.');
+                await fetchData();
+                return;
+              } catch (offlineError: any) {
+                if (__DEV__) {
+                  console.error('Falha ao excluir recorrente offline:', offlineError);
+                }
+              }
+            }
+            
             Alert.alert('Erro', 'Não foi possível excluir.');
           }
         }
@@ -128,6 +230,7 @@ export default function RecurringScreen() {
         {
           text: 'Confirmar', style: 'destructive',
           onPress: async () => {
+            if (!ensureOnline('atualizar este lançamento fixo')) return;
             try {
               await api.patch(`/transactions/${txId}`, { isFixed: false });
               setTransactions(prev => prev.map(t => t.id === txId ? { ...t, isFixed: false } : t));

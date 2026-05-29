@@ -5,6 +5,7 @@ import { Login } from './components/Login';
 import { ResetPassword } from './components/ResetPassword';
 import { VerifyEmail } from './components/VerifyEmail';
 import LandingView from './views/LandingView';
+import PremiumView from './views/PremiumView';
 import PremiumReturn from './components/PremiumReturn';
 import { CookieBanner } from './components/CookieBanner';
 import api from './services/api';
@@ -67,6 +68,9 @@ const Main = () => {
                         </PrivateRoute>
                     }
                 />
+                <Route path="/premium" element={<PremiumView />} />
+                <Route path="/planos" element={<PremiumView />} />
+                <Route path="/valores" element={<PremiumView />} />
                 <Route path="/premium/success" element={<PremiumReturn />} />
                 <Route path="/premium/failure" element={<PremiumReturn />} />
                 <Route path="/premium/pending" element={<PremiumReturn />} />

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, Alert, Platform, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../services/api';
+import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
 import { useAuth } from '../context/AuthContext';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
@@ -12,6 +13,7 @@ export default function LoginScreen() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { login } = useAuth();
+    const { ensureOnline } = useOfflineActionGuard();
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -21,6 +23,8 @@ export default function LoginScreen() {
 
         const sanitizedEmail = email.trim().toLowerCase();
         const sanitizedPassword = password.trim();
+
+        if (!ensureOnline('entrar na sua conta')) return;
 
         setLoading(true);
         try {

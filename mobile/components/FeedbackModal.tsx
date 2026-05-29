@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Modal, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../services/api';
+import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
 
 interface FeedbackModalProps {
     visible: boolean;
@@ -11,12 +12,15 @@ interface FeedbackModalProps {
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
+    const { ensureOnline } = useOfflineActionGuard();
 
     const handleSubmit = async () => {
         if (!content.trim()) {
             Alert.alert('Atenção', 'Por favor, escreva alguma mensagem antes de enviar.');
             return;
         }
+
+        if (!ensureOnline('enviar seu feedback')) return;
 
         setLoading(true);
         try {

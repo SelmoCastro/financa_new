@@ -2,6 +2,241 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.89](https://github.com/SelmoCastro/financa_new/compare/v1.8.88...v1.8.89) (2026-05-28)
+
+### ✨ Features
+
+* (mobile) add plan picker modal with prices before MP checkout
+* (mobile) add premium plan checks for accounts, budgets, and goals
+
+### 🐛 Bug Fixes
+
+* (mobile) replace broken /premium redirect with direct MP checkout flow
+* (deploy) backup and validate .env critical vars during VPS deploy
+* receipt import - Content-Type race condition + AI category learning
+* (import) prevent receipt import exceptions from surfacing as generic web errors
+* (import) restore vision-first flow for images
+* (import) make receipt OCR more tolerant
+* (backend) restore @IsNumber() on amount (whitelist removes fields without validators)
+* (backend) add selected and id fields to import confirm DTO (forbidNonWhitelisted)
+* (backend) accept extra OCR fields in import confirm DTO (cnpj, suggested*, confidence, etc.)
+* (mobile) sync Expo version to stop update loop
+* (mobile) set versionName 1.8.79 in build.gradle
+* (backend) update version-meta.json to 1.8.79 for mobile version check
+* (ci) use git reset --hard instead of git pull in release workflow to avoid untracked file conflicts
+* (ci) remove nested .git from mobile/.agent/skills/ breaking CI/CD submodule cleanup
+
+### 🧹 Chores
+
+* release v1.8.81
+* release v1.8.80
+* bump version to 1.8.79
+* bump version to 1.8.78
+
+All notable changes to this project will be documented in this file.
+
+## [1.8.88](https://github.com/SelmoCastro/financa_new/compare/v1.8.87...v1.8.88) (2026-05-28)
+
+### ✨ Features
+
+* (mobile) add plan picker modal with prices before MP checkout
+* (mobile) add premium plan checks for accounts, budgets, and goals
+
+### 🐛 Bug Fixes
+
+* (mobile) replace broken /premium redirect with direct MP checkout flow
+* (deploy) backup and validate .env critical vars during VPS deploy
+* receipt import - Content-Type race condition + AI category learning
+* (import) prevent receipt import exceptions from surfacing as generic web errors
+* (import) restore vision-first flow for images
+* (import) make receipt OCR more tolerant
+* (backend) restore @IsNumber() on amount (whitelist removes fields without validators)
+* (backend) add selected and id fields to import confirm DTO (forbidNonWhitelisted)
+* (backend) accept extra OCR fields in import confirm DTO (cnpj, suggested*, confidence, etc.)
+* (mobile) sync Expo version to stop update loop
+* (mobile) set versionName 1.8.79 in build.gradle
+* (backend) update version-meta.json to 1.8.79 for mobile version check
+* (ci) use git reset --hard instead of git pull in release workflow to avoid untracked file conflicts
+* (ci) remove nested .git from mobile/.agent/skills/ breaking CI/CD submodule cleanup
+
+### 🧹 Chores
+
+* release v1.8.81
+* release v1.8.80
+* bump version to 1.8.79
+* bump version to 1.8.78
+
+All notable changes to this project will be documented in this file.
+
+## [1.8.87](https://github.com/SelmoCastro/financa_new/compare/v1.8.86...v1.8.87) (2026-05-28)
+
+### ✨ Features
+
+* (mobile) add plan picker modal with prices before MP checkout
+* (mobile) add premium plan checks for accounts, budgets, and goals
+
+### 🐛 Bug Fixes
+
+* (mobile) replace broken /premium redirect with direct MP checkout flow
+* (deploy) backup and validate .env critical vars during VPS deploy
+* receipt import - Content-Type race condition + AI category learning
+* (import) prevent receipt import exceptions from surfacing as generic web errors
+* (import) restore vision-first flow for images
+* (import) make receipt OCR more tolerant
+* (backend) restore @IsNumber() on amount (whitelist removes fields without validators)
+* (backend) add selected and id fields to import confirm DTO (forbidNonWhitelisted)
+* (backend) accept extra OCR fields in import confirm DTO (cnpj, suggested*, confidence, etc.)
+* (mobile) sync Expo version to stop update loop
+* (mobile) set versionName 1.8.79 in build.gradle
+* (backend) update version-meta.json to 1.8.79 for mobile version check
+* (ci) use git reset --hard instead of git pull in release workflow to avoid untracked file conflicts
+* (ci) remove nested .git from mobile/.agent/skills/ breaking CI/CD submodule cleanup
+
+### 🧹 Chores
+
+* release v1.8.81
+* release v1.8.80
+* bump version to 1.8.79
+* bump version to 1.8.78
+
+All notable changes to this project will be documented in this file.
+
+## [1.8.86](https://github.com/SelmoCastro/financa_new/compare/v1.8.85...v1.8.86) (2026-05-28)
+
+### ✨ Features
+
+* (mobile) add plan picker modal with prices before MP checkout
+* (mobile) add premium plan checks for accounts, budgets, and goals
+
+### 🐛 Bug Fixes
+
+* (mobile) replace broken /premium redirect with direct MP checkout flow
+* (deploy) backup and validate .env critical vars during VPS deploy
+* receipt import - Content-Type race condition + AI category learning
+* (import) prevent receipt import exceptions from surfacing as generic web errors
+* (import) restore vision-first flow for images
+* (import) make receipt OCR more tolerant
+* (backend) restore @IsNumber() on amount (whitelist removes fields without validators)
+* (backend) add selected and id fields to import confirm DTO (forbidNonWhitelisted)
+* (backend) accept extra OCR fields in import confirm DTO (cnpj, suggested*, confidence, etc.)
+* (mobile) sync Expo version to stop update loop
+* (mobile) set versionName 1.8.79 in build.gradle
+* (backend) update version-meta.json to 1.8.79 for mobile version check
+* (ci) use git reset --hard instead of git pull in release workflow to avoid untracked file conflicts
+* (ci) remove nested .git from mobile/.agent/skills/ breaking CI/CD submodule cleanup
+
+### 🧹 Chores
+
+* release v1.8.81
+* release v1.8.80
+* bump version to 1.8.79
+* bump version to 1.8.78
+
+All notable changes to this project will be documented in this file.
+
+## [1.8.85](https://github.com/SelmoCastro/financa_new/compare/v1.8.84...v1.8.85) (2026-05-28)
+
+### ✨ Features
+
+* (mobile) add plan picker modal with prices before MP checkout
+* (mobile) add premium plan checks for accounts, budgets, and goals
+
+### 🐛 Bug Fixes
+
+* (mobile) replace broken /premium redirect with direct MP checkout flow
+* (deploy) backup and validate .env critical vars during VPS deploy
+* receipt import - Content-Type race condition + AI category learning
+* (import) prevent receipt import exceptions from surfacing as generic web errors
+* (import) restore vision-first flow for images
+* (import) make receipt OCR more tolerant
+* (backend) restore @IsNumber() on amount (whitelist removes fields without validators)
+* (backend) add selected and id fields to import confirm DTO (forbidNonWhitelisted)
+* (backend) accept extra OCR fields in import confirm DTO (cnpj, suggested*, confidence, etc.)
+* (mobile) sync Expo version to stop update loop
+* (mobile) set versionName 1.8.79 in build.gradle
+* (backend) update version-meta.json to 1.8.79 for mobile version check
+* (ci) use git reset --hard instead of git pull in release workflow to avoid untracked file conflicts
+* (ci) remove nested .git from mobile/.agent/skills/ breaking CI/CD submodule cleanup
+
+### 🧹 Chores
+
+* release v1.8.81
+* release v1.8.80
+* bump version to 1.8.79
+* bump version to 1.8.78
+
+All notable changes to this project will be documented in this file.
+
+## [1.8.84](https://github.com/SelmoCastro/financa_new/compare/v1.8.83...v1.8.84) (2026-05-28)
+
+### ✨ Features
+
+* (mobile) add plan picker modal with prices before MP checkout
+* (mobile) add premium plan checks for accounts, budgets, and goals
+
+### 🐛 Bug Fixes
+
+* (mobile) replace broken /premium redirect with direct MP checkout flow
+* (deploy) backup and validate .env critical vars during VPS deploy
+* receipt import - Content-Type race condition + AI category learning
+* (import) prevent receipt import exceptions from surfacing as generic web errors
+* (import) restore vision-first flow for images
+* (import) make receipt OCR more tolerant
+* (backend) restore @IsNumber() on amount (whitelist removes fields without validators)
+* (backend) add selected and id fields to import confirm DTO (forbidNonWhitelisted)
+* (backend) accept extra OCR fields in import confirm DTO (cnpj, suggested*, confidence, etc.)
+* (mobile) sync Expo version to stop update loop
+* (mobile) set versionName 1.8.79 in build.gradle
+* (backend) update version-meta.json to 1.8.79 for mobile version check
+* (ci) use git reset --hard instead of git pull in release workflow to avoid untracked file conflicts
+* (ci) remove nested .git from mobile/.agent/skills/ breaking CI/CD submodule cleanup
+
+### 🧹 Chores
+
+* release v1.8.81
+* release v1.8.80
+* bump version to 1.8.79
+* bump version to 1.8.78
+
+All notable changes to this project will be documented in this file.
+
+## [1.8.83](https://github.com/SelmoCastro/financa_new/compare/v1.8.82...v1.8.83) (2026-05-28)
+
+### ✨ Features
+
+* (mobile) add plan picker modal with prices before MP checkout
+* (mobile) add premium plan checks for accounts, budgets, and goals
+
+### 🐛 Bug Fixes
+
+* (mobile) replace broken /premium redirect with direct MP checkout flow
+* (deploy) backup and validate .env critical vars during VPS deploy
+* receipt import - Content-Type race condition + AI category learning
+* (import) prevent receipt import exceptions from surfacing as generic web errors
+* (import) restore vision-first flow for images
+* (import) make receipt OCR more tolerant
+* (backend) restore @IsNumber() on amount (whitelist removes fields without validators)
+* (backend) add selected and id fields to import confirm DTO (forbidNonWhitelisted)
+* (backend) accept extra OCR fields in import confirm DTO (cnpj, suggested*, confidence, etc.)
+* (mobile) sync Expo version to stop update loop
+* (mobile) set versionName 1.8.79 in build.gradle
+* (backend) update version-meta.json to 1.8.79 for mobile version check
+* (ci) use git reset --hard instead of git pull in release workflow to avoid untracked file conflicts
+* (ci) remove nested .git from mobile/.agent/skills/ breaking CI/CD submodule cleanup
+
+### 🧹 Chores
+
+* release v1.8.81
+* release v1.8.80
+* bump version to 1.8.79
+* bump version to 1.8.78
+
+All notable changes to this project will be documented in this file.
+
+## [1.8.82](https://github.com/SelmoCastro/financa_new/compare/v1.8.81...v1.8.82) (2026-05-27)
+
+All notable changes to this project will be documented in this file.
+
 ## [1.8.81](https://github.com/SelmoCastro/financa_new/compare/v1.8.80...v1.8.81) (2026-05-27)
 
 ### ✨ Features

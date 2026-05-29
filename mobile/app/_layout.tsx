@@ -6,6 +6,7 @@ import { Component, useEffect, PropsWithChildren, ReactNode } from 'react';
 import { LogBox, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { NetworkProvider } from '../context/NetworkContext';
 import { CurrencyProvider } from '../context/CurrencyContext';
 import { UpdateDialog } from '../components/UpdateDialog';
 import { ConsentModal } from '../components/ConsentModal';
@@ -73,11 +74,13 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <CurrencyProvider>
-          <RootLayoutNav />
-        </CurrencyProvider>
-      </AuthProvider>
+      <NetworkProvider>
+        <AuthProvider>
+          <CurrencyProvider>
+            <RootLayoutNav />
+          </CurrencyProvider>
+        </AuthProvider>
+      </NetworkProvider>
     </SafeAreaProvider>
   );
 }

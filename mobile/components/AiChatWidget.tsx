@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../services/api';
+import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
 import * as Haptics from 'expo-haptics';
 
 interface Message {
@@ -20,6 +21,7 @@ export function AiChatWidget() {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
+    const { ensureOnline } = useOfflineActionGuard();
 
     // Mensagem inicial quando abre
     useEffect(() => {
@@ -38,6 +40,8 @@ export function AiChatWidget() {
 
     const sendMessage = async () => {
         if (!input.trim() || isLoading) return;
+
+        if (!ensureOnline('enviar mensagem para o chat')) return;
 
         const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input.trim() };
         setMessages(prev => [...prev, userMsg]);
