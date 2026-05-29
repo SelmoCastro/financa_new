@@ -233,6 +233,8 @@ export const UsersSection: React.FC<{ logic: AdminLogic }> = ({ logic }) => {
                                 <option value="30d">30 dias</option>
                                 <option value="60d">60 dias</option>
                                 <option value="90d">90 dias</option>
+                                <option value="6m">6 meses</option>
+                                <option value="12m">12 meses</option>
                                 <option value="custom">Manter expiração atual</option>
                               </select>
                             </div>

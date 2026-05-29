@@ -2,7 +2,7 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type AdminPlanType = 'free' | 'premium';
-export type AdminDurationType = 'lifetime' | '30d' | '60d' | '90d' | 'custom';
+export type AdminDurationType = 'lifetime' | '30d' | '60d' | '90d' | '6m' | '12m' | 'custom';
 
 @Injectable()
 export class AdminService {
@@ -235,6 +235,10 @@ export class AdminService {
       expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
     } else if (duration === '90d') {
       expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+    } else if (duration === '6m') {
+      expiresAt = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000);
+    } else if (duration === '12m') {
+      expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
     } else if (duration === 'custom') {
       // Nao alterar expiresAt existente (mantem o que tem)
       const existing = await this.prisma.subscription.findUnique({
