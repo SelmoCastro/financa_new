@@ -31,7 +31,7 @@ export const ConsentModal: React.FC = () => {
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View className="flex-1 justify-end bg-black/50">
-        <View className="bg-white dark:bg-gray-900 rounded-t-3xl p-6 pb-8 mx-1">
+        <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6 pb-8 mx-1">
           <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">
             🍪 Seus dados, sua escolha
           </Text>

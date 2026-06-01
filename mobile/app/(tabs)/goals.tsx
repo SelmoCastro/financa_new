@@ -272,12 +272,12 @@ export default function GoalsScreen() {
     };
 
     return (
-        <View className="flex-1 bg-slate-50">
+        <View className="flex-1 bg-slate-50 dark:bg-slate-950">
             <ScrollView
                 contentContainerStyle={{ paddingBottom: 100 }}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
-                <View className="bg-white p-6 pt-12 rounded-b-3xl shadow-sm mb-6" style={{ paddingTop: insets.top + 20 }}>
+                <View className="bg-white dark:bg-slate-900 p-6 pt-12 rounded-b-3xl shadow-sm mb-6" style={{ paddingTop: insets.top + 20 }}>
                     <View className="flex-row justify-between items-center">
                         <View>
                             <LinkHeader title="Metas & Sonhos" subtitle="Realize seus objetivos" isPrivacyEnabled={isPrivacyEnabled} togglePrivacy={togglePrivacy} />
@@ -311,11 +311,11 @@ export default function GoalsScreen() {
                     <ActivityIndicator size="large" color="#4f46e5" className="mt-10" />
                 ) : goals.length === 0 ? (
                     <View className="items-center justify-center py-20 px-6">
-                        <View className="w-16 h-16 bg-slate-100 rounded-full items-center justify-center mb-4">
+                        <View className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center mb-4">
                             <MaterialIcons name="flag" size={32} color="#cbd5e1" />
                         </View>
-                        <Text className="text-slate-900 font-bold text-lg mb-2">Nenhuma meta criada</Text>
-                        <Text className="text-slate-500 text-center">Crie cofrinhos virtuais para seus sonhos.</Text>
+                        <Text className="text-slate-900 dark:text-white font-bold text-lg mb-2">Nenhuma meta criada</Text>
+                        <Text className="text-slate-500 dark:text-slate-400 text-center">Crie cofrinhos virtuais para seus sonhos.</Text>
                     </View>
                 ) : (
                     <View className="px-4 space-y-4">
@@ -324,7 +324,7 @@ export default function GoalsScreen() {
                                 <View className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex-row items-center gap-3">
                                     <MaterialIcons name="lock-outline" size={20} color="#f59e0b" />
                                     <View className="flex-1">
-                                        <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
+                                        <Text className="text-xs font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider">Limite do plano Free</Text>
                                         <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa as 3 metas incluídas no Free. Para criar mais, faça upgrade.</Text>
                                     </View>
                                     <Pressable onPress={() => Linking.openURL('https://finanzaai.tech/premium')} className="bg-amber-500 px-3 py-2 rounded-xl">
@@ -334,7 +334,7 @@ export default function GoalsScreen() {
                             </View>
                         )}
                         {goals.map(goal => (
-                            <View key={goal.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                            <View key={goal.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
                                 {isGoalLimitReached && (
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
                                         <MaterialIcons name="lock-outline" size={14} color="#f59e0b" />
@@ -343,17 +343,17 @@ export default function GoalsScreen() {
                                 )}
                                 <View className="flex-row justify-between items-start mb-3">
                                     <View>
-                                        <Text className="text-lg font-bold text-slate-700">{goal.title}</Text>
+                                        <Text className="text-lg font-bold text-slate-700 dark:text-slate-100">{goal.title}</Text>
                                         {goal.pendingSync && (
-                                            <View className="bg-amber-100 px-2 py-0.5 rounded-full mt-1 self-start">
-                                                <Text className="text-amber-700 text-[10px] font-black uppercase">Pendente</Text>
+                                            <View className="bg-amber-100 dark:bg-amber-950/40 px-2 py-0.5 rounded-full mt-1 self-start">
+                                                <Text className="text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase">Pendente</Text>
                                             </View>
                                         )}
-                                        <Text className="text-xs text-slate-400 font-bold uppercase mt-1">
+                                        <Text className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase mt-1">
                                             Meta: {formatValue(goal.targetAmount)}
                                         </Text>
                                     </View>
-                                    <View className="rounded-lg overflow-hidden border border-emerald-100 bg-emerald-50">
+                                    <View className="rounded-lg overflow-hidden border border-emerald-100 bg-emerald-50 dark:bg-emerald-950/40">
                                         <Pressable
                                             onPress={() => {
                                                 if (isGoalLimitReached) {
@@ -367,7 +367,7 @@ export default function GoalsScreen() {
                                             android_ripple={{ color: 'rgba(16,185,129,0.2)' }}
                                             className={`px-3 py-1.5 ${isGoalLimitReached ? 'opacity-50' : ''}`}
                                         >
-                                            <Text className="text-emerald-700 font-bold text-xs">+ Depositar</Text>
+                                            <Text className="text-emerald-700 dark:text-emerald-300 font-bold text-xs">+ Depositar</Text>
                                         </Pressable>
                                     </View>
                                 </View>
@@ -377,12 +377,12 @@ export default function GoalsScreen() {
                                     const target = Number(goal.targetAmount) || 1;
                                     const progress = target > 0 ? Math.min((current / target) * 100, 100) : 0;
                                     return (
-                                        <View className="h-4 w-full bg-slate-100 rounded-full overflow-hidden mb-3 relative">
+                                        <View className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-3 relative">
                                             <View
-                                                className="h-full bg-indigo-500 absolute left-0 top-0 bottom-0 z-10"
+                                                className="h-full bg-indigo-50 dark:bg-indigo-950/40 absolute left-0 top-0 bottom-0 z-10"
                                                 style={{ width: `${progress}%` }}
                                             />
-                                            <Text className="absolute w-full text-center text-xs font-bold text-slate-500 z-20 top-[1px]">
+                                            <Text className="absolute w-full text-center text-xs font-bold text-slate-500 dark:text-slate-400 z-20 top-[1px]">
                                                 {progress.toFixed(1)}%
                                             </Text>
                                         </View>
@@ -390,15 +390,15 @@ export default function GoalsScreen() {
                                 })()}
 
                                 <View className="flex-row justify-between items-center">
-                                    <Text className="text-2xl font-black text-slate-800">
+                                    <Text className="text-2xl font-black text-slate-800 dark:text-white">
                                         {formatValue(goal.currentAmount)}
                                     </Text>
-                                    <Text className="text-xs font-bold text-slate-400">
+                                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-500">
                                         Faltam {formatValue((Number(goal.targetAmount) || 0) - (Number(goal.currentAmount) || 0))}
                                     </Text>
                                 </View>
 
-                                <View className="flex-row justify-between mt-3 pt-3 border-t border-slate-100">
+                                <View className="flex-row justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                                     <Pressable
                                         onPress={() => {
                                             if (isGoalLimitReached) {
@@ -408,7 +408,7 @@ export default function GoalsScreen() {
                                             openEditGoal(goal);
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                         }}
-                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-indigo-50 mr-2 ${isGoalLimitReached ? 'opacity-50' : ''}`}
+                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 mr-2 ${isGoalLimitReached ? 'opacity-50' : ''}`}
                                     >
                                         <MaterialIcons name="edit" size={18} color="#4f46e5" />
                                         <Text className="text-indigo-600 font-bold text-xs ml-2">Editar</Text>
@@ -422,7 +422,7 @@ export default function GoalsScreen() {
                                             handleDeleteGoal(goal);
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                         }}
-                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-rose-50 ${isGoalLimitReached ? 'opacity-50' : ''}`}
+                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 ${isGoalLimitReached ? 'opacity-50' : ''}`}
                                     >
                                         <MaterialIcons name="delete-outline" size={18} color="#ef4444" />
                                         <Text className="text-rose-600 font-bold text-xs ml-2">Excluir</Text>
@@ -441,11 +441,11 @@ export default function GoalsScreen() {
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View className="flex-1 justify-end bg-slate-900/50">
-                    <View className="bg-white rounded-t-3xl p-6">
+                <View className="flex-1 justify-end bg-slate-900/50 dark:bg-black/70">
+                    <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6">
                         <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-xl font-bold text-slate-800">{editingGoal ? 'Editar Meta' : 'Nova Meta'}</Text>
-                            <View className="rounded-full overflow-hidden bg-slate-100">
+                            <Text className="text-xl font-bold text-slate-800 dark:text-white">{editingGoal ? 'Editar Meta' : 'Nova Meta'}</Text>
+                            <View className="rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800">
                                 <Pressable
                                     onPress={() => {
                                         setModalVisible(false);
@@ -462,21 +462,21 @@ export default function GoalsScreen() {
 
                         <View className="space-y-4 mb-6">
                             <View>
-                                <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Nome do Objetivo</Text>
+                                <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Nome do Objetivo</Text>
                                 <TextInput
                                     value={title}
                                     onChangeText={setTitle}
-                                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-slate-700"
+                                    className="w-full p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl font-bold text-slate-700 dark:text-slate-100"
                                     placeholder="Ex: Viagem para Disney"
                                 />
                             </View>
                             <View>
-                                <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Valor Alvo ({currencySymbol})</Text>
+                                <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Valor Alvo ({currencySymbol})</Text>
                                 <TextInput
                                     value={targetAmount}
                                     onChangeText={setTargetAmount}
                                     keyboardType="numeric"
-                                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-slate-700"
+                                    className="w-full p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl font-bold text-slate-700 dark:text-slate-100"
                                     placeholder="0,00"
                                 />
                             </View>
@@ -502,14 +502,14 @@ export default function GoalsScreen() {
                 visible={depositModalVisible}
                 onRequestClose={() => setDepositModalVisible(false)}
             >
-                <View className="flex-1 justify-center items-center bg-slate-900/50 px-4">
-                    <View className="bg-white rounded-3xl p-6 w-full max-w-sm">
+                <View className="flex-1 justify-center items-center bg-slate-900/50 dark:bg-black/70 px-4">
+                    <View className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm">
                         <View className="flex-row justify-between items-center mb-6">
                             <View>
-                                <Text className="text-lg font-bold text-slate-800">Novo Aporte</Text>
-                                <Text className="text-xs text-slate-500">{selectedGoal?.title}</Text>
+                                <Text className="text-lg font-bold text-slate-800 dark:text-white">Novo Aporte</Text>
+                                <Text className="text-xs text-slate-500 dark:text-slate-400">{selectedGoal?.title}</Text>
                             </View>
-                            <View className="rounded-full overflow-hidden bg-slate-100">
+                            <View className="rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800">
                                 <Pressable
                                     onPress={() => { setDepositModalVisible(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                                     className="p-2"
@@ -521,12 +521,12 @@ export default function GoalsScreen() {
                         </View>
 
                         <View className="mb-6">
-                            <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Valor do Depósito ({currencySymbol})</Text>
+                            <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Valor do Depósito ({currencySymbol})</Text>
                             <TextInput
                                 value={depositAmount}
                                 onChangeText={setDepositAmount}
                                 keyboardType="numeric"
-                                className="w-full p-4 bg-emerald-50 rounded-2xl font-black text-emerald-700 text-xl text-center border border-emerald-100 placeholder:text-emerald-300"
+                                className="w-full p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl font-black text-emerald-700 dark:text-emerald-300 text-xl text-center border border-emerald-100 placeholder:text-emerald-300"
                                 placeholder="0,00"
                                 autoFocus
                             />
@@ -536,7 +536,7 @@ export default function GoalsScreen() {
                             <Pressable
                                 onPress={() => { handleDeposit(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
                                 android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
-                                className="w-full bg-emerald-500 py-4 items-center"
+                                className="w-full bg-emerald-50 dark:bg-emerald-950/40 py-4 items-center"
                             >
                                 <Text className="text-white font-bold text-lg">Confirmar Depósito</Text>
                             </Pressable>
@@ -552,8 +552,8 @@ export default function GoalsScreen() {
 const LinkHeader = ({ title, subtitle, isPrivacyEnabled, togglePrivacy }: any) => (
     <View>
         <View className="flex-row items-center gap-3">
-            <Text className="text-2xl font-bold text-slate-800">{title}</Text>
-            <View className="rounded-lg overflow-hidden bg-slate-100">
+            <Text className="text-2xl font-bold text-slate-800 dark:text-white">{title}</Text>
+            <View className="rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <Pressable
                     onPress={() => { togglePrivacy(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                     android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
@@ -563,6 +563,6 @@ const LinkHeader = ({ title, subtitle, isPrivacyEnabled, togglePrivacy }: any) =
                 </Pressable>
             </View>
         </View>
-        <Text className="text-slate-500 text-sm">{subtitle}</Text>
+        <Text className="text-slate-500 dark:text-slate-400 text-sm">{subtitle}</Text>
     </View>
 );

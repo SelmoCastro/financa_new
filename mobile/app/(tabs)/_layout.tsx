@@ -1,7 +1,7 @@
 import { Tabs, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, Platform, Pressable } from 'react-native';
+import { View, Text, Platform, Pressable, useColorScheme } from 'react-native';
 import { MonthProvider } from '../../context/MonthContext';
 import { TransactionsProvider } from '../../context/TransactionsContext';
 import { useNotifications, refreshUnreadCount } from '../../hooks/useNotifications';
@@ -30,14 +30,17 @@ function NotificationsBadge() {
 function NotificationBell() {
   const router = useRouter();
   const { unreadCount } = useNotifications();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
     <Pressable
       onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/notifications'); }}
-      android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+      android_ripple={{ color: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
       hitSlop={15}
       style={{ position: 'relative', padding: 6 }}
     >
-      <MaterialIcons name={unreadCount > 0 ? 'notifications-active' : 'notifications-none'} size={24} color={unreadCount > 0 ? '#4f46e5' : '#64748b'} />
+      <MaterialIcons name={unreadCount > 0 ? 'notifications-active' : 'notifications-none'} size={24} color={unreadCount > 0 ? '#818cf8' : (isDark ? '#cbd5e1' : '#64748b')} />
       {unreadCount > 0 && (
         <View style={{
           position: 'absolute', top: 2, right: 2,
@@ -58,6 +61,8 @@ export { NotificationBell };
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   // Refresh notification badge count when tab view gains focus
   useFocusEffect(useCallback(() => { refreshUnreadCount(); }, []));
@@ -65,17 +70,20 @@ export default function TabLayout() {
   return (
     <MonthProvider>
       <TransactionsProvider>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: isDark ? '#020617' : '#f8fafc' }}>
           <OfflineBanner />
           <Tabs
             screenOptions={{
               headerShown: false,
+              sceneStyle: { backgroundColor: isDark ? '#020617' : '#f8fafc' },
               tabBarStyle: {
+                backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                borderTopColor: isDark ? '#1e293b' : '#e2e8f0',
                 paddingBottom: Platform.OS === 'ios' ? insets.bottom : 0,
                 elevation: 0,
               },
-              tabBarActiveTintColor: '#4f46e5',
-              tabBarInactiveTintColor: '#94a3b8',
+              tabBarActiveTintColor: isDark ? '#818cf8' : '#4f46e5',
+              tabBarInactiveTintColor: isDark ? '#64748b' : '#94a3b8',
             }}
           >
             <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => <MaterialIcons name="grid-view" size={24} color={color} /> }} />

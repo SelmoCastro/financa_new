@@ -1,6 +1,6 @@
 {
-  "version": "1.8.96",
-  "mobileVersion": "1.8.96",
+  "version": "1.8.97",
+  "mobileVersion": "1.8.97",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Correção dos recorrentes: comprometimento não mostra mais porcentagem inflada quando o mês está sem receitas; cálculo ajustado no backend, web e mobile."
+  "releaseNotes": "Tema escuro no mobile: telas principais, dashboard, gráficos e navegação inferior agora respeitam o modo escuro do sistema"
 }

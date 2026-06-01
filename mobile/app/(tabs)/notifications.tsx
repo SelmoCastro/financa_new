@@ -107,7 +107,7 @@ export default function NotificationsScreen() {
     return (
       <View
         key={notif.id}
-        className={`p-4 rounded-2xl border mb-3 ${notif.isRead ? 'bg-white border-slate-100' : 'bg-white border-indigo-200'}`}
+        className={`p-4 rounded-2xl border mb-3 ${notif.isRead ? 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800' : 'bg-white dark:bg-slate-900 border-indigo-200'}`}
         style={notif.isRead ? { opacity: 0.7 } : {}}
       >
         <View className="flex-row items-start gap-3">
@@ -116,12 +116,12 @@ export default function NotificationsScreen() {
           </View>
           <View className="flex-1">
             <View className="flex-row items-center justify-between mb-1">
-              <Text className="font-bold text-slate-800 text-sm flex-1" numberOfLines={1}>
+              <Text className="font-bold text-slate-800 dark:text-white text-sm flex-1" numberOfLines={1}>
                 {notif.title}
               </Text>
-              <Text className="text-xs text-slate-400 ml-2">{timeAgo(notif.createdAt)}</Text>
+              <Text className="text-xs text-slate-400 dark:text-slate-500 ml-2">{timeAgo(notif.createdAt)}</Text>
             </View>
-            <Text className="text-slate-600 text-xs leading-4" numberOfLines={2}>
+            <Text className="text-slate-600 dark:text-slate-300 text-xs leading-4" numberOfLines={2}>
               {notif.message}
             </Text>
 
@@ -145,7 +145,7 @@ export default function NotificationsScreen() {
                   className="flex-1 py-2.5 rounded-xl items-center justify-center"
                   style={{ backgroundColor: '#f1f5f9' }}
                 >
-                  <Text className="text-slate-600 font-bold text-xs uppercase">Adiar</Text>
+                  <Text className="text-slate-600 dark:text-slate-300 font-bold text-xs uppercase">Adiar</Text>
                 </Pressable>
               </View>
             )}
@@ -163,7 +163,7 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <ScrollView
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchData} />}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -175,31 +175,31 @@ export default function NotificationsScreen() {
               onPress={() => router.back()}
               android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
               hitSlop={15}
-              className="w-10 h-10 items-center justify-center rounded-xl bg-white"
+              className="w-10 h-10 items-center justify-center rounded-xl bg-white dark:bg-slate-900"
             >
               <MaterialIcons name="arrow-back" size={22} color="#334155" />
             </Pressable>
             <View>
-              <Text className="text-2xl font-black text-slate-800">Notificações</Text>
-              <Text className="text-sm text-slate-500 font-medium mt-0.5">
+              <Text className="text-2xl font-black text-slate-800 dark:text-white">Notificações</Text>
+              <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 {unread.length > 0 ? `${unread.length} pendente${unread.length > 1 ? 's' : ''}` : 'Tudo em dia'}
               </Text>
             </View>
           </View>
           {unread.length > 0 && (
-            <Pressable onPress={handleMarkAllRead} className="px-3 py-2 bg-slate-100 rounded-xl">
-              <Text className="text-xs font-bold text-slate-500 uppercase">Marcar tudo</Text>
+            <Pressable onPress={handleMarkAllRead} className="px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl">
+              <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Marcar tudo</Text>
             </Pressable>
           )}
         </View>
 
         {notifications.length === 0 && !loading && (
           <View className="items-center justify-center py-20 px-6">
-            <View className="w-16 h-16 bg-slate-100 rounded-full items-center justify-center mb-4">
+            <View className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center mb-4">
               <MaterialIcons name="notifications-off" size={32} color="#cbd5e1" />
             </View>
-            <Text className="text-slate-900 font-bold text-lg mb-2">Nenhuma notificação</Text>
-            <Text className="text-slate-500 text-center text-sm">
+            <Text className="text-slate-900 dark:text-white font-bold text-lg mb-2">Nenhuma notificação</Text>
+            <Text className="text-slate-500 dark:text-slate-400 text-center text-sm">
               Notificações de contas recorrentes, faturas e parcelas aparecerão aqui.
             </Text>
           </View>
@@ -215,7 +215,7 @@ export default function NotificationsScreen() {
         {/* Read */}
         {read.length > 0 && (
           <View className="px-4 mt-4">
-            <Text className="text-xs font-bold text-slate-400 uppercase mb-2 px-2">Anteriores</Text>
+            <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase mb-2 px-2">Anteriores</Text>
             {read.map(renderCard)}
           </View>
         )}

@@ -344,14 +344,14 @@ export default function AccountsScreen() {
     return (
         <>
             <ScrollView
-                className="flex-1 bg-slate-50"
+                className="flex-1 bg-slate-50 dark:bg-slate-950"
                 refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchData} />}
             >
                 {/* Header */}
                 <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
                     <View>
-                        <Text className="text-2xl font-black text-slate-800">Contas e Cartões</Text>
-                        <Text className="text-sm text-slate-500 font-medium mt-1">Gerencie seu saldo e faturas</Text>
+                        <Text className="text-2xl font-black text-slate-800 dark:text-white">Contas e Cartões</Text>
+                        <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Gerencie seu saldo e faturas</Text>
                     </View>
                     <Pressable onPress={openCreate} style={[styles.addButton, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: 'rgba(255,255,255,0.3)', borderless: true }}>
                         <MaterialIcons name={isAccountLimitReached ? 'lock' : 'add'} size={24} color="white" />
@@ -384,7 +384,7 @@ export default function AccountsScreen() {
                         <View className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex-row items-center gap-3">
                             <MaterialIcons name="lock-outline" size={20} color="#f59e0b" />
                             <View className="flex-1">
-                                <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
+                                <Text className="text-xs font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider">Limite do plano Free</Text>
                                 <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa a 1 conta incluída no Free. Para criar mais contas, faça upgrade.</Text>
                             </View>
                             <Pressable onPress={() => Linking.openURL('https://finanzaai.tech/premium')} className="bg-amber-500 px-3 py-2 rounded-xl">
@@ -396,7 +396,7 @@ export default function AccountsScreen() {
 
                 {/* Contas */}
                 <View className="px-6 mb-8">
-                    <Text className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Suas Contas</Text>
+                    <Text className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Suas Contas</Text>
                     {accounts.length === 0 && !loading && (
                         <Pressable onPress={openCreate} style={styles.emptyCard}>
                             <MaterialIcons name="add-circle-outline" size={32} color="#a5b4fc" />
@@ -404,17 +404,17 @@ export default function AccountsScreen() {
                         </Pressable>
                     )}
                     {accounts.map(acc => (
-                        <View key={acc.id} className="bg-white p-5 rounded-2xl mb-3 border border-slate-100 shadow-sm">
+                        <View key={acc.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl mb-3 border border-slate-100 dark:border-slate-800 shadow-sm">
                             <View className="flex-row justify-between items-center">
                                 <View className="flex-row items-center gap-4 flex-1">
                                     <BankIcon name={acc.name} type={acc.type} size={48} />
                                     <View className="flex-1">
-                                        <Text className="text-base font-bold text-slate-800">{acc.name}</Text>
-                                        <Text className="text-xs font-medium text-slate-400">{ACCOUNT_TYPE_LABELS[acc.type] ?? acc.type}</Text>
+                                        <Text className="text-base font-bold text-slate-800 dark:text-white">{acc.name}</Text>
+                                        <Text className="text-xs font-medium text-slate-400 dark:text-slate-500">{ACCOUNT_TYPE_LABELS[acc.type] ?? acc.type}</Text>
                                     </View>
                                 </View>
                                 <View className="items-end mr-4">
-                                    <Text className="text-base font-black text-slate-800">
+                                    <Text className="text-base font-black text-slate-800 dark:text-white">
                                         {formatCurrency((Number(acc.balance) || 0) + (pendingAccountAdjustments[acc.id] || 0))}
                                     </Text>
                                     {pendingAccountAdjustments[acc.id] != null && pendingAccountAdjustments[acc.id] !== 0 && (
@@ -446,7 +446,7 @@ export default function AccountsScreen() {
                 {/* Cartões */}
                 <View className="px-6 mb-8">
                     <View className="flex-row items-center justify-between mb-4">
-                        <Text className="text-sm font-black text-slate-400 uppercase tracking-widest">Cartões de Crédito</Text>
+                        <Text className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Cartões de Crédito</Text>
                         <Pressable onPress={openCreateCc} hitSlop={10}>
                             <MaterialIcons name="add-circle" size={24} color="#9333ea" />
                         </Pressable>
@@ -460,20 +460,20 @@ export default function AccountsScreen() {
                     )}
 
                     {creditCards.map(cc => (
-                        <View key={cc.id} className="bg-white p-5 rounded-2xl mb-3 border border-slate-100 shadow-sm">
+                        <View key={cc.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl mb-3 border border-slate-100 dark:border-slate-800 shadow-sm">
                             <View className="flex-row justify-between items-center">
                                 <View className="flex-row items-center gap-4">
                                     <View className="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 items-center justify-center">
                                         <MaterialIcons name="credit-card" size={24} color="#9333ea" />
                                     </View>
                                     <View>
-                                        <Text className="text-base font-bold text-slate-800">{cc.name}</Text>
-                                        <Text className="text-xs font-medium text-slate-400">Vence dia {cc.dueDay}</Text>
+                                        <Text className="text-base font-bold text-slate-800 dark:text-white">{cc.name}</Text>
+                                        <Text className="text-xs font-medium text-slate-400 dark:text-slate-500">Vence dia {cc.dueDay}</Text>
                                     </View>
                                 </View>
                                 <View className="items-end">
-                                    <Text className="text-xs font-bold text-slate-400 uppercase">Limite</Text>
-                                    <Text className="text-base font-black text-slate-800">
+                                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">Limite</Text>
+                                    <Text className="text-base font-black text-slate-800 dark:text-white">
                                         {formatCurrency(cc.limit)}
                                     </Text>
                                 </View>
@@ -501,9 +501,9 @@ export default function AccountsScreen() {
                             </Pressable>
 
                             {/* Fatura atual + Parcelas */}
-                            <View className="mt-3 pt-3 border-t border-slate-100">
+                            <View className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                               <View className="flex-row items-center justify-between mb-2">
-                                <Text className="text-xs font-black text-slate-400 uppercase">Fatura Atual</Text>
+                                <Text className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase">Fatura Atual</Text>
                                 <View className="flex-row items-center gap-1">
                                   <Pressable onPress={() => fetchInvoice(cc.id)} hitSlop={8}>
                                     <MaterialIcons name="refresh" size={16} color="#0891b2" />
@@ -515,13 +515,13 @@ export default function AccountsScreen() {
 
                             {/* Parcelas Ativas */}
                             {installments[cc.id] && installments[cc.id].length > 0 && (
-                              <View className="mt-3 pt-3 border-t border-slate-100">
+                              <View className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                                 <Text className="text-xs font-black text-purple-500 uppercase mb-2">Parcelas</Text>
                                 {installments[cc.id].filter(inst => inst.isActive).map(inst => (
                                   <View key={inst.id} className="bg-purple-50 rounded-xl p-3 mb-2 border border-purple-100">
                                     <View className="flex-row justify-between items-center">
                                       <View className="flex-1">
-                                        <Text className="text-sm font-bold text-slate-800" numberOfLines={1}>{inst.description}</Text>
+                                        <Text className="text-sm font-bold text-slate-800 dark:text-white" numberOfLines={1}>{inst.description}</Text>
                                         <Text className="text-xs text-purple-600 font-medium">
                                           {inst.currentInstallment}/{inst.installmentCount}x de {formatCurrency(inst.amountPerMonth)}
                                         </Text>
@@ -530,7 +530,7 @@ export default function AccountsScreen() {
                                         )}
                                       </View>
                                       <View className="items-end">
-                                        <Text className="text-sm font-black text-slate-800">{formatCurrency(inst.totalAmount)}</Text>
+                                        <Text className="text-sm font-black text-slate-800 dark:text-white">{formatCurrency(inst.totalAmount)}</Text>
                                         <Pressable
                                           onPress={() => {
                                             Alert.alert(
@@ -1231,7 +1231,7 @@ function CardInvoiceSection({ creditCardId, creditCardName, accounts, refreshKey
     if (!invoice) {
         return (
             <Pressable onPress={loadInvoice} className="py-3 items-center">
-                <Text className="text-xs text-slate-400">Sem faturas no momento</Text>
+                <Text className="text-xs text-slate-400 dark:text-slate-500">Sem faturas no momento</Text>
             </Pressable>
         );
     }
@@ -1239,17 +1239,17 @@ function CardInvoiceSection({ creditCardId, creditCardName, accounts, refreshKey
     return (
         <View>
                 {/* Invoice summary card */}
-            <View className="bg-indigo-50 rounded-2xl p-4 mb-2">
+            <View className="bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl p-4 mb-2">
                 <View className="flex-row justify-between items-center mb-2">
                     <Text className="text-sm font-bold text-indigo-700">
                         {monthNames[invoice.referenceMonth]}/{invoice.referenceYear}
                     </Text>
-                    <Text className="text-sm text-slate-500">
+                    <Text className="text-sm text-slate-500 dark:text-slate-400">
                         Fecha: {new Date(invoice.closingDate).toLocaleDateString('pt-BR')}
                     </Text>
                 </View>
                 <View className="flex-row justify-between items-center mb-2">
-                    <Text className="text-xl font-black text-slate-800">
+                    <Text className="text-xl font-black text-slate-800 dark:text-white">
                         {formatCurrency(Number(invoice.totalAmount))}
                     </Text>
                     {remaining > 0 && (
@@ -1278,12 +1278,12 @@ function CardInvoiceSection({ creditCardId, creditCardName, accounts, refreshKey
                 )}
                 {invoice.transactions && invoice.transactions.length > 0 && (
                     <View className="mt-1 border-t border-indigo-100 pt-2">
-                        <Text className="text-sm font-bold text-slate-500 mb-2">
+                        <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2">
                             {invoice.transactions.length} compra{invoice.transactions.length > 1 ? 's' : ''}
                         </Text>
                         {invoice.transactions.map(t => (
                             <View key={t.id} className="flex-row justify-between items-center py-2 border-b border-indigo-100 last:border-b-0">
-                                <Text className="text-sm text-slate-700 font-medium" numberOfLines={1} style={{ flex: 1 }}>
+                                <Text className="text-sm text-slate-700 dark:text-slate-100 font-medium" numberOfLines={1} style={{ flex: 1 }}>
                                     {t.description}
                                 </Text>
                                 <View className="flex-row items-center gap-3 ml-2">

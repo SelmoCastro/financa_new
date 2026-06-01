@@ -253,9 +253,9 @@ export default function BudgetsScreen() {
     };
 
     const getProgressColor = (percentage: number) => {
-        if (percentage >= 100) return 'bg-rose-500';
+        if (percentage >= 100) return 'bg-rose-50 dark:bg-rose-950/40';
         if (percentage >= 80) return 'bg-amber-400';
-        return 'bg-emerald-500';
+        return 'bg-emerald-50 dark:bg-emerald-950/40';
     };
 
     const formatValue = (value: number | undefined | null) => {
@@ -264,12 +264,12 @@ export default function BudgetsScreen() {
     };
 
     return (
-        <View className="flex-1 bg-slate-50">
+        <View className="flex-1 bg-slate-50 dark:bg-slate-950">
             <ScrollView
                 contentContainerStyle={{ paddingBottom: 100 }}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
-                <View className="bg-white p-6 pt-12 rounded-b-3xl shadow-sm mb-6" style={{ paddingTop: insets.top + 20 }}>
+                <View className="bg-white dark:bg-slate-900 p-6 pt-12 rounded-b-3xl shadow-sm mb-6" style={{ paddingTop: insets.top + 20 }}>
                     <View className="flex-row justify-between items-center">
                         <View>
                             <LinkHeader title="Orçamentos" subtitle="Controle seus gastos mensais" isPrivacyEnabled={isPrivacyEnabled} togglePrivacy={togglePrivacy} />
@@ -304,7 +304,7 @@ export default function BudgetsScreen() {
                         <View className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex-row items-center gap-3">
                             <MaterialIcons name="lock-outline" size={20} color="#f59e0b" />
                             <View className="flex-1">
-                                <Text className="text-xs font-black text-amber-700 uppercase tracking-wider">Limite do plano Free</Text>
+                                <Text className="text-xs font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider">Limite do plano Free</Text>
                                 <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa os 3 orçamentos incluídos no Free. Para criar mais tetos, faça upgrade.</Text>
                             </View>
                             <Pressable onPress={() => Linking.openURL('https://finanzaai.tech/premium')} className="bg-amber-500 px-3 py-2 rounded-xl">
@@ -318,32 +318,32 @@ export default function BudgetsScreen() {
                     <ActivityIndicator size="large" color="#4f46e5" className="mt-10" />
                 ) : budgets.length === 0 ? (
                     <View className="items-center justify-center py-20 px-6">
-                        <View className="w-16 h-16 bg-slate-100 rounded-full items-center justify-center mb-4">
+                        <View className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center mb-4">
                             <MaterialIcons name="savings" size={32} color="#cbd5e1" />
                         </View>
-                        <Text className="text-slate-900 font-bold text-lg mb-2">Nenhum orçamento</Text>
-                        <Text className="text-slate-500 text-center">Defina tetos de gastos para suas categorias.</Text>
+                        <Text className="text-slate-900 dark:text-white font-bold text-lg mb-2">Nenhum orçamento</Text>
+                        <Text className="text-slate-500 dark:text-slate-400 text-center">Defina tetos de gastos para suas categorias.</Text>
                     </View>
                 ) : (
                     <View className="px-4 space-y-4">
                         {budgets.map(budget => (
-                            <View key={budget.categoryId} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                            <View key={budget.categoryId} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
                                 {/* header */}
                                 <View className="flex-row justify-between items-center mb-3">
-                                    <Text className="text-lg font-bold text-slate-700">{budget.categoryObj?.name || 'Categoria'}</Text>
+                                    <Text className="text-lg font-bold text-slate-700 dark:text-slate-100">{budget.categoryObj?.name || 'Categoria'}</Text>
                                     {budget.pendingSync && (
-                                        <View className="bg-amber-100 px-2 py-0.5 rounded-full mt-1 self-start">
-                                            <Text className="text-amber-700 text-[10px] font-black uppercase">Pendente</Text>
+                                        <View className="bg-amber-100 dark:bg-amber-950/40 px-2 py-0.5 rounded-full mt-1 self-start">
+                                            <Text className="text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase">Pendente</Text>
                                         </View>
                                     )}
                                     <View className="items-end">
-                                        <Text className="text-xs text-slate-400 font-bold uppercase">Gasto: {formatValue(budget.spent)}</Text>
-                                        <Text className="text-xs text-slate-400 font-bold uppercase mt-1">Teto</Text>
+                                        <Text className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase">Gasto: {formatValue(budget.spent)}</Text>
+                                        <Text className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase mt-1">Teto</Text>
                                         <Text className="text-lg font-black text-indigo-600">{formatValue(budget.amount)}</Text>
                                     </View>
                                 </View>
 
-                                <View className="h-3 w-full bg-slate-100 rounded-full overflow-hidden mb-2">
+                                <View className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
                                     <View
                                         className={`h-full ${getProgressColor(budget.percentage)}`}
                                         style={{ width: `${Math.min(budget.percentage, 100)}%` }}
@@ -354,7 +354,7 @@ export default function BudgetsScreen() {
                                     <Text className={`text-xs font-bold ${budget.isOverBudget ? 'text-rose-500' : 'text-emerald-500'}`}>
                                         {budget.isOverBudget ? 'Orçamento Estourado!' : 'Dentro do limite'}
                                     </Text>
-                                    <Text className="text-xs font-bold text-slate-400">
+                                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-500">
                                         {budget.percentage.toFixed(1)}% usado
                                     </Text>
                                 </View>
@@ -366,7 +366,7 @@ export default function BudgetsScreen() {
                                     </View>
                                 )}
 
-                                <View className="flex-row justify-between mt-3 pt-3 border-t border-slate-100">
+                                <View className="flex-row justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                                     <Pressable
                                         onPress={() => {
                                             if (isBudgetLimitReached) {
@@ -376,7 +376,7 @@ export default function BudgetsScreen() {
                                             openEditBudget(budget);
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                         }}
-                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-indigo-50 mr-2 ${isBudgetLimitReached ? 'opacity-50' : ''}`}
+                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 mr-2 ${isBudgetLimitReached ? 'opacity-50' : ''}`}
                                     >
                                         <MaterialIcons name="edit" size={18} color="#4f46e5" />
                                         <Text className="text-indigo-600 font-bold text-xs ml-2">Editar</Text>
@@ -390,7 +390,7 @@ export default function BudgetsScreen() {
                                             handleDeleteBudget(budget);
                                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                         }}
-                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-rose-50 ${isBudgetLimitReached ? 'opacity-50' : ''}`}
+                                        className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 ${isBudgetLimitReached ? 'opacity-50' : ''}`}
                                     >
                                         <MaterialIcons name="delete-outline" size={18} color="#ef4444" />
                                         <Text className="text-rose-600 font-bold text-xs ml-2">Excluir</Text>
@@ -408,11 +408,11 @@ export default function BudgetsScreen() {
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View className="flex-1 justify-end bg-slate-900/50">
-                    <View className="bg-white rounded-t-3xl p-6">
+                <View className="flex-1 justify-end bg-slate-900/50 dark:bg-black/70">
+                    <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6">
                         <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-xl font-bold text-slate-800">{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</Text>
-                            <View className="rounded-full overflow-hidden bg-slate-100">
+                            <Text className="text-xl font-bold text-slate-800 dark:text-white">{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</Text>
+                            <View className="rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800">
                                 <Pressable
                                     onPress={() => {
                                         setModalVisible(false);
@@ -430,24 +430,24 @@ export default function BudgetsScreen() {
 
                         <View className="space-y-4 mb-6">
                             <View>
-                                <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Categoria</Text>
+                                <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Categoria</Text>
                                 <Pressable
                                     onPress={() => setIsCategoryPickerOpen(true)}
-                                    className="w-full p-4 bg-slate-50 rounded-2xl flex-row justify-between items-center"
+                                    className="w-full p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl flex-row justify-between items-center"
                                 >
-                                    <Text className={`font-bold ${categoryId ? 'text-slate-700' : 'text-slate-400'}`}>
+                                    <Text className={`font-bold ${categoryId ? 'text-slate-700 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'}`}>
                                         {categoryId ? categories.find(c => c.id === categoryId)?.name || 'Selecione uma categoria' : 'Selecione uma categoria'}
                                     </Text>
                                     <MaterialIcons name="keyboard-arrow-down" size={20} color="#64748b" />
                                 </Pressable>
                             </View>
                             <View>
-                                <Text className="text-xs font-bold text-slate-500 uppercase mb-2">Teto Mensal ({currencySymbol})</Text>
+                                <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Teto Mensal ({currencySymbol})</Text>
                                 <TextInput
                                     value={amount}
                                     onChangeText={setAmount}
                                     keyboardType="numeric"
-                                    className="w-full p-4 bg-slate-50 rounded-2xl font-bold text-slate-700"
+                                    className="w-full p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl font-bold text-slate-700 dark:text-slate-100"
                                     placeholder="0,00"
                                 />
                             </View>
@@ -520,8 +520,8 @@ export default function BudgetsScreen() {
 const LinkHeader = ({ title, subtitle, isPrivacyEnabled, togglePrivacy }: any) => (
     <View>
         <View className="flex-row items-center gap-3">
-            <Text className="text-2xl font-bold text-slate-800">{title}</Text>
-            <View className="rounded-lg overflow-hidden bg-slate-100">
+            <Text className="text-2xl font-bold text-slate-800 dark:text-white">{title}</Text>
+            <View className="rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <Pressable
                     onPress={() => { togglePrivacy(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                     android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
@@ -531,6 +531,6 @@ const LinkHeader = ({ title, subtitle, isPrivacyEnabled, togglePrivacy }: any) =
                 </Pressable>
             </View>
         </View>
-        <Text className="text-slate-500 text-sm">{subtitle}</Text>
+        <Text className="text-slate-500 dark:text-slate-400 text-sm">{subtitle}</Text>
     </View>
 );

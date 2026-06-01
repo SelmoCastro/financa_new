@@ -205,16 +205,16 @@ export default function TransactionsScreen() {
     };
 
     return (
-        <View className="flex-1 bg-slate-50">
-            <View className="bg-white pb-4 rounded-b-3xl shadow-sm z-10" style={{ paddingTop: insets.top + 10 }}>
+        <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+            <View className="bg-white dark:bg-slate-900 pb-4 rounded-b-3xl shadow-sm z-10" style={{ paddingTop: insets.top + 10 }}>
                 <View className="px-6 mb-4 flex-row justify-between items-center">
                     <View>
                         <View className="flex-row items-center gap-3">
-                            <Text className="text-2xl font-bold text-slate-800">Extrato</Text>
+                            <Text className="text-2xl font-bold text-slate-800 dark:text-white">Extrato</Text>
                             <Pressable
                                 onPress={() => { togglePrivacy(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                                 android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: true, radius: 24 }}
-                                className="p-1 px-2 bg-slate-100 rounded-lg"
+                                className="p-1 px-2 bg-slate-100 dark:bg-slate-800 rounded-lg"
                             >
                                 <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={16} color="#64748b" />
                             </Pressable>
@@ -245,13 +245,13 @@ export default function TransactionsScreen() {
 
                 {/* Search Bar */}
                 <View className="px-6 mb-4">
-                    <View className="flex-row items-center bg-slate-100 rounded-2xl px-4 py-3 border border-slate-200">
+                    <View className="flex-row items-center bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 border border-slate-200 dark:border-slate-700">
                         <MaterialIcons name="search" size={24} color="#94a3b8" />
                         <TextInput
                             value={searchQuery}
                             onChangeText={setSearchQuery}
                             placeholder="Buscar transações..."
-                            className="flex-1 ml-3 font-medium text-slate-700"
+                            className="flex-1 ml-3 font-medium text-slate-700 dark:text-slate-100"
                             placeholderTextColor="#94a3b8"
                         />
                         {searchQuery.length > 0 && (
@@ -268,31 +268,31 @@ export default function TransactionsScreen() {
 
                 {/* Filter Tabs */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6" contentContainerStyle={{ paddingRight: 24, gap: 12 }}>
-                    <View className={`rounded-xl overflow-hidden border ${filter === 'ALL' ? 'bg-slate-800 border-slate-800' : 'bg-white border-slate-200'}`}>
+                    <View className={`rounded-xl overflow-hidden border ${filter === 'ALL' ? 'bg-slate-800 border-slate-800' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'}`}>
                         <Pressable
                             onPress={() => { setFilter('ALL'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                             android_ripple={{ color: filter === 'ALL' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }}
                             className="px-4 py-2"
                         >
-                            <Text className={`font-bold text-xs ${filter === 'ALL' ? 'text-white' : 'text-slate-600'}`}>Todos</Text>
+                            <Text className={`font-bold text-xs ${filter === 'ALL' ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>Todos</Text>
                         </Pressable>
                     </View>
-                    <View className={`rounded-xl overflow-hidden border ${filter === 'INCOME' ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-slate-200'}`}>
+                    <View className={`rounded-xl overflow-hidden border ${filter === 'INCOME' ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'}`}>
                         <Pressable
                             onPress={() => { setFilter('INCOME'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                             android_ripple={{ color: filter === 'INCOME' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }}
                             className="px-4 py-2"
                         >
-                            <Text className={`font-bold text-xs ${filter === 'INCOME' ? 'text-white' : 'text-slate-600'}`}>Receitas</Text>
+                            <Text className={`font-bold text-xs ${filter === 'INCOME' ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>Receitas</Text>
                         </Pressable>
                     </View>
-                    <View className={`rounded-xl overflow-hidden border ${filter === 'EXPENSE' ? 'bg-rose-500 border-rose-500' : 'bg-white border-slate-200'}`}>
+                    <View className={`rounded-xl overflow-hidden border ${filter === 'EXPENSE' ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'}`}>
                         <Pressable
                             onPress={() => { setFilter('EXPENSE'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                             android_ripple={{ color: filter === 'EXPENSE' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }}
                             className="px-4 py-2"
                         >
-                            <Text className={`font-bold text-xs ${filter === 'EXPENSE' ? 'text-white' : 'text-slate-600'}`}>Despesas</Text>
+                            <Text className={`font-bold text-xs ${filter === 'EXPENSE' ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>Despesas</Text>
                         </Pressable>
                     </View>
                 </ScrollView>
@@ -308,7 +308,7 @@ export default function TransactionsScreen() {
                         >
                             <View className="flex-1">
                                 <Text className="text-amber-800 font-extrabold text-sm">{pendingOfflineCount} lançamento{pendingOfflineCount > 1 ? 's' : ''} aguardando sincronização</Text>
-                                <Text className="text-amber-700 text-xs mt-1">{syncing ? 'Sincronizando...' : 'Toque para sincronizar agora'}</Text>
+                                <Text className="text-amber-700 dark:text-amber-300 text-xs mt-1">{syncing ? 'Sincronizando...' : 'Toque para sincronizar agora'}</Text>
                             </View>
                             <MaterialIcons name={syncing ? 'sync' : 'cloud-upload'} size={20} color="#b45309" />
                         </Pressable>
@@ -318,11 +318,11 @@ export default function TransactionsScreen() {
                 {/* Summary for Filter */}
                 {filter !== 'ALL' && (
                     <View className="px-6 mt-4">
-                        <View className={`p-4 rounded-2xl ${filter === 'INCOME' ? 'bg-emerald-50 border border-emerald-100' : 'bg-rose-50 border border-rose-100'}`}>
+                        <View className={`p-4 rounded-2xl ${filter === 'INCOME' ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100' : 'bg-rose-50 dark:bg-rose-950/40 border border-rose-100'}`}>
                             <Text className={`text-xs font-bold uppercase mb-1 ${filter === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
                                 Total {filter === 'INCOME' ? 'Receitas' : 'Despesas'}
                             </Text>
-                            <Text className={`text-2xl font-black ${filter === 'INCOME' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                            <Text className={`text-2xl font-black ${filter === 'INCOME' ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
                                 {formatValue(filter === 'INCOME' ? totals.income : totals.expense)}
                             </Text>
                         </View>
@@ -341,12 +341,12 @@ export default function TransactionsScreen() {
                         ListEmptyComponent={() => (
                             <View className="items-center py-20">
                                 <MaterialIcons name="receipt-long" size={48} color="#cbd5e1" />
-                                <Text className="text-slate-400 font-bold mt-4">Nenhum lançamento encontrado</Text>
+                                <Text className="text-slate-400 dark:text-slate-500 font-bold mt-4">Nenhum lançamento encontrado</Text>
                             </View>
                         )}
                         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
                         renderItem={({ item: t }) => (
-                            <View className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                            <View className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
                                 <Pressable
                                     onLongPress={() => handleLongPress(t)}
                                     android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
@@ -354,7 +354,7 @@ export default function TransactionsScreen() {
                                     style={({ pressed }) => Platform.OS === 'ios' && pressed ? { opacity: 0.7 } : {}}
                                 >
                                     <View className="flex-row items-center gap-4 flex-1">
-                                        <View className={`w-10 h-10 rounded-xl items-center justify-center ${t.type === 'INCOME' ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                                        <View className={`w-10 h-10 rounded-xl items-center justify-center ${t.type === 'INCOME' ? 'bg-emerald-50 dark:bg-emerald-950/40' : 'bg-rose-50 dark:bg-rose-950/40'}`}>
                                             <MaterialIcons
                                                 name={t.type === 'INCOME' ? 'arrow-upward' : 'arrow-downward'}
                                                 size={20}
@@ -362,13 +362,13 @@ export default function TransactionsScreen() {
                                             />
                                         </View>
                                         <View className="flex-1">
-                                            <Text className="font-bold text-slate-700 text-sm" numberOfLines={1}>{t.description}</Text>
+                                            <Text className="font-bold text-slate-700 dark:text-slate-100 text-sm" numberOfLines={1}>{t.description}</Text>
                                             <View className="flex-row items-center gap-2 flex-wrap">
-                                                <Text className="text-xs text-slate-400 uppercase font-bold tracking-wider">{t.category?.name || t.categoryLegacy || 'Outros'}</Text>
+                                                <Text className="text-xs text-slate-400 dark:text-slate-500 uppercase font-bold tracking-wider">{t.category?.name || t.categoryLegacy || 'Outros'}</Text>
                                                 <Text className="text-xs text-slate-300">•</Text>
-                                                <Text className="text-xs text-slate-400">{new Date(t.date).toLocaleDateString()}</Text>
+                                                <Text className="text-xs text-slate-400 dark:text-slate-500">{new Date(t.date).toLocaleDateString()}</Text>
                                                 {t.pendingSync && (
-                                                    <View className="flex-row items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5">
+                                                    <View className="flex-row items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950/40 px-2 py-0.5">
                                                         <MaterialIcons name="cloud-upload" size={10} color="#b45309" />
                                                         <Text className="text-[10px] font-bold text-amber-800 uppercase">Pendente</Text>
                                                     </View>
@@ -376,7 +376,7 @@ export default function TransactionsScreen() {
                                             </View>
                                         </View>
                                     </View>
-                                    <Text className={`font-black text-sm ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-700'}`}>
+                                    <Text className={`font-black text-sm ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-100'}`}>
                                         {t.type === 'INCOME' ? '+' : '-'} {formatValue(Number(t.amount))}
                                     </Text>
                                 </Pressable>

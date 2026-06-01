@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { getStartOfDay, getYearMonth, parseDate } from '../../utils/dateUtils';
 import api from '../../services/api';
-import { View, Text, ScrollView, RefreshControl, Pressable, StyleSheet, Platform, DeviceEventEmitter, Alert } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, StyleSheet, Platform, DeviceEventEmitter, Alert, useColorScheme } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -27,6 +27,9 @@ import { offlineTransactionQueue } from '../../services/offlineTransactionQueue'
 
 export default function DashboardScreen() {
     const insets = useSafeAreaInsets();
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const styles = useMemo(() => createStyles(isDark), [isDark]);
     const { selectedDate } = useMonth();
     const { transactions, loading, refreshing, onRefresh, isPrivacyEnabled, togglePrivacy } = useTransactions();
     const { formatCurrency } = useCurrency();
@@ -240,27 +243,27 @@ export default function DashboardScreen() {
                             <InviteNotification />
                             <Pressable
                                 onPress={() => { togglePrivacy(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                                android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                                android_ripple={{ color: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
                                 hitSlop={15}
                                 style={styles.btnSecondarySmall}
                             >
-                                <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={20} color="#64748b" />
+                                <MaterialIcons name={isPrivacyEnabled ? "visibility-off" : "visibility"} size={20} color={isDark ? '#cbd5e1' : '#64748b'} />
                             </Pressable>
                             <Pressable
                                 onPress={() => { setFeedbackModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                                android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                                android_ripple={{ color: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
                                 hitSlop={15}
                                 style={styles.btnSecondarySmall}
                             >
-                                <MaterialIcons name="rate-review" size={20} color="#64748b" />
+                                <MaterialIcons name="rate-review" size={20} color={isDark ? '#cbd5e1' : '#64748b'} />
                             </Pressable>
                             <Pressable
                                 onPress={() => { setSettingsModalVisible(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                                android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+                                android_ripple={{ color: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
                                 hitSlop={15}
                                 style={styles.btnSecondarySmall}
                             >
-                                <MaterialIcons name="settings" size={20} color="#64748b" />
+                                <MaterialIcons name="settings" size={20} color={isDark ? '#cbd5e1' : '#64748b'} />
                             </Pressable>
                         </View>
                     </View>
@@ -384,12 +387,12 @@ export default function DashboardScreen() {
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
                             {[0, 1, 2, 3].map(i => (
                                 <View key={i} style={styles.skeletonCard}>
-                                    <Skeleton width={80} height={12} style={{ backgroundColor: '#f1f5f9' }} />
-                                    <Skeleton width={100} height={20} style={{ backgroundColor: '#f1f5f9' }} />
+                                    <Skeleton width={80} height={12} style={{ backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }} />
+                                    <Skeleton width={100} height={20} style={{ backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }} />
                                 </View>
                             ))}
                         </View>
-                        <Skeleton width="100%" height={250} borderRadius={32} style={{ backgroundColor: '#f8fafc' }} />
+                        <Skeleton width="100%" height={250} borderRadius={32} style={{ backgroundColor: isDark ? '#0f172a' : '#f8fafc' }} />
                     </View>
                 ) : (
                     <View style={{ paddingHorizontal: 16, gap: 16 }}>
@@ -569,18 +572,18 @@ export default function DashboardScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f8fafc' },
-    header: { backgroundColor: 'white', paddingHorizontal: 24, paddingBottom: 24, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 3, marginBottom: 24 },
+const createStyles = (isDark: boolean) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: isDark ? '#020617' : '#f8fafc' },
+    header: { backgroundColor: isDark ? '#0f172a' : 'white', paddingHorizontal: 24, paddingBottom: 24, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, shadowColor: '#000', shadowOpacity: isDark ? 0.18 : 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 3, marginBottom: 24 },
     headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, zIndex: 10, elevation: 10 },
     headerMainRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     headerBottomRow: { flexDirection: 'row', alignItems: 'center' },
-    welcomeText: { color: '#64748b', fontSize: 13, fontWeight: '500' },
-    titleText: { fontSize: 22, fontWeight: '900', color: '#1e293b', flex: 1, marginRight: 12 },
+    welcomeText: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 13, fontWeight: '500' },
+    titleText: { fontSize: 22, fontWeight: '900', color: isDark ? '#f8fafc' : '#1e293b', flex: 1, marginRight: 12 },
     headerButtonsSmall: { flexDirection: 'row', gap: 8 },
     btnPrimary: { backgroundColor: '#4f46e5', borderRadius: 16, padding: 10, shadowColor: '#4f46e5', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
-    btnSecondarySmall: { backgroundColor: '#f1f5f9', borderRadius: 12, padding: 8 },
-    btnSecondary: { backgroundColor: '#f1f5f9', borderRadius: 999, padding: 8 },
+    btnSecondarySmall: { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 12, padding: 8 },
+    btnSecondary: { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 999, padding: 8 },
     cardsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
     card: { width: '48%', padding: 16, borderRadius: 24 },
     glassEffect: {
@@ -589,7 +592,7 @@ const styles = StyleSheet.create({
     },
     glassEffectLight: {
         borderWidth: 1,
-        borderColor: 'rgba(79, 70, 229, 0.1)',
+        borderColor: isDark ? 'rgba(148, 163, 184, 0.15)' : 'rgba(79, 70, 229, 0.1)',
     },
     glassEffectGreen: {
         borderWidth: 1,
@@ -600,42 +603,42 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(244, 63, 94, 0.2)',
     },
     cardPrimary: { backgroundColor: '#4f46e5', shadowColor: '#4f46e5', shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
-    cardWhite: { backgroundColor: 'white', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
-    cardGreen: { backgroundColor: '#f0fdf4' },
-    cardRed: { backgroundColor: '#fff1f2' },
+    cardWhite: { backgroundColor: isDark ? '#0f172a' : 'white', shadowColor: '#000', shadowOpacity: isDark ? 0.16 : 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+    cardGreen: { backgroundColor: isDark ? '#052e16' : '#f0fdf4' },
+    cardRed: { backgroundColor: isDark ? '#4c0519' : '#fff1f2' },
     cardLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
     cardLabelPrimary: { color: '#c7d2fe', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-    cardLabelSecondary: { color: '#64748b', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-    cardLabelGreen: { color: '#059669', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
-    cardLabelRed: { color: '#e11d48', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
+    cardLabelSecondary: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+    cardLabelGreen: { color: isDark ? '#6ee7b7' : '#059669', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
+    cardLabelRed: { color: isDark ? '#fda4af' : '#e11d48', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
     cardValuePrimary: { color: 'white', fontSize: 20, fontWeight: '900' },
-    cardValueSecondary: { color: '#1e293b', fontSize: 20, fontWeight: '900' },
-    cardValueGreen: { color: '#065f46', fontSize: 18, fontWeight: '900' },
-    cardValueRed: { color: '#9f1239', fontSize: 18, fontWeight: '900' },
-    skeletonCard: { width: '48%', backgroundColor: 'white', padding: 16, borderRadius: 24, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 1, height: 100, justifyContent: 'space-between', borderWidth: 1, borderColor: '#f1f5f9' },
-    sectionCard: { backgroundColor: 'white', padding: 24, borderRadius: 32, borderWidth: 1, borderColor: '#f1f5f9', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 2, marginBottom: 16 },
+    cardValueSecondary: { color: isDark ? '#f8fafc' : '#1e293b', fontSize: 20, fontWeight: '900' },
+    cardValueGreen: { color: isDark ? '#a7f3d0' : '#065f46', fontSize: 18, fontWeight: '900' },
+    cardValueRed: { color: isDark ? '#fecdd3' : '#9f1239', fontSize: 18, fontWeight: '900' },
+    skeletonCard: { width: '48%', backgroundColor: isDark ? '#0f172a' : 'white', padding: 16, borderRadius: 24, shadowColor: '#000', shadowOpacity: isDark ? 0.16 : 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 1, height: 100, justifyContent: 'space-between', borderWidth: 1, borderColor: isDark ? '#1e293b' : '#f1f5f9' },
+    sectionCard: { backgroundColor: isDark ? '#0f172a' : 'white', padding: 24, borderRadius: 32, borderWidth: 1, borderColor: isDark ? '#1e293b' : '#f1f5f9', shadowColor: '#000', shadowOpacity: isDark ? 0.16 : 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 2, marginBottom: 16 },
     sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-    sectionTitle: { fontSize: 18, fontWeight: '900', color: '#1e293b', marginTop: 2 },
-    sectionLabel: { fontSize: 13, fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: 1.5 },
+    sectionTitle: { fontSize: 18, fontWeight: '900', color: isDark ? '#f8fafc' : '#1e293b', marginTop: 2 },
+    sectionLabel: { fontSize: 13, fontWeight: '900', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: 1.5 },
     ruleLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    ruleLabel: { fontSize: 12, fontWeight: '700', color: '#64748b' },
-    ruleValue: { fontSize: 12, fontWeight: '900', color: '#1e293b' },
-    ruleProgressBar: { height: 8, backgroundColor: '#f1f5f9', borderRadius: 4, overflow: 'hidden' },
+    ruleLabel: { fontSize: 12, fontWeight: '700', color: isDark ? '#cbd5e1' : '#64748b' },
+    ruleValue: { fontSize: 12, fontWeight: '900', color: isDark ? '#f8fafc' : '#1e293b' },
+    ruleProgressBar: { height: 8, backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 4, overflow: 'hidden' },
     ruleProgressFill: { height: '100%', borderRadius: 4 },
-    badge: { backgroundColor: '#e0e7ff', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-    badgeText: { fontSize: 11, fontWeight: '700', color: '#4338ca' },
-    progressBar: { height: 16, backgroundColor: '#f1f5f9', borderRadius: 999, overflow: 'hidden', flexDirection: 'row', marginBottom: 8 },
-    progressFill: { height: '100%', backgroundColor: '#1e293b' },
+    badge: { backgroundColor: isDark ? '#312e81' : '#e0e7ff', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+    badgeText: { fontSize: 11, fontWeight: '700', color: isDark ? '#c7d2fe' : '#4338ca' },
+    progressBar: { height: 16, backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 999, overflow: 'hidden', flexDirection: 'row', marginBottom: 8 },
+    progressFill: { height: '100%', backgroundColor: isDark ? '#cbd5e1' : '#1e293b' },
     progressRemainder: { height: '100%', backgroundColor: '#34d399', flex: 1 },
-    subtleText: { fontSize: 12, color: '#94a3b8' },
-    listRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-    listTitle: { fontSize: 14, fontWeight: '700', color: '#334155' },
+    subtleText: { fontSize: 12, color: isDark ? '#64748b' : '#94a3b8' },
+    listRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: isDark ? '#1e293b' : '#f1f5f9' },
+    listTitle: { fontSize: 14, fontWeight: '700', color: isDark ? '#e2e8f0' : '#334155' },
     listValueRed: { fontSize: 14, fontWeight: '900', color: '#f43f5e' },
-    listValueDark: { fontSize: 14, fontWeight: '900', color: '#1e293b' },
-    emptyTitle: { fontSize: 14, fontWeight: '700', color: '#64748b', marginTop: 8 },
-    emptySubtitle: { fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 4 },
-    rankBadge: { width: 24, height: 24, backgroundColor: '#f1f5f9', borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-    rankText: { fontSize: 13, fontWeight: '700', color: '#64748b' },
+    listValueDark: { fontSize: 14, fontWeight: '900', color: isDark ? '#f8fafc' : '#1e293b' },
+    emptyTitle: { fontSize: 14, fontWeight: '700', color: isDark ? '#cbd5e1' : '#64748b', marginTop: 8 },
+    emptySubtitle: { fontSize: 12, color: isDark ? '#94a3b8' : '#94a3b8', textAlign: 'center', marginTop: 4 },
+    rankBadge: { width: 24, height: 24, backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+    rankText: { fontSize: 13, fontWeight: '700', color: isDark ? '#cbd5e1' : '#64748b' },
 
     // Quick Actions
     quickActionsContainer: { flexDirection: 'row', gap: 12, marginBottom: 20, marginTop: 4 },
@@ -643,18 +646,18 @@ const styles = StyleSheet.create({
     quickActionAdd: { backgroundColor: '#4f46e5', shadowColor: '#4f46e5' },
     quickActionImport: { backgroundColor: '#10b981', shadowColor: '#10b981' },
     quickActionTextLight: { color: 'white', fontWeight: '800', fontSize: 14 },
-    proBadge: { backgroundColor: '#dcfce7', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 8, marginLeft: 2 },
+    proBadge: { backgroundColor: isDark ? '#064e3b' : '#dcfce7', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 8, marginLeft: 2 },
 
     // Empty State
-    emptyStateContainer: { backgroundColor: 'white', padding: 32, borderRadius: 32, borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 16, minHeight: 250 },
-    emptyStateIconWrapper: { width: 64, height: 64, backgroundColor: '#f8fafc', borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9' },
-    emptyStateTitle: { fontSize: 16, fontWeight: '800', color: '#334155', marginBottom: 8 },
-    emptyStateSubtitle: { fontSize: 13, color: '#64748b', textAlign: 'center', lineHeight: 20 },
+    emptyStateContainer: { backgroundColor: isDark ? '#0f172a' : 'white', padding: 32, borderRadius: 32, borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginBottom: 16, minHeight: 250 },
+    emptyStateIconWrapper: { width: 64, height: 64, backgroundColor: isDark ? '#020617' : '#f8fafc', borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: isDark ? '#1e293b' : '#f1f5f9' },
+    emptyStateTitle: { fontSize: 16, fontWeight: '800', color: isDark ? '#e2e8f0' : '#334155', marginBottom: 8 },
+    emptyStateSubtitle: { fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 20 },
 
     // FAB - subido para ficar acima do AiChatWidget FAB
     fabButton: { position: 'absolute', right: 24, bottom: 96, width: 64, height: 64, borderRadius: 32, backgroundColor: '#4f46e5', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 10, zIndex: 9999 },
     fabButtonPressed: { transform: [{ scale: 0.92 }], opacity: 0.9 },
-    pendingOfflineBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fffbeb', borderColor: '#fcd34d', borderWidth: 1, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 14, marginTop: 16, marginBottom: 8 },
-    pendingOfflineTitle: { fontSize: 13, fontWeight: '900', color: '#92400e' },
-    pendingOfflineSubtitle: { fontSize: 11, color: '#b45309', marginTop: 2, lineHeight: 15 },
+    pendingOfflineBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: isDark ? '#422006' : '#fffbeb', borderColor: '#fcd34d', borderWidth: 1, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 14, marginTop: 16, marginBottom: 8 },
+    pendingOfflineTitle: { fontSize: 13, fontWeight: '900', color: isDark ? '#fde68a' : '#92400e' },
+    pendingOfflineSubtitle: { fontSize: 11, color: isDark ? '#fbbf24' : '#b45309', marginTop: 2, lineHeight: 15 },
 });

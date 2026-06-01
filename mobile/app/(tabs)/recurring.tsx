@@ -281,7 +281,7 @@ export default function RecurringScreen() {
   const pct = weight?.weight || 0;
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <ScrollView
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchData} />}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -289,8 +289,8 @@ export default function RecurringScreen() {
         {/* Header */}
         <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
           <View>
-            <Text className="text-2xl font-black text-slate-800">Recorrentes & Fixos</Text>
-            <Text className="text-sm text-slate-500 font-medium mt-1">Despesas e receitas fixas</Text>
+            <Text className="text-2xl font-black text-slate-800 dark:text-white">Recorrentes & Fixos</Text>
+            <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Despesas e receitas fixas</Text>
           </View>
           <Pressable onPress={openCreate} style={{ backgroundColor: '#0891b2', borderRadius: 999, padding: 12 }}>
             <MaterialIcons name="add" size={24} color="white" />
@@ -306,7 +306,7 @@ export default function RecurringScreen() {
                 <Text className="text-cyan-100 font-medium text-sm">Comprometimento da Renda</Text>
               </View>
               <Text className="text-white text-4xl font-black mb-3">{pct}%</Text>
-              <View className="w-full h-3 bg-white/20 rounded-full overflow-hidden mb-2">
+              <View className="w-full h-3 bg-white dark:bg-slate-900/20 rounded-full overflow-hidden mb-2">
                 <View
                   className={`h-full rounded-full ${pct > 50 ? 'bg-rose-400' : pct > 30 ? 'bg-amber-400' : 'bg-emerald-400'}`}
                   style={{ width: `${Math.min(pct, 100)}%` }}
@@ -322,15 +322,15 @@ export default function RecurringScreen() {
         {/* Seção: Recorrentes (from backend) */}
         {!loading && (
           <View className="px-6 mb-2">
-            <Text className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Programados (Recorrentes)</Text>
+            <Text className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Programados (Recorrentes)</Text>
           </View>
         )}
         {recorrentes.length === 0 && !loading && (
           <View className="items-center justify-center py-10 px-6">
-            <View className="w-12 h-12 bg-slate-100 rounded-full items-center justify-center mb-3">
+            <View className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center mb-3">
               <MaterialIcons name="event-repeat" size={24} color="#cbd5e1" />
             </View>
-            <Text className="text-slate-500 text-center text-sm">
+            <Text className="text-slate-500 dark:text-slate-400 text-center text-sm">
               Adicione suas despesas fixas programadas aqui.
             </Text>
           </View>
@@ -341,10 +341,10 @@ export default function RecurringScreen() {
             const isDueToday = r.isActive && r.dueDay === today;
             const isOverdue = r.isActive && r.dueDay < today && r.startMonth <= (new Date().getMonth() + 1);
             return (
-            <View key={r.id} className={`bg-white p-5 rounded-2xl border shadow-sm ${!r.isActive ? 'border-slate-50 opacity-50' : isDueToday ? 'border-amber-300' : isOverdue ? 'border-rose-200' : 'border-slate-100'}`}>
+            <View key={r.id} className={`bg-white dark:bg-slate-900 p-5 rounded-2xl border shadow-sm ${!r.isActive ? 'border-slate-50 dark:border-slate-800 opacity-50' : isDueToday ? 'border-amber-300' : isOverdue ? 'border-rose-200' : 'border-slate-100 dark:border-slate-800'}`}>
               <View className="flex-row justify-between items-center">
                 <View className="flex-row items-center gap-4 flex-1">
-                  <View className={`w-12 h-12 rounded-xl items-center justify-center ${r.type === 'INCOME' ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                  <View className={`w-12 h-12 rounded-xl items-center justify-center ${r.type === 'INCOME' ? 'bg-emerald-50 dark:bg-emerald-950/40' : 'bg-rose-50 dark:bg-rose-950/40'}`}>
                     <MaterialIcons
                       name={r.type === 'INCOME' ? 'arrow-upward' : 'arrow-downward'}
                       size={24}
@@ -353,16 +353,16 @@ export default function RecurringScreen() {
                   </View>
                   <View className="flex-1">
                     <View className="flex-row items-center gap-2">
-                      <Text className="font-bold text-slate-700 text-base">{r.description}</Text>
-                      {isDueToday && <View className="bg-amber-100 px-2 py-0.5 rounded-full"><Text className="text-amber-700 text-[10px] font-black uppercase">Hoje</Text></View>}
-                      {isOverdue && <View className="bg-rose-100 px-2 py-0.5 rounded-full"><Text className="text-rose-700 text-[10px] font-black uppercase">Vencido</Text></View>}
-                      {r.pendingSync && <View className="bg-amber-100 px-2 py-0.5 rounded-full"><Text className="text-amber-700 text-[10px] font-black uppercase">Pendente</Text></View>}
+                      <Text className="font-bold text-slate-700 dark:text-slate-100 text-base">{r.description}</Text>
+                      {isDueToday && <View className="bg-amber-100 dark:bg-amber-950/40 px-2 py-0.5 rounded-full"><Text className="text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase">Hoje</Text></View>}
+                      {isOverdue && <View className="bg-rose-100 px-2 py-0.5 rounded-full"><Text className="text-rose-700 dark:text-rose-300 text-[10px] font-black uppercase">Vencido</Text></View>}
+                      {r.pendingSync && <View className="bg-amber-100 dark:bg-amber-950/40 px-2 py-0.5 rounded-full"><Text className="text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase">Pendente</Text></View>}
                     </View>
                     <View className="flex-row items-center gap-2 mt-1">
                       <Text className={`font-black text-sm ${r.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {formatCurrency(Number(r.amount))}
                       </Text>
-                      <Text className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Dia {r.dueDay}</Text>
+                      <Text className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">Dia {r.dueDay}</Text>
                     </View>
                   </View>
                 </View>
@@ -374,10 +374,10 @@ export default function RecurringScreen() {
                     </Pressable>
                   </View>
                   <View className="flex-row gap-1">
-                    <Pressable onPress={() => openEdit(r)} className="p-2 rounded-lg bg-indigo-50">
+                    <Pressable onPress={() => openEdit(r)} className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40">
                       <MaterialIcons name="edit" size={16} color="#4f46e5" />
                     </Pressable>
-                    <Pressable onPress={() => handleDelete(r.id, r.description)} className="p-2 rounded-lg bg-red-50">
+                    <Pressable onPress={() => handleDelete(r.id, r.description)} className="p-2 rounded-lg bg-red-50 dark:bg-red-950/40">
                       <MaterialIcons name="delete" size={16} color="#ef4444" />
                     </Pressable>
                   </View>
@@ -395,13 +395,13 @@ export default function RecurringScreen() {
           return uniqueFixedItems.length > 0 && !loading ? (
             <>
               <View className="px-6 mt-8 mb-2">
-                <Text className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Fixos (detectados)</Text>
+                <Text className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Fixos (detectados)</Text>
               </View>
               <View className="px-4 space-y-3">
                 {uniqueFixedItems.map(item => (
-                  <View key={item.lastTransactionId} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex-row justify-between items-center">
+                  <View key={item.lastTransactionId} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex-row justify-between items-center">
                     <View className="flex-row items-center gap-4">
-                      <View className={`w-12 h-12 rounded-xl items-center justify-center ${item.type === 'INCOME' ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                      <View className={`w-12 h-12 rounded-xl items-center justify-center ${item.type === 'INCOME' ? 'bg-emerald-50 dark:bg-emerald-950/40' : 'bg-rose-50 dark:bg-rose-950/40'}`}>
                         <MaterialIcons
                           name={item.type === 'INCOME' ? 'arrow-upward' : 'arrow-downward'}
                           size={24}
@@ -409,19 +409,19 @@ export default function RecurringScreen() {
                         />
                       </View>
                       <View>
-                        <Text className="font-bold text-slate-700 text-base">{item.name}</Text>
+                        <Text className="font-bold text-slate-700 dark:text-slate-100 text-base">{item.name}</Text>
                         <View className="flex-row items-center gap-2">
-                          <Text className="text-xs text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded">{item.category}</Text>
-                          {item.day && <Text className="text-xs text-slate-400">Todo dia {item.day}</Text>}
+                          <Text className="text-xs text-slate-400 dark:text-slate-500 font-bold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{item.category}</Text>
+                          {item.day && <Text className="text-xs text-slate-400 dark:text-slate-500">Todo dia {item.day}</Text>}
                         </View>
                       </View>
                     </View>
 
                     <View className="items-end gap-2">
-                      <Text className={`font-black text-base ${item.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-700'}`}>
+                      <Text className={`font-black text-base ${item.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-100'}`}>
                         {formatCurrency(item.amount)}
                       </Text>
-                      <View className="rounded-lg overflow-hidden bg-red-50">
+                      <View className="rounded-lg overflow-hidden bg-red-50 dark:bg-red-950/40">
                         <Pressable
                           onPress={() => { handleRemoveFixed(item.lastTransactionId, item.name); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
                           android_ripple={{ color: 'rgba(239,68,68,0.2)' }}
