@@ -1,6 +1,6 @@
 {
-  "version": "1.8.97",
-  "mobileVersion": "1.8.97",
+  "version": "1.8.98",
+  "mobileVersion": "1.8.98",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Tema escuro no mobile: telas principais, dashboard, gráficos e navegação inferior agora respeitam o modo escuro do sistema"
+  "releaseNotes": "Configurações do mobile agora permitem escolher tema sistema/claro/escuro e o chat da IA foi removido novamente do app"
 }

@@ -19,7 +19,6 @@ import { ImportModal } from '../../components/ImportModal';
 import { FeedbackModal } from '../../components/FeedbackModal';
 import SettingsModal from '../../components/SettingsModal';
 import { InviteNotification } from '../../components/InviteNotification';
-import { AiChatWidget } from '../../components/AiChatWidget';
 import { NotificationBell } from './_layout';
 import { useCurrency } from '../../context/CurrencyContext';
 import { offlineTransactionQueue } from '../../services/offlineTransactionQueue';
@@ -555,10 +554,7 @@ export default function DashboardScreen() {
                 onClose={() => setSettingsModalVisible(false)}
             />
 
-            {/* AI Chat Widget (FAB + Modal) */}
-            <AiChatWidget />
-
-            {/* Global FAB (Floating Action Button) - deslocado para cima para nao sobrepor o chat FAB */}
+            {/* Global FAB (Floating Action Button) */}
             <Pressable
                 style={({ pressed }) => [
                     styles.fabButton,
@@ -654,8 +650,8 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     emptyStateTitle: { fontSize: 16, fontWeight: '800', color: isDark ? '#e2e8f0' : '#334155', marginBottom: 8 },
     emptyStateSubtitle: { fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', textAlign: 'center', lineHeight: 20 },
 
-    // FAB - subido para ficar acima do AiChatWidget FAB
-    fabButton: { position: 'absolute', right: 24, bottom: 96, width: 64, height: 64, borderRadius: 32, backgroundColor: '#4f46e5', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 10, zIndex: 9999 },
+    // FAB principal
+    fabButton: { position: 'absolute', right: 24, bottom: 32, width: 64, height: 64, borderRadius: 32, backgroundColor: '#4f46e5', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 10, zIndex: 9999 },
     fabButtonPressed: { transform: [{ scale: 0.92 }], opacity: 0.9 },
     pendingOfflineBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: isDark ? '#422006' : '#fffbeb', borderColor: '#fcd34d', borderWidth: 1, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 14, marginTop: 16, marginBottom: 8 },
     pendingOfflineTitle: { fontSize: 13, fontWeight: '900', color: isDark ? '#fde68a' : '#92400e' },

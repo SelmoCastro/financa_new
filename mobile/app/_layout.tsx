@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useSegments, router } from 'expo-router';
 import * as ExpoRouter from 'expo-router';
-import { Component, useEffect, PropsWithChildren, ReactNode } from 'react';
+import { Component, useEffect, PropsWithChildren, ReactNode, useState } from 'react';
 import { LogBox, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ import { UpdateDialog } from '../components/UpdateDialog';
 import { ConsentModal } from '../components/ConsentModal';
 import { initErrorReporter, reportReactError } from '../utils/errorReporter';
 import { initLocalDb } from '../services/localDb';
+import { applyThemePreference, getThemePreference } from '../services/themePreference';
 import '../global.css';
 
 // Suppress expo-file-system deprecation warnings (SDK 54+ legacy API, used internally by expo)
@@ -58,6 +59,7 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     // Load your custom fonts here if needed
   });
+  const [themeReady, setThemeReady] = useState(false);
 
   useEffect(() => {
     initLocalDb().catch((dbError) => {
@@ -70,12 +72,22 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
+    getThemePreference()
+      .then((preference) => {
+        applyThemePreference(preference);
+      })
+      .finally(() => {
+        setThemeReady(true);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (loaded && themeReady) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded, themeReady]);
 
-  if (!loaded) {
+  if (!loaded || !themeReady) {
     return null;
   }
 

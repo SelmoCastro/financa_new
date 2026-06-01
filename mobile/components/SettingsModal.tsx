@@ -10,11 +10,13 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
+import { getThemePreference, setThemePreference, ThemePreference } from '../services/themePreference';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -24,6 +26,9 @@ interface SettingsModalProps {
 export default function SettingsModal({ visible, onClose }: SettingsModalProps) {
   const { logout, user, updateUserName, updateUserEmail } = useAuth();
   const { ensureOnline } = useOfflineActionGuard();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const styles = React.useMemo(() => createStyles(isDark), [isDark]);
 
   // Nome
   const [editingName, setEditingName] = useState(false);
@@ -49,10 +54,19 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [deleteSaving, setDeleteSaving] = useState(false);
 
+  // Tema
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
+  const [themeSaving, setThemeSaving] = useState(false);
+
   // Sincronizar nameValue quando user muda
   React.useEffect(() => {
     if (user?.name) setNameValue(user.name);
   }, [user?.name]);
+
+  React.useEffect(() => {
+    if (!visible) return;
+    getThemePreference().then(setThemePreferenceState).catch(() => setThemePreferenceState('system'));
+  }, [visible]);
 
   const handleSaveName = async () => {
     if (!nameValue.trim()) return;
@@ -127,6 +141,18 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
     }
   };
 
+  const handleThemeChange = async (preference: ThemePreference) => {
+    setThemePreferenceState(preference);
+    setThemeSaving(true);
+    try {
+      await setThemePreference(preference);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível salvar sua preferência de tema.');
+    } finally {
+      setThemeSaving(false);
+    }
+  };
+
   const isPremium = user?.plan === 'premium';
 
   return (
@@ -164,6 +190,41 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   </TouchableOpacity>
                 )}
               </View>
+            </View>
+
+            {/* TEMA */}
+            <View style={styles.divider} />
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>🎨 Aparência</Text>
+              <View style={styles.themeGroup}>
+                {([
+                  { key: 'system', label: 'Sistema', icon: 'brightness-auto' },
+                  { key: 'light', label: 'Claro', icon: 'light-mode' },
+                  { key: 'dark', label: 'Escuro', icon: 'dark-mode' },
+                ] as const).map((option) => {
+                  const selected = themePreference === option.key;
+                  return (
+                    <TouchableOpacity
+                      key={option.key}
+                      style={[styles.themeOption, selected && styles.themeOptionSelected, themeSaving && styles.btnDisabled]}
+                      onPress={() => handleThemeChange(option.key)}
+                      disabled={themeSaving}
+                    >
+                      <MaterialIcons
+                        name={option.icon}
+                        size={18}
+                        color={selected ? '#ffffff' : (isDark ? '#cbd5e1' : '#475569')}
+                      />
+                      <Text style={[styles.themeOptionText, selected && styles.themeOptionTextSelected]}>{option.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={styles.helperText}>
+                {themePreference === 'system'
+                  ? 'Acompanha automaticamente o tema do seu celular.'
+                  : `Tema ${themePreference === 'dark' ? 'escuro' : 'claro'} aplicado manualmente.`}
+              </Text>
             </View>
 
             {/* EMAIL */}
@@ -305,7 +366,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (isDark: boolean) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -314,7 +375,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   content: {
-    backgroundColor: '#fff',
+    backgroundColor: isDark ? '#0f172a' : '#fff',
     borderRadius: 16,
     width: '100%',
     maxWidth: 420,
@@ -335,14 +396,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0f172a',
+    color: isDark ? '#f8fafc' : '#0f172a',
   },
   scroll: {
     maxHeight: '90%',
   },
   divider: {
     height: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
     marginVertical: 12,
   },
   section: {
@@ -351,7 +412,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#94a3b8',
+    color: isDark ? '#64748b' : '#94a3b8',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
@@ -369,30 +430,30 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: isDark ? '#111827' : '#f8fafc',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: isDark ? '#334155' : '#e2e8f0',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
     fontWeight: '600',
-    color: '#0f172a',
+    color: isDark ? '#f8fafc' : '#0f172a',
   },
   inputEditing: {
     borderColor: '#6366f1',
     borderWidth: 2,
   },
   inputFull: {
-    backgroundColor: '#fff',
+    backgroundColor: isDark ? '#111827' : '#fff',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: isDark ? '#334155' : '#e2e8f0',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
     fontWeight: '600',
-    color: '#0f172a',
+    color: isDark ? '#f8fafc' : '#0f172a',
   },
   inputFullDanger: {
     backgroundColor: '#fff',
@@ -409,9 +470,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: isDark ? '#111827' : '#f8fafc',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: isDark ? '#334155' : '#e2e8f0',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -421,7 +482,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748b',
+    color: isDark ? '#cbd5e1' : '#64748b',
   },
   btnSmall: {
     backgroundColor: '#6366f1',
@@ -435,18 +496,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
   },
   btnGhostText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#475569',
+    color: isDark ? '#cbd5e1' : '#475569',
   },
   btnFull: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f1f5f9',
+    backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -454,12 +515,12 @@ const styles = StyleSheet.create({
   btnFullText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#475569',
+    color: isDark ? '#cbd5e1' : '#475569',
   },
   expandBox: {
     marginTop: 8,
     padding: 14,
-    backgroundColor: '#eef2ff',
+    backgroundColor: isDark ? '#1e1b4b' : '#eef2ff',
     borderRadius: 12,
     gap: 8,
   },
@@ -491,21 +552,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: isDark ? '#1e293b' : '#f1f5f9',
   },
   btnSecondaryText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#64748b',
+    color: isDark ? '#cbd5e1' : '#64748b',
   },
   btnDisabled: {
     opacity: 0.4,
+  },
+  themeGroup: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  themeOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: isDark ? '#334155' : '#cbd5e1',
+    backgroundColor: isDark ? '#111827' : '#f8fafc',
+  },
+  themeOptionSelected: {
+    backgroundColor: '#6366f1',
+    borderColor: '#6366f1',
+  },
+  themeOptionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: isDark ? '#cbd5e1' : '#475569',
+  },
+  themeOptionTextSelected: {
+    color: '#ffffff',
+  },
+  helperText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: isDark ? '#94a3b8' : '#64748b',
   },
   planBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#eef2ff',
+    backgroundColor: isDark ? '#1e1b4b' : '#eef2ff',
     borderRadius: 12,
     padding: 14,
   },
@@ -520,7 +614,7 @@ const styles = StyleSheet.create({
   },
   planDesc: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: isDark ? '#94a3b8' : '#94a3b8',
     fontWeight: '600',
   },
   planIcon: {
