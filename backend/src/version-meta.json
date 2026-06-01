@@ -1,6 +1,6 @@
 {
-  "version": "1.8.95",
-  "mobileVersion": "1.8.95",
+  "version": "1.8.96",
+  "mobileVersion": "1.8.96",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Correção do dashboard: junho vazio não reaproveita mais os saldos do mês anterior; melhorias na sincronização offline do app."
+  "releaseNotes": "Correção dos recorrentes: comprometimento não mostra mais porcentagem inflada quando o mês está sem receitas; cálculo ajustado no backend, web e mobile."
 }

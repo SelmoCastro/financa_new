@@ -121,12 +121,15 @@ export class RecurringTransactionsService {
     const monthlyIncome = transactions.reduce(
       (sum, t) => sum + decryptAmount(t.amount, this.encryption),
       0,
-    ) || 1;
+    );
+    const weight = monthlyIncome > 0
+      ? Math.round((totalFixedExpense / monthlyIncome) * 100)
+      : 0;
 
     return {
       totalFixedExpense: Math.round(totalFixedExpense * 100) / 100,
       monthlyIncome: Math.round(monthlyIncome * 100) / 100,
-      weight: Math.round((totalFixedExpense / monthlyIncome) * 100),
+      weight,
       count: recorrentes.length,
     };
   }

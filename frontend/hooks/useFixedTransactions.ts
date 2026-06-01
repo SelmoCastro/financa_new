@@ -114,10 +114,10 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
         });
         missingFixed.filter(t => t.type === 'EXPENSE').forEach(t => totalFixedExpense += t.amount);
 
-        // Use currentIncome if available, otherwise fallback to total income (though usually unrelated)
-        // Or better, use 1 to avoid division by zero.
-        const income = totals.currentIncome || totals.income || 1;
-        const fixedRatio = (totalFixedExpense / income) * 100;
+        // Sem receita no mês, o comprometimento percentual deve ficar em 0 para evitar
+        // percentuais artificiais inflados (ex.: dividir por 1 e mostrar 1320%).
+        const income = totals.currentIncome || totals.income || 0;
+        const fixedRatio = income > 0 ? (totalFixedExpense / income) * 100 : 0;
 
         // 5. "Top Villains" (Most expensive descriptions - THIS MONTH ONLY)
         const expensesByDesc: Record<string, number> = {};

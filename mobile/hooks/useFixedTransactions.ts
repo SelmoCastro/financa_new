@@ -126,9 +126,9 @@ export const useFixedTransactions = (transactions: Transaction[], totals: { bala
             }
         });
 
-        const income = totals.currentIncome || totals.income || 1;
+        const income = totals.currentIncome || totals.income || 0;
         const totalFixedExpenseSafe = totalFixedExpense || 0;
-        const fixedRatio = (totalFixedExpenseSafe / income) * 100;
+        const fixedRatio = income > 0 ? (totalFixedExpenseSafe / income) * 100 : 0;
 
         const topVillains = Object.entries(expensesByDesc)
             .map(([name, value]) => ({ name, value }))
