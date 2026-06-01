@@ -1,6 +1,6 @@
 {
-  "version": "1.8.89",
-  "mobileVersion": "1.8.89",
+  "version": "1.8.95",
+  "mobileVersion": "1.8.95",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Offline: sync imediato após fallback de rede para transações e recorrentes"
+  "releaseNotes": "Correção do dashboard: junho vazio não reaproveita mais os saldos do mês anterior; melhorias na sincronização offline do app."
 }

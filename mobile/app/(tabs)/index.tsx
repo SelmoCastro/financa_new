@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { getStartOfDay, getYearMonth, parseDate } from '../../utils/dateUtils';
 import api from '../../services/api';
-import { View, Text, ScrollView, RefreshControl, Pressable, StyleSheet, Platform, DeviceEventEmitter } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, StyleSheet, Platform, DeviceEventEmitter, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 import { MaterialIcons } from '@expo/vector-icons';
@@ -22,6 +22,7 @@ import { InviteNotification } from '../../components/InviteNotification';
 import { AiChatWidget } from '../../components/AiChatWidget';
 import { NotificationBell } from './_layout';
 import { useCurrency } from '../../context/CurrencyContext';
+import { offlineTransactionQueue } from '../../services/offlineTransactionQueue';
 
 
 export default function DashboardScreen() {
@@ -106,17 +107,57 @@ export default function DashboardScreen() {
         return () => sub.remove();
     }, [handleRefresh]);
 
+    const pendingAdjustments = useMemo(() => {
+        const { year: targetYear, month: targetMonth } = getYearMonth(selectedDate);
+        const seen = new Set<string>();
+
+        return transactions.reduce((acc, transaction) => {
+            if (!transaction.pendingSync) return acc;
+
+            const logicalId = transaction.offlineLocalId || transaction.id;
+            const amount = Number(transaction.amount) || 0;
+            const isExpense = transaction.type === 'EXPENSE';
+            const signedAmount = isExpense ? -amount : amount;
+
+            acc.balance += signedAmount;
+
+            const date = parseDate(transaction.date);
+            const { year, month } = getYearMonth(date);
+            if (year === targetYear && month === targetMonth) {
+                // Transfers create one pending income and one pending expense locally.
+                // Keep them out of income/expense cards to avoid inflating monthly movement;
+                // their net effect is still represented in balance as zero.
+                if (!transaction.offlineTransferGroupId && !seen.has(logicalId)) {
+                    if (isExpense) acc.currentExpense += amount;
+                    else acc.currentIncome += amount;
+                    seen.add(logicalId);
+                }
+            }
+
+            return acc;
+        }, { balance: 0, currentIncome: 0, currentExpense: 0 });
+    }, [transactions, selectedDate]);
+
     const totals = useMemo(() => {
-        if (!dashboardSummary) return { balance: 0, income: 0, currentIncome: 0, currentExpense: 0, incomeTrend: 0, expenseTrend: 0 };
+        if (!dashboardSummary) {
+            return {
+                balance: pendingAdjustments.balance,
+                income: pendingAdjustments.currentIncome,
+                currentIncome: pendingAdjustments.currentIncome,
+                currentExpense: pendingAdjustments.currentExpense,
+                incomeTrend: 0,
+                expenseTrend: 0,
+            };
+        }
         return {
-            balance: dashboardSummary.balance || 0,
-            income: dashboardSummary.currentMonth?.income || 0,
-            currentIncome: dashboardSummary.currentMonth?.income || 0,
-            currentExpense: dashboardSummary.currentMonth?.expense || 0,
+            balance: (dashboardSummary.balance || 0) + pendingAdjustments.balance,
+            income: (dashboardSummary.currentMonth?.income || 0) + pendingAdjustments.currentIncome,
+            currentIncome: (dashboardSummary.currentMonth?.income || 0) + pendingAdjustments.currentIncome,
+            currentExpense: (dashboardSummary.currentMonth?.expense || 0) + pendingAdjustments.currentExpense,
             incomeTrend: dashboardSummary.currentMonth?.incomeTrend || 0,
             expenseTrend: dashboardSummary.currentMonth?.expenseTrend || 0
         };
-    }, [dashboardSummary?.balance, dashboardSummary?.currentMonth]);
+    }, [dashboardSummary, pendingAdjustments]);
 
     const forecast = useFixedTransactions(transactions, totals);
 
@@ -137,6 +178,33 @@ export default function DashboardScreen() {
         },
         [transactions]
     );
+
+    const [syncing, setSyncing] = useState(false);
+    const handleSyncNow = useCallback(async () => {
+        if (syncing || pendingOfflineCount === 0) return;
+        setSyncing(true);
+        try {
+            const result = await offlineTransactionQueue.syncPendingTransactionQueue();
+            if (result.synced > 0) {
+                Alert.alert('Sincronizado', `${result.synced} lançamento${result.synced > 1 ? 's' : ''} enviado${result.synced > 1 ? 's' : ''} com sucesso!`);
+                handleRefresh();
+            }
+            if (result.errors && result.errors.length > 0) {
+                const msgs = result.errors.map(e => {
+                    const desc = e.description?.substring(0, 40) || 'lançamento';
+                    const cleanError = typeof e.error === 'string' ? e.error.split(',').pop()?.trim() || e.error : 'Erro desconhecido';
+                    return `• ${desc}: ${cleanError}`;
+                });
+                Alert.alert('Erro ao sincronizar', msgs.join('\n'));
+            } else if (result.synced === 0 && result.remaining > 0) {
+                Alert.alert('Atenção', `${result.remaining} lançamento${result.remaining > 1 ? 's' : ''} ainda não puderam ser sincronizados. Tente novamente em alguns instantes.`);
+            }
+        } catch (error) {
+            Alert.alert('Erro', 'Não foi possível sincronizar agora. Verifique sua conexão.');
+        } finally {
+            setSyncing(false);
+        }
+    }, [syncing, pendingOfflineCount, handleRefresh]);
 
     const formatValue = (value: number | undefined | null) => {
         if (isPrivacyEnabled) return '••••';
@@ -230,17 +298,25 @@ export default function DashboardScreen() {
                     </View>
 
                     {pendingOfflineCount > 0 && (
-                        <View style={styles.pendingOfflineBanner}>
+                        <Pressable
+                            onPress={handleSyncNow}
+                            disabled={syncing}
+                            style={({ pressed }) => [
+                                styles.pendingOfflineBanner,
+                                { opacity: syncing ? 0.6 : pressed ? 0.85 : 1 }
+                            ]}
+                            android_ripple={{ color: 'rgba(180,83,9,0.2)' }}
+                        >
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.pendingOfflineTitle}>
                                     {pendingOfflineCount} lançamento{pendingOfflineCount > 1 ? 's' : ''} aguardando sincronização
                                 </Text>
                                 <Text style={styles.pendingOfflineSubtitle}>
-                                    Eles foram salvos no aparelho e serão enviados quando a internet voltar.
+                                    {syncing ? 'Sincronizando...' : 'Toque para sincronizar agora'}
                                 </Text>
                             </View>
-                            <MaterialIcons name="cloud-upload" size={20} color="#b45309" />
-                        </View>
+                            <MaterialIcons name={syncing ? 'sync' : 'cloud-upload'} size={20} color="#b45309" />
+                        </Pressable>
                     )}
 
                     {/* Cards Grid */}

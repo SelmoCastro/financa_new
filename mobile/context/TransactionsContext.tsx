@@ -27,19 +27,47 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
     const [isPrivacyEnabled, setIsPrivacyEnabled] = useState(false);
     const { token } = useAuth();
 
+    const mergePendingTransactions = useCallback((base: Transaction[], pending: Transaction[]) => {
+        if (pending.length === 0) return base;
+
+        const pendingIds = new Set(pending.map((item) => item.id));
+        const pendingOfflineIds = new Set(pending.map((item) => item.offlineLocalId).filter(Boolean));
+
+        return [
+            ...pending,
+            ...base.filter((item) => {
+                if (pendingIds.has(item.id)) return false;
+                if (item.offlineLocalId && pendingOfflineIds.has(item.offlineLocalId)) return false;
+                return true;
+            }),
+        ];
+    }, []);
+
     const fetchTransactions = useCallback(async () => {
         try {
             setError(null);
-            const response = await api.get('/transactions');
-            setTransactions(response.data);
+            const [response, pendingTransactions] = await Promise.all([
+                api.get('/transactions'),
+                offlineTransactionQueue.getPendingOptimisticTransactions(),
+            ]);
+            setTransactions(mergePendingTransactions(response.data, pendingTransactions));
         } catch (err) {
             console.error(err);
             setError('Falha ao carregar transações');
+
+            try {
+                const pendingTransactions = await offlineTransactionQueue.getPendingOptimisticTransactions();
+                if (pendingTransactions.length > 0) {
+                    setTransactions((prev) => mergePendingTransactions(prev, pendingTransactions));
+                }
+            } catch {
+                // Mantém o estado atual se até a leitura local falhar.
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [mergePendingTransactions]);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);

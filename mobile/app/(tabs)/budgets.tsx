@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform, Linking } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform, Linking, DeviceEventEmitter } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getCategoryEmoji } from '../../utils/categoryIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +7,8 @@ import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useAuth } from '../../context/AuthContext';
-import { useOfflineActionGuard } from '../../hooks/useOfflineActionGuard';
+import { useNetworkStatus } from '../../context/NetworkContext';
+import { offlineBudgetQueue, OfflineBudget } from '../../services/offlineBudgetQueue';
 import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Budget } from '../../types';
 import * as Haptics from 'expo-haptics';
@@ -32,8 +33,8 @@ export default function BudgetsScreen() {
     const { isPrivacyEnabled, togglePrivacy } = useTransactions();
     const { formatCurrency, currencySymbol } = useCurrency();
     const { user } = useAuth();
-    const { ensureOnline } = useOfflineActionGuard();
-    const [budgets, setBudgets] = useState<Budget[]>([]);
+    const { isOnline } = useNetworkStatus();
+    const [budgets, setBudgets] = useState<OfflineBudget[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -48,6 +49,22 @@ export default function BudgetsScreen() {
     const isFree = user?.plan !== 'premium';
     const isBudgetLimitReached = isFree && budgets.length >= 3;
 
+    const mergePendingBudgets = useCallback(async (remoteBudgets: Budget[] = []) => {
+        const [pending, deletedIds] = await Promise.all([
+            offlineBudgetQueue.getPendingOptimisticBudgets(),
+            offlineBudgetQueue.getDeletedBudgetIds(),
+        ]);
+        const deletedSet = new Set(deletedIds);
+        const pendingCategoryIds = new Set(pending.map(item => item.categoryId));
+        const pendingIds = new Set(pending.map(item => item.id));
+        const visibleRemote = remoteBudgets.filter(item => !deletedSet.has(item.id) && !pendingIds.has(item.id) && !pendingCategoryIds.has(item.categoryId));
+        setBudgets([...pending, ...visibleRemote]);
+    }, []);
+
+    const applyOptimisticBudget = useCallback((budget: OfflineBudget) => {
+        setBudgets(prev => [budget, ...prev.filter(item => item.id !== budget.id && item.categoryId !== budget.categoryId)]);
+    }, []);
+
     const fetchBudgets = async () => {
         try {
             const [bRes, cRes] = await Promise.allSettled([
@@ -56,7 +73,9 @@ export default function BudgetsScreen() {
             ]);
 
             if (bRes.status === 'fulfilled') {
-                setBudgets(bRes.value.data);
+                await mergePendingBudgets(bRes.value.data);
+            } else {
+                await mergePendingBudgets([]);
             }
             if (cRes.status === 'fulfilled') {
                 setCategories(cRes.value.data);
@@ -97,6 +116,10 @@ export default function BudgetsScreen() {
 
     useEffect(() => {
         fetchBudgets();
+        const sub = DeviceEventEmitter.addListener(offlineBudgetQueue.syncEvent, () => {
+            fetchBudgets();
+        });
+        return () => sub.remove();
     }, []);
 
     const onRefresh = useCallback(() => {
@@ -116,7 +139,25 @@ export default function BudgetsScreen() {
             return;
         }
 
-        if (!ensureOnline(editingBudget ? 'atualizar este orçamento' : 'criar este orçamento')) return;
+        const payload = { categoryId, amount: rawAmount, categoryObj: selectedCat || categories.find(c => c.id === categoryId) };
+
+        if (!isOnline) {
+            try {
+                const optimistic = editingBudget
+                    ? await offlineBudgetQueue.queueBudgetUpdate(editingBudget, payload)
+                    : await offlineBudgetQueue.queueBudgetCreate(payload);
+                applyOptimisticBudget(optimistic);
+                setModalVisible(false);
+                setEditingBudget(null);
+                setCategoryId('');
+                setAmount('');
+                Alert.alert('Salvo offline', 'O orçamento foi salvo no aparelho e será sincronizado quando a internet voltar.');
+            } catch (error) {
+                console.error('Erro ao salvar orçamento offline:', error);
+                Alert.alert('Erro', 'Não foi possível salvar o orçamento offline.');
+            }
+            return;
+        }
 
         try {
             if (editingBudget) {
@@ -130,7 +171,27 @@ export default function BudgetsScreen() {
             setAmount('');
             fetchBudgets();
             Alert.alert('Sucesso', 'Orçamento salvo!');
-        } catch (error) {
+        } catch (error: any) {
+            const status = error?.response?.status;
+            const code = error?.code;
+            const isNetworkError = !status || code === 'ERR_NETWORK' || code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('network');
+            if (isNetworkError) {
+                try {
+                    const optimistic = editingBudget
+                        ? await offlineBudgetQueue.queueBudgetUpdate(editingBudget, payload)
+                        : await offlineBudgetQueue.queueBudgetCreate(payload);
+                    applyOptimisticBudget(optimistic);
+                    const syncResult = await offlineBudgetQueue.syncPendingBudgetQueue();
+                    setModalVisible(false);
+                    setEditingBudget(null);
+                    setCategoryId('');
+                    setAmount('');
+                    Alert.alert(syncResult.synced > 0 ? 'Sucesso' : 'Salvo offline', syncResult.synced > 0 ? 'Orçamento salvo!' : 'O orçamento será sincronizado quando a conexão estabilizar.');
+                    return;
+                } catch (offlineError) {
+                    console.error('Erro ao salvar orçamento offline:', offlineError);
+                }
+            }
             console.error('Erro ao salvar orçamento:', error);
             Alert.alert('Erro', 'Não foi possível salvar o orçamento.');
         }
@@ -153,12 +214,35 @@ export default function BudgetsScreen() {
                     text: 'Excluir',
                     style: 'destructive',
                     onPress: async () => {
-                        if (!ensureOnline('excluir este orçamento')) return;
+                        if (!isOnline) {
+                            try {
+                                await offlineBudgetQueue.queueBudgetDelete(budget);
+                                setBudgets(prev => prev.filter(item => item.id !== budget.id));
+                                Alert.alert('Salvo offline', 'O orçamento será excluído quando a internet voltar.');
+                            } catch (error) {
+                                console.error('Erro ao excluir orçamento offline:', error);
+                                Alert.alert('Erro', 'Não foi possível salvar a exclusão offline.');
+                            }
+                            return;
+                        }
                         try {
                             await api.delete(`/budgets/${budget.id}`);
                             fetchBudgets();
                             Alert.alert('Sucesso', 'Orçamento excluído!');
-                        } catch (error) {
+                        } catch (error: any) {
+                            const status = error?.response?.status;
+                            const code = error?.code;
+                            const isNetworkError = !status || code === 'ERR_NETWORK' || code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('network');
+                            if (isNetworkError) {
+                                try {
+                                    await offlineBudgetQueue.queueBudgetDelete(budget);
+                                    setBudgets(prev => prev.filter(item => item.id !== budget.id));
+                                    Alert.alert('Salvo offline', 'A exclusão será sincronizada quando a conexão estabilizar.');
+                                    return;
+                                } catch (offlineError) {
+                                    console.error('Erro ao excluir orçamento offline:', offlineError);
+                                }
+                            }
                             console.error('Erro ao excluir orçamento:', error);
                             Alert.alert('Erro', 'Não foi possível excluir o orçamento.');
                         }
@@ -247,6 +331,11 @@ export default function BudgetsScreen() {
                                 {/* header */}
                                 <View className="flex-row justify-between items-center mb-3">
                                     <Text className="text-lg font-bold text-slate-700">{budget.categoryObj?.name || 'Categoria'}</Text>
+                                    {budget.pendingSync && (
+                                        <View className="bg-amber-100 px-2 py-0.5 rounded-full mt-1 self-start">
+                                            <Text className="text-amber-700 text-[10px] font-black uppercase">Pendente</Text>
+                                        </View>
+                                    )}
                                     <View className="items-end">
                                         <Text className="text-xs text-slate-400 font-bold uppercase">Gasto: {formatValue(budget.spent)}</Text>
                                         <Text className="text-xs text-slate-400 font-bold uppercase mt-1">Teto</Text>

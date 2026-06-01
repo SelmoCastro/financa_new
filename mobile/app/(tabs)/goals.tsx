@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform, Linking } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, ActivityIndicator, Modal, TextInput, Alert, Platform, Linking, DeviceEventEmitter } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useAuth } from '../../context/AuthContext';
-import { useOfflineActionGuard } from '../../hooks/useOfflineActionGuard';
+import { useNetworkStatus } from '../../context/NetworkContext';
+import { offlineGoalQueue, OfflineGoal } from '../../services/offlineGoalQueue';
 import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currencyUtils';
 import { Goal } from '../../types';
 import * as Haptics from 'expo-haptics';
@@ -18,8 +19,8 @@ export default function GoalsScreen() {
     const { isPrivacyEnabled, togglePrivacy } = useTransactions();
     const { formatCurrency, currencySymbol } = useCurrency();
     const { user } = useAuth();
-    const { ensureOnline } = useOfflineActionGuard();
-    const [goals, setGoals] = useState<Goal[]>([]);
+    const { isOnline } = useNetworkStatus();
+    const [goals, setGoals] = useState<OfflineGoal[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -36,12 +37,28 @@ export default function GoalsScreen() {
     const isFree = user?.plan !== 'premium';
     const isGoalLimitReached = isFree && goals.length >= 3;
 
+    const mergePendingGoals = useCallback(async (remoteGoals: Goal[] = []) => {
+        const [pending, deletedIds] = await Promise.all([
+            offlineGoalQueue.getPendingOptimisticGoals(),
+            offlineGoalQueue.getDeletedGoalIds(),
+        ]);
+        const deletedSet = new Set(deletedIds);
+        const pendingIds = new Set(pending.map(item => item.id));
+        const visibleRemote = remoteGoals.filter(item => !deletedSet.has(item.id) && !pendingIds.has(item.id));
+        setGoals([...pending, ...visibleRemote]);
+    }, []);
+
+    const applyOptimisticGoal = useCallback((goal: OfflineGoal) => {
+        setGoals(prev => [goal, ...prev.filter(item => item.id !== goal.id)]);
+    }, []);
+
     const fetchGoals = async () => {
         try {
             const response = await api.get('/goals');
-            setGoals(response.data);
+            await mergePendingGoals(response.data);
         } catch (error) {
             console.error('Erro ao buscar metas:', error);
+            await mergePendingGoals([]);
             Alert.alert('Erro', 'Não foi possível carregar as metas.');
         } finally {
             setLoading(false);
@@ -51,6 +68,10 @@ export default function GoalsScreen() {
 
     useEffect(() => {
         fetchGoals();
+        const sub = DeviceEventEmitter.addListener(offlineGoalQueue.syncEvent, () => {
+            fetchGoals();
+        });
+        return () => sub.remove();
     }, []);
 
     const onRefresh = useCallback(() => {
@@ -78,7 +99,25 @@ export default function GoalsScreen() {
             return;
         }
 
-        if (!ensureOnline(editingGoal ? 'atualizar esta meta' : 'criar esta meta')) return;
+        const payload = { title, targetAmount: rawAmount };
+
+        if (!isOnline) {
+            try {
+                const optimistic = editingGoal
+                    ? await offlineGoalQueue.queueGoalUpdate(editingGoal, payload)
+                    : await offlineGoalQueue.queueGoalCreate(payload);
+                applyOptimisticGoal(optimistic);
+                setModalVisible(false);
+                setEditingGoal(null);
+                setTitle('');
+                setTargetAmount('');
+                Alert.alert('Salvo offline', 'A meta foi salva no aparelho e será sincronizada quando a internet voltar.');
+            } catch (error) {
+                console.error('Erro ao salvar meta offline:', error);
+                Alert.alert('Erro', 'Não foi possível salvar a meta offline.');
+            }
+            return;
+        }
 
         try {
             if (editingGoal) {
@@ -92,7 +131,27 @@ export default function GoalsScreen() {
             setTargetAmount('');
             fetchGoals();
             Alert.alert('Sucesso', 'Meta salva!');
-        } catch (error) {
+        } catch (error: any) {
+            const status = error?.response?.status;
+            const code = error?.code;
+            const isNetworkError = !status || code === 'ERR_NETWORK' || code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('network');
+            if (isNetworkError) {
+                try {
+                    const optimistic = editingGoal
+                        ? await offlineGoalQueue.queueGoalUpdate(editingGoal, payload)
+                        : await offlineGoalQueue.queueGoalCreate(payload);
+                    applyOptimisticGoal(optimistic);
+                    const syncResult = await offlineGoalQueue.syncPendingGoalQueue();
+                    setModalVisible(false);
+                    setEditingGoal(null);
+                    setTitle('');
+                    setTargetAmount('');
+                    Alert.alert(syncResult.synced > 0 ? 'Sucesso' : 'Salvo offline', syncResult.synced > 0 ? 'Meta salva!' : 'A meta será sincronizada quando a conexão estabilizar.');
+                    return;
+                } catch (offlineError) {
+                    console.error('Erro ao salvar meta offline:', offlineError);
+                }
+            }
             console.error('Erro ao salvar meta:', error);
             Alert.alert('Erro', 'Não foi possível salvar a meta.');
         }
@@ -115,12 +174,35 @@ export default function GoalsScreen() {
                     text: 'Excluir',
                     style: 'destructive',
                     onPress: async () => {
-                        if (!ensureOnline('excluir esta meta')) return;
+                        if (!isOnline) {
+                            try {
+                                await offlineGoalQueue.queueGoalDelete(goal);
+                                setGoals(prev => prev.filter(item => item.id !== goal.id));
+                                Alert.alert('Salvo offline', 'A meta será excluída quando a internet voltar.');
+                            } catch (error) {
+                                console.error('Erro ao excluir meta offline:', error);
+                                Alert.alert('Erro', 'Não foi possível salvar a exclusão offline.');
+                            }
+                            return;
+                        }
                         try {
                             await api.delete(`/goals/${goal.id}`);
                             fetchGoals();
                             Alert.alert('Sucesso', 'Meta excluída!');
-                        } catch (error) {
+                        } catch (error: any) {
+                            const status = error?.response?.status;
+                            const code = error?.code;
+                            const isNetworkError = !status || code === 'ERR_NETWORK' || code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('network');
+                            if (isNetworkError) {
+                                try {
+                                    await offlineGoalQueue.queueGoalDelete(goal);
+                                    setGoals(prev => prev.filter(item => item.id !== goal.id));
+                                    Alert.alert('Salvo offline', 'A exclusão será sincronizada quando a conexão estabilizar.');
+                                    return;
+                                } catch (offlineError) {
+                                    console.error('Erro ao excluir meta offline:', offlineError);
+                                }
+                            }
                             console.error('Erro ao excluir meta:', error);
                             Alert.alert('Erro', 'Não foi possível excluir a meta.');
                         }
@@ -139,7 +221,20 @@ export default function GoalsScreen() {
             return;
         }
 
-        if (!ensureOnline('fazer este depósito')) return;
+        if (!isOnline) {
+            try {
+                const optimistic = await offlineGoalQueue.queueGoalDeposit(selectedGoal, rawAmount);
+                applyOptimisticGoal(optimistic);
+                setDepositModalVisible(false);
+                setDepositAmount('');
+                setSelectedGoal(null);
+                Alert.alert('Salvo offline', 'O depósito foi aplicado localmente e será sincronizado quando a internet voltar.');
+            } catch (error) {
+                console.error('Erro ao depositar offline:', error);
+                Alert.alert('Erro', 'Não foi possível salvar o depósito offline.');
+            }
+            return;
+        }
 
         try {
             await api.post(`/goals/${selectedGoal.id}/deposit`, { amount: rawAmount });
@@ -148,7 +243,24 @@ export default function GoalsScreen() {
             setSelectedGoal(null);
             fetchGoals();
             Alert.alert('Sucesso', 'Depósito realizado!');
-        } catch (error) {
+        } catch (error: any) {
+            const status = error?.response?.status;
+            const code = error?.code;
+            const isNetworkError = !status || code === 'ERR_NETWORK' || code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('network');
+            if (isNetworkError) {
+                try {
+                    const optimistic = await offlineGoalQueue.queueGoalDeposit(selectedGoal, rawAmount);
+                    applyOptimisticGoal(optimistic);
+                    const syncResult = await offlineGoalQueue.syncPendingGoalQueue();
+                    setDepositModalVisible(false);
+                    setDepositAmount('');
+                    setSelectedGoal(null);
+                    Alert.alert(syncResult.synced > 0 ? 'Sucesso' : 'Salvo offline', syncResult.synced > 0 ? 'Depósito realizado!' : 'O depósito será sincronizado quando a conexão estabilizar.');
+                    return;
+                } catch (offlineError) {
+                    console.error('Erro ao depositar offline:', offlineError);
+                }
+            }
             console.error('Erro ao depositar:', error);
             Alert.alert('Erro', 'Não foi possível realizar o depósito.');
         }
@@ -232,6 +344,11 @@ export default function GoalsScreen() {
                                 <View className="flex-row justify-between items-start mb-3">
                                     <View>
                                         <Text className="text-lg font-bold text-slate-700">{goal.title}</Text>
+                                        {goal.pendingSync && (
+                                            <View className="bg-amber-100 px-2 py-0.5 rounded-full mt-1 self-start">
+                                                <Text className="text-amber-700 text-[10px] font-black uppercase">Pendente</Text>
+                                            </View>
+                                        )}
                                         <Text className="text-xs text-slate-400 font-bold uppercase mt-1">
                                             Meta: {formatValue(goal.targetAmount)}
                                         </Text>

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, RefreshControl, Alert,
-  Pressable, Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform
+  Pressable, Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, DeviceEventEmitter
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
@@ -16,8 +16,13 @@ import { useOfflineActionGuard } from '../../hooks/useOfflineActionGuard';
 import { useNetworkStatus } from '../../context/NetworkContext';
 import { offlineRecurringQueue } from '../../services/offlineRecurringQueue';
 
+type OfflineRecurringTransaction = RecurringTransactionDTO & {
+  pendingSync?: boolean;
+  offlineLocalId?: string;
+};
+
 export default function RecurringScreen() {
-  const [recorrentes, setRecorrentes] = useState<RecurringTransactionDTO[]>([]);
+  const [recorrentes, setRecorrentes] = useState<OfflineRecurringTransaction[]>([]);
   const [weight, setWeight] = useState<WeightData | null>(null);
   const [loading, setLoading] = useState(true);
   const { formatCurrency, currency } = useCurrency();
@@ -28,6 +33,21 @@ export default function RecurringScreen() {
   const { transactions, setTransactions } = useTransactions();
   const totals = useMemo(() => ({ income: 0, expense: 0, balance: 0, currentIncome: 0, currentExpense: 0 }), []);
   const { fixedItems } = useFixedTransactions(transactions, totals);
+
+  const mergePendingRecurring = useCallback(async (remoteItems: RecurringTransactionDTO[] = []) => {
+    const [pending, deletedIds] = await Promise.all([
+      offlineRecurringQueue.getPendingOptimisticRecurring(),
+      offlineRecurringQueue.getDeletedRecurringIds(),
+    ]);
+    const deletedSet = new Set(deletedIds);
+    const pendingIds = new Set(pending.map(item => item.id));
+    const visibleRemote = remoteItems.filter(item => !deletedSet.has(item.id) && !pendingIds.has(item.id));
+    setRecorrentes([...(pending as OfflineRecurringTransaction[]), ...visibleRemote]);
+  }, []);
+
+  const applyOptimisticRecurring = useCallback((item: OfflineRecurringTransaction) => {
+    setRecorrentes(prev => [item, ...prev.filter(existing => existing.id !== item.id)]);
+  }, []);
 
   // Form
   const [modalVisible, setModalVisible] = useState(false);
@@ -47,7 +67,9 @@ export default function RecurringScreen() {
       ]);
 
       if (rtRes.status === 'fulfilled') {
-        setRecorrentes(rtRes.value.data);
+        await mergePendingRecurring(rtRes.value.data);
+      } else {
+        await mergePendingRecurring([]);
       }
       if (wRes.status === 'fulfilled') {
         setWeight(wRes.value.data);
@@ -61,9 +83,13 @@ export default function RecurringScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mergePendingRecurring]);
 
-  useFocusEffect(useCallback(() => { fetchData(); }, [fetchData]));
+  useFocusEffect(useCallback(() => {
+    fetchData();
+    const sub = DeviceEventEmitter.addListener(offlineRecurringQueue.syncEvent, () => fetchData());
+    return () => sub.remove();
+  }, [fetchData]));
 
   const openCreate = () => {
     setEditing(null);
@@ -100,7 +126,8 @@ export default function RecurringScreen() {
           await recurringService.update(editing.id, payload);
           Alert.alert('Sucesso', 'Recorrente atualizado!');
         } else {
-          await offlineRecurringQueue.queueRecurringUpdate(editing.id, payload);
+          const result = await offlineRecurringQueue.queueRecurringUpdate(editing.id, payload, editing);
+          applyOptimisticRecurring(result.optimistic as OfflineRecurringTransaction);
           Alert.alert('Salvo offline', 'O recorrente será atualizado quando a internet voltar.');
         }
       } else {
@@ -108,7 +135,8 @@ export default function RecurringScreen() {
           await recurringService.create(payload);
           Alert.alert('Sucesso', 'Recorrente criado!');
         } else {
-          await offlineRecurringQueue.queueRecurringCreate(payload);
+          const result = await offlineRecurringQueue.queueRecurringCreate(payload);
+          applyOptimisticRecurring(result.optimistic as OfflineRecurringTransaction);
           Alert.alert('Salvo offline', 'O recorrente será criado quando a internet voltar.');
         }
       }
@@ -126,19 +154,21 @@ export default function RecurringScreen() {
       if (isNetworkError) {
         try {
           if (editing) {
-            await offlineRecurringQueue.queueRecurringUpdate(editing.id, {
+            const result = await offlineRecurringQueue.queueRecurringUpdate(editing.id, {
               description: desc.trim(),
               amount: parseCurrencyToNumber(amount),
               type: trType,
               dueDay: Number(dueDay),
-            });
+            }, editing);
+            applyOptimisticRecurring(result.optimistic as OfflineRecurringTransaction);
           } else {
-            await offlineRecurringQueue.queueRecurringCreate({
+            const result = await offlineRecurringQueue.queueRecurringCreate({
               description: desc.trim(),
               amount: parseCurrencyToNumber(amount),
               type: trType,
               dueDay: Number(dueDay),
             });
+            applyOptimisticRecurring(result.optimistic as OfflineRecurringTransaction);
           }
 
           // Tenta sincronizar imediatamente — se a rede já estiver de volta,
@@ -189,7 +219,9 @@ export default function RecurringScreen() {
               await recurringService.remove(id);
               Alert.alert('Sucesso', 'Recorrente excluído!');
             } else {
-              await offlineRecurringQueue.queueRecurringDelete(id);
+              const item = recorrentes.find(r => r.id === id);
+              await offlineRecurringQueue.queueRecurringDelete(id, item);
+              setRecorrentes(prev => prev.filter(r => r.id !== id));
               Alert.alert('Salvo offline', 'O recorrente será excluído quando a internet voltar.');
             }
             await fetchData();
@@ -203,7 +235,9 @@ export default function RecurringScreen() {
             
             if (isNetworkError) {
               try {
-                await offlineRecurringQueue.queueRecurringDelete(id);
+                const item = recorrentes.find(r => r.id === id);
+                await offlineRecurringQueue.queueRecurringDelete(id, item);
+                setRecorrentes(prev => prev.filter(r => r.id !== id));
                 Alert.alert('Salvo offline', 'A internet caiu. O recorrente será excluído quando a conexão voltar.');
                 await fetchData();
                 return;
@@ -322,6 +356,7 @@ export default function RecurringScreen() {
                       <Text className="font-bold text-slate-700 text-base">{r.description}</Text>
                       {isDueToday && <View className="bg-amber-100 px-2 py-0.5 rounded-full"><Text className="text-amber-700 text-[10px] font-black uppercase">Hoje</Text></View>}
                       {isOverdue && <View className="bg-rose-100 px-2 py-0.5 rounded-full"><Text className="text-rose-700 text-[10px] font-black uppercase">Vencido</Text></View>}
+                      {r.pendingSync && <View className="bg-amber-100 px-2 py-0.5 rounded-full"><Text className="text-amber-700 text-[10px] font-black uppercase">Pendente</Text></View>}
                     </View>
                     <View className="flex-row items-center gap-2 mt-1">
                       <Text className={`font-black text-sm ${r.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>

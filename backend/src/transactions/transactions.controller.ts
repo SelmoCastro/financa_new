@@ -306,8 +306,8 @@ export class TransactionsController {
     const parsedMonth = month ? parseInt(month, 10) : undefined;
     return this.reportsService.getDashboardSummary(
       req.user.userId,
-      parsedYear && !isNaN(parsedYear) ? parsedYear : undefined,
-      parsedMonth && !isNaN(parsedMonth) ? parsedMonth : undefined,
+      parsedYear !== undefined && !isNaN(parsedYear) ? parsedYear : undefined,
+      parsedMonth !== undefined && !isNaN(parsedMonth) ? parsedMonth : undefined,
     );
   }
 

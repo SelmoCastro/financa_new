@@ -11,6 +11,7 @@ import { CurrencyProvider } from '../context/CurrencyContext';
 import { UpdateDialog } from '../components/UpdateDialog';
 import { ConsentModal } from '../components/ConsentModal';
 import { initErrorReporter, reportReactError } from '../utils/errorReporter';
+import { initLocalDb } from '../services/localDb';
 import '../global.css';
 
 // Suppress expo-file-system deprecation warnings (SDK 54+ legacy API, used internally by expo)
@@ -57,6 +58,12 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     // Load your custom fonts here if needed
   });
+
+  useEffect(() => {
+    initLocalDb().catch((dbError) => {
+      if (__DEV__) console.warn('[localDb] Falha ao inicializar banco offline:', dbError);
+    });
+  }, []);
 
   useEffect(() => {
     if (error) throw error;

@@ -8,6 +8,8 @@ import { warmOfflineCache } from '../services/offlineWarmup';
 import { useNetworkStatus } from './NetworkContext';
 import { offlineTransactionQueue } from '../services/offlineTransactionQueue';
 import { offlineRecurringQueue } from '../services/offlineRecurringQueue';
+import { offlineBudgetQueue } from '../services/offlineBudgetQueue';
+import { offlineGoalQueue } from '../services/offlineGoalQueue';
 
 const API_URL = 'https://api.finanzaai.tech/v1';
 
@@ -135,6 +137,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (__DEV__) console.log('[AuthContext] App came back from background. Checking session...');
             // Poke the API. Interceptor handles 401 -> refresh if needed.
             await fetchProfile();
+
+            // Re-tenta sincronizar filas offline ao voltar pro primeiro plano
+            if (isOnline && !syncInFlightRef.current) {
+                syncInFlightRef.current = true;
+                Promise.all([
+                    offlineTransactionQueue.syncPendingTransactionQueue(),
+                    offlineRecurringQueue.syncPendingRecurringQueue(),
+                    offlineBudgetQueue.syncPendingBudgetQueue(),
+                    offlineGoalQueue.syncPendingGoalQueue(),
+                ]).catch((error) => {
+                    if (__DEV__) console.warn('[AuthContext] Erro ao sincronizar filas offline (foreground):', error);
+                }).finally(() => {
+                    syncInFlightRef.current = false;
+                });
+            }
         };
 
         const subscription = AppState.addEventListener('change', handleAppState);
@@ -163,6 +180,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         Promise.all([
             offlineTransactionQueue.syncPendingTransactionQueue(),
             offlineRecurringQueue.syncPendingRecurringQueue(),
+            offlineBudgetQueue.syncPendingBudgetQueue(),
+            offlineGoalQueue.syncPendingGoalQueue(),
         ])
             .catch((error) => {
                 if (__DEV__) console.warn('[AuthContext] Erro ao sincronizar filas offline:', error);

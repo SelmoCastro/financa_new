@@ -17,51 +17,8 @@ export class ReportsService {
 
   async getDashboardSummary(userId: string, year?: number, month?: number) {
     const now = new Date();
-    let targetYear = year !== undefined ? year : now.getFullYear();
-    let targetMonth = month !== undefined ? month : now.getMonth();
-
-    // Auto-fallback: if the requested month has no transactions, scan backwards
-    // to find the most recent month with data (up to 12 months)
-    {
-      const checkStart = new Date(Date.UTC(targetYear, targetMonth, 1));
-      const checkEnd = new Date(
-        Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59, 999),
-      );
-      const checkTxs = await this.prisma.transaction.findFirst({
-        where: {
-          userId,
-          deletedAt: null,
-          transferGroupId: null,
-          date: { gte: checkStart, lte: checkEnd },
-        },
-        select: { id: true },
-      });
-      if (!checkTxs) {
-        // Empty month — scan backwards
-        let sy = targetYear;
-        let sm = targetMonth;
-        for (let i = 1; i <= 12; i++) {
-          sm--;
-          if (sm < 0) { sm = 11; sy--; }
-          const ss = new Date(Date.UTC(sy, sm, 1));
-          const se = new Date(Date.UTC(sy, sm + 1, 0, 23, 59, 59, 999));
-          const stx = await this.prisma.transaction.findFirst({
-            where: {
-              userId,
-              deletedAt: null,
-              transferGroupId: null,
-              date: { gte: ss, lte: se },
-            },
-            select: { id: true },
-          });
-          if (stx) {
-            targetYear = sy;
-            targetMonth = sm;
-            break;
-          }
-        }
-      }
-    }
+    const targetYear = year !== undefined ? year : now.getFullYear();
+    const targetMonth = month !== undefined ? month : now.getMonth();
 
     const startOfMonth = new Date(Date.UTC(targetYear, targetMonth, 1));
     const endOfMonth = new Date(

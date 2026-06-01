@@ -63,6 +63,7 @@ export default function TransactionsScreen() {
             const date = parseDate(t.date);
             const { year, month } = getYearMonth(date);
             const matchesDate = year === targetYear && month === targetMonth;
+            if (!matchesDate) return false;
 
             if (filter !== 'ALL' && t.type !== filter) return false;
 
@@ -87,15 +88,42 @@ export default function TransactionsScreen() {
     const pendingOfflineCount = useMemo(
         () => {
             const uniqueIds = new Set<string>();
-            filteredTransactions.forEach((transaction) => {
+            transactions.forEach((transaction) => {
                 if (transaction.pendingSync) {
                     uniqueIds.add(transaction.offlineLocalId || transaction.id);
                 }
             });
             return uniqueIds.size;
         },
-        [filteredTransactions]
+        [transactions]
     );
+
+    const [syncing, setSyncing] = useState(false);
+    const handleSyncNow = useCallback(async () => {
+        if (syncing || pendingOfflineCount === 0) return;
+        setSyncing(true);
+        try {
+            const result = await offlineTransactionQueue.syncPendingTransactionQueue();
+            if (result.synced > 0) {
+                Alert.alert('Sincronizado', `${result.synced} lançamento${result.synced > 1 ? 's' : ''} enviado${result.synced > 1 ? 's' : ''} com sucesso!`);
+                onRefresh();
+            }
+            if (result.errors && result.errors.length > 0) {
+                const msgs = result.errors.map(e => {
+                    const desc = e.description?.substring(0, 40) || 'lançamento';
+                    const cleanError = typeof e.error === 'string' ? e.error.split(',').pop()?.trim() || e.error : 'Erro desconhecido';
+                    return `• ${desc}: ${cleanError}`;
+                });
+                Alert.alert('Erro ao sincronizar', msgs.join('\n'));
+            } else if (result.synced === 0 && result.remaining > 0) {
+                Alert.alert('Atenção', `${result.remaining} lançamento${result.remaining > 1 ? 's' : ''} ainda não puderam ser sincronizados. Tente novamente em alguns instantes.`);
+            }
+        } catch (error) {
+            Alert.alert('Erro', 'Não foi possível sincronizar agora. Verifique sua conexão.');
+        } finally {
+            setSyncing(false);
+        }
+    }, [syncing, pendingOfflineCount, onRefresh]);
 
 
     const handleEditTransaction = async (transaction: any) => {
@@ -271,13 +299,19 @@ export default function TransactionsScreen() {
 
                 {pendingOfflineCount > 0 && (
                     <View className="px-6 mt-4">
-                        <View className="flex-row items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                        <Pressable
+                            onPress={handleSyncNow}
+                            disabled={syncing}
+                            className="flex-row items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
+                            style={({ pressed }) => ({ opacity: syncing ? 0.6 : pressed ? 0.85 : 1 })}
+                            android_ripple={{ color: 'rgba(180,83,9,0.2)' }}
+                        >
                             <View className="flex-1">
                                 <Text className="text-amber-800 font-extrabold text-sm">{pendingOfflineCount} lançamento{pendingOfflineCount > 1 ? 's' : ''} aguardando sincronização</Text>
-                                <Text className="text-amber-700 text-xs mt-1">Foram salvos no aparelho e serão enviados quando a internet voltar.</Text>
+                                <Text className="text-amber-700 text-xs mt-1">{syncing ? 'Sincronizando...' : 'Toque para sincronizar agora'}</Text>
                             </View>
-                            <MaterialIcons name="cloud-upload" size={20} color="#b45309" />
-                        </View>
+                            <MaterialIcons name={syncing ? 'sync' : 'cloud-upload'} size={20} color="#b45309" />
+                        </Pressable>
                     </View>
                 )}
 

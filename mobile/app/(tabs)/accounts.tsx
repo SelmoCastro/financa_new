@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
     View, Text, ScrollView, RefreshControl, Alert,
-    Pressable, Modal, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Linking
+    Pressable, Modal, TextInput, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Linking, DeviceEventEmitter
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getCategoryEmoji } from '../../utils/categoryIcons';
@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useOfflineActionGuard } from '../../hooks/useOfflineActionGuard';
 import { invoiceService, InvoiceDTO } from '../../services/invoiceService';
 import { creditCardService, CreditCardInstallmentDTO } from '../../services/creditCardService';
+import { offlineTransactionQueue } from '../../services/offlineTransactionQueue';
 
 
 
@@ -91,6 +92,10 @@ export default function AccountsScreen() {
     // Parcelas
     const [installments, setInstallments] = useState<Record<string, CreditCardInstallmentDTO[]>>({});
 
+    // Ajustes de saldo por transações offline pendentes (por accountId)
+    const [pendingAccountAdjustments, setPendingAccountAdjustments] = useState<Record<string, number>>({});
+    const [pendingOfflineTotal, setPendingOfflineTotal] = useState(0);
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -124,6 +129,27 @@ export default function AccountsScreen() {
                 // Installments may not exist yet or may be offline without cache
             }
 
+            // Calcula ajustes de saldo para transações offline pendentes por conta
+            try {
+                const pendingTransactions = await offlineTransactionQueue.getPendingOptimisticTransactions();
+                const adjustments: Record<string, number> = {};
+                let totalPending = 0;
+                for (const t of pendingTransactions) {
+                    if (!t.pendingSync) continue;
+                    const amount = Number(t.amount) || 0;
+                    const isExpense = t.type === 'EXPENSE';
+                    const signedAmount = isExpense ? -amount : amount;
+                    totalPending += signedAmount;
+                    if (t.accountId) {
+                        adjustments[t.accountId] = (adjustments[t.accountId] || 0) + signedAmount;
+                    }
+                }
+                setPendingAccountAdjustments(adjustments);
+                setPendingOfflineTotal(totalPending);
+            } catch {
+                // Silently fails — pending adjustments are optional UX
+            }
+
             if (accRes.status === 'rejected' && ccRes.status === 'rejected' && catRes.status === 'rejected') {
                 throw accRes.reason || ccRes.reason || catRes.reason;
             }
@@ -146,6 +172,14 @@ export default function AccountsScreen() {
     }, []);
 
     useFocusEffect(useCallback(() => { fetchData(); }, [fetchData]));
+
+    // Re-render accounts when offline queue syncs
+    useEffect(() => {
+        const sub = DeviceEventEmitter.addListener('transactions:offline-queue-synced', () => {
+            fetchData();
+        });
+        return () => sub.remove();
+    }, [fetchData]);
 
     // ---- CRIAR ----
     const openCreate = () => {
@@ -295,7 +329,8 @@ export default function AccountsScreen() {
 
     const totalBalance = accounts.reduce((s, a) => {
         const bal = Number(a.balance);
-        return s + (isNaN(bal) ? 0 : bal);
+        const pendingAdj = pendingAccountAdjustments[a.id] || 0;
+        return s + (isNaN(bal) ? 0 : bal) + pendingAdj;
     }, 0);
 
     // Helper: safe number conversion (protects against encrypted strings not yet decrypted)
@@ -326,13 +361,21 @@ export default function AccountsScreen() {
                 {/* Saldo Consolidado */}
                 <View className="px-6 mb-6">
                     <View className="bg-indigo-600 rounded-[24px] p-6">
-                        <View className="flex-row items-center gap-2 mb-4 opacity-90">
+                        <View className="flex-row items-center gap-2 mb-3 opacity-90">
                             <MaterialIcons name="account-balance-wallet" size={20} color="white" />
                             <Text className="text-indigo-100 font-medium text-sm">Saldo Consolidado</Text>
                         </View>
                         <Text className="text-white text-4xl font-black">
                             {formatCurrency(totalBalance)}
                         </Text>
+                        {pendingOfflineTotal !== 0 && (
+                            <View className="flex-row items-center gap-1.5 mt-2">
+                                <MaterialIcons name="cloud-upload" size={14} color="#a5b4fc" />
+                                <Text className="text-indigo-200 text-xs font-medium">
+                                    {pendingOfflineTotal > 0 ? '+' : ''}{formatCurrency(pendingOfflineTotal)} pendente{Math.abs(pendingOfflineTotal) !== 1 ? 's' : ''}
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 </View>
 
@@ -370,9 +413,14 @@ export default function AccountsScreen() {
                                         <Text className="text-xs font-medium text-slate-400">{ACCOUNT_TYPE_LABELS[acc.type] ?? acc.type}</Text>
                                     </View>
                                 </View>
-                                <Text className="text-base font-black text-slate-800 mr-4">
-                                    {formatCurrency(acc.balance)}
-                                </Text>
+                                <View className="items-end mr-4">
+                                    <Text className="text-base font-black text-slate-800">
+                                        {formatCurrency((Number(acc.balance) || 0) + (pendingAccountAdjustments[acc.id] || 0))}
+                                    </Text>
+                                    {pendingAccountAdjustments[acc.id] != null && pendingAccountAdjustments[acc.id] !== 0 && (
+                                        <Text className="text-[10px] font-bold text-amber-600 uppercase mt-0.5">Pendente</Text>
+                                    )}
+                                </View>
                             </View>
                             {/* Ações */}
                             {isAccountLimitReached && (

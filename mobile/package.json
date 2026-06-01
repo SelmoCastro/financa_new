@@ -1,7 +1,7 @@
 {
   "name": "mobile",
   "main": "expo-router/entry",
-  "version": "1.8.89",
+  "version": "1.8.95",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -33,6 +33,7 @@
     "expo-secure-store": "~15.0.8",
     "expo-sharing": "~14.0.8",
     "expo-splash-screen": "~31.0.13",
+    "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
     "expo-updates": "~29.0.17",
     "expo-web-browser": "~15.0.10",

@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.95](https://github.com/SelmoCastro/financa_new/compare/v1.8.94...v1.8.95) (2026-06-01)
+
+### ✨ Features
+
+* (admin) add 6m and 12m duration options in plan selector
+* (mobile) add plan picker modal with prices before MP checkout
+* (mobile) add premium plan checks for accounts, budgets, and goals
+
+### 🐛 Bug Fixes
+
+* (mobile) replace broken /premium redirect with direct MP checkout flow
+* (deploy) backup and validate .env critical vars during VPS deploy
+* receipt import - Content-Type race condition + AI category learning
+* (import) prevent receipt import exceptions from surfacing as generic web errors
+* (import) restore vision-first flow for images
+* (import) make receipt OCR more tolerant
+* (backend) restore @IsNumber() on amount (whitelist removes fields without validators)
+* (backend) add selected and id fields to import confirm DTO (forbidNonWhitelisted)
+* (backend) accept extra OCR fields in import confirm DTO (cnpj, suggested*, confidence, etc.)
+* (mobile) sync Expo version to stop update loop
+* (mobile) set versionName 1.8.79 in build.gradle
+* (backend) update version-meta.json to 1.8.79 for mobile version check
+* (ci) use git reset --hard instead of git pull in release workflow to avoid untracked file conflicts
+
+### 🧹 Chores
+
+* release v1.8.89
+* release v1.8.81
+* release v1.8.80
+* bump version to 1.8.79
+
+All notable changes to this project will be documented in this file.
+
 ## [1.8.89](https://github.com/SelmoCastro/financa_new/compare/v1.8.88...v1.8.89) (2026-05-28)
 
 ### ✨ Features

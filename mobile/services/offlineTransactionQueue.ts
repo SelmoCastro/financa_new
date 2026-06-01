@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import api from './api';
 import { buildScopedCacheKey, getCachedJson, setCachedJson } from './cache';
+import { deleteLocalEntity, deleteQueueItem, enqueueOfflineMutation, upsertLocalEntity } from './localDb';
 import { Transaction } from '../types';
 
 const QUEUE_PREFIX = '@finanza:offline-transaction-queue';
@@ -246,6 +247,46 @@ function buildQueueItem(payload: OfflineTransactionPayload, localId: string, cre
   };
 }
 
+async function persistPendingMutationInLocalDb(item: PendingQueueItem, optimisticTransactions: Transaction[]) {
+  try {
+    await enqueueOfflineMutation({
+      id: item.id,
+      entityType: 'transaction',
+      operation: item.kind === 'transfer' ? 'transfer' : 'create',
+      endpoint: item.endpoint,
+      method: 'POST',
+      payload: item.payload,
+      localEntityId: item.id,
+    });
+
+    await Promise.all(
+      optimisticTransactions.map((transaction) =>
+        upsertLocalEntity({
+          id: transaction.id,
+          entityType: 'transaction',
+          data: transaction,
+          pendingSync: true,
+        })
+      )
+    );
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('[offlineTransactionQueue] Falha ao persistir pendência no SQLite local:', error);
+    }
+  }
+}
+
+async function removePendingMutationFromLocalDb(item: PendingQueueItem) {
+  try {
+    await deleteQueueItem(item.id);
+    await Promise.all(item.localTransactionIds.map((localId) => deleteLocalEntity(localId)));
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('[offlineTransactionQueue] Falha ao limpar pendência do SQLite local:', error);
+    }
+  }
+}
+
 async function replaceLocalTransactions(localId: string, nextTransactions: Transaction[]) {
   const current = await readTransactionsCache();
   const filtered = current.filter((item) => item.offlineLocalId !== localId && item.id !== localId && item.offlineTransferGroupId !== localId);
@@ -265,11 +306,13 @@ async function queueOfflineMutation(payload: OfflineTransactionPayload) {
   const localId = makeLocalId();
   const optimisticTransactions = buildOptimisticTransactions(payload, localId);
   const queue = await readQueue();
-  queue.unshift(buildQueueItem(payload, localId));
+  const queueItem = buildQueueItem(payload, localId);
+  queue.unshift(queueItem);
 
   // A fila é a fonte de verdade do offline. Se a atualização do cache falhar,
   // ainda assim preservamos o item enfileirado para sincronizar depois.
   await writeQueue(queue);
+  await persistPendingMutationInLocalDb(queueItem, optimisticTransactions);
 
   try {
     await replaceLocalTransactions(localId, optimisticTransactions);
@@ -293,6 +336,11 @@ async function queueOfflineTransfer(payload: OfflineTransactionTransferPayload) 
 async function getPendingTransactionCount() {
   const queue = await readQueue();
   return queue.length;
+}
+
+async function getPendingOptimisticTransactions() {
+  const queue = await readQueue();
+  return queue.flatMap((item) => buildOptimisticTransactions(item.payload, item.id));
 }
 
 async function getPendingOfflineMutationSnapshot(localId: string) {
@@ -342,8 +390,10 @@ async function updatePendingOfflineMutation(localId: string, payload: OfflineTra
 
   const optimisticTransactions = buildOptimisticTransactions(payload, localId);
   const current = queue[index];
-  queue[index] = buildQueueItem(payload, localId, current.createdAt);
+  const queueItem = buildQueueItem(payload, localId, current.createdAt);
+  queue[index] = queueItem;
   await writeQueue(queue);
+  await persistPendingMutationInLocalDb(queueItem, optimisticTransactions);
 
   try {
     await replaceLocalTransactions(localId, optimisticTransactions);
@@ -358,12 +408,14 @@ async function updatePendingOfflineMutation(localId: string, payload: OfflineTra
 
 async function removePendingOfflineMutation(localId: string) {
   const queue = await readQueue();
+  const removedItem = queue.find((entry) => entry.id === localId);
   const next = queue.filter((entry) => entry.id !== localId);
   if (next.length === queue.length) {
     return false;
   }
 
   await writeQueue(next);
+  if (removedItem) await removePendingMutationFromLocalDb(removedItem);
 
   try {
     await removeLocalTransactions(localId);
@@ -379,43 +431,61 @@ async function removePendingOfflineMutation(localId: string) {
 async function syncPendingTransactionQueue() {
   const queue = await readQueue();
   if (queue.length === 0) {
-    return { synced: 0, remaining: 0 };
+    return { synced: 0, remaining: 0, errors: [] };
   }
 
   let synced = 0;
   let remaining = [...queue];
+  const errors: { itemId: string; description: string; error: string; status?: number }[] = [];
 
   for (const item of queue) {
     try {
-      await api.post(item.endpoint, item.payload);
+      const postResponse = await api.post(item.endpoint, item.payload);
       synced += 1;
       remaining = remaining.filter((pending) => pending.id !== item.id);
       await writeQueue(remaining);
-      await removeLocalTransactions(item.id);
+
+      // Substitui o item otimista pelo real no cache local, sem depender de um GET posterior
+      if (item.kind === 'create' && postResponse?.data?.id) {
+        const realTransaction: Transaction = postResponse.data;
+        await replaceLocalTransactions(item.id, [realTransaction]);
+      } else {
+        // Fallback: remove do cache (transferências ou resposta inesperada)
+        await removeLocalTransactions(item.id);
+      }
+
+      await removePendingMutationFromLocalDb(item);
     } catch (error: any) {
       const status = error?.response?.status;
       const code = error?.code;
+      const responseData = error?.response?.data;
+      const errorMessage =
+        (typeof responseData === 'string' ? responseData : responseData?.message) ||
+        error?.message ||
+        'Erro desconhecido';
 
-      // Keep the item in the queue when the network is unstable or the backend rejects the payload.
-      // The user can retry after reconnecting or fixing the data.
+      // Network/unstable error: keep item in queue, stop loop
       if (status == null || code === 'ERR_NETWORK' || code === 'ECONNABORTED') {
+        errors.push({ itemId: item.id, description: item.payload.description, error: errorMessage, status });
         break;
       }
 
-      break;
+      // HTTP error (4xx/5xx): capture message, remove item from queue, continue with next
+      errors.push({ itemId: item.id, description: item.payload.description, error: errorMessage, status });
+      remaining = remaining.filter((pending) => pending.id !== item.id);
+      await writeQueue(remaining);
+      await removeLocalTransactions(item.id);
+      await removePendingMutationFromLocalDb(item);
     }
   }
 
   if (synced > 0) {
-    try {
-      await api.get('/transactions');
-    } catch {
-      // If the refresh fails, the queue is still already drained; the next online refresh will reconcile.
-    }
+    // O SYNC_EVENT dispara fetchTransactions() nos listeners, que busca dados frescos
+    // Não fazemos api.get() aqui para evitar race condition com cache offline
     DeviceEventEmitter.emit(SYNC_EVENT);
   }
 
-  return { synced, remaining: remaining.length };
+  return { synced, remaining: remaining.length, errors };
 }
 
 export const offlineTransactionQueue = {
@@ -423,6 +493,7 @@ export const offlineTransactionQueue = {
   queueOfflineTransaction,
   queueOfflineTransfer,
   getPendingTransactionCount,
+  getPendingOptimisticTransactions,
   getPendingOfflineMutationSnapshot,
   updatePendingOfflineMutation,
   removePendingOfflineMutation,
