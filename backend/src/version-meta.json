@@ -1,6 +1,6 @@
 {
-  "version": "1.8.98",
-  "mobileVersion": "1.8.98",
+  "version": "1.9.0",
+  "mobileVersion": "1.9.0",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Configurações do mobile agora permitem escolher tema sistema/claro/escuro e o chat da IA foi removido novamente do app"
+  "releaseNotes": "Abertura da linha 1.9 com infraestrutura offline-first no mobile"
 }

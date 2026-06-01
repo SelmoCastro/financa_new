@@ -9,8 +9,27 @@ Este projeto segue **Semantic Versioning** (`MAJOR.MINOR.PATCH`) com commits con
 | Tipo | Quando usar | Exemplo |
 |---|---|---|
 | **MAJOR** | Mudanças que quebram compatibilidade (API, schema, comportamento) | `1.2.0` → `2.0.0` |
-| **MINOR** | Novas features compatíveis com versões anteriores | `1.2.0` → `1.3.0` |
-| **PATCH** | Bug fixes, correções sem mudar funcionalidade | `1.2.0` → `1.2.1` |
+| **MINOR** | Nova feature relevante ou capability grande compatível com versões anteriores | `1.2.0` → `1.3.0` |
+| **PATCH** | Bug fixes, correções, hardening e pequenos ajustes sem nova capability principal | `1.2.0` → `1.2.1` |
+
+### Regra prática do Finanza
+
+Use **MINOR** quando a release:
+- adiciona uma capability grande para o usuário;
+- atravessa múltiplos módulos/telas/serviços;
+- muda materialmente a operação do app, mesmo sem breaking change.
+
+Exemplo histórico do projeto:
+- **`v1.8.89` deveria ter sido `v1.9.0`**: foi a primeira release que introduziu a base offline-first no mobile (fila offline, cache local, warmup, NetworkContext, guardas offline e banner offline).
+- a expansão posterior em **`v1.8.95`** ficaria mais próxima de **`1.9.1`** ou **`1.9.2`**, pois ampliou a mesma capability com `localDb`, offline de budgets e goals.
+
+### `mobileVersion` vs `minRequiredVersion`
+
+- `mobileVersion` = versão publicada do APK
+- `minRequiredVersion` = versão mínima que ainda pode rodar sem update forçado
+
+Subir a release para `1.9.0` **não obriga** subir `minRequiredVersion` para `1.9.0`.
+Só aumente `minRequiredVersion` quando versões antigas ficarem incompatíveis, inseguras ou quebradas.
 
 ---
 
@@ -147,16 +166,19 @@ git push origin main --tags
 
 ---
 
-## 📦 Versionamento por Pacote
+## 📦 Versionamento do Monorepo
 
-Cada pacote tem sua versão independente:
+O projeto usa **uma versão compartilhada** a partir do `package.json` raiz.
 
-| Pacote | Versão Atual | Quando bump |
-|---|---|---|
-| **Backend** (`backend/package.json`) | `0.0.1` | Quando API muda |
-| **Frontend** (`frontend/package.json`) | `1.1.0` | Quando UI/UX muda |
-| **Mobile** (`mobile/package.json`) | `1.0.0` | Quando app muda |
-| **Projeto** (`package.json` raiz) | `1.2.0` | Release geral do projeto |
+Ela é sincronizada para:
+- `backend/package.json`
+- `frontend/package.json`
+- `mobile/package.json`
+- `mobile/app.json`
+- `mobile/android/app/build.gradle`
+- `backend/src/version-meta.json`
+
+> Importante: `scripts/sync-versions.js` ajuda a sincronizar parte dos arquivos, mas o fluxo de release precisa garantir também `build.gradle` e `version-meta.json`.
 
 ---
 
@@ -185,7 +207,10 @@ Estrutura:
 
 - [ ] Todos os testes passando
 - [ ] CHANGELOG.md revisado
+- [ ] Tipo de release escolhido corretamente (`patch` / `minor` / `major`)
 - [ ] Versão do `package.json` raiz atualizada
+- [ ] `mobile/app.json`, `build.gradle` e `version-meta.json` conferidos
+- [ ] `minRequiredVersion` revisado separadamente (não por reflexo do bump)
 - [ ] Tag git criada e com push
 - [ ] Deploy em produção
 - [ ] Comunicar mudanças (se relevante)
