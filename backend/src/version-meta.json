@@ -1,7 +1,6 @@
 {
-  "version": "1.9.2",
-  "mobileVersion": "1.9.2",
+  "version": "1.10.0",
+  "mobileVersion": "1.10.0",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.9.2 - Conversão real de moeda (BCB + Frankfurter) com taxa de câmbio"
+  "releaseNotes": "v1.10.0 - Conversão real de moeda (BCB + Frankfurter), IA atualizada (gemini-2.5-flash), limite IA 10/dia"
 }
-
