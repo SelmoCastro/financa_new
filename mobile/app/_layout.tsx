@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { NetworkProvider } from '../context/NetworkContext';
 import { CurrencyProvider } from '../context/CurrencyContext';
+import { LanguageProvider } from '../context/LanguageContext';
 import { UpdateDialog } from '../components/UpdateDialog';
 import { ConsentModal } from '../components/ConsentModal';
 import { initErrorReporter, reportReactError } from '../utils/errorReporter';
@@ -95,9 +96,11 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <NetworkProvider>
         <AuthProvider>
-          <CurrencyProvider>
-            <RootLayoutNav />
-          </CurrencyProvider>
+          <LanguageProvider>
+            <CurrencyProvider>
+              <RootLayoutNav />
+            </CurrencyProvider>
+          </LanguageProvider>
         </AuthProvider>
       </NetworkProvider>
     </SafeAreaProvider>

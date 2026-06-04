@@ -21,6 +21,7 @@ import SettingsModal from '../../components/SettingsModal';
 import { InviteNotification } from '../../components/InviteNotification';
 import { NotificationBell } from './_layout';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { offlineTransactionQueue } from '../../services/offlineTransactionQueue';
 
 
@@ -32,6 +33,7 @@ export default function DashboardScreen() {
     const { selectedDate } = useMonth();
     const { transactions, loading, refreshing, onRefresh, isPrivacyEnabled, togglePrivacy } = useTransactions();
     const { formatCurrency } = useCurrency();
+    const { t, language } = useLanguage();
 
     const [modalVisible, setModalVisible] = useState(false);
     const [importModalVisible, setImportModalVisible] = useState(false);
@@ -188,21 +190,30 @@ export default function DashboardScreen() {
         try {
             const result = await offlineTransactionQueue.syncPendingTransactionQueue();
             if (result.synced > 0) {
-                Alert.alert('Sincronizado', `${result.synced} lançamento${result.synced > 1 ? 's' : ''} enviado${result.synced > 1 ? 's' : ''} com sucesso!`);
+                const plural = language === 'en' ? (result.synced === 1 ? 'y' : 'ies') : (result.synced > 1 ? 's' : '');
+                const sentPlural = language === 'en' ? '' : (result.synced > 1 ? 's' : '');
+                Alert.alert(
+                    t('dashboard.sync.successTitle'),
+                    t('dashboard.sync.successBody', { count: result.synced, plural, sentPlural })
+                );
                 handleRefresh();
             }
             if (result.errors && result.errors.length > 0) {
                 const msgs = result.errors.map(e => {
-                    const desc = e.description?.substring(0, 40) || 'lançamento';
-                    const cleanError = typeof e.error === 'string' ? e.error.split(',').pop()?.trim() || e.error : 'Erro desconhecido';
+                    const desc = e.description?.substring(0, 40) || t('dashboard.sync.defaultDescription');
+                    const cleanError = typeof e.error === 'string' ? e.error.split(',').pop()?.trim() || e.error : t('dashboard.sync.unknownError');
                     return `• ${desc}: ${cleanError}`;
                 });
-                Alert.alert('Erro ao sincronizar', msgs.join('\n'));
+                Alert.alert(t('dashboard.sync.errorTitle'), msgs.join('\n'));
             } else if (result.synced === 0 && result.remaining > 0) {
-                Alert.alert('Atenção', `${result.remaining} lançamento${result.remaining > 1 ? 's' : ''} ainda não puderam ser sincronizados. Tente novamente em alguns instantes.`);
+                const plural = language === 'en' ? (result.remaining === 1 ? 'y' : 'ies') : (result.remaining > 1 ? 's' : '');
+                Alert.alert(
+                    t('dashboard.sync.attentionTitle'),
+                    t('dashboard.sync.remainingBody', { count: result.remaining, plural })
+                );
             }
         } catch (error) {
-            Alert.alert('Erro', 'Não foi possível sincronizar agora. Verifique sua conexão.');
+            Alert.alert(t('settings.error'), t('dashboard.sync.connectionError'));
         } finally {
             setSyncing(false);
         }
@@ -235,7 +246,7 @@ export default function DashboardScreen() {
                     {/* Top Row: Welcome & Profile Actions */}
                     <View style={styles.headerTopRow}>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.welcomeText} numberOfLines={1}>Bem-vindo de volta,</Text>
+                            <Text style={styles.welcomeText} numberOfLines={1}>{t('dashboard.welcomeBack')}</Text>
                         </View>
                         <View style={styles.headerButtonsSmall}>
                             <NotificationBell />
@@ -269,7 +280,7 @@ export default function DashboardScreen() {
 
                     {/* Main Row: Title */}
                     <View style={styles.headerMainRow}>
-                        <Text style={styles.titleText} numberOfLines={1}>Resumo Financeiro</Text>
+                        <Text style={styles.titleText} numberOfLines={1}>{t('dashboard.title')}</Text>
                     </View>
 
                     {/* Bottom Row: Month Selector */}
@@ -285,7 +296,7 @@ export default function DashboardScreen() {
                             style={[styles.quickActionBtn, styles.quickActionAdd]}
                         >
                             <MaterialIcons name="add-circle-outline" size={20} color="white" />
-                            <Text style={styles.quickActionTextLight}>Lançamento</Text>
+                            <Text style={styles.quickActionTextLight}>{t('dashboard.quickAdd')}</Text>
                         </Pressable>
 
                         <Pressable
@@ -294,7 +305,7 @@ export default function DashboardScreen() {
                             style={[styles.quickActionBtn, styles.quickActionImport]}
                         >
                             <MaterialIcons name="document-scanner" size={20} color="white" />
-                            <Text style={styles.quickActionTextLight}>Importar (IA)</Text>
+                            <Text style={styles.quickActionTextLight}>{t('dashboard.quickImport')}</Text>
                             <View style={styles.proBadge}><MaterialIcons name="auto-awesome" size={10} color="#059669" /></View>
                         </Pressable>
                     </View>
@@ -311,10 +322,15 @@ export default function DashboardScreen() {
                         >
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.pendingOfflineTitle}>
-                                    {pendingOfflineCount} lançamento{pendingOfflineCount > 1 ? 's' : ''} aguardando sincronização
+                                    {t('dashboard.pendingSyncTitle', {
+                                        count: pendingOfflineCount,
+                                        plural: language === 'en'
+                                            ? (pendingOfflineCount === 1 ? 'y' : 'ies')
+                                            : (pendingOfflineCount > 1 ? 's' : ''),
+                                    })}
                                 </Text>
                                 <Text style={styles.pendingOfflineSubtitle}>
-                                    {syncing ? 'Sincronizando...' : 'Toque para sincronizar agora'}
+                                    {syncing ? t('dashboard.pendingSyncSubtitle.syncing') : t('dashboard.pendingSyncSubtitle.idle')}
                                 </Text>
                             </View>
                             <MaterialIcons name={syncing ? 'sync' : 'cloud-upload'} size={20} color="#b45309" />
@@ -337,7 +353,7 @@ export default function DashboardScreen() {
                                 <Text style={[
                                     styles.cardLabelPrimary,
                                     forecast.availableReal < 0 ? { color: "#e11d48" } : null
-                                ]}>Disponível (Mês)</Text>
+                                ]}>{t('dashboard.availableMonth')}</Text>
                             </View>
                             <Text style={[
                                 styles.cardValuePrimary,
@@ -348,14 +364,14 @@ export default function DashboardScreen() {
                         <View style={[styles.card, styles.cardWhite, styles.glassEffectLight]}>
                             <View style={styles.cardLabelRow}>
                                 <MaterialIcons name="account-balance-wallet" size={16} color="#4f46e5" />
-                                <Text style={styles.cardLabelSecondary}>Saldo Atual</Text>
+                                <Text style={styles.cardLabelSecondary}>{t('dashboard.currentBalance')}</Text>
                             </View>
                             <Text style={styles.cardValueSecondary}>{formatValue(totals.balance)}</Text>
                         </View>
 
                         <View style={[styles.card, styles.cardGreen, styles.glassEffectGreen]}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                <Text style={[styles.cardLabelGreen, { marginBottom: 0 }]}>Entradas (Mês)</Text>
+                                <Text style={[styles.cardLabelGreen, { marginBottom: 0 }]}>{t('dashboard.monthIncome')}</Text>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#dcfce7', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 }}>
                                     <MaterialIcons name={totals.incomeTrend >= 0 ? "trending-up" : "trending-down"} size={10} color="#059669" />
                                     <Text style={{ fontSize: 9, fontWeight: '700', color: '#059669', marginLeft: 2 }}>{Math.abs(totals.incomeTrend).toFixed(1)}%</Text>
@@ -366,7 +382,7 @@ export default function DashboardScreen() {
 
                         <View style={[styles.card, styles.cardRed, styles.glassEffectRed]}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                <Text style={[styles.cardLabelRed, { marginBottom: 0 }]}>Saídas (Mês)</Text>
+                                <Text style={[styles.cardLabelRed, { marginBottom: 0 }]}>{t('dashboard.monthExpense')}</Text>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffe4e6', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 }}>
                                     <MaterialIcons name={totals.expenseTrend <= 0 ? "trending-down" : "trending-up"} size={10} color="#e11d48" />
                                     <Text style={{ fontSize: 9, fontWeight: '700', color: '#e11d48', marginLeft: 2 }}>{Math.abs(totals.expenseTrend).toFixed(1)}%</Text>
@@ -403,9 +419,9 @@ export default function DashboardScreen() {
                                 <View style={styles.emptyStateIconWrapper}>
                                     <MaterialIcons name="show-chart" size={32} color="#94a3b8" />
                                 </View>
-                                <Text style={styles.emptyStateTitle}>Nenhum registro este mês</Text>
+                                <Text style={styles.emptyStateTitle}>{t('dashboard.noRecordsTitle')}</Text>
                                 <Text style={styles.emptyStateSubtitle}>
-                                    Seu fluxo de caixa aparecerá aqui. Adicione seu primeiro lançamento!
+                                    {t('dashboard.noRecordsSubtitle')}
                                 </Text>
                             </View>
                         )}
@@ -423,8 +439,8 @@ export default function DashboardScreen() {
                             <View style={styles.sectionCard}>
                                 <View style={styles.sectionRow}>
                                     <View>
-                                        <Text style={styles.sectionLabel}>Saúde Financeira</Text>
-                                        <Text style={styles.sectionTitle}>Regra 50/30/20</Text>
+                                        <Text style={styles.sectionLabel}>{t('dashboard.financialHealth')}</Text>
+                                        <Text style={styles.sectionTitle}>{t('dashboard.rule503020')}</Text>
                                     </View>
                                     <MaterialIcons name="pie-chart" size={20} color="#4f46e5" />
                                 </View>
@@ -433,7 +449,7 @@ export default function DashboardScreen() {
                                     {/* Needs */}
                                     <View style={{ gap: 6 }}>
                                         <View style={styles.ruleLabelRow}>
-                                            <Text style={styles.ruleLabel}>Necessidades (50%)</Text>
+                                            <Text style={styles.ruleLabel}>{t('dashboard.rule.needs')}</Text>
                                             <Text style={styles.ruleValue}>{rule503020.needs?.percent.toFixed(1)}%</Text>
                                         </View>
                                         <View style={styles.ruleProgressBar}>
@@ -444,7 +460,7 @@ export default function DashboardScreen() {
                                     {/* Wants */}
                                     <View style={{ gap: 6 }}>
                                         <View style={styles.ruleLabelRow}>
-                                            <Text style={styles.ruleLabel}>Desejos (30%)</Text>
+                                            <Text style={styles.ruleLabel}>{t('dashboard.rule.wants')}</Text>
                                             <Text style={styles.ruleValue}>{rule503020.wants?.percent.toFixed(1)}%</Text>
                                         </View>
                                         <View style={styles.ruleProgressBar}>
@@ -455,7 +471,7 @@ export default function DashboardScreen() {
                                     {/* Goals */}
                                     <View style={{ gap: 6 }}>
                                         <View style={styles.ruleLabelRow}>
-                                            <Text style={styles.ruleLabel}>Objetivos (20%)</Text>
+                                            <Text style={styles.ruleLabel}>{t('dashboard.rule.savings')}</Text>
                                             <Text style={styles.ruleValue}>{rule503020.savings?.percent.toFixed(1)}%</Text>
                                         </View>
                                         <View style={styles.ruleProgressBar}>
@@ -467,13 +483,13 @@ export default function DashboardScreen() {
                                     {rule503020.uncategorized && rule503020.uncategorized.value > 0 && (
                                         <View style={{ gap: 6 }}>
                                             <View style={styles.ruleLabelRow}>
-                                                <Text style={styles.ruleLabel}>Outros</Text>
+                                                <Text style={styles.ruleLabel}>{t('dashboard.rule.other')}</Text>
                                                 <Text style={styles.ruleValue}>{rule503020.uncategorized.percent.toFixed(1)}%</Text>
                                             </View>
                                             <View style={styles.ruleProgressBar}>
                                                 <View style={[styles.ruleProgressFill, { width: `${Math.max(Math.min(rule503020.uncategorized.percent || 0, 100), rule503020.uncategorized.value > 0 ? 2 : 0)}%`, backgroundColor: '#94a3b8' }]} />
                                             </View>
-                                            <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>Categorias não classificadas na regra</Text>
+                                            <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{t('dashboard.rule.uncategorized')}</Text>
                                         </View>
                                     )}
                                 </View>
@@ -482,12 +498,12 @@ export default function DashboardScreen() {
 
                         {/* Fixed Pending */}
                         <View style={styles.sectionCard}>
-                            <Text style={[styles.sectionLabel, { marginBottom: 16 }]}>Fixos Pendentes</Text>
+                            <Text style={[styles.sectionLabel, { marginBottom: 16 }]}>{t('dashboard.fixedPending')}</Text>
                             {forecast.missingFixed.length === 0 ? (
                                 <View style={{ alignItems: 'center', paddingVertical: 24, opacity: 0.5 }}>
                                     <MaterialIcons name="check-circle-outline" size={48} color="#10b981" />
-                                    <Text style={styles.emptyTitle}>Tudo pago!</Text>
-                                    <Text style={styles.emptySubtitle}>Você está em dia com suas contas fixas.</Text>
+                                    <Text style={styles.emptyTitle}>{t('dashboard.allPaidTitle')}</Text>
+                                    <Text style={styles.emptySubtitle}>{t('dashboard.allPaidSubtitle')}</Text>
                                 </View>
                             ) : (
                                 forecast.missingFixed.map((item, idx) => (
@@ -502,14 +518,14 @@ export default function DashboardScreen() {
                         {/* Top Villains */}
                         <View style={styles.sectionCard}>
                             <View style={styles.sectionRow}>
-                                <Text style={styles.sectionLabel}>Top Gastos do Mês</Text>
+                                <Text style={styles.sectionLabel}>{t('dashboard.topExpenses')}</Text>
                                 <MaterialIcons name="trending-down" size={16} color="#eab308" />
                             </View>
                             {topVillains.length === 0 ? (
                                 <View style={{ alignItems: 'center', paddingVertical: 24, opacity: 0.5 }}>
                                     <MaterialIcons name="savings" size={48} color="#eab308" />
-                                    <Text style={styles.emptyTitle}>Nenhum gasto alto</Text>
-                                    <Text style={styles.emptySubtitle}>Seus gastos estão sob controle este mês.</Text>
+                                    <Text style={styles.emptyTitle}>{t('dashboard.noHighExpenseTitle')}</Text>
+                                    <Text style={styles.emptySubtitle}>{t('dashboard.noHighExpenseSubtitle')}</Text>
                                 </View>
                             ) : (
                                 topVillains.map((item, idx) => (

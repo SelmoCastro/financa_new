@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { LayoutGrid, Wallet, Target, Trophy, Clock, Anchor, Receipt, User, Settings, ChevronLeft, ChevronRight, MessageSquareHeart, Shield, CreditCard } from 'lucide-react';
 import { version } from '../package.json';
+import { useLanguage } from '../context/LanguageContext';
 
 interface SidebarProps {
   activeTab: string;
@@ -13,18 +14,19 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen, onOpenFeedback, isAdmin }) => {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const allMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
-    { id: 'accounts', label: 'Contas', icon: Wallet },
-    { id: 'budgets', label: 'Orçamentos', icon: Target },
-    { id: 'goals', label: 'Metas', icon: Trophy },
-    { id: 'invoices', label: 'Faturas', icon: CreditCard },
-    { id: 'timeline', label: 'Linha do Tempo', icon: Clock },
-    { id: 'fixed', label: 'Recorrentes', icon: Anchor },
-    { id: 'history', label: 'Extrato', icon: Receipt },
-    { id: 'feedbacks', label: 'Feedbacks', icon: MessageSquareHeart },
-    { id: 'admin', label: 'Painel Admin', icon: Shield },
-  ];
+  const { t } = useLanguage();
+  const allMenuItems = useMemo(() => [
+    { id: 'dashboard', label: t('sidebar.dashboard'), icon: LayoutGrid },
+    { id: 'accounts', label: t('sidebar.accounts'), icon: Wallet },
+    { id: 'budgets', label: t('sidebar.budgets'), icon: Target },
+    { id: 'goals', label: t('sidebar.goals'), icon: Trophy },
+    { id: 'invoices', label: t('sidebar.invoices'), icon: CreditCard },
+    { id: 'timeline', label: t('sidebar.timeline'), icon: Clock },
+    { id: 'fixed', label: t('sidebar.fixed'), icon: Anchor },
+    { id: 'history', label: t('sidebar.history'), icon: Receipt },
+    { id: 'feedbacks', label: t('sidebar.feedbacks'), icon: MessageSquareHeart },
+    { id: 'admin', label: t('sidebar.admin'), icon: Shield },
+  ], [t]);
 
   const menuItems = allMenuItems.filter(item => {
     if (item.id === 'feedbacks') return isAdmin;
@@ -69,8 +71,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                   <User className="w-5 h-5" />
                 </div>
                 <div className="overflow-hidden">
-                  <p className="text-xs font-bold text-white truncate">Usuário</p>
-                  <p className="text-[10px] text-slate-500 font-medium">Configurações</p>
+                  <p className="text-xs font-bold text-white truncate">{t('common.user')}</p>
+                  <p className="text-[10px] text-slate-500 font-medium">{t('sidebar.settings')}</p>
                 </div>
                 <Settings className={`w-4 h-4 text-slate-500 ml-auto group-hover:rotate-90 transition-transform ${activeTab === 'settings' ? 'text-cyan-400 rotate-90' : ''}`} />
               </div>
@@ -78,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
           ) : (
             <button
               onClick={() => setActiveTab('settings')}
-              title="Configurações"
+              title={t('sidebar.settings')}
               className={`w-full aspect-square bg-slate-800/50 dark:bg-slate-900/50 rounded-xl mb-4 flex items-center justify-center transition-colors ${activeTab === 'settings' ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-400 hover:text-white'}`}
             >
               <Settings className="w-5 h-5" />
@@ -102,14 +104,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0004.5511-.4482.9997-.9993.9997zm-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997zm11.4045-6.02l1.9973-3.4592c.1158-.201.0467-.4582-.1546-.574-.2013-.1158-.4586-.0467-.5743.1546l-2.0362 3.527c-1.4816-.6802-3.1611-1.0592-4.9458-1.077v-.004s-.0448-.0004-.0456-.0004c-.0011 0-.0456.0004-.0456.0004v.004c-1.7847.0178-3.4642.3968-4.9461 1.077L5.0945 5.4431c-.115-.2017-.3734-.2711-.574-.1553-.2013.1158-.2707.373-.1549.5744l1.9969 3.4588C2.6865 11.3855.2343 15.3524.0321 20.0006h23.9351c-.2018-4.6482-2.6541-8.6151-6.3297-10.6792z" />
                 </svg>
-                Baixar Versão Mobile
+                {t('sidebar.mobileDownload')}
               </a>
               <button
                 onClick={onOpenFeedback}
                 className="w-full py-2 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
               >
                 <MessageSquareHeart className="w-4 h-4" />
-                Deixar Feedback
+                {t('sidebar.leaveFeedback')}
               </button>
               <p className="text-[10px] font-mono text-slate-600 opacity-50">v{version}</p>
             </div>
@@ -123,7 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
         const primaryIds = ['dashboard', 'accounts', 'invoices', 'history'];
         const primaryItems = mobileItems.filter(i => primaryIds.includes(i.id));
         const moreItems = mobileItems.filter(i => !primaryIds.includes(i.id));
-        const settingsItem = { id: 'settings', label: 'Ajustes', icon: Settings };
+        const settingsItem = { id: 'settings', label: t('sidebar.mobileSettings'), icon: Settings };
         const allMoreItems = [...moreItems, settingsItem];
         const isMoreActive = allMoreItems.some(i => i.id === activeTab);
 
@@ -146,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                   className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-0.5 rounded-xl active:scale-95 transition-all ${isMoreActive || moreMenuOpen ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
                 >
                   <LayoutGrid className="w-[18px] h-[18px]" />
-                  <span className="text-[9px] font-semibold leading-none">Mais</span>
+                  <span className="text-[9px] font-semibold leading-none">{t('common.more')}</span>
                 </button>
               </div>
             </div>

@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Modal, SafeAreaView, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useMonth } from '../context/MonthContext';
+import { useLanguage } from '../context/LanguageContext';
 import * as Haptics from 'expo-haptics';
-
-const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 export const MonthSelector = () => {
     const { selectedDate, setDate } = useMonth();
+    const { locale, t } = useLanguage();
     const [modalVisible, setModalVisible] = useState(false);
     const [tempYear, setTempYear] = useState(selectedDate.getFullYear());
 
@@ -24,10 +24,15 @@ export const MonthSelector = () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     };
 
-    // Pega o nome do mês e ano para mostrar ao lado do ícone, só pra não ficar totalmente perdido sem contexto.
-    // Mas o botão todo é enxuto em forma de ícone ou pílula.
-    const monthName = selectedDate.toLocaleDateString('pt-BR', { month: 'short' });
+    const monthName = selectedDate.toLocaleDateString(locale, { month: 'short' });
     const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    const months = useMemo(
+        () => Array.from({ length: 12 }, (_, index) => {
+            const name = new Date(tempYear, index, 1).toLocaleDateString(locale, { month: 'short' });
+            return name.charAt(0).toUpperCase() + name.slice(1);
+        }),
+        [locale, tempYear]
+    );
 
     return (
         <>
@@ -58,7 +63,7 @@ export const MonthSelector = () => {
                         </View>
 
                         <View style={styles.monthsGrid}>
-                            {MONTHS.map((m, index) => {
+                            {months.map((m, index) => {
                                 const isSelected = selectedDate.getMonth() === index && selectedDate.getFullYear() === tempYear;
                                 return (
                                     <TouchableOpacity
@@ -81,7 +86,7 @@ export const MonthSelector = () => {
                         </View>
 
                         <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
-                            <Text style={styles.closeBtnText}>Cancelar</Text>
+                            <Text style={styles.closeBtnText}>{t('monthSelector.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

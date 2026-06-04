@@ -12,6 +12,7 @@ import { parseCurrencyToNumber, formatCurrencyInput } from '../../utils/currency
 import { Account, CreditCard } from '../../types';
 import { BankIcon } from '../../components/BankIcon';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { useOfflineActionGuard } from '../../hooks/useOfflineActionGuard';
 import { invoiceService, InvoiceDTO } from '../../services/invoiceService';
@@ -40,8 +41,20 @@ export default function AccountsScreen() {
     const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
     const [loading, setLoading] = useState(true);
     const { formatCurrency, currency } = useCurrency();
+    const { t, language } = useLanguage();
     const { user } = useAuth();
     const { ensureOnline } = useOfflineActionGuard();
+    const accountTypeLabels = React.useMemo<Record<string, string>>(() => (
+        language === 'en'
+            ? {
+                CHECKING: 'Checking',
+                SAVINGS: 'Savings',
+                INVESTMENT: 'Investments',
+                CASH: 'Cash',
+                OTHER: 'Other',
+            }
+            : ACCOUNT_TYPE_LABELS
+    ), [language]);
     const isFree = user?.plan !== 'premium';
     const isAccountLimitReached = isFree && accounts.length >= 1;
     const [invoiceData, setInvoiceData] = useState<Record<string, InvoiceDTO | null>>({});
@@ -350,8 +363,8 @@ export default function AccountsScreen() {
                 {/* Header */}
                 <View className="px-6 pt-6 pb-4 flex-row items-center justify-between">
                     <View>
-                        <Text className="text-2xl font-black text-slate-800 dark:text-white">Contas e Cartões</Text>
-                        <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Gerencie seu saldo e faturas</Text>
+                        <Text className="text-2xl font-black text-slate-800 dark:text-white">{t('accounts.title')}</Text>
+                        <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">{t('accounts.subtitle')}</Text>
                     </View>
                     <Pressable onPress={openCreate} style={[styles.addButton, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: 'rgba(255,255,255,0.3)', borderless: true }}>
                         <MaterialIcons name={isAccountLimitReached ? 'lock' : 'add'} size={24} color="white" />
@@ -363,7 +376,7 @@ export default function AccountsScreen() {
                     <View className="bg-indigo-600 rounded-[24px] p-6">
                         <View className="flex-row items-center gap-2 mb-3 opacity-90">
                             <MaterialIcons name="account-balance-wallet" size={20} color="white" />
-                            <Text className="text-indigo-100 font-medium text-sm">Saldo Consolidado</Text>
+                            <Text className="text-indigo-100 font-medium text-sm">{t('accounts.balance')}</Text>
                         </View>
                         <Text className="text-white text-4xl font-black">
                             {formatCurrency(totalBalance)}
@@ -372,7 +385,7 @@ export default function AccountsScreen() {
                             <View className="flex-row items-center gap-1.5 mt-2">
                                 <MaterialIcons name="cloud-upload" size={14} color="#a5b4fc" />
                                 <Text className="text-indigo-200 text-xs font-medium">
-                                    {pendingOfflineTotal > 0 ? '+' : ''}{formatCurrency(pendingOfflineTotal)} pendente{Math.abs(pendingOfflineTotal) !== 1 ? 's' : ''}
+                                    {pendingOfflineTotal > 0 ? '+' : ''}{formatCurrency(pendingOfflineTotal)} {t('accounts.pending').toLowerCase()}{Math.abs(pendingOfflineTotal) !== 1 && language !== 'en' ? 's' : ''}
                                 </Text>
                             </View>
                         )}
@@ -384,11 +397,11 @@ export default function AccountsScreen() {
                         <View className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex-row items-center gap-3">
                             <MaterialIcons name="lock-outline" size={20} color="#f59e0b" />
                             <View className="flex-1">
-                                <Text className="text-xs font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider">Limite do plano Free</Text>
-                                <Text className="text-xs font-medium text-amber-600 mt-1">Você já usa a 1 conta incluída no Free. Para criar mais contas, faça upgrade.</Text>
+                                <Text className="text-xs font-black text-amber-700 dark:text-amber-300 uppercase tracking-wider">{t('accounts.freeLimit')}</Text>
+                                <Text className="text-xs font-medium text-amber-600 mt-1">{t('accounts.freeLimitDesc')}</Text>
                             </View>
                             <Pressable onPress={() => Linking.openURL('https://finanzaai.tech/premium')} className="bg-amber-500 px-3 py-2 rounded-xl">
-                                <Text className="text-white text-xs font-black uppercase">Upgrade</Text>
+                                <Text className="text-white text-xs font-black uppercase">{t('accounts.upgrade')}</Text>
                             </Pressable>
                         </View>
                     </View>
@@ -396,11 +409,11 @@ export default function AccountsScreen() {
 
                 {/* Contas */}
                 <View className="px-6 mb-8">
-                    <Text className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Suas Contas</Text>
+                    <Text className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">{t('accounts.yourAccounts')}</Text>
                     {accounts.length === 0 && !loading && (
                         <Pressable onPress={openCreate} style={styles.emptyCard}>
                             <MaterialIcons name="add-circle-outline" size={32} color="#a5b4fc" />
-                            <Text style={styles.emptyText}>Nenhuma conta. Toque para adicionar.</Text>
+                            <Text style={styles.emptyText}>{t('accounts.noAccounts')}</Text>
                         </Pressable>
                     )}
                     {accounts.map(acc => (
@@ -410,7 +423,7 @@ export default function AccountsScreen() {
                                     <BankIcon name={acc.name} type={acc.type} size={48} />
                                     <View className="flex-1">
                                         <Text className="text-base font-bold text-slate-800 dark:text-white">{acc.name}</Text>
-                                        <Text className="text-xs font-medium text-slate-400 dark:text-slate-500">{ACCOUNT_TYPE_LABELS[acc.type] ?? acc.type}</Text>
+                                        <Text className="text-xs font-medium text-slate-400 dark:text-slate-500">{accountTypeLabels[acc.type] ?? acc.type}</Text>
                                     </View>
                                 </View>
                                 <View className="items-end mr-4">
@@ -418,7 +431,7 @@ export default function AccountsScreen() {
                                         {formatCurrency((Number(acc.balance) || 0) + (pendingAccountAdjustments[acc.id] || 0))}
                                     </Text>
                                     {pendingAccountAdjustments[acc.id] != null && pendingAccountAdjustments[acc.id] !== 0 && (
-                                        <Text className="text-[10px] font-bold text-amber-600 uppercase mt-0.5">Pendente</Text>
+                                        <Text className="text-[10px] font-bold text-amber-600 uppercase mt-0.5">{t('accounts.pending')}</Text>
                                     )}
                                 </View>
                             </View>
@@ -426,17 +439,17 @@ export default function AccountsScreen() {
                             {isAccountLimitReached && (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
                                     <MaterialIcons name="lock-outline" size={14} color="#f59e0b" />
-                                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: 0.5 }}>Somente leitura</Text>
+                                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('accounts.readOnly')}</Text>
                                 </View>
                             )}
                             <View style={styles.actionRow}>
                                 <Pressable onPress={() => { if (isAccountLimitReached) { Alert.alert('Plano Gratuito', 'Edição disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => Linking.openURL('https://finanzaai.tech/premium') }]); return; } openEdit(acc); }} style={[styles.btnEdit, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: '#e0e7ff' }}>
                                     <MaterialIcons name="edit" size={16} color="#4f46e5" />
-                                    <Text style={styles.btnEditText}>Editar</Text>
+                                    <Text style={styles.btnEditText}>{t('accounts.edit')}</Text>
                                 </Pressable>
                                 <Pressable onPress={() => { if (isAccountLimitReached) { Alert.alert('Plano Gratuito', 'Exclusão disponível apenas no plano Premium.', [{ text: 'Entendi' }, { text: 'Ver Premium', onPress: () => Linking.openURL('https://finanzaai.tech/premium') }]); return; } handleDelete(acc); }} style={[styles.btnDelete, isAccountLimitReached && { opacity: 0.4 }]} android_ripple={{ color: '#fee2e2' }}>
                                     <MaterialIcons name="delete-outline" size={16} color="#ef4444" />
-                                    <Text style={styles.btnDeleteText}>Excluir</Text>
+                                    <Text style={styles.btnDeleteText}>{t('accounts.delete')}</Text>
                                 </Pressable>
                             </View>
                         </View>
@@ -446,7 +459,7 @@ export default function AccountsScreen() {
                 {/* Cartões */}
                 <View className="px-6 mb-8">
                     <View className="flex-row items-center justify-between mb-4">
-                        <Text className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Cartões de Crédito</Text>
+                        <Text className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t('accounts.creditCards')}</Text>
                         <Pressable onPress={openCreateCc} hitSlop={10}>
                             <MaterialIcons name="add-circle" size={24} color="#9333ea" />
                         </Pressable>
@@ -455,7 +468,7 @@ export default function AccountsScreen() {
                     {creditCards.length === 0 && !loading && (
                         <Pressable onPress={openCreateCc} style={[styles.emptyCard, { borderColor: '#f3e8ff' }]}>
                             <MaterialIcons name="credit-card" size={32} color="#d8b4fe" />
-                            <Text style={[styles.emptyText, { color: '#c084fc' }]}>Nenhum cartão. Toque para adicionar.</Text>
+                            <Text style={[styles.emptyText, { color: '#c084fc' }]}>{t('accounts.noCards')}</Text>
                         </Pressable>
                     )}
 
@@ -468,11 +481,11 @@ export default function AccountsScreen() {
                                     </View>
                                     <View>
                                         <Text className="text-base font-bold text-slate-800 dark:text-white">{cc.name}</Text>
-                                        <Text className="text-xs font-medium text-slate-400 dark:text-slate-500">Vence dia {cc.dueDay}</Text>
+                                        <Text className="text-xs font-medium text-slate-400 dark:text-slate-500">{t('accounts.dueDay', { day: cc.dueDay })}</Text>
                                     </View>
                                 </View>
                                 <View className="items-end">
-                                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">Limite</Text>
+                                    <Text className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">{t('accounts.limit')}</Text>
                                     <Text className="text-base font-black text-slate-800 dark:text-white">
                                         {formatCurrency(cc.limit)}
                                     </Text>
@@ -483,11 +496,11 @@ export default function AccountsScreen() {
                             <View style={styles.actionRow}>
                                 <Pressable onPress={() => openEditCc(cc)} style={styles.btnEdit} android_ripple={{ color: '#e0e7ff' }}>
                                     <MaterialIcons name="edit" size={16} color="#4f46e5" />
-                                    <Text style={styles.btnEditText}>Editar</Text>
+                                    <Text style={styles.btnEditText}>{t('accounts.edit')}</Text>
                                 </Pressable>
                                 <Pressable onPress={() => handleDeleteCc(cc)} style={styles.btnDelete} android_ripple={{ color: '#fef2f2' }}>
                                     <MaterialIcons name="delete-outline" size={16} color="#ef4444" />
-                                    <Text style={styles.btnDeleteText}>Excluir</Text>
+                                    <Text style={styles.btnDeleteText}>{t('accounts.delete')}</Text>
                                 </Pressable>
                             </View>
 

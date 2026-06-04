@@ -3,7 +3,11 @@ import { LogOut, User, Mail, Lock, Trash2, Crown, Shield, ChevronDown, Check, Lo
 import { Transaction } from '../types';
 import api from '../services/api';
 import { useCurrency, CurrencyCode } from '../context/CurrencyContext';
-import { useLanguage, AppLanguage } from '../context/LanguageContext';
+import { useLanguage, AppLanguage, AppLocale } from '../context/LanguageContext';
+
+const SUPPORTED_CURRENCIES: CurrencyCode[] = ['BRL', 'USD', 'EUR'];
+const SUPPORTED_LANGUAGES: AppLanguage[] = ['pt-BR', 'en'];
+const SUPPORTED_LOCALES: AppLocale[] = ['pt-BR', 'en-US', 'pt-PT', 'de-DE', 'en-IE'];
 
 interface SettingsViewProps {
     userName: string;
@@ -18,7 +22,7 @@ interface SettingsViewProps {
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail, userPlan, transactions, onLogout, onNameChange, onEmailChange, onUpgrade }) => {
     const { currency, setCurrency } = useCurrency();
-    const { language, setLanguage, t } = useLanguage();
+    const { language, setLanguage, locale, setLocale, t } = useLanguage();
     // Edit name
     const [editingName, setEditingName] = useState(false);
     const [nameValue, setNameValue] = useState(userName);
@@ -49,6 +53,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
     const showFeedback = (type: 'success' | 'error', message: string) => {
         setFeedback({ type, message });
         setTimeout(() => setFeedback(null), 4000);
+    };
+
+    const handlePreferenceChange = async (change: () => void | Promise<void>) => {
+        try {
+            await change();
+            showFeedback('success', t('settings.preferencesSaved'));
+        } catch {
+            showFeedback('error', t('settings.preferencesError'));
+        }
     };
 
     const handleSaveName = async () => {
@@ -105,6 +118,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
     };
 
     const handleDeleteAccount = async () => {
+        if (deleteConfirm.trim().toUpperCase() !== deleteConfirmKeyword) return;
         setDeleteSaving(true);
         try {
             await api.delete('/auth/delete-account', { data: { password: deletePass } });
@@ -131,14 +145,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
         }
     };
 
-    // LGPD: Direito de portabilidade — exportação completa de dados pessoais (JSON)
+    // LGPD: data portability right — full personal data export (JSON)
     const handleExportAllData = async () => {
         try {
             const response = await api.get('/auth/export-data', { responseType: 'blob' });
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', 'finanza-dados-pessoais.json');
+            link.setAttribute('download', 'finanza-personal-data.json');
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -149,6 +163,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
     };
 
     const isPremium = userPlan === 'premium';
+    const deleteConfirmKeyword = t('settings.deleteConfirmPlaceholder').toUpperCase();
+    const getLanguageLabel = (option: AppLanguage) => (option === 'pt-BR' ? t('settings.language.pt') : t('settings.language.en'));
+    const getLocaleLabel = (option: AppLocale) => {
+        switch (option) {
+            case 'pt-BR': return t('settings.locale.ptBR');
+            case 'en-US': return t('settings.locale.enUS');
+            case 'pt-PT': return t('settings.locale.ptPT');
+            case 'de-DE': return t('settings.locale.deDE');
+            case 'en-IE': return t('settings.locale.enIE');
+        }
+    };
 
     return (
         <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-right duration-700">
@@ -174,35 +199,48 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
                             <Globe className="w-3 h-3" /> {t('settings.preferences')}
                         </label>
-                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 mb-2">{t('settings.currency')}</label>
                                 <select
                                     value={currency}
-                                    onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+                                    onChange={(e) => { void handlePreferenceChange(() => setCurrency(e.target.value as CurrencyCode)); }}
                                     className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10"
                                 >
-                                    <option value="BRL">BRL</option>
-                                    <option value="USD">USD</option>
-                                    <option value="EUR">EUR</option>
+                                    {SUPPORTED_CURRENCIES.map((option) => (
+                                        <option key={option} value={option}>{option}</option>
+                                    ))}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 mb-2">{t('settings.language')}</label>
                                 <select
                                     value={language}
-                                    onChange={(e) => setLanguage(e.target.value as AppLanguage)}
+                                    onChange={(e) => { void handlePreferenceChange(() => setLanguage(e.target.value as AppLanguage)); }}
                                     className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10"
                                 >
-                                    <option value="pt-BR">{t('settings.language.pt')}</option>
-                                    <option value="en">{t('settings.language.en')}</option>
+                                    {SUPPORTED_LANGUAGES.map((option) => (
+                                        <option key={option} value={option}>{getLanguageLabel(option)}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 mb-2">{t('settings.locale')}</label>
+                                <select
+                                    value={locale}
+                                    onChange={(e) => { void handlePreferenceChange(() => setLocale(e.target.value as AppLocale)); }}
+                                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10"
+                                >
+                                    {SUPPORTED_LOCALES.map((option) => (
+                                        <option key={option} value={option}>{getLocaleLabel(option)}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-3">{t('settings.preferences.helper')}</p>
                     </div>
 
-                    {/* NOME DE EXIBIÇÃO */}
+                    {/* Display name */}
                     <div>
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
                             <User className="w-3 h-3" /> {t('settings.displayName')}
@@ -228,7 +266,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                         </div>
                     </div>
 
-                    {/* EMAIL */}
+                    {/* Email */}
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
                             <Mail className="w-3 h-3" /> {t('settings.email')}
@@ -278,7 +316,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                         )}
                     </div>
 
-                    {/* SENHA */}
+                    {/* Password */}
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
                             <Lock className="w-3 h-3" /> {t('settings.password')}
@@ -334,7 +372,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                         )}
                     </div>
 
-                    {/* PLANO */}
+                    {/* Plan */}
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
                             <Crown className="w-3 h-3" /> {t('settings.plan')}
@@ -372,7 +410,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                         </div>
                     </div>
 
-                    {/* EXCLUIR CONTA */}
+                    {/* Delete account */}
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                         <div className="p-6 bg-rose-50/30 dark:bg-rose-500/5 border border-rose-100 dark:border-rose-500/20 rounded-2xl">
                             <div className="flex items-center justify-between">
@@ -425,7 +463,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     </div>
 
                                     <div className="flex gap-3">
-                                        <button onClick={handleDeleteAccount} disabled={deleteSaving || !deletePass || deleteConfirm !== 'EXCLUIR'}
+                                        <button onClick={handleDeleteAccount} disabled={deleteSaving || !deletePass || deleteConfirm.trim().toUpperCase() !== deleteConfirmKeyword}
                                             className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                                             {deleteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                             {t('settings.deletePermanently')}
@@ -440,7 +478,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                         </div>
                     </div>
 
-                    {/* DADOS */}
+                    {/* Data */}
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                         <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-6 ml-1">{t('settings.maintenance')}</h4>
                         <div className="space-y-4">

@@ -1,17 +1,25 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useNetworkStatus } from '../context/NetworkContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export function OfflineBanner() {
   const { isOnline, lastChangedAt } = useNetworkStatus();
+  const { locale, t } = useLanguage();
 
   if (isOnline) return null;
 
+  const lastChangedText = lastChangedAt
+    ? ` • ${t('offline.lastChanged', {
+        time: new Date(lastChangedAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
+      })}`
+    : '';
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sem internet</Text>
+      <Text style={styles.title}>{t('offline.title')}</Text>
       <Text style={styles.subtitle}>
-        Exibindo dados salvos{lastChangedAt ? ` • última mudança ${new Date(lastChangedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''}
+        {t('offline.subtitle')}{lastChangedText}
       </Text>
     </View>
   );

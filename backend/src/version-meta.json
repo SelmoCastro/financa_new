@@ -1,6 +1,6 @@
 {
-  "version": "1.9.0",
-  "mobileVersion": "1.9.0",
+  "version": "1.9.1",
+  "mobileVersion": "1.9.1",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Abertura da linha 1.9 com infraestrutura offline-first no mobile"
+  "releaseNotes": "v1.9.1 - corrige atualizacao da aba Relatorios ao trocar de mes no mobile"
 }

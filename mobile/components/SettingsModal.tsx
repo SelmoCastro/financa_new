@@ -17,6 +17,8 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
 import { getThemePreference, setThemePreference, ThemePreference } from '../services/themePreference';
+import { useCurrency, CurrencyCode } from '../context/CurrencyContext';
+import { useLanguage, AppLanguage } from '../context/LanguageContext';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -29,6 +31,9 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const styles = React.useMemo(() => createStyles(isDark), [isDark]);
+  const { currency, setCurrency } = useCurrency();
+  const { language, setLanguage, t } = useLanguage();
+  const deleteConfirmKeyword = language === 'en' ? 'DELETE' : 'EXCLUIR';
 
   // Nome
   const [editingName, setEditingName] = useState(false);
@@ -76,9 +81,9 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
       await api.patch('/auth/change-name', { name: nameValue.trim() });
       updateUserName(nameValue.trim());
       setEditingName(false);
-      Alert.alert('Sucesso', 'Nome atualizado!');
+      Alert.alert(t('settings.success'), t('settings.nameUpdated'));
     } catch (e: any) {
-      Alert.alert('Erro', e?.response?.data?.message || 'Erro ao alterar nome');
+      Alert.alert(t('settings.error'), e?.response?.data?.message || t('settings.error'));
     } finally {
       setNameSaving(false);
     }
@@ -86,11 +91,11 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
 
   const handleChangePassword = async () => {
     if (newPass !== confirmPass) {
-      Alert.alert('Erro', 'As senhas não coincidem');
+      Alert.alert(t('settings.error'), t('settings.passwordMismatch'));
       return;
     }
     if (newPass.length < 8) {
-      Alert.alert('Erro', 'A nova senha deve ter pelo menos 8 caracteres');
+      Alert.alert(t('settings.error'), t('settings.passwordTooShort'));
       return;
     }
     if (!ensureOnline('alterar sua senha')) return;
@@ -99,9 +104,9 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
       await api.post('/auth/change-password', { currentPassword: currentPass, newPassword: newPass });
       setCurrentPass(''); setNewPass(''); setConfirmPass('');
       setShowChangePassword(false);
-      Alert.alert('Sucesso', 'Senha alterada com sucesso!');
+      Alert.alert(t('settings.success'), t('settings.passwordUpdated'));
     } catch (e: any) {
-      Alert.alert('Erro', e?.response?.data?.message || 'Erro ao alterar senha');
+      Alert.alert(t('settings.error'), e?.response?.data?.message || t('settings.error'));
     } finally {
       setPassSaving(false);
     }
@@ -116,17 +121,17 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
       updateUserEmail(newEmail.trim());
       setNewEmail(''); setEmailPass('');
       setShowChangeEmail(false);
-      Alert.alert('Sucesso', res.data?.message || 'E-mail alterado! Verifique seu novo endereço.');
+      Alert.alert(t('settings.success'), res.data?.message || t('settings.emailUpdated'));
     } catch (e: any) {
-      Alert.alert('Erro', e?.response?.data?.message || 'Erro ao alterar e-mail');
+      Alert.alert(t('settings.error'), e?.response?.data?.message || t('settings.error'));
     } finally {
       setEmailSaving(false);
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirm !== 'EXCLUIR') {
-      Alert.alert('Erro', 'Digite EXCLUIR para confirmar');
+    if (deleteConfirm !== deleteConfirmKeyword) {
+      Alert.alert(t('settings.error'), t('settings.deleteTypeConfirm'));
       return;
     }
     if (!ensureOnline('excluir sua conta')) return;
@@ -147,10 +152,18 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
     try {
       await setThemePreference(preference);
     } catch {
-      Alert.alert('Erro', 'Não foi possível salvar sua preferência de tema.');
+      Alert.alert(t('settings.error'), t('settings.themeError'));
     } finally {
       setThemeSaving(false);
     }
+  };
+
+  const handleCurrencyChange = async (nextCurrency: CurrencyCode) => {
+    await setCurrency(nextCurrency);
+  };
+
+  const handleLanguageChange = async (nextLanguage: AppLanguage) => {
+    await setLanguage(nextLanguage);
   };
 
   const isPremium = user?.plan === 'premium';
@@ -161,22 +174,68 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
         <Pressable style={styles.content} onPress={(e) => e.stopPropagation()}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Configurações</Text>
+            <Text style={styles.title}>{t('settings.title')}</Text>
             <TouchableOpacity onPress={onClose}>
               <MaterialIcons name="close" size={24} color="#64748b" />
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll} contentContainerStyle={{ paddingBottom: 24 }}>
-            {/* NOME */}
+            {/* PREFERÊNCIAS */}
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>👤 Nome de Exibição</Text>
+              <Text style={styles.sectionLabel}>{t('settings.preferences')}</Text>
+              <View style={styles.preferenceBlock}>
+                <Text style={styles.preferenceLabel}>{t('settings.currency')}</Text>
+                <View style={styles.themeGroup}>
+                  {(['BRL', 'USD', 'EUR'] as const).map((option) => {
+                    const selected = currency === option;
+                    return (
+                      <TouchableOpacity
+                        key={option}
+                        style={[styles.themeOption, selected && styles.themeOptionSelected]}
+                        onPress={() => handleCurrencyChange(option)}
+                      >
+                        <Text style={[styles.themeOptionText, selected && styles.themeOptionTextSelected]}>{option}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={styles.preferenceBlock}>
+                <Text style={styles.preferenceLabel}>{t('settings.language')}</Text>
+                <View style={styles.themeGroup}>
+                  {([
+                    { key: 'pt-BR', label: t('settings.language.pt') },
+                    { key: 'en', label: t('settings.language.en') },
+                  ] as const).map((option) => {
+                    const selected = language === option.key;
+                    return (
+                      <TouchableOpacity
+                        key={option.key}
+                        style={[styles.themeOption, selected && styles.themeOptionSelected]}
+                        onPress={() => handleLanguageChange(option.key)}
+                      >
+                        <Text style={[styles.themeOptionText, selected && styles.themeOptionTextSelected]}>{option.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <Text style={styles.helperText}>{t('settings.preferences.helper')}</Text>
+            </View>
+
+            {/* NOME */}
+            <View style={styles.divider} />
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>{t('settings.displayName')}</Text>
               <View style={styles.row}>
                 <TextInput
                   style={[styles.input, editingName && styles.inputEditing]}
                   value={nameValue}
                   onChangeText={(t) => { setNameValue(t); if (!editingName) setEditingName(true); }}
-                  placeholder="Seu nome"
+                  placeholder={t('settings.namePlaceholder')}
                 />
                 {editingName && (
                   <TouchableOpacity
@@ -195,12 +254,12 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
             {/* TEMA */}
             <View style={styles.divider} />
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>🎨 Aparência</Text>
+              <Text style={styles.sectionLabel}>{t('settings.appearance')}</Text>
               <View style={styles.themeGroup}>
                 {([
-                  { key: 'system', label: 'Sistema', icon: 'brightness-auto' },
-                  { key: 'light', label: 'Claro', icon: 'light-mode' },
-                  { key: 'dark', label: 'Escuro', icon: 'dark-mode' },
+                  { key: 'system', label: t('settings.appearance.system'), icon: 'brightness-auto' },
+                  { key: 'light', label: t('settings.appearance.light'), icon: 'light-mode' },
+                  { key: 'dark', label: t('settings.appearance.dark'), icon: 'dark-mode' },
                 ] as const).map((option) => {
                   const selected = themePreference === option.key;
                   return (
@@ -222,15 +281,19 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
               </View>
               <Text style={styles.helperText}>
                 {themePreference === 'system'
-                  ? 'Acompanha automaticamente o tema do seu celular.'
-                  : `Tema ${themePreference === 'dark' ? 'escuro' : 'claro'} aplicado manualmente.`}
+                  ? t('settings.appearance.systemHelper')
+                  : t('settings.appearance.manualHelper', {
+                      theme: themePreference === 'dark'
+                        ? t('settings.appearance.manualHelper.dark')
+                        : t('settings.appearance.manualHelper.light'),
+                    })}
               </Text>
             </View>
 
             {/* EMAIL */}
             <View style={styles.divider} />
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>✉️ E-mail</Text>
+              <Text style={styles.sectionLabel}>{t('settings.email')}</Text>
               <View style={styles.row}>
                 <View style={styles.emailBox}>
                   <Text style={styles.emailText} numberOfLines={1}>{user?.email || ''}</Text>
@@ -241,24 +304,24 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                   />
                 </View>
                 <TouchableOpacity style={styles.btnGhost} onPress={() => setShowChangeEmail(!showChangeEmail)}>
-                  <Text style={styles.btnGhostText}>Alterar</Text>
+                  <Text style={styles.btnGhostText}>{t('settings.change')}</Text>
                 </TouchableOpacity>
               </View>
 
               {showChangeEmail && (
                 <View style={styles.expandBox}>
-                  <TextInput style={styles.inputFull} placeholder="Novo e-mail" value={newEmail} onChangeText={setNewEmail} keyboardType="email-address" autoCapitalize="none" />
-                  <TextInput style={styles.inputFull} placeholder="Sua senha" value={emailPass} onChangeText={setEmailPass} secureTextEntry />
+                  <TextInput style={styles.inputFull} placeholder={t('settings.newEmail')} value={newEmail} onChangeText={setNewEmail} keyboardType="email-address" autoCapitalize="none" />
+                  <TextInput style={styles.inputFull} placeholder={t('settings.yourPassword')} value={emailPass} onChangeText={setEmailPass} secureTextEntry />
                   <View style={styles.rowButtons}>
                     <TouchableOpacity
                       style={[styles.btnPrimary, (!newEmail || !emailPass || emailSaving) && styles.btnDisabled]}
                       onPress={handleChangeEmail}
                       disabled={!newEmail || !emailPass || emailSaving}
                     >
-                      {emailSaving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnPrimaryText}>Confirmar</Text>}
+                      {emailSaving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnPrimaryText}>{t('settings.confirm')}</Text>}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.btnSecondary} onPress={() => { setShowChangeEmail(false); setNewEmail(''); setEmailPass(''); }}>
-                      <Text style={styles.btnSecondaryText}>Cancelar</Text>
+                      <Text style={styles.btnSecondaryText}>{t('settings.cancel')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -268,19 +331,19 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
             {/* SENHA */}
             <View style={styles.divider} />
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>🔒 Senha</Text>
+              <Text style={styles.sectionLabel}>{t('settings.password')}</Text>
               <TouchableOpacity style={styles.btnFull} onPress={() => setShowChangePassword(!showChangePassword)}>
-                <Text style={styles.btnFullText}>Alterar senha de acesso</Text>
+                <Text style={styles.btnFullText}>{t('settings.passwordButton')}</Text>
                 <MaterialIcons name={showChangePassword ? "expand-less" : "expand-more"} size={20} color="#64748b" />
               </TouchableOpacity>
 
               {showChangePassword && (
                 <View style={styles.expandBox}>
-                  <TextInput style={styles.inputFull} placeholder="Senha atual" value={currentPass} onChangeText={setCurrentPass} secureTextEntry />
-                  <TextInput style={styles.inputFull} placeholder="Nova senha (mín. 8 caracteres)" value={newPass} onChangeText={setNewPass} secureTextEntry />
-                  <TextInput style={styles.inputFull} placeholder="Confirmar nova senha" value={confirmPass} onChangeText={setConfirmPass} secureTextEntry />
+                  <TextInput style={styles.inputFull} placeholder={t('settings.currentPassword')} value={currentPass} onChangeText={setCurrentPass} secureTextEntry />
+                  <TextInput style={styles.inputFull} placeholder={t('settings.newPassword')} value={newPass} onChangeText={setNewPass} secureTextEntry />
+                  <TextInput style={styles.inputFull} placeholder={t('settings.confirmPassword')} value={confirmPass} onChangeText={setConfirmPass} secureTextEntry />
                   {newPass && confirmPass && newPass !== confirmPass && (
-                    <Text style={styles.errorText}>As senhas não coincidem</Text>
+                    <Text style={styles.errorText}>{t('settings.passwordMismatch')}</Text>
                   )}
                   <View style={styles.rowButtons}>
                     <TouchableOpacity
@@ -288,10 +351,10 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                       onPress={handleChangePassword}
                       disabled={!currentPass || !newPass || newPass !== confirmPass || passSaving}
                     >
-                      {passSaving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnPrimaryText}>Alterar</Text>}
+                      {passSaving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnPrimaryText}>{t('settings.change')}</Text>}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.btnSecondary} onPress={() => { setShowChangePassword(false); setCurrentPass(''); setNewPass(''); setConfirmPass(''); }}>
-                      <Text style={styles.btnSecondaryText}>Cancelar</Text>
+                      <Text style={styles.btnSecondaryText}>{t('settings.cancel')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -301,12 +364,12 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
             {/* PLANO */}
             <View style={styles.divider} />
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>👑 Plano Atual</Text>
+              <Text style={styles.sectionLabel}>{t('settings.plan')}</Text>
               <View style={styles.planBox}>
                 <View style={styles.planInfo}>
-                  <Text style={styles.planName}>{isPremium ? 'Premium' : 'Gratuito'}</Text>
+                  <Text style={styles.planName}>{isPremium ? t('settings.premiumPlan') : t('settings.freePlan')}</Text>
                   <Text style={styles.planDesc}>
-                    {isPremium ? 'IA ilimitada, contas e orçamentos sem limite' : '1 pedido de IA/dia, 1 conta, 1 cartão, 3 orçamentos, 3 metas'}
+                    {isPremium ? t('settings.premiumPlanDesc') : t('settings.freePlanDesc')}
                   </Text>
                 </View>
                 <View style={[styles.planIcon, isPremium ? styles.planIconPremium : styles.planIconFree]}>
@@ -318,35 +381,35 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
             {/* EXCLUIR CONTA */}
             <View style={styles.divider} />
             <View style={styles.section}>
-              <Text style={styles.sectionLabelDanger}>🗑️ Excluir Conta</Text>
+              <Text style={styles.sectionLabelDanger}>{t('settings.deleteAccount')}</Text>
               <View style={styles.dangerBox}>
-                <Text style={styles.dangerWarning}>Ação irreversível — todos os dados serão perdidos</Text>
+                <Text style={styles.dangerWarning}>{t('settings.deleteWarning')}</Text>
                 <TouchableOpacity style={styles.btnDanger} onPress={() => setShowDeleteAccount(!showDeleteAccount)}>
-                  <Text style={styles.btnDangerText}>Excluir</Text>
+                  <Text style={styles.btnDangerText}>{t('settings.delete')}</Text>
                 </TouchableOpacity>
               </View>
 
               {showDeleteAccount && (
                 <View style={styles.expandBoxDanger}>
-                  <Text style={styles.dangerAlertText}>⚠️ Esta ação é irreversível!</Text>
+                  <Text style={styles.dangerAlertText}>{t('settings.deleteIrreversible')}</Text>
                   <View style={styles.dangerList}>
                     <Text style={styles.dangerItem}>• Todas as transações serão excluídas</Text>
                     <Text style={styles.dangerItem}>• Contas bancárias, cartões e saldos serão apagados</Text>
                     <Text style={styles.dangerItem}>• Metas, orçamentos e categorias personalizados serão perdidos</Text>
                     <Text style={styles.dangerItem}>• Seu plano premium será cancelado sem reembolso</Text>
                   </View>
-                  <TextInput style={styles.inputFullDanger} placeholder="Digite sua senha" value={deletePass} onChangeText={setDeletePass} secureTextEntry />
-                  <TextInput style={styles.inputFullDanger} placeholder="Digite EXCLUIR para confirmar" value={deleteConfirm} onChangeText={setDeleteConfirm} autoCapitalize="characters" />
+                  <TextInput style={styles.inputFullDanger} placeholder={t('settings.deletePasswordPlaceholder')} value={deletePass} onChangeText={setDeletePass} secureTextEntry />
+                  <TextInput style={styles.inputFullDanger} placeholder={t('settings.deleteConfirmPlaceholder')} value={deleteConfirm} onChangeText={setDeleteConfirm} autoCapitalize="characters" />
                   <View style={styles.rowButtons}>
                     <TouchableOpacity
-                      style={[styles.btnDangerSolid, (!deletePass || deleteConfirm !== 'EXCLUIR' || deleteSaving) && styles.btnDisabled]}
+                      style={[styles.btnDangerSolid, (!deletePass || deleteConfirm !== deleteConfirmKeyword || deleteSaving) && styles.btnDisabled]}
                       onPress={handleDeleteAccount}
-                      disabled={!deletePass || deleteConfirm !== 'EXCLUIR' || deleteSaving}
+                      disabled={!deletePass || deleteConfirm !== deleteConfirmKeyword || deleteSaving}
                     >
-                      {deleteSaving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnDangerSolidText}>Excluir Permanentemente</Text>}
+                      {deleteSaving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnDangerSolidText}>{t('settings.deletePermanent')}</Text>}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.btnSecondary} onPress={() => { setShowDeleteAccount(false); setDeletePass(''); setDeleteConfirm(''); }}>
-                      <Text style={styles.btnSecondaryText}>Cancelar</Text>
+                      <Text style={styles.btnSecondaryText}>{t('settings.cancel')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -357,7 +420,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
             <View style={styles.divider} />
             <TouchableOpacity style={styles.logoutButton} onPress={async () => { onClose(); await logout(); }}>
               <MaterialIcons name="logout" size={20} color="#ef4444" />
-              <Text style={styles.logoutText}>Sair da Conta</Text>
+              <Text style={styles.logoutText}>{t('settings.logout')}</Text>
             </TouchableOpacity>
           </ScrollView>
         </Pressable>
@@ -561,6 +624,14 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   },
   btnDisabled: {
     opacity: 0.4,
+  },
+  preferenceBlock: {
+    gap: 8,
+  },
+  preferenceLabel: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: isDark ? '#e2e8f0' : '#334155',
   },
   themeGroup: {
     flexDirection: 'row',

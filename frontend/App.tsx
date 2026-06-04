@@ -21,6 +21,7 @@ import { getYearMonth } from './utils/dateUtils';
 import api from './services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Mail } from 'lucide-react';
+import { useLanguage } from './context/LanguageContext';
 
 const AppContent: React.FC = () => {
   const {
@@ -48,6 +49,7 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { selectedDate } = useMonth();
+  const { t } = useLanguage();
 
   // Close any open modal/overlay on Esc key
   useEffect(() => {
@@ -160,22 +162,22 @@ const AppContent: React.FC = () => {
       <div className={`flex-1 sidebar-transition ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pb-24 lg:pb-0`}>
         <header className="sticky top-0 z-[100] bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 px-4 md:px-8 py-2 md:py-3 flex flex-row justify-between items-center gap-2 w-full max-w-[100vw] transition-colors duration-300">
           <div className="min-w-0 flex-1">
-            <p className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-0.5 truncate">Gestão Financeira</p>
+            <p className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-0.5 truncate">{t('common.management')}</p>
             <h2 className="text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight capitalize truncate flex items-center gap-3">
-              {activeTab === 'dashboard' ? 'Dashboard' :
-                activeTab === 'accounts' ? 'Contas & Cartões' :
-                  activeTab === 'timeline' ? 'Linha do Tempo' :
-                    activeTab === 'goals' ? 'Metas & Sonhos' :
-                      activeTab === 'budgets' ? 'Orçamentos' :
-                        activeTab === 'invoices' ? 'Faturas' :
-                        activeTab === 'fixed' ? 'Recorrentes' :
-                          activeTab === 'feedbacks' ? 'Feedbacks (Admin)' :
-                        activeTab === 'admin' ? 'Painel Admin' :
-                            activeTab === 'history' ? 'Extrato' :
-                              'Configurações'}
+              {activeTab === 'dashboard' ? t('header.dashboard') :
+                activeTab === 'accounts' ? t('header.accounts') :
+                  activeTab === 'timeline' ? t('header.timeline') :
+                    activeTab === 'goals' ? t('header.goals') :
+                      activeTab === 'budgets' ? t('header.budgets') :
+                        activeTab === 'invoices' ? t('header.invoices') :
+                        activeTab === 'fixed' ? t('header.fixed') :
+                          activeTab === 'feedbacks' ? t('header.feedbacks') :
+                        activeTab === 'admin' ? t('header.admin') :
+                            activeTab === 'history' ? t('header.history') :
+                              t('header.settings')}
               {userName && (
                 <div className="flex flex-col border-l border-slate-200 dark:border-slate-800 pl-3">
-                  <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold leading-tight">Olá, {userName}</span>
+                  <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold leading-tight">{t('common.hello', { name: userName })}</span>
                   {userEmail && <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium lowercase leading-tight">{userEmail}</span>}
                 </div>
               )}
@@ -185,7 +187,7 @@ const AppContent: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <MonthSelector />
                   <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded-full whitespace-nowrap hidden sm:inline-block">
-                    {Array.isArray(transactions) ? transactions.length : 0} transações
+                    {t('common.transactionsCount', { count: Array.isArray(transactions) ? transactions.length : 0 })}
                   </span>
                 </div>
               </div>
@@ -206,8 +208,8 @@ const AppContent: React.FC = () => {
               className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-cyan-600 text-white rounded-2xl hover:bg-cyan-700 font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-lg shadow-cyan-200 dark:shadow-none transition-all active:scale-95 whitespace-nowrap group"
             >
               <Plus className="w-4 h-4 sm:w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-              <span className="hidden sm:inline">Novo Lançamento</span>
-              <span className="sm:hidden">+ Lançamento</span>
+              <span className="hidden sm:inline">{t('header.newTransaction')}</span>
+              <span className="sm:hidden">{t('header.newTransactionMobile')}</span>
             </button>
           </div>
         </header>
@@ -301,7 +303,7 @@ const AppContent: React.FC = () => {
         <button
           onClick={handleOpenTransactionForm}
           className="fixed lg:hidden bottom-20 right-4 z-50 bg-cyan-600 hover:bg-cyan-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95 group"
-          title="Novo Lançamento"
+          title={t('header.newTransactionTitle')}
           style={{ boxShadow: '0 10px 25px -5px rgba(6, 182, 212, 0.4)' }}
         >
           <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />

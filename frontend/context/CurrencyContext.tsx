@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import { useLanguage } from './LanguageContext';
 
 export type CurrencyCode = 'BRL' | 'USD' | 'EUR';
 
@@ -14,6 +15,7 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 
 export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [currency, setCurrencyState] = useState<CurrencyCode>('BRL');
+    const { locale } = useLanguage();
 
     useEffect(() => {
         const storedCurrency = localStorage.getItem('app_currency');
@@ -28,19 +30,14 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
 
     const formatCurrency = (value: number | string, options?: Intl.NumberFormatOptions) => {
-        // Proteção contra null/undefined/NaN (campos criptografados ou NULL do banco)
-        if (value === null || value === undefined) return 'R$ 0,00';
+        if (value === null || value === undefined) return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(0);
         const numValue = typeof value === 'string' ? Number(value) : value;
-        if (isNaN(numValue)) return 'R$ 0,00';
+        if (isNaN(numValue)) return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(0);
 
-        let currentLocale = 'pt-BR';
-        if (currency === 'USD') currentLocale = 'en-US';
-        if (currency === 'EUR') currentLocale = 'de-DE'; // Using German locale for Euro formatting as an example (1.234,56 €) or standard standard
-
-        return numValue.toLocaleString(currentLocale, {
+        return numValue.toLocaleString(locale, {
             style: 'currency',
-            currency: currency,
-            ...options
+            currency,
+            ...options,
         });
     };
 
@@ -48,12 +45,6 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
         if (currency === 'USD') return '$';
         if (currency === 'EUR') return '€';
         return 'R$';
-    }, [currency]);
-
-    const locale = useMemo(() => {
-        if (currency === 'USD') return 'en-US';
-        if (currency === 'EUR') return 'de-DE';
-        return 'pt-BR';
     }, [currency]);
 
     return (

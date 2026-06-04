@@ -9,6 +9,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { OfflineBanner } from '../../components/OfflineBanner';
+import { useLanguage } from '../../context/LanguageContext';
 
 function NotificationsBadge() {
   const { unreadCount } = useNotifications();
@@ -63,6 +64,7 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { t } = useLanguage();
 
   // Refresh notification badge count when tab view gains focus
   useFocusEffect(useCallback(() => { refreshUnreadCount(); }, []));
@@ -86,14 +88,14 @@ export default function TabLayout() {
               tabBarInactiveTintColor: isDark ? '#64748b' : '#94a3b8',
             }}
           >
-            <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color }) => <MaterialIcons name="grid-view" size={24} color={color} /> }} />
+            <Tabs.Screen name="index" options={{ title: t('tabs.home'), tabBarIcon: ({ color }) => <MaterialIcons name="grid-view" size={24} color={color} /> }} />
             <Tabs.Screen name="notifications" options={{ href: null }} />
-            <Tabs.Screen name="accounts" options={{ title: 'Contas', tabBarIcon: ({ color }) => <MaterialIcons name="account-balance-wallet" size={24} color={color} /> }} />
-            <Tabs.Screen name="recurring" options={{ title: 'Fixo/Recorr.', tabBarIcon: ({ color }) => <MaterialIcons name="event-repeat" size={24} color={color} /> }} />
-            <Tabs.Screen name="transactions" options={{ title: 'Extrato', tabBarIcon: ({ color }) => <MaterialIcons name="receipt-long" size={24} color={color} /> }} />
-            <Tabs.Screen name="budgets" options={{ title: 'Orç.', tabBarIcon: ({ color }) => <MaterialIcons name="pie-chart" size={24} color={color} /> }} />
-            <Tabs.Screen name="goals" options={{ title: 'Metas', tabBarIcon: ({ color }) => <MaterialIcons name="track-changes" size={24} color={color} /> }} />
-            <Tabs.Screen name="reports" options={{ title: 'Relat.', tabBarIcon: ({ color }) => <MaterialIcons name="bar-chart" size={24} color={color} /> }} />
+            <Tabs.Screen name="accounts" options={{ title: t('tabs.accounts'), tabBarIcon: ({ color }) => <MaterialIcons name="account-balance-wallet" size={24} color={color} /> }} />
+            <Tabs.Screen name="recurring" options={{ title: t('tabs.recurring'), tabBarIcon: ({ color }) => <MaterialIcons name="event-repeat" size={24} color={color} /> }} />
+            <Tabs.Screen name="transactions" options={{ title: t('tabs.transactions'), tabBarIcon: ({ color }) => <MaterialIcons name="receipt-long" size={24} color={color} /> }} />
+            <Tabs.Screen name="budgets" options={{ title: t('tabs.budgets'), tabBarIcon: ({ color }) => <MaterialIcons name="pie-chart" size={24} color={color} /> }} />
+            <Tabs.Screen name="goals" options={{ title: t('tabs.goals'), tabBarIcon: ({ color }) => <MaterialIcons name="track-changes" size={24} color={color} /> }} />
+            <Tabs.Screen name="reports" options={{ title: t('tabs.reports'), tabBarIcon: ({ color }) => <MaterialIcons name="bar-chart" size={24} color={color} /> }} />
           </Tabs>
         </View>
       </TransactionsProvider>

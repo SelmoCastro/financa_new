@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { useLanguage } from './LanguageContext';
 
 export type CurrencyCode = 'BRL' | 'USD' | 'EUR';
 
@@ -15,6 +16,7 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 
 export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [currency, setCurrencyState] = useState<CurrencyCode>('BRL');
+    const { locale } = useLanguage();
 
     useEffect(() => {
         async function loadStoredCurrency() {
@@ -47,27 +49,17 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
         if (typeof value === 'string' && value.startsWith('enc:')) return 'R$ 0,00';
         const safeValue = isNaN(numValue) ? 0 : numValue;
 
-        let currentLocale = 'pt-BR';
-        if (currency === 'USD') currentLocale = 'en-US';
-        if (currency === 'EUR') currentLocale = 'de-DE';
-
-        return safeValue.toLocaleString(currentLocale, {
+        return safeValue.toLocaleString(locale, {
             style: 'currency',
             currency: currency,
             ...options
         });
-    }, [currency]);
+    }, [currency, locale]);
 
     const currencySymbol = useMemo(() => {
         if (currency === 'USD') return '$';
         if (currency === 'EUR') return '€';
         return 'R$';
-    }, [currency]);
-
-    const locale = useMemo(() => {
-        if (currency === 'USD') return 'en-US';
-        if (currency === 'EUR') return 'de-DE';
-        return 'pt-BR';
     }, [currency]);
 
     const value = React.useMemo(() => ({

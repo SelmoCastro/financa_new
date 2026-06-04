@@ -1,17 +1,20 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 
 export type AppLanguage = 'pt-BR' | 'en';
+export type AppLocale = 'pt-BR' | 'en-US' | 'pt-PT' | 'de-DE' | 'en-IE';
 
 type TranslationParams = Record<string, string | number>;
 
 interface LanguageContextType {
   language: AppLanguage;
   setLanguage: (language: AppLanguage) => void;
-  locale: string;
+  locale: AppLocale;
+  setLocale: (locale: AppLocale) => void;
   t: (key: string, params?: TranslationParams) => string;
 }
 
 const STORAGE_KEY = 'app_language';
+const LOCALE_STORAGE_KEY = 'app_locale';
 
 const translations: Record<AppLanguage, Record<string, string>> = {
   'pt-BR': {
@@ -241,12 +244,20 @@ const translations: Record<AppLanguage, Record<string, string>> = {
 
     'settings.title': 'Configurações',
     'settings.subtitle': 'Gerencie seus dados pessoais e plano.',
-    'settings.preferences': 'Preferências Regionais',
+    'settings.preferences': 'Preferências',
     'settings.preferences.helper': 'A moeda define o símbolo/valor. O idioma define os textos e o formato de datas e números.',
-    'settings.currency': 'Moeda Padrão',
+    'settings.currency': 'Moeda',
     'settings.language': 'Idioma',
-    'settings.language.pt': 'Português (BR)',
+    'settings.language.pt': 'Português (Brasil)',
     'settings.language.en': 'English (US)',
+    'settings.locale': 'Localidade',
+    'settings.locale.ptBR': 'Português (Brasil)',
+    'settings.locale.enUS': 'English (US)',
+    'settings.locale.ptPT': 'Português (Portugal)',
+    'settings.locale.deDE': 'Deutsch (Deutschland)',
+    'settings.locale.enIE': 'English (Ireland)',
+    'settings.preferencesSaved': 'Preferências salvas com sucesso!',
+    'settings.preferencesError': 'Erro ao salvar preferências',
     'settings.displayName': 'Nome de Exibição',
     'settings.namePlaceholder': 'Seu nome',
     'settings.email': 'E-mail',
@@ -521,12 +532,20 @@ const translations: Record<AppLanguage, Record<string, string>> = {
 
     'settings.title': 'Settings',
     'settings.subtitle': 'Manage your personal data and plan.',
-    'settings.preferences': 'Regional Preferences',
+    'settings.preferences': 'Preferences',
     'settings.preferences.helper': 'Currency defines the symbol/amount. Language defines texts plus date and number formatting.',
-    'settings.currency': 'Default Currency',
+    'settings.currency': 'Currency',
     'settings.language': 'Language',
-    'settings.language.pt': 'Portuguese (BR)',
+    'settings.language.pt': 'Portuguese (Brazil)',
     'settings.language.en': 'English (US)',
+    'settings.locale': 'Locale',
+    'settings.locale.ptBR': 'Portuguese (Brazil)',
+    'settings.locale.enUS': 'English (US)',
+    'settings.locale.ptPT': 'Portuguese (Portugal)',
+    'settings.locale.deDE': 'German (Germany)',
+    'settings.locale.enIE': 'English (Ireland)',
+    'settings.preferencesSaved': 'Preferences saved successfully!',
+    'settings.preferencesError': 'Error saving preferences',
     'settings.displayName': 'Display Name',
     'settings.namePlaceholder': 'Your name',
     'settings.email': 'Email',
@@ -586,20 +605,44 @@ function interpolate(template: string, params?: TranslationParams): string {
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<AppLanguage>('pt-BR');
+  const [locale, setLocaleState] = useState<AppLocale>('pt-BR');
+  const [localeCustomized, setLocaleCustomized] = useState(false);
 
   useEffect(() => {
     const storedLanguage = localStorage.getItem(STORAGE_KEY);
     if (storedLanguage === 'pt-BR' || storedLanguage === 'en') {
       setLanguageState(storedLanguage);
     }
+
+    const storedLocale = localStorage.getItem(LOCALE_STORAGE_KEY);
+    if (storedLocale === 'pt-BR' || storedLocale === 'en-US' || storedLocale === 'pt-PT' || storedLocale === 'de-DE' || storedLocale === 'en-IE') {
+      setLocaleState(storedLocale);
+      setLocaleCustomized(true);
+    } else if (storedLanguage === 'en') {
+      setLocaleState('en-US');
+      setLocaleCustomized(false);
+    } else {
+      setLocaleState('pt-BR');
+      setLocaleCustomized(false);
+    }
   }, []);
 
   const setLanguage = (newLanguage: AppLanguage) => {
     setLanguageState(newLanguage);
     localStorage.setItem(STORAGE_KEY, newLanguage);
+
+    if (!localeCustomized) {
+      const defaultLocale: AppLocale = newLanguage === 'en' ? 'en-US' : 'pt-BR';
+      setLocaleState(defaultLocale);
+      localStorage.setItem(LOCALE_STORAGE_KEY, defaultLocale);
+    }
   };
 
-  const locale = useMemo(() => (language === 'en' ? 'en-US' : 'pt-BR'), [language]);
+  const setLocale = (newLocale: AppLocale) => {
+    setLocaleState(newLocale);
+    setLocaleCustomized(true);
+    localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+  };
 
   const t = (key: string, params?: TranslationParams) => {
     const fallback = translations['pt-BR'][key] ?? key;
@@ -607,7 +650,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     return interpolate(translated, params);
   };
 
-  const value = useMemo(() => ({ language, setLanguage, locale, t }), [language, locale]);
+  const value = useMemo(() => ({ language, setLanguage, locale, setLocale, t }), [language, locale]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };

@@ -9,6 +9,7 @@ import { useCurrency } from '../../context/CurrencyContext';
 import { useTransactions } from '../../hooks/useTransactions';
 import { MonthSelector } from '../../components/MonthSelector';
 import { Skeleton } from '../../components/Skeleton';
+import { getYearMonth } from '../../utils/dateUtils';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#8b5cf6', '#ec4899'];
 
@@ -43,9 +44,7 @@ export default function ReportsScreen() {
     const fetchSummary = useCallback(async () => {
         try {
             setLoading(true);
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth();
+            const { year, month } = getYearMonth(selectedDate);
             const res = await api.get(`/transactions/dashboard-summary?year=${year}&month=${month}`);
             setSummary(res.data);
         } catch (error) {
@@ -54,7 +53,7 @@ export default function ReportsScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [selectedDate]);
 
     useEffect(() => { fetchSummary(); }, [fetchSummary]);
 

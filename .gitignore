@@ -119,3 +119,4 @@ mobile/assets/fonts/
 
 # Nginx/deploy scripts (keep locally)
 scripts/rollback.sh
+backend/.env.bak*
