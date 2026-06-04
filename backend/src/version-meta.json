@@ -1,6 +1,7 @@
 {
-  "version": "1.9.1",
-  "mobileVersion": "1.9.1",
+  "version": "1.9.2",
+  "mobileVersion": "1.9.2",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.9.1 - corrige atualizacao da aba Relatorios ao trocar de mes no mobile"
+  "releaseNotes": "v1.9.2 - Conversão real de moeda (BCB + Frankfurter) com taxa de câmbio"
 }
+

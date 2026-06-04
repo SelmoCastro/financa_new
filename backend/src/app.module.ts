@@ -37,6 +37,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AutoTransactionScheduler } from './scheduler/auto-transaction.scheduler';
 import { EncryptionModule } from './common/services/encryption.module';
+import { ExchangeRateModule } from './exchange-rate/exchange-rate.module';
 import { OcrModule } from './common/services/ocr.module';
 import { BehavioralThrottleMiddleware } from './common/middleware/behavioral-throttle.middleware';
 import { SecurityLoggerMiddleware } from './common/middleware/security-logger.middleware';
@@ -74,6 +75,7 @@ import { SecurityLoggerMiddleware } from './common/middleware/security-logger.mi
     RecurringTransactionsModule,
     PaymentsModule,
     EncryptionModule,
+    ExchangeRateModule,
     OcrModule,
     ScheduleModule.forRoot(),
   ],
