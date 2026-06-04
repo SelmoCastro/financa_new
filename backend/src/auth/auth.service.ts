@@ -15,6 +15,7 @@ import { AuditService } from '../audit/audit.service';
 import * as crypto from 'crypto';
 
 import { RefreshTokenService } from './refresh-token.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,7 @@ export class AuthService {
     private emailService: EmailService,
     private auditService: AuditService,
     private refreshTokenService: RefreshTokenService,
+    private subscriptionService: SubscriptionService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -169,6 +171,11 @@ export class AuthService {
       termsAccepted: true,
       termsAcceptedAt: new Date(),
     });
+
+    // 🎁 Trial: 2 meses de premium grátis para novos usuários
+    const twoMonthsFromNow = new Date();
+    twoMonthsFromNow.setMonth(twoMonthsFromNow.getMonth() + 2);
+    await this.subscriptionService.upgrade(user.id, 'premium', twoMonthsFromNow);
 
     // Gerar token de verificação de email e enviar
     const verifyToken = crypto.randomBytes(32).toString('hex');

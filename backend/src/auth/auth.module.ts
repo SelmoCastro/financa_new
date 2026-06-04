@@ -6,6 +6,7 @@ import { PassportModule } from '@nestjs/passport';
 import { PrismaModule } from '../prisma/prisma.module';
 import { EmailModule } from '../email/email.module';
 import { AuditModule } from '../audit/audit.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
@@ -20,6 +21,7 @@ import { RefreshTokenService } from './refresh-token.service';
     PrismaModule,
     EmailModule,
     AuditModule,
+    SubscriptionModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
