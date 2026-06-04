@@ -12,6 +12,7 @@ import { Sparkles, RefreshCw, AlertCircle, Crosshair, Banknote, TrendingUp, Tren
 import { OnboardingWidget } from '../components/OnboardingWidget';
 import { ProjectionWidget } from '../components/ProjectionWidget';
 import { useCurrency } from '../context/CurrencyContext';
+import { useLanguage } from '../context/LanguageContext';
 import { motion } from 'framer-motion';
 
 interface DashboardViewProps {
@@ -27,6 +28,7 @@ const COLORS = ['#06b6d4', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false, onAddAccount, onAddTransaction, onAddBudget }) => {
     const { formatCurrency } = useCurrency();
+    const { t } = useLanguage();
     const { selectedDate } = useMonth();
     const [insights, setInsights] = React.useState<string | null>(null);
     const [isFetchingInsights, setIsFetchingInsights] = React.useState(false);
@@ -117,22 +119,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                 ) : (
                     <>
                         <StatCard 
-                            title="Disponível (Mês)" 
+                            title={t('dashboard.available')} 
                             value={formatCurrency(availableReal)} 
                             color={availableReal < 0 ? "bg-rose-600 text-white" : "bg-cyan-600 text-cyan-50"} 
                             icon={availableReal < 0 ? <AlertCircle className="text-white animate-pulse" /> : <Banknote className="text-white" />} 
                             isVisible={!isPrivacyEnabled} 
                         />
-                        <StatCard title="Saldo Atual" value={formatCurrency(totals.balance)} color="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300" icon={<Banknote className="" />} isVisible={!isPrivacyEnabled} />
+                        <StatCard title={t('dashboard.currentBalance')} value={formatCurrency(totals.balance)} color="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300" icon={<Banknote className="" />} isVisible={!isPrivacyEnabled} />
                         <StatCard
-                            title="Fatura Cartão"
+                            title={t('dashboard.cardInvoice')}
                             value={formatCurrency(totals.creditCardDebt)}
                             color={totals.creditCardDebt > 0 ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}
                             icon={totals.creditCardDebt > 0 ? <AlertCircle className="text-amber-500" /> : <CheckCircle className="text-emerald-500" />}
                             isVisible={!isPrivacyEnabled}
                         />
                         <StatCard 
-                            title="Entradas (Mês)" 
+                            title={t('dashboard.monthIncome')} 
                             value={formatCurrency(totals.currentIncome)} 
                             color="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" 
                             icon={<TrendingUp className="" />} 
@@ -140,7 +142,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             trendUp={totals.incomeTrend >= 0} 
                             isVisible={!isPrivacyEnabled} 
                         />
-                        <StatCard title="Saídas (Mês)" value={formatCurrency(totals.currentExpense)} color="bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400" icon={<TrendingDown className="" />} trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`} trendUp={totals.expenseTrend <= 0} isVisible={!isPrivacyEnabled} />
+                        <StatCard title={t('dashboard.monthExpense')} value={formatCurrency(totals.currentExpense)} color="bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400" icon={<TrendingDown className="" />} trend={`${Math.abs(totals.expenseTrend).toFixed(1)}%`} trendUp={totals.expenseTrend <= 0} isVisible={!isPrivacyEnabled} />
                     </>
                 )}
             </div>
@@ -164,7 +166,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 <div className="p-2 bg-white/20 rounded-xl">
                                     <Sparkles className="w-5 h-5" />
                                 </div>
-                                <h2 className="text-xl font-black">Insights Inteligentes</h2>
+                                <h2 className="text-xl font-black">{t('dashboard.smartInsights')}</h2>
                             </div>
 
                             {isFetchingInsights ? (
@@ -186,7 +188,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </div>
                             ) : (
                                 <p className="text-cyan-100 text-sm font-medium">
-                                    Peça para a nossa IA analisar seus gastos desse mês e te dar dicas personalizadas.
+                                    {t('dashboard.insightsPrompt')}
                                 </p>
                             )}
                         </div>
@@ -197,7 +199,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             className={`relative z-10 flex items-center gap-2 bg-white text-cyan-600 px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-cyan-50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-lg ${!insights && !isFetchingInsights ? 'animate-pulse hover:animate-none' : ''}`}
                         >
                             {isFetchingInsights ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                            {insights ? 'Atualizar Dicas' : 'Analisar meu Mês'}
+                            {isFetchingInsights ? t('dashboard.updateTips') : insights ? t('dashboard.updateTips') : t('dashboard.analyzeMonth')}
                         </button>
                     </div>
                 </motion.div>
@@ -205,8 +207,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                 <div className="lg:col-span-8 space-y-6 md:space-y-8">
                     <div className="glass-card p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] overflow-hidden">
                         <div className="mb-8">
-                            <h3 className="text-lg font-black text-slate-800 dark:text-white">Performance Mensal</h3>
-                            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Fluxo consolidado de caixa</p>
+                            <h3 className="text-lg font-black text-slate-800 dark:text-white">{t('dashboard.monthlyPerformance')}</h3>
+                            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">{t('dashboard.cashFlow')}</p>
                         </div>
                         <div className="h-[250px] md:h-[320px] w-full min-h-[250px] relative">
                             {isLoading ? (
@@ -224,8 +226,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                             formatter={(value: number) => isPrivacyEnabled ? '••••' : formatCurrency(value)}
                                         />
                                         <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }} />
-                                        <Bar name="Receitas" dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                                        <Bar name="Despesas" dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                                        <Bar name={t('dashboard.revenues')} dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                                        <Bar name={t('dashboard.expenses')} dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             ) : (
@@ -235,20 +237,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     </div>
                                     {accounts && accounts.length === 0 ? (
                                         <>
-                                            <h4 className="text-slate-700 dark:text-slate-200 font-black mb-1">Bem-vindo(a) ao Finanza!</h4>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-4 font-medium">Para começar a organizar suas finanças, primeiro registre onde seu dinheiro fica guardado.</p>
+                                            <h4 className="text-slate-700 dark:text-slate-200 font-black mb-1">{t('dashboard.welcome')}</h4>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-4 font-medium">{t('dashboard.welcomeDesc')}</p>
                                             <p className="text-[10px] text-rose-500 font-black bg-rose-50 dark:bg-rose-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 uppercase tracking-widest">
                                                 <Banknote className="w-3 h-3" />
-                                                Acesse "Contas & Cartões" no menu
+                                                {t('dashboard.addAccount')}
                                             </p>
                                         </>
                                     ) : (
                                         <>
-                                            <h4 className="text-slate-700 dark:text-slate-200 font-black mb-1">Nenhum lançamento neste mês</h4>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-4 font-medium">Que tal começar a organizar suas finanças registrando sua primeira movimentação?</p>
+                                            <h4 className="text-slate-700 dark:text-slate-200 font-black mb-1">{t('dashboard.noEntries')}</h4>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mb-4 font-medium">{t('dashboard.noEntriesDesc')}</p>
                                             <p className="text-[10px] text-cyan-500 font-black bg-cyan-50 dark:bg-cyan-500/10 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 uppercase tracking-widest">
                                                 <Sparkles className="w-3 h-3" />
-                                                Comece pelo botão "Novo Lançamento"
+                                                {t('dashboard.startEntry')}
                                             </p>
                                         </>
                                     )}
@@ -268,7 +270,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </div>
                             ) : forecast.missingFixed.length > 0 ? (
                                 <>
-                                    <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-4">Fixos Pendentes</h3>
+                                    <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-4">{t('dashboard.fixedPending')}</h3>
                                     <div className="space-y-3">
                                         {forecast.missingFixed.map((item, idx) => (
                                             <div key={idx} className="flex justify-between items-center p-4 bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800 transition-colors hover:border-cyan-200 dark:hover:border-cyan-900/50 group">
@@ -285,15 +287,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                     <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center mb-3">
                                         <CheckCircle className="w-6 h-6" />
                                     </div>
-                                    <p className="text-sm font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Tudo em dia!</p>
-                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Nenhuma conta fixa pendente.</p>
+                                    <p className="text-sm font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">{t('dashboard.allPaid')}</p>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{t('dashboard.noPendingFixed')}</p>
                                 </div>
                             )}
                         </div>
                         <div className="space-y-6">
                             <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] relative overflow-hidden">
                                 <div className="flex justify-between items-center mb-6">
-                                    <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Top Gastos</h3>
+                                    <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">{t('dashboard.topExpenses')}</h3>
                                     <Trophy className="w-4 h-4 text-amber-500" />
                                 </div>
                                 <div className="space-y-4 relative z-10">
@@ -310,32 +312,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                             </span>
                                         </div>
                                     ))}
-                                    {forecast.topVillains.length === 0 && <p className="text-xs text-slate-400">Sem dados suficientes.</p>}
+                                    {forecast.topVillains.length === 0 && <p className="text-xs text-slate-400">{t('dashboard.insufficientData')}</p>}
                                 </div>
                             </div>
 
                             <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem]">
                                 <div className="flex justify-between items-center mb-2">
-                                    <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Comprometimento</h3>
+                                    <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">{t('dashboard.compromise')}</h3>
                                     <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${forecast.fixedRatio > 60 ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20' : 'bg-cyan-100 text-cyan-600 dark:bg-cyan-500/20'}`}>
                                         {forecast.fixedRatio.toFixed(0)}%
                                     </span>
                                 </div>
-                                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-4 uppercase tracking-tighter">Da sua renda mensal está comprometida com fixos.</p>
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mb-4 uppercase tracking-tighter">{t('dashboard.fixedRatioDesc')}</p>
 
                                 <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
                                     <div
                                         className="h-full bg-slate-800 dark:bg-cyan-500"
                                         style={{ width: `${forecast.fixedRatio}%` }}
-                                        title="Custos Fixos"
+                                        title={t('dashboard.fixedCost')}
                                     ></div>
-                                    <div className="h-full bg-emerald-400/40 flex-1" title="Livre"></div>
+                                    <div className="h-full bg-emerald-400/40 flex-1" title={t('dashboard.free')}></div>
                                 </div>
                                 <div className="flex justify-between mt-3 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                                     <span className={isPrivacyEnabled ? 'blur-sm select-none' : ''}>
-                                        {isPrivacyEnabled ? 'Fixo: ••••' : `Fixo: ${formatCurrency(forecast.totalFixedExpense, { maximumFractionDigits: 0 })}`}
+                                        {isPrivacyEnabled ? t('dashboard.fixedLabel', { value: '••••' }) : t('dashboard.fixedLabel', { value: formatCurrency(forecast.totalFixedExpense, { maximumFractionDigits: 0 }) })}
                                     </span>
-                                    <span>Livre</span>
+                                    <span>{t('dashboard.free')}</span>
                                 </div>
                             </div>
                         </div>
@@ -346,8 +348,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                     <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem]">
                         <div className="flex justify-between items-start mb-6">
                             <div>
-                                <h3 className="text-lg font-black text-slate-800 dark:text-white">Regra 50/30/20</h3>
-                                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Saúde Financeira</p>
+                                <h3 className="text-lg font-black text-slate-800 dark:text-white">{t('dashboard.ruleTitle')}</h3>
+                                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">{t('dashboard.financialHealth')}</p>
                             </div>
                             <div className="p-2 bg-cyan-50 dark:bg-cyan-500/10 rounded-xl">
                                 <PieChartIcon className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
@@ -355,10 +357,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                         </div>
 
                         <div className="space-y-6">
-                            <div className="space-y-2 group cursor-help" title="Gastos essenciais como Aluguel, Alimentação, Luz, Água e Saúde. Limite sugerido: 50%.">
+                            <div className="space-y-2 group cursor-help" title={t('dashboard.needsTooltip')}>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                        Necessidades (50%)
+                                        {t('dashboard.needs')}
                                         <AlertCircle className={`w-3.5 h-3.5 transition-colors ${rule503020.needs.percent > 50 ? 'text-rose-500' : 'text-slate-300 dark:text-slate-600'}`} />
                                     </span>
                                     <span className={`font-black ${rule503020.needs.percent > 50 ? 'text-rose-600' : 'text-slate-900 dark:text-white'}`}>{rule503020.needs.percent.toFixed(1)}%</span>
@@ -369,13 +371,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.max(Math.min(rule503020.needs.percent || 0, 100), rule503020.needs.value > 0 ? 2 : 0)}%` }}
                                     />
                                 </div>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.5)}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">{t('dashboard.suggestion', { value: formatCurrency(totals.currentIncome * 0.5) })}</p>
                             </div>
 
-                            <div className="space-y-2 group cursor-help" title="Lazer, Hobbies, Assinaturas, Restaurantes e Compras não-essenciais. Limite sugerido: 30%.">
+                            <div className="space-y-2 group cursor-help" title={t('dashboard.wantsTooltip')}>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                        Desejos (30%)
+                                        {t('dashboard.wants')}
                                         <AlertCircle className={`w-3.5 h-3.5 transition-colors ${rule503020.wants.percent > 30 ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600'}`} />
                                     </span>
                                     <span className={`font-black ${rule503020.wants.percent > 30 ? 'text-amber-600' : 'text-slate-900 dark:text-white'}`}>{rule503020.wants.percent.toFixed(1)}%</span>
@@ -386,13 +388,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.max(Math.min(rule503020.wants.percent || 0, 100), rule503020.wants.value > 0 ? 2 : 0)}%` }}
                                     />
                                 </div>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.3)}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">{t('dashboard.suggestion', { value: formatCurrency(totals.currentIncome * 0.3) })}</p>
                             </div>
 
-                            <div className="space-y-2 group cursor-help" title="Investimentos, Reserva de Emergência, Aposentadoria e Quitação de Dívidas. Mínimo sugerido: 20%.">
+                            <div className="space-y-2 group cursor-help" title={t('dashboard.savingsTooltip')}>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                        Objetivos (20%)
+                                        {t('dashboard.savings')}
                                         <AlertCircle className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
                                     </span>
                                     <span className="font-black text-slate-900 dark:text-white">{rule503020.savings.percent.toFixed(1)}%</span>
@@ -403,14 +405,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                         style={{ width: `${Math.max(Math.min(rule503020.savings.percent || 0, 100), rule503020.savings.value > 0 ? 2 : 0)}%` }}
                                     />
                                 </div>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">Sugestão: {formatCurrency(totals.currentIncome * 0.2)}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tighter">{t('dashboard.suggestion', { value: formatCurrency(totals.currentIncome * 0.2) })}</p>
                             </div>
 
                             {rule503020.uncategorized && rule503020.uncategorized.value > 0 && (
-                                <div className="space-y-2 group cursor-help" title="Gastos em categorias não classificadas na regra 50/30/20 (categorias personalizadas).">
+                                <div className="space-y-2 group cursor-help" title={t('dashboard.uncategorizedTooltip')}>
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                            Outros
+                                            {t('dashboard.other')}
                                             <AlertCircle className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
                                         </span>
                                         <span className="font-black text-slate-900 dark:text-white">{rule503020.uncategorized.percent.toFixed(1)}%</span>
@@ -421,13 +423,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                             style={{ width: `${Math.max(Math.min(rule503020.uncategorized.percent || 0, 100), rule503020.uncategorized.value > 0 ? 2 : 0)}%` }}
                                         />
                                     </div>
-                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Categorias não classificadas na regra</p>
+                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">{t('dashboard.uncategorized')}</p>
                                 </div>
                             )}
                         </div>
                     </div>
                     <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem]">
-                        <h3 className="text-lg font-black text-slate-800 dark:text-white mb-6">Alocação de Recursos</h3>
+                        <h3 className="text-lg font-black text-slate-800 dark:text-white mb-6">{t('dashboard.resourceAllocation')}</h3>
                         <div className="h-64 relative mx-auto">
                             {categorySummary.length > 0 ? (
                             <>
@@ -444,13 +446,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Despesas</span>
+                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t('dashboard.expenses')}</span>
                                 <span className="text-xl font-black text-slate-800 dark:text-white">100%</span>
                             </div>
                             </>
                             ) : (
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <p className="text-sm text-slate-400 dark:text-slate-500">Sem dados de categorização</p>
+                                    <p className="text-sm text-slate-400 dark:text-slate-500">{t('dashboard.noCategoryData')}</p>
                                 </div>
                             )}
                         </div>
@@ -473,8 +475,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                         <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-[2.5rem]">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
-                                    <h3 className="text-lg font-black text-slate-800 dark:text-white">Faturas Pendentes</h3>
-                                    <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">Cartão de Crédito</p>
+                                    <h3 className="text-lg font-black text-slate-800 dark:text-white">{t('dashboard.pendingInvoices')}</h3>
+                                    <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[10px]">{t('dashboard.creditCard')}</p>
                                 </div>
                                 <div className="p-2 bg-amber-50 dark:bg-amber-500/10 rounded-xl">
                                     <AlertCircle className="w-5 h-5 text-amber-500" />
@@ -495,16 +497,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                                                     {isPrivacyEnabled ? '••••' : formatCurrency(inv.remaining)}
                                                 </span>
                                                 <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-                                                    Vence {new Date(inv.dueDate).toLocaleDateString('pt-BR')}
+                                                    {t('dashboard.due', { date: new Date(inv.dueDate).toLocaleDateString('pt-BR') })}
                                                 </p>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold">
-                                                    Total: {isPrivacyEnabled ? '••••' : formatCurrency(inv.totalAmount)}
+                                                    {t('dashboard.total', { value: isPrivacyEnabled ? '••••' : formatCurrency(inv.totalAmount) })}
                                                 </p>
                                                 {inv.paidAmount > 0 && (
                                                     <p className="text-[11px] text-emerald-500 font-bold">
-                                                        Pago: {isPrivacyEnabled ? '••••' : formatCurrency(inv.paidAmount)}
+                                                        {t('dashboard.paid', { value: isPrivacyEnabled ? '••••' : formatCurrency(inv.paidAmount) })}
                                                     </p>
                                                 )}
                                             </div>

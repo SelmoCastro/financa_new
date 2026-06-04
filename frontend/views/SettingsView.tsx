@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { LogOut, User, Mail, Lock, Trash2, Crown, Shield, ChevronDown, Check, Loader2, X, Sparkles } from 'lucide-react';
+import { LogOut, User, Mail, Lock, Trash2, Crown, Shield, ChevronDown, Check, Loader2, X, Sparkles, Globe } from 'lucide-react';
 import { Transaction } from '../types';
 import api from '../services/api';
+import { useCurrency, CurrencyCode } from '../context/CurrencyContext';
+import { useLanguage, AppLanguage } from '../context/LanguageContext';
 
 interface SettingsViewProps {
     userName: string;
@@ -15,6 +17,8 @@ interface SettingsViewProps {
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail, userPlan, transactions, onLogout, onNameChange, onEmailChange, onUpgrade }) => {
+    const { currency, setCurrency } = useCurrency();
+    const { language, setLanguage, t } = useLanguage();
     // Edit name
     const [editingName, setEditingName] = useState(false);
     const [nameValue, setNameValue] = useState(userName);
@@ -54,9 +58,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
             await api.patch('/auth/change-name', { name: nameValue.trim() });
             setEditingName(false);
             onNameChange?.(nameValue.trim());
-            showFeedback('success', 'Nome atualizado com sucesso!');
+            showFeedback('success', t('settings.success.name'));
         } catch (e: any) {
-            showFeedback('error', e?.response?.data?.message || 'Erro ao alterar nome');
+            showFeedback('error', e?.response?.data?.message || t('settings.error.name'));
         } finally {
             setNameSaving(false);
         }
@@ -64,11 +68,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
 
     const handleChangePassword = async () => {
         if (newPass !== confirmPass) {
-            showFeedback('error', 'As senhas não coincidem');
+            showFeedback('error', t('settings.passwordMismatch'));
             return;
         }
         if (newPass.length < 8) {
-            showFeedback('error', 'A nova senha deve ter pelo menos 8 caracteres, incluindo letras e números');
+            showFeedback('error', t('settings.error.passwordLength'));
             return;
         }
         setPassSaving(true);
@@ -76,9 +80,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
             await api.post('/auth/change-password', { currentPassword: currentPass, newPassword: newPass });
             setCurrentPass(''); setNewPass(''); setConfirmPass('');
             setShowChangePassword(false);
-            showFeedback('success', 'Senha alterada com sucesso!');
+            showFeedback('success', t('settings.success.password'));
         } catch (e: any) {
-            showFeedback('error', e?.response?.data?.message || 'Erro ao alterar senha');
+            showFeedback('error', e?.response?.data?.message || t('settings.error.password'));
         } finally {
             setPassSaving(false);
         }
@@ -92,9 +96,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
             setNewEmail(''); setEmailPass('');
             setShowChangeEmail(false);
             onEmailChange?.(newEmail.trim());
-            showFeedback('success', res.data?.message || 'E-mail alterado! Verifique seu novo endereço.');
+            showFeedback('success', res.data?.message || t('settings.success.email'));
         } catch (e: any) {
-            showFeedback('error', e?.response?.data?.message || 'Erro ao alterar e-mail');
+            showFeedback('error', e?.response?.data?.message || t('settings.error.email'));
         } finally {
             setEmailSaving(false);
         }
@@ -106,7 +110,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
             await api.delete('/auth/delete-account', { data: { password: deletePass } });
             onLogout();
         } catch (e: any) {
-            showFeedback('error', e?.response?.data?.message || 'Erro ao excluir conta');
+            showFeedback('error', e?.response?.data?.message || t('settings.deleteError'));
             setDeleteSaving(false);
         }
     };
@@ -121,8 +125,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
             document.body.appendChild(link);
             link.click();
             link.remove();
+            showFeedback('success', t('settings.exportSuccess'));
         } catch (error) {
-            console.error('Erro ao exportar:', error);
+            console.error(t('settings.exportError'), error);
         }
     };
 
@@ -137,9 +142,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
             document.body.appendChild(link);
             link.click();
             link.remove();
-            showFeedback('success', 'Dados pessoais exportados com sucesso (LGPD — portabilidade)');
+            showFeedback('success', t('settings.exportPersonalDataSuccess'));
         } catch (error) {
-            showFeedback('error', 'Erro ao exportar dados pessoais');
+            showFeedback('error', t('settings.exportError'));
         }
     };
 
@@ -158,17 +163,49 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
             <div className="glass-card rounded-2xl md:rounded-[2.5rem] lg:rounded-[3rem] overflow-hidden">
                 {/* Header */}
                 <div className="p-8 md:p-12 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.3em] mb-2">Conta</p>
-                    <h3 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight">Configurações</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Gerencie seus dados pessoais e plano.</p>
+                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.3em] mb-2">{t('common.management')}</p>
+                    <h3 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight">{t('settings.title')}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">{t('settings.subtitle')}</p>
                 </div>
 
                 <div className="p-8 md:p-12 space-y-10">
 
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                            <Globe className="w-3 h-3" /> {t('settings.preferences')}
+                        </label>
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 mb-2">{t('settings.currency')}</label>
+                                <select
+                                    value={currency}
+                                    onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+                                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10"
+                                >
+                                    <option value="BRL">BRL</option>
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 mb-2">{t('settings.language')}</label>
+                                <select
+                                    value={language}
+                                    onChange={(e) => setLanguage(e.target.value as AppLanguage)}
+                                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-black text-slate-700 dark:text-white outline-none transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10"
+                                >
+                                    <option value="pt-BR">{t('settings.language.pt')}</option>
+                                    <option value="en">{t('settings.language.en')}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-3">{t('settings.preferences.helper')}</p>
+                    </div>
+
                     {/* NOME DE EXIBIÇÃO */}
                     <div>
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                            <User className="w-3 h-3" /> Nome de Exibição
+                            <User className="w-3 h-3" /> {t('settings.displayName')}
                         </label>
                         <div className="mt-3 flex gap-3">
                             <input
@@ -176,7 +213,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                 value={nameValue}
                                 onChange={(e) => { setNameValue(e.target.value); if (!editingName) setEditingName(true); }}
                                 className={`flex-1 px-5 py-4 bg-slate-50 dark:bg-slate-950 border rounded-2xl font-black text-slate-700 dark:text-white outline-none transition-all ${editingName ? 'border-cyan-500 ring-4 ring-cyan-500/10' : 'border-slate-200 dark:border-slate-800'}`}
-                                placeholder="Seu nome"
+                                placeholder={t('settings.namePlaceholder')}
                             />
                             {editingName && (
                                 <button
@@ -185,7 +222,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     className="px-6 py-4 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
                                 >
                                     {nameSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                    Salvar
+                                    {t('common.save')}
                                 </button>
                             )}
                         </div>
@@ -194,7 +231,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                     {/* EMAIL */}
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                            <Mail className="w-3 h-3" /> E-mail
+                            <Mail className="w-3 h-3" /> {t('settings.email')}
                         </label>
                         <div className="mt-3 flex items-center gap-4">
                             <div className="flex-1 px-5 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-slate-500 dark:text-slate-400 flex items-center gap-3">
@@ -205,7 +242,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                 onClick={() => setShowChangeEmail(!showChangeEmail)}
                                 className="px-5 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl font-bold text-sm text-slate-600 dark:text-slate-300 transition-all active:scale-95"
                             >
-                                Alterar
+                                {t('common.change')}
                             </button>
                         </div>
 
@@ -217,24 +254,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     value={newEmail}
                                     onChange={(e) => setNewEmail(e.target.value)}
                                     className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
-                                    placeholder="Novo e-mail"
+                                    placeholder={t('settings.newEmail')}
                                 />
                                 <input
                                     type="password"
                                     value={emailPass}
                                     onChange={(e) => setEmailPass(e.target.value)}
                                     className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
-                                    placeholder="Confirme sua senha"
+                                    placeholder={t('settings.confirmPasswordCurrent')}
                                 />
                                 <div className="flex gap-3">
                                     <button onClick={handleChangeEmail} disabled={emailSaving || !newEmail || !emailPass}
                                         className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2">
                                         {emailSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                                        Confirmar Alteração
+                                        {t('settings.confirmEmailChange')}
                                     </button>
                                     <button onClick={() => { setShowChangeEmail(false); setNewEmail(''); setEmailPass(''); }}
                                         className="px-5 py-3 bg-slate-100 dark:bg-slate-800 rounded-2xl font-bold text-sm text-slate-500 transition-all">
-                                        Cancelar
+                                        {t('common.cancel')}
                                     </button>
                                 </div>
                             </div>
@@ -244,14 +281,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                     {/* SENHA */}
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                            <Lock className="w-3 h-3" /> Senha
+                            <Lock className="w-3 h-3" /> {t('settings.password')}
                         </label>
                         <div className="mt-3">
                             <button
                                 onClick={() => setShowChangePassword(!showChangePassword)}
                                 className="px-5 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl font-bold text-sm text-slate-600 dark:text-slate-300 transition-all active:scale-95 w-full text-left flex items-center justify-between"
                             >
-                                <span>Alterar senha de acesso</span>
+                                <span>{t('settings.passwordButton')}</span>
                                 <ChevronDown className={`w-4 h-4 transition-transform ${showChangePassword ? 'rotate-180' : ''}`} />
                             </button>
                         </div>
@@ -263,34 +300,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     value={currentPass}
                                     onChange={(e) => setCurrentPass(e.target.value)}
                                     className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
-                                    placeholder="Senha atual"
+                                    placeholder={t('settings.currentPassword')}
                                 />
                                 <input
                                     type="password"
                                     value={newPass}
                                     onChange={(e) => setNewPass(e.target.value)}
                                     className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
-                                    placeholder="Nova senha (mín. 8 caracteres, letras e números)"
+                                    placeholder={t('settings.newPassword')}
                                 />
                                 <input
                                     type="password"
                                     value={confirmPass}
                                     onChange={(e) => setConfirmPass(e.target.value)}
                                     className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500"
-                                    placeholder="Confirmar nova senha"
+                                    placeholder={t('settings.confirmPassword')}
                                 />
                                 {newPass && confirmPass && newPass !== confirmPass && (
-                                    <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider px-1">As senhas não coincidem</p>
+                                    <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider px-1">{t('settings.passwordMismatch')}</p>
                                 )}
                                 <div className="flex gap-3">
                                     <button onClick={handleChangePassword} disabled={passSaving || !currentPass || !newPass || newPass !== confirmPass}
                                         className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2">
                                         {passSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                                        Alterar Senha
+                                        {t('settings.changePassword')}
                                     </button>
                                     <button onClick={() => { setShowChangePassword(false); setCurrentPass(''); setNewPass(''); setConfirmPass(''); }}
                                         className="px-5 py-3 bg-slate-100 dark:bg-slate-800 rounded-2xl font-bold text-sm text-slate-500 transition-all">
-                                        Cancelar
+                                        {t('common.cancel')}
                                     </button>
                                 </div>
                             </div>
@@ -300,23 +337,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                     {/* PLANO */}
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                         <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                            <Crown className="w-3 h-3" /> Plano Atual
+                            <Crown className="w-3 h-3" /> {t('settings.plan')}
                         </label>
                         <div className="mt-3 p-6 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-500/10 dark:to-blue-500/10 border border-cyan-100 dark:border-cyan-500/20 rounded-2xl">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-lg font-black text-cyan-600 dark:text-cyan-400">
-                                            {isPremium ? 'Premium' : 'Gratuito'}
+                                            {isPremium ? t('settings.plan.premium') : t('settings.plan.free')}
                                         </span>
                                         {isPremium && (
-                                            <span className="px-2 py-0.5 bg-emerald-500 text-white text-[9px] font-black uppercase rounded-full tracking-wider">Ativo</span>
+                                            <span className="px-2 py-0.5 bg-emerald-500 text-white text-[9px] font-black uppercase rounded-full tracking-wider">{t('common.active')}</span>
                                         )}
                                     </div>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
                                         {isPremium
-                                            ? 'IA ilimitada, contas e orçamentos sem limite'
-                                            : '1 pedido de IA/dia, 1 conta, 1 cartão, 3 orçamentos, 3 metas'}
+                                            ? t('settings.plan.premiumDesc')
+                                            : t('settings.plan.freeDesc')}
                                     </p>
                                 </div>
                                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isPremium ? 'bg-cyan-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
@@ -329,7 +366,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     className="mt-4 w-full py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
                                     <Sparkles className="w-4 h-4" />
-                                    Fazer Upgrade para Premium
+                                    {t('settings.upgradePremium')}
                                 </button>
                             )}
                         </div>
@@ -341,15 +378,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="font-black text-sm text-rose-700 dark:text-rose-400 flex items-center gap-2">
-                                        <Trash2 className="w-4 h-4" /> Excluir Conta
+                                        <Trash2 className="w-4 h-4" /> {t('settings.deleteAccount')}
                                     </p>
-                                    <p className="text-[10px] text-rose-400 dark:text-rose-500 font-bold uppercase tracking-widest mt-1">Ação irreversível — todos os dados serão perdidos</p>
+                                    <p className="text-[10px] text-rose-400 dark:text-rose-500 font-bold uppercase tracking-widest mt-1">{t('settings.deleteAccountDesc')}</p>
                                 </div>
                                 <button
                                     onClick={() => setShowDeleteAccount(!showDeleteAccount)}
                                     className="px-5 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-black text-sm transition-all active:scale-95"
                                 >
-                                    Excluir
+                                    {t('settings.delete')}
                                 </button>
                             </div>
 
@@ -357,14 +394,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                 <div className="mt-4 pt-4 border-t border-rose-100 dark:border-rose-500/20 space-y-4">
                                     <div className="p-4 bg-rose-100/50 dark:bg-rose-500/10 rounded-2xl border border-rose-200 dark:border-rose-500/30 space-y-2">
                                         <p className="text-sm text-rose-700 dark:text-rose-300 font-black">
-                                            ⚠️ Esta ação é irreversível!
+                                            {t('settings.deleteWarning')}
                                         </p>
                                         <ul className="text-xs text-rose-600 dark:text-rose-400 font-semibold space-y-1 list-disc list-inside">
-                                            <li>Todas as suas transações serão excluídas</li>
-                                            <li>Contas bancárias, cartões e saldos serão apagados</li>
-                                            <li>Metas, orçamentos e categorias personalizados serão perdidos</li>
-                                            <li>Seu plano premium será cancelado sem reembolso</li>
-                                            <li>Não será possível recuperar os dados depois</li>
+                                            {t('settings.deleteItems').split('\\n').map((item, i) => (
+                                                <li key={i}>{item}</li>
+                                            ))}
                                         </ul>
                                     </div>
 
@@ -373,19 +408,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                         value={deletePass}
                                         onChange={(e) => setDeletePass(e.target.value)}
                                         className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-rose-200 dark:border-rose-500/30 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500"
-                                        placeholder="Digite sua senha para confirmar"
+                                        placeholder={t('settings.deletePasswordPlaceholder')}
                                     />
 
                                     <div>
                                         <label className="text-xs font-black text-rose-500 uppercase tracking-widest mb-2 block">
-                                            Digite <span className="bg-rose-600 text-white px-2 py-0.5 rounded-lg mx-1">EXCLUIR</span> para confirmar
+                                            {t('settings.deleteConfirmLabel')}
                                         </label>
                                         <input
                                             type="text"
                                             value={deleteConfirm}
                                             onChange={(e) => setDeleteConfirm(e.target.value)}
                                             className="w-full px-5 py-4 bg-white dark:bg-slate-950 border border-rose-200 dark:border-rose-500/30 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 placeholder:text-slate-300 dark:placeholder:text-slate-600"
-                                            placeholder="EXCLUIR"
+                                            placeholder={t('settings.deleteConfirmPlaceholder')}
                                         />
                                     </div>
 
@@ -393,11 +428,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                         <button onClick={handleDeleteAccount} disabled={deleteSaving || !deletePass || deleteConfirm !== 'EXCLUIR'}
                                             className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                                             {deleteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                                            Excluir Permanentemente
+                                            {t('settings.deletePermanently')}
                                         </button>
                                         <button onClick={() => { setShowDeleteAccount(false); setDeletePass(''); setDeleteConfirm(''); }}
                                             className="px-5 py-3 bg-slate-100 dark:bg-slate-800 rounded-2xl font-bold text-sm text-slate-500 transition-all">
-                                            Cancelar
+                                            {t('common.cancel')}
                                         </button>
                                     </div>
                                 </div>
@@ -407,7 +442,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
 
                     {/* DADOS */}
                     <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
-                        <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-6 ml-1">Manutenção & Dados</h4>
+                        <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-6 ml-1">{t('settings.maintenance')}</h4>
                         <div className="space-y-4">
                             <button
                                 onClick={handleExportData}
@@ -417,8 +452,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                                 </div>
                                 <div className="text-left">
-                                    <p className="font-black text-slate-800 dark:text-white text-sm tracking-tight">Exportar Transações</p>
-                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-1">Backup em CSV</p>
+                                    <p className="font-black text-slate-800 dark:text-white text-sm tracking-tight">{t('settings.exportTransactions')}</p>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-1">{t('settings.exportCSV')}</p>
                                 </div>
                             </button>
                             <button
@@ -429,8 +464,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                 </div>
                                 <div className="text-left">
-                                    <p className="font-black text-slate-800 dark:text-white text-sm tracking-tight">Exportar Dados Pessoais</p>
-                                    <p className="text-[10px] text-indigo-400 dark:text-indigo-500 font-bold uppercase tracking-widest mt-1">LGPD — Portabilidade completa (JSON)</p>
+                                    <p className="font-black text-slate-800 dark:text-white text-sm tracking-tight">{t('settings.exportPersonalData')}</p>
+                                    <p className="text-[10px] text-indigo-400 dark:text-indigo-500 font-bold uppercase tracking-widest mt-1">{t('settings.exportLGPD')}</p>
                                 </div>
                             </button>
                         </div>
@@ -443,7 +478,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                             className="w-full flex items-center justify-center gap-3 p-6 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-slate-900/20"
                         >
                             <LogOut className="w-5 h-5" />
-                            Encerrar Sessão
+                            {t('settings.logout')}
                         </button>
                     </div>
                 </div>

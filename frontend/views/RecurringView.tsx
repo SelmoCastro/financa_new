@@ -4,6 +4,7 @@ import { getCategoryEmoji } from '../utils/categoryIcons';
 import { useData } from '../context/DataProvider';
 import { useCurrency } from '../context/CurrencyContext';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Skeleton } from '../components/Skeleton';
 import { Plus, Edit3, Trash2, X, ChevronDown, Calendar } from 'lucide-react';
 
@@ -11,6 +12,7 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
   const { accounts, categories, refreshData } = useData();
   const { formatCurrency } = useCurrency();
   const { addToast } = useToast();
+  const { t } = useLanguage();
 
   const [recorrentes, setRecorrentes] = useState<RecurringTransactionDTO[]>([]);
   const [weight, setWeight] = useState<WeightData | null>(null);
@@ -36,7 +38,7 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
       setRecorrentes(rtRes.data);
       setWeight(wRes.data);
     } catch (err: any) {
-      addToast('Erro ao carregar recorrentes', 'error');
+      addToast(t('recurring.loadError'), 'error');
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
 
   const handleSubmit = async () => {
     if (!form.description || !form.amount) {
-      addToast('Preencha descrição e valor', 'error');
+      addToast(t('recurring.saveError'), 'error');
       return;
     }
     try {
@@ -79,16 +81,16 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
       };
       if (editingRecurring) {
         await recurringService.update(editingRecurring.id, payload);
-        addToast('Recorrente atualizado!', 'success');
+        addToast(t('recurring.saveSuccess'), 'success');
       } else {
         await recurringService.create(payload);
-        addToast('Recorrente criado!', 'success');
+        addToast(t('recurring.saveSuccess'), 'success');
       }
       setIsFormOpen(false);
       fetchData();
       refreshData();
     } catch (err: any) {
-      addToast(err?.response?.data?.message || 'Erro ao salvar', 'error');
+      addToast(err?.response?.data?.message || t('recurring.saveError'), 'error');
     }
   };
 
@@ -98,19 +100,19 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
       fetchData();
       refreshData();
     } catch (err: any) {
-      addToast('Erro ao alternar status', 'error');
+      addToast(t('recurring.saveError'), 'error');
     }
   };
 
-  const handleDelete = async (id: string, description: string) => {
-    if (!confirm(`Excluir "${description}"?`)) return;
+  const handleDelete = async (id: string) => {
+    if (!confirm(t('recurring.deleteConfirm'))) return;
     try {
       await recurringService.remove(id);
-      addToast('Recorrente removido', 'info');
+      addToast(t('recurring.deleteSuccess'), 'info');
       fetchData();
       refreshData();
     } catch (err: any) {
-      addToast('Erro ao excluir', 'error');
+      addToast(t('recurring.deleteError'), 'error');
     }
   };
 
@@ -136,14 +138,14 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
       {weight && (
         <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
-            💰 Comprometimento da Renda
+            💰 {t('recurring.monthlyWeight')}
           </p>
           <div className="flex items-end justify-between gap-4 mb-4">
             <span className={`text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
               {isPrivacyEnabled ? '••••' : `${pct}%`}
             </span>
             <span className={`text-xs text-slate-400 dark:text-slate-500 font-medium text-right ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
-              {isPrivacyEnabled ? '••••' : `${formatCurrency(weight.totalFixedExpense)} de ${formatCurrency(weight.monthlyIncome)}`}
+              {isPrivacyEnabled ? '••••' : `${t('recurring.totalFixed')}: ${formatCurrency(weight.totalFixedExpense)} / ${formatCurrency(weight.monthlyIncome)}`}
             </span>
           </div>
           <div className="w-full h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
@@ -153,21 +155,26 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
             />
           </div>
           <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            {weight.count} {weight.count === 1 ? 'despesa recorrente ativa' : 'despesas recorrentes ativas'}
+            {t('common.entries', { count: weight.count })}
           </p>
         </div>
       )}
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-4">
-        <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-          Despesas Recorrentes
-        </h3>
+        <div>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+            {t('recurring.title')}
+          </h3>
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-1">
+            {t('recurring.subtitle')}
+          </p>
+        </div>
         <button
           onClick={openCreate}
           className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-cyan-700 transition-all active:scale-95 shadow-lg shadow-cyan-200 dark:shadow-none"
         >
-          <Plus className="w-4 h-4" /> Novo Recorrente
+          <Plus className="w-4 h-4" /> {t('recurring.newRecurring')}
         </button>
       </div>
 
@@ -176,9 +183,9 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
         <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center opacity-50">
           <div className="text-4xl mb-4">📌</div>
           <p className="text-sm font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-            Nenhuma despesa recorrente cadastrada
+            {t('recurring.noRecurring')}
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Clique em "Novo Recorrente" para começar</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t('recurring.noRecurringDesc')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -207,26 +214,27 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
                     {isPrivacyEnabled ? '••••' : formatCurrency(Number(r.amount))}
                   </span>
                   <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Calendar className="w-3 h-3" /> Dia {r.dueDay}
+                    <Calendar className="w-3 h-3" /> {t('recurring.dueDay')} {r.dueDay}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={() => handleToggle(r.id)}
-                  title={r.isActive ? 'Desativar' : 'Ativar'}
                   className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-lg"
                 >
                   {r.isActive ? '✅' : '⭕'}
                 </button>
                 <button
                   onClick={() => openEdit(r)}
+                  aria-label={t('common.edit')}
                   className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-cyan-600"
                 >
                   <Edit3 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => handleDelete(r.id, r.description)}
+                  onClick={() => handleDelete(r.id)}
+                  aria-label={t('common.delete')}
                   className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-rose-600"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -243,7 +251,7 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
           <div className="bg-white dark:bg-slate-900 w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-cyan-50/50 dark:bg-slate-950/50 flex items-center justify-between">
               <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                {editingRecurring ? 'Editar Recorrente' : 'Novo Recorrente'}
+                {editingRecurring ? t('recurring.editRecurring') : t('recurring.newRecurring')}
               </h2>
               <button
                 onClick={() => setIsFormOpen(false)}
@@ -256,11 +264,11 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
             <div className="p-6 space-y-5">
               {/* Description */}
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Descrição</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('recurring.description')}</label>
                 <input
                   type="text"
                   className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all font-bold text-sm text-slate-900 dark:text-white"
-                  placeholder="Ex: Aluguel"
+                  placeholder={t('recurring.description')}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />
@@ -269,21 +277,21 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
               {/* Type + Amount row */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Tipo</label>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('recurring.type')}</label>
                   <div className="relative">
                     <select
                       className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all font-bold text-sm text-slate-900 dark:text-white appearance-none cursor-pointer"
                       value={form.type}
                       onChange={(e) => setForm({ ...form, type: e.target.value, categoryId: '' })}
                     >
-                      <option value="EXPENSE">Despesa</option>
-                      <option value="INCOME">Receita</option>
+                      <option value="EXPENSE">{t('recurring.typeExpense')}</option>
+                      <option value="INCOME">{t('recurring.typeIncome')}</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Valor</label>
+                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('recurring.amount')}</label>
                   <input
                     type="number"
                     step="0.01"
@@ -299,7 +307,7 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
               {/* Due day */}
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1 flex items-center gap-1.5">
-                  <Calendar className="w-3 h-3" /> Dia do Vencimento
+                  <Calendar className="w-3 h-3" /> {t('recurring.dueDay')}
                 </label>
                 <input
                   type="number"
@@ -313,14 +321,14 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
 
               {/* Category */}
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Categoria</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('recurring.category')}</label>
                 <div className="relative">
                   <select
                     className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all font-bold text-sm text-slate-900 dark:text-white appearance-none cursor-pointer"
                     value={form.categoryId}
                     onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
                   >
-                    <option value="">Nenhuma</option>
+                    <option value="">{t('common.noData')}</option>
                     {filteredCategories.map(cat => (
                       <option key={cat.id} value={cat.id}>{getCategoryEmoji(cat.icon)} {cat.name}</option>
                     ))}
@@ -331,14 +339,14 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
 
               {/* Account */}
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">Conta</label>
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('recurring.account')}</label>
                 <div className="relative">
                   <select
                     className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all font-bold text-sm text-slate-900 dark:text-white appearance-none cursor-pointer"
                     value={form.accountId}
                     onChange={(e) => setForm({ ...form, accountId: e.target.value })}
                   >
-                    <option value="">Nenhuma</option>
+                    <option value="">{t('common.noData')}</option>
                     {accounts.map(acc => (
                       <option key={acc.id} value={acc.id}>{acc.name}</option>
                     ))}
@@ -353,13 +361,13 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
                 onClick={() => setIsFormOpen(false)}
                 className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleSubmit}
                 className="flex-[2] py-3 text-[10px] font-black uppercase tracking-widest bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition-all active:scale-95 shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2"
               >
-                {editingRecurring ? 'Salvar' : 'Criar'}
+                {editingRecurring ? t('common.save') : t('common.create')}
               </button>
             </div>
           </div>

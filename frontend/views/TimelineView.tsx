@@ -3,6 +3,7 @@ import { Repeat } from 'lucide-react';
 import { Transaction } from '../types';
 import { toYYYYMMDD } from '../utils/dateUtils';
 import { useCurrency } from '../context/CurrencyContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface TimelineViewProps {
     transactions: Transaction[];
@@ -11,6 +12,7 @@ interface TimelineViewProps {
 
 export const TimelineView: React.FC<TimelineViewProps> = ({ transactions, isPrivacyEnabled }) => {
     const { formatCurrency, locale } = useCurrency();
+    const { t } = useLanguage();
     const transactionsGroupedByDate = useMemo(() => {
         if (!Array.isArray(transactions)) return [];
         const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -31,51 +33,53 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions, isPriv
     return (
         <div className="max-w-4xl mx-auto space-y-10 sm:space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="text-center space-y-3 sm:space-y-4 px-4">
-                <p className="text-[10px] font-black uppercase text-cyan-600 dark:text-cyan-400 tracking-widest">Jornada Temporal</p>
-                <h3 className="text-xl sm:text-2xl md:text-4xl font-black text-slate-800 dark:text-white tracking-tight leading-tight">Caminho Financeiro</h3>
-                <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Sua história detalhada dia após dia</p>
+                <p className="text-[10px] font-black uppercase text-cyan-600 dark:text-cyan-400 tracking-widest">{t('timeline.subtitle')}</p>
+                <h3 className="text-xl sm:text-2xl md:text-4xl font-black text-slate-800 dark:text-white tracking-tight leading-tight">{t('timeline.title')}</h3>
+                <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium leading-relaxed">{t('timeline.desc')}</p>
             </div>
             <div className="relative px-2 md:px-0">
                 <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 via-blue-500 to-slate-200 dark:to-slate-800 -translate-x-1/2 rounded-full hidden md:block"></div>
                 <div className="space-y-16 md:space-y-24">
-                    {transactionsGroupedByDate.map((group, groupIdx) => {
-                        const dateObj = new Date(group.date + 'T12:00:00');
-                        const isEven = groupIdx % 2 === 0;
-                        return (
-                            <div key={group.date} className="relative">
-                                <div className="sticky top-24 z-10 flex md:justify-center mb-6 md:mb-12">
-                                    <div className="bg-slate-900 dark:bg-slate-800 text-white px-4 sm:px-8 py-2 sm:py-3 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-[0.3em] shadow-2xl ring-4 ring-white dark:ring-slate-950">
-                                        {dateObj.toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' })}
+                    {transactionsGroupedByDate.length === 0 ? (
+                        <div className="text-center py-20">
+                            <p className="text-slate-400 dark:text-slate-500 font-bold">{t('timeline.noData')}</p>
+                        </div>
+                    ) : (
+                        transactionsGroupedByDate.map((group, groupIdx) => {
+                            const dateObj = new Date(group.date + 'T12:00:00');
+                            const isEven = groupIdx % 2 === 0;
+                            return (
+                                <div key={group.date} className="relative">
+                                    <div className="sticky top-24 z-10 flex md:justify-center mb-6 md:mb-12">
+                                        <div className="bg-slate-900 dark:bg-slate-800 text-white px-4 sm:px-8 py-2 sm:py-3 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-[0.3em] shadow-2xl ring-4 ring-white dark:ring-slate-950">
+                                            {dateObj.toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' })}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="space-y-6 md:space-y-8">
-                                    {group.transactions.map((tx) => (
-                                        <div key={tx.id} className={`flex flex-col md:flex-row items-center gap-6 md:gap-12 ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
-                                            <div className="w-full md:w-1/2 pl-4 md:pl-0">
-                                                <div className={`glass-card p-3 sm:p-4 md:p-6 lg:p-8 rounded-xl sm:rounded-2xl md:rounded-[2rem] lg:rounded-[2.5rem] relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300 ${isEven ? 'md:mr-auto' : 'md:ml-auto'}`}>
-                                                    <div className={`absolute top-0 left-0 bottom-0 w-2 ${tx.type === 'INCOME' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-                                                    <div className="flex justify-between items-start gap-4">
-                                                        <div className="space-y-2 overflow-hidden">
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest bg-slate-50 dark:bg-slate-900 px-3 py-1 rounded-lg truncate">{tx.category?.name || tx.categoryLegacy || 'Outros'}</span>
-                                                                {tx.isFixed && <Repeat className="w-4 h-4 text-cyan-400" />}
-                                                            </div>
-                                                            <h4 className="font-black text-slate-800 dark:text-white text-lg md:text-xl tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors truncate">{tx.description}</h4>
+                                    <div className={`grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 ${isEven ? 'md:flex-row' : ''}`}>
+                                        {group.transactions.map((tx, txIdx) => (
+                                            <div key={tx.id} className={`relative md:col-span-6 ${isEven ? 'md:col-start-7' : ''}`}>
+                                                <div className="p-4 sm:p-6 rounded-2xl md:rounded-3xl bg-white dark:bg-slate-900 border border-slate-100/70 dark:border-slate-800/70 shadow-sm hover:shadow-xl transition-all duration-300 hover:translate-y-[-2px] group">
+                                                    <div className="flex items-center gap-4 mb-2">
+                                                        <div className={`text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-xl ${tx.type === 'INCOME' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
+                                                            {tx.type === 'INCOME' ? t('common.income') : t('common.expense')}
                                                         </div>
-                                                        <p className={`font-black text-lg md:text-xl tracking-tighter whitespace-nowrap ${isPrivacyEnabled ? 'blur-sm select-none' : ''} ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'}`}>
-                                                            {isPrivacyEnabled ? '••••' : `${tx.type === 'INCOME' ? '+' : '-'} ${formatCurrency(Number(tx.amount))}`}
-                                                        </p>
+                                                        {tx.isFixed && <Repeat className="w-3.5 h-3.5 text-cyan-500 animate-pulse" />}
+                                                    </div>
+                                                    <p className="font-black text-sm sm:text-base text-slate-800 dark:text-white tracking-tight mb-1">{tx.description}</p>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{tx.category?.name || tx.categoryLegacy}</span>
+                                                        <span className={`text-sm sm:text-base font-black tracking-tight ${tx.type === 'INCOME' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'} ${isPrivacyEnabled ? 'blur-md select-none' : ''}`}>
+                                                            {isPrivacyEnabled ? '•••••••' : `${tx.type === 'INCOME' ? '+' : '-'} ${formatCurrency(Number(tx.amount))}`}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="absolute left-8 md:left-1/2 w-4 h-4 md:w-6 md:h-6 rounded-full bg-white dark:bg-slate-900 border-4 md:border-8 border-cyan-500 -translate-x-1/2 z-0 hidden md:block shadow-lg"></div>
-                                            <div className="hidden md:block w-1/2"></div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })
+                    )}
                 </div>
             </div>
         </div>

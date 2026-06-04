@@ -7,7 +7,7 @@ import { useMonth } from '../context/MonthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { ReadOnlyBadge } from '../components/ReadOnlyBadge';
 import { useExceeding } from '../context/ExceedingContext';
-import { Category } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 import { Plus, PiggyBank, Edit3, Trash2, X, ChevronDown } from 'lucide-react';
 
 interface Budget {
@@ -32,6 +32,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
     const { addToast } = useToast();
     const { formatCurrency, currencySymbol, locale } = useCurrency(); // Component State
     const { isExceeding } = useExceeding();
+    const { t } = useLanguage();
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,7 +41,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
     const isBudgetLimitReached = userPlan !== 'premium' && budgets.length >= 3;
 
     const showBudgetLimitNotice = () => {
-        addToast('Plano Free permite 3 orçamentos. Faça upgrade para Premium para criar mais orçamentos.', 'info');
+        addToast(t('budgets.freeLimit'), 'info');
         onUpgrade();
     };
     
@@ -54,24 +55,21 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
             });
             setBudgets(response.data);
         } catch (error) {
-            console.error('Erro ao buscar orçamentos:', error);
-            addToast('Erro ao carregar orçamentos', 'error');
+            console.error('Error fetching budgets:', error);
+            addToast(t('budgets.loadError'), 'error');
         } finally {
             setIsLoading(false);
         }
     };
 
-
     useEffect(() => {
         fetchBudgets();
     }, [selectedDate]);
 
-
-
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.categoryId || !form.amount) {
-            addToast('Preencha todos os campos', 'info');
+            addToast(t('budgets.fillAllFields'), 'info');
             return;
         }
 
@@ -80,7 +78,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
             const rawAmount = parseFloat(form.amount.replace(/\./g, '').replace(',', '.'));
 
             if (isNaN(rawAmount) || rawAmount <= 0) {
-                addToast('Valor inválido', 'info');
+                addToast(t('budgets.invalidAmount'), 'info');
                 return;
             }
 
@@ -89,7 +87,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                     categoryId: form.categoryId,
                     amount: rawAmount
                 });
-                addToast('Orçamento atualizado com sucesso!', 'success');
+                addToast(t('budgets.updateSuccess'), 'success');
             } else {
                 if (isBudgetLimitReached) {
                     showBudgetLimitNotice();
@@ -99,7 +97,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                     categoryId: form.categoryId,
                     amount: rawAmount
                 });
-                addToast('Orçamento salvo com sucesso!', 'success');
+                addToast(t('budgets.saveSuccess'), 'success');
             }
 
             setForm({ categoryId: '', amount: '' });
@@ -107,26 +105,26 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
             setIsModalOpen(false);
             fetchBudgets(); // Refresh to ensure calculation is correct
         } catch (error: any) {
-            console.error('Erro ao salvar:', error);
+            console.error('Error saving budget:', error);
             const message = error.response?.data?.message || '';
-            if (error.response?.status === 403 && (message.includes('Limite') || message.includes('Plano Free'))) {
-                addToast(`${message} 🚀`, 'error');
+            if (error.response?.status === 403) {
+                addToast(`${message || t('budgets.freeLimit')} 🚀`, 'error');
             } else {
-                addToast('Erro ao salvar orçamento', 'error');
+                addToast(t('budgets.saveError'), 'error');
             }
         }
     };
 
     const handleDelete = async (id: string, categoryName: string) => {
-        if (!confirm(`Tem certeza que deseja excluir o orçamento de ${categoryName}?`)) return;
+        if (!confirm(t('budgets.deleteConfirmWithCategory', { category: categoryName }))) return;
 
         try {
             await api.delete(`/budgets/${id}`);
-            addToast('Orçamento excluído com sucesso!', 'success');
+            addToast(t('budgets.deleteSuccess'), 'success');
             fetchBudgets();
         } catch (error) {
-            console.error('Erro ao excluir:', error);
-            addToast('Erro ao excluir orçamento', 'error');
+            console.error('Error deleting budget:', error);
+            addToast(t('budgets.deleteError'), 'error');
         }
     };
 
@@ -149,8 +147,8 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div>
-                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">Planejamento</p>
-                    <h2 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight">Orçamentos</h2>
+                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">{t('budgets.planning')}</p>
+                    <h2 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight">{t('budgets.title')}</h2>
                 </div>
                 <button
                     onClick={() => {
@@ -165,36 +163,36 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                     className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-cyan-600/20 transition-all active:scale-95 flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
-                    {isBudgetLimitReached ? 'Upgrade para criar mais' : 'Definir Teto'}
+                    {isBudgetLimitReached ? t('budgets.createMore') : t('budgets.newBudget')}
                 </button>
             </div>
 
             {isBudgetLimitReached && (
                 <div className="glass-card border border-cyan-100 dark:border-cyan-500/20 bg-cyan-50/70 dark:bg-cyan-500/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400 mb-1">Limite do plano Free</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400 mb-1">{t('budgets.freeLimitTitle')}</p>
                         <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                            O Free permite até 3 orçamentos. Para criar mais tetos de gastos, faça upgrade para o plano Premium.
+                            {t('budgets.freeLimit')}
                         </p>
                     </div>
                     <button
                         onClick={onUpgrade}
                         className="px-5 py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 whitespace-nowrap"
                     >
-                        Ver Premium
+                        {t('budgets.viewPremium')}
                     </button>
                 </div>
             )}
 
             {isLoading ? (
-                <div className="text-center py-12 text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-xs">Carregando orçamentos...</div>
+                <div className="text-center py-12 text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-xs">{t('budgets.loading')}</div>
             ) : budgets.length === 0 ? (
                 <div className="text-center py-16 sm:py-20 glass-card rounded-2xl sm:rounded-[2.5rem] border-dashed border-slate-200 dark:border-slate-800">
                     <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-sm">
                         <PiggyBank className="w-10 h-10 text-slate-300 dark:text-slate-600" />
                     </div>
-                    <h3 className="text-slate-900 dark:text-white font-black text-xl mb-2">Nenhum orçamento definido</h3>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-xs mx-auto">Crie um teto de gastos para cada categoria e comece a economizar de verdade.</p>
+                    <h3 className="text-slate-900 dark:text-white font-black text-xl mb-2">{t('budgets.noBudgets')}</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-xs mx-auto">{t('budgets.noBudgetsDesc')}</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -203,11 +201,11 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                             <div className="flex justify-between items-start mb-6">
                                 <div className="space-y-1 min-w-0 flex-1 mr-4">
                                     <div className="flex items-center gap-2">
-                                        <h3 className="font-black text-slate-800 dark:text-white text-xl tracking-tight truncate">{budget.categoryObj?.name || 'Categoria'}</h3>
+                                        <h3 className="font-black text-slate-800 dark:text-white text-xl tracking-tight truncate">{budget.categoryObj?.name || t('budgets.category')}</h3>
                                         <ReadOnlyBadge type="budget" id={budget.id} />
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Gasto Atual</span>
+                                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t('budgets.spent')}</span>
                                         <span className={`text-sm font-black ${budget.isOverBudget ? 'text-rose-500' : 'text-slate-600 dark:text-slate-300'} ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
                                             {isPrivacyEnabled ? '••••' : formatCurrency(budget.spent)}
                                         </span>
@@ -219,21 +217,21 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                                             onClick={() => openEditModal(budget)}
                                             disabled={isExceeding('budget', budget.id)}
                                             className={`p-2 text-slate-400 hover:text-cyan-500 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 rounded-xl transition-all ${isExceeding('budget', budget.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            title={isExceeding('budget', budget.id) ? 'Recurso em modo somente leitura' : 'Editar Orçamento'}
+                                            title={isExceeding('budget', budget.id) ? t('budgets.readOnlyMode') : t('budgets.editBudget')}
                                         >
                                             <Edit3 className="w-4 h-4" />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(budget.id, budget.categoryObj?.name || 'Categoria')}
+                                            onClick={() => handleDelete(budget.id, budget.categoryObj?.name || t('budgets.category'))}
                                             disabled={isExceeding('budget', budget.id)}
                                             className={`p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all ${isExceeding('budget', budget.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            title={isExceeding('budget', budget.id) ? 'Recurso em modo somente leitura' : 'Excluir Orçamento'}
+                                            title={isExceeding('budget', budget.id) ? t('budgets.readOnlyMode') : t('budgets.deleteBudget')}
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest mb-0.5">Teto Mensal</p>
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest mb-0.5">{t('budgets.amount')}</p>
                                         <p className={`text-xl font-black text-cyan-600 dark:text-cyan-400 tracking-tight ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
                                             {isPrivacyEnabled ? '••••' : formatCurrency(budget.amount)}
                                         </p>
@@ -252,11 +250,11 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                                 <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full ${budget.isOverBudget ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></div>
                                     <span className={`text-[10px] font-black uppercase tracking-widest ${budget.isOverBudget ? 'text-rose-500' : 'text-emerald-500'}`}>
-                                        {budget.isOverBudget ? 'Orçamento Estourado!' : 'Dentro do limite'}
+                                        {budget.isOverBudget ? t('budgets.overBudget') : t('budgets.withinBudget')}
                                     </span>
                                 </div>
                                 <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                    {budget.percentage.toFixed(1)}% utilizado
+                                    {budget.percentage.toFixed(1)}% {t('budgets.used')}
                                 </span>
                             </div>
                         </div>
@@ -269,8 +267,8 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-200 dark:border-slate-800">
                         <div className="flex justify-between items-center mb-8">
                             <div>
-                                <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{editingBudget ? 'Editar Teto' : 'Novo Teto'}</h3>
-                                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Planeje seus gastos</p>
+                                <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{editingBudget ? t('budgets.editBudget') : t('budgets.newBudget')}</h3>
+                                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">{t('budgets.planYourExpenses')}</p>
                             </div>
                             <button onClick={() => { setIsModalOpen(false); setEditingBudget(null); }} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95">
                                 <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -278,7 +276,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                         </div>
                         <form onSubmit={handleSave} className="space-y-6">
                             <div>
-                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Categoria do Gasto</label>
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">{t('budgets.category')}</label>
                                 <div className="relative">
                                     <select
                                         value={form.categoryId}
@@ -288,15 +286,15 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                                         }}
                                         className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-slate-700 dark:text-white focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none appearance-none cursor-pointer transition-all"
                                     >
-                                        <option value="">Selecione uma categoria...</option>
+                                        <option value="">{t('budgets.selectCategory')}</option>
 
-                                        <optgroup label="Entradas (Rendas)">
+                                        <optgroup label={t('budgets.incomeGroup')}>
                                             {categories.filter(c => c.type === 'INCOME').map(c => (
                                                 <option key={c.id} value={c.id}>{getCategoryEmoji(c.icon)} {c.name}</option>
                                             ))}
                                         </optgroup>
 
-                                        <optgroup label="Necessidades (Essencial)">
+                                        <optgroup label={t('budgets.needsGroup')}>
                                             {categories.filter(c =>
                                                 ['Moradia', 'Contas Residenciais', 'Mercado / Padaria', 'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia', 'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais']
                                                     .includes(c.name)
@@ -305,7 +303,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                                             ))}
                                         </optgroup>
 
-                                        <optgroup label="Desejos (Estilo de Vida)">
+                                        <optgroup label={t('budgets.wantsGroup')}>
                                             {categories.filter(c =>
                                                 ['Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas', 'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets', 'Viagens']
                                                     .includes(c.name)
@@ -314,7 +312,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                                             ))}
                                         </optgroup>
 
-                                        <optgroup label="Objetivos (Quitação e Reserva)">
+                                        <optgroup label={t('budgets.goalsGroup')}>
                                             {categories.filter(c =>
                                                 ['Aplicações / Poupança', 'Pagamento de Dívidas']
                                                     .includes(c.name)
@@ -329,7 +327,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Limite Mensal Desejado</label>
+                                <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">{t('budgets.desiredMonthlyLimit')}</label>
                                 <div className="relative group">
                                     <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-black text-lg pointer-events-none group-focus-within:text-cyan-500 transition-colors">{currencySymbol}</span>
                                     <input
@@ -355,7 +353,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                                 </div>
                             </div>
                             <button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-black uppercase tracking-widest text-xs py-5 rounded-2xl mt-4 transition-all active:scale-95 shadow-xl shadow-cyan-600/20">
-                                {editingBudget ? 'Atualizar Orçamento' : 'Salvar Orçamento'}
+                                {editingBudget ? t('budgets.updateBudget') : t('budgets.saveBudget')}
                             </button>
                         </form>
                     </div>

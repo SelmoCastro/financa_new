@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Edit3, Trash2, ArrowUpRight, ArrowDownLeft, Repeat, Search, Inbox } from 'lucide-react';
 import { Transaction, TransactionType } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HistoryViewProps {
     transactions: Transaction[];
@@ -13,6 +14,7 @@ interface HistoryViewProps {
 
 export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivacyEnabled, onEdit, onDelete }) => {
     const { formatCurrency, locale } = useCurrency();
+    const { t } = useLanguage();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState<'ALL' | TransactionType>('ALL');
 
@@ -30,11 +32,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 px-2">
                 <div>
-                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">Movimentações</p>
-                    <h3 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight">Extrato Detalhado</h3>
+                    <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.2em] mb-1">{t('history.subtitle')}</p>
+                    <h3 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight">{t('history.title')}</h3>
                 </div>
                 <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-900 px-4 py-2 rounded-2xl border border-slate-200 dark:border-slate-800">
-                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{filteredHistory.length} registros</span>
+                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('common.records', { count: filteredHistory.length })}</span>
                 </div>
             </div>
 
@@ -45,8 +47,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                         <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-6">
                             <Inbox className="w-10 h-10 text-slate-300 dark:text-slate-600" />
                         </div>
-                        <p className="text-slate-400 dark:text-slate-500 font-bold text-lg mb-1">Nenhuma movimentação</p>
-                        <p className="text-slate-300 dark:text-slate-600 text-sm text-center">As transações aparecerão aqui conforme você adicioná-las.</p>
+                        <p className="text-slate-400 dark:text-slate-500 font-bold text-lg mb-1">{t('history.noTransactions')}</p>
+                        <p className="text-slate-300 dark:text-slate-600 text-sm text-center">{t('history.noTransactionsDesc')}</p>
                     </div>
                 ) : (
                 filteredHistory.map((tx) => (
@@ -63,7 +65,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                         {tx.isFixed && <Repeat className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[8px] uppercase font-black tracking-widest text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg truncate">{tx.category?.name || tx.categoryLegacy || 'Outros'}</span>
+                                        <span className="text-[8px] uppercase font-black tracking-widest text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg truncate">{tx.category?.name || tx.categoryLegacy || t('history.other')}</span>
                                         <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold whitespace-nowrap">{new Date(tx.date).toLocaleDateString(locale, { timeZone: 'UTC' })}</span>
                                     </div>
                                 </div>
@@ -88,13 +90,13 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                 <div className="p-10 border-b border-slate-100 dark:border-slate-800 space-y-8">
                     <div className="flex justify-between items-center gap-4">
                         <div className="space-y-1">
-                            <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Extrato Consolidado</h3>
-                            <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">Filtros Inteligentes</p>
+                            <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">{t('history.consolidated')}</h3>
+                            <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest">{t('history.smartFilters')}</p>
                         </div>
                         <div className="flex gap-2 p-1.5 bg-slate-100 dark:bg-slate-950 rounded-[1.5rem] border border-slate-200/50 dark:border-slate-800/50">
                             {['ALL', 'INCOME', 'EXPENSE'].map((type) => (
                                 <button key={type} onClick={() => setFilterType(type as any)} className={`px-8 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 ${filterType === type ? 'bg-white dark:bg-slate-900 text-cyan-600 dark:text-cyan-400 shadow-xl shadow-cyan-600/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
-                                    {type === 'ALL' ? 'Todos' : type === 'INCOME' ? 'Ganhos' : 'Gastos'}
+                                    {type === 'ALL' ? t('history.filterAll') : type === 'INCOME' ? t('history.filterIncome') : t('history.filterExpense')}
                                 </button>
                             ))}
                         </div>
@@ -103,7 +105,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                         <div className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500 group-focus-within:text-cyan-500 transition-colors">
                             <Search className="w-5 h-5" />
                         </div>
-                        <input type="text" placeholder="Pesquise por descrição ou categoria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-16 pr-8 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600" />
+                        <input type="text" placeholder={t('history.search')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-16 pr-8 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] text-sm outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all font-bold text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                     </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -112,18 +114,18 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                             <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-6">
                                 <Inbox className="w-10 h-10 text-slate-300 dark:text-slate-600" />
                             </div>
-                            <p className="text-slate-400 dark:text-slate-500 font-bold text-lg mb-1">Nenhuma movimentação</p>
-                            <p className="text-slate-300 dark:text-slate-600 text-sm text-center">As transações aparecerão aqui conforme você adicioná-las.</p>
+                            <p className="text-slate-400 dark:text-slate-500 font-bold text-lg mb-1">{t('history.noTransactions')}</p>
+                            <p className="text-slate-300 dark:text-slate-600 text-sm text-center">{t('history.noTransactionsDesc')}</p>
                         </div>
                     ) : (
                     <table className="w-full border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 text-[10px] uppercase font-black tracking-[0.2em] border-b border-slate-100 dark:border-slate-800">
-                                <th className="px-10 py-6 text-left">Item</th>
-                                <th className="px-10 py-6 text-left">Categoria</th>
-                                <th className="px-10 py-6 text-left">Data</th>
-                                <th className="px-10 py-6 text-right">Valor</th>
-                                <th className="px-10 py-6 text-right">Gerenciar</th>
+                                <th className="px-10 py-6 text-left">{t('history.columnItem')}</th>
+                                <th className="px-10 py-6 text-left">{t('history.columnCategory')}</th>
+                                <th className="px-10 py-6 text-left">{t('history.columnDate')}</th>
+                                <th className="px-10 py-6 text-right">{t('history.columnAmount')}</th>
+                                <th className="px-10 py-6 text-right">{t('history.columnManage')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -139,7 +141,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                     </td>
                                     <td className="px-10 py-6">
                                         <span className="inline-flex items-center px-4 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                                            {tx.category?.name || tx.categoryLegacy || 'Outros'}
+                                            {tx.category?.name || tx.categoryLegacy || t('history.other')}
                                         </span>
                                     </td>
                                     <td className="px-10 py-6 text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter">{new Date(tx.date).toLocaleDateString(locale, { timeZone: 'UTC' })}</td>
