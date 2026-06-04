@@ -5,7 +5,7 @@ export type PlanType = 'free' | 'premium';
 export type ResourceType = 'account' | 'budget' | 'creditCard' | 'goal';
 
 export const PLAN_LIMITS: Record<PlanType, { aiRequestsPerDay: number; maxAccounts: number; maxBudgets: number; maxCreditCards: number; maxGoals: number }> = {
-  free: { aiRequestsPerDay: 1, maxAccounts: 1, maxBudgets: 3, maxCreditCards: 1, maxGoals: 3 },
+  free: { aiRequestsPerDay: 10, maxAccounts: 1, maxBudgets: 3, maxCreditCards: 1, maxGoals: 3 },
   premium: { aiRequestsPerDay: -1, maxAccounts: -1, maxBudgets: -1, maxCreditCards: -1, maxGoals: -1 }, // -1 = unlimited
 };
 
