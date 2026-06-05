@@ -2,7 +2,14 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type AdminPlanType = 'free' | 'premium';
-export type AdminDurationType = 'lifetime' | '30d' | '60d' | '90d' | '6m' | '12m' | 'custom';
+export type AdminDurationType =
+  | 'lifetime'
+  | '30d'
+  | '60d'
+  | '90d'
+  | '6m'
+  | '12m'
+  | 'custom';
 
 @Injectable()
 export class AdminService {
@@ -51,7 +58,8 @@ export class AdminService {
       this.prisma.notification.count(),
       this.prisma.transactionInvite.count(),
       // DB size
-      this.prisma.$queryRaw`SELECT pg_database_size(current_database())::bigint as size`,
+      this.prisma
+        .$queryRaw`SELECT pg_database_size(current_database())::bigint as size`,
     ]);
 
     return {
@@ -114,44 +122,39 @@ export class AdminService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const [
-      newUsers,
-      newTransactions,
-      aiRequests,
-      feedbacks,
-      topAiUsers,
-    ] = await Promise.all([
-      this.prisma.user.count({
-        where: { createdAt: { gte: thirtyDaysAgo } },
-      }),
-      this.prisma.transaction.count({
-        where: { createdAt: { gte: thirtyDaysAgo }, deletedAt: null },
-      }),
-      this.prisma.aiRequestLog.groupBy({
-        by: ['createdAt'],
-        where: { createdAt: { gte: thirtyDaysAgo } },
-        _count: true,
-      }),
-      this.prisma.feedback.findMany({
-        where: { createdAt: { gte: thirtyDaysAgo } },
-        select: {
-          id: true,
-          content: true,
-          platform: true,
-          createdAt: true,
-          user: { select: { name: true, email: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      }),
-      this.prisma.aiRequestLog.groupBy({
-        by: ['userId'],
-        where: { createdAt: { gte: thirtyDaysAgo } },
-        _count: { userId: true },
-        orderBy: { _count: { userId: 'desc' } },
-        take: 5,
-      }),
-    ]);
+    const [newUsers, newTransactions, aiRequests, feedbacks, topAiUsers] =
+      await Promise.all([
+        this.prisma.user.count({
+          where: { createdAt: { gte: thirtyDaysAgo } },
+        }),
+        this.prisma.transaction.count({
+          where: { createdAt: { gte: thirtyDaysAgo }, deletedAt: null },
+        }),
+        this.prisma.aiRequestLog.groupBy({
+          by: ['createdAt'],
+          where: { createdAt: { gte: thirtyDaysAgo } },
+          _count: true,
+        }),
+        this.prisma.feedback.findMany({
+          where: { createdAt: { gte: thirtyDaysAgo } },
+          select: {
+            id: true,
+            content: true,
+            platform: true,
+            createdAt: true,
+            user: { select: { name: true, email: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+        this.prisma.aiRequestLog.groupBy({
+          by: ['userId'],
+          where: { createdAt: { gte: thirtyDaysAgo } },
+          _count: { userId: true },
+          orderBy: { _count: { userId: 'desc' } },
+          take: 5,
+        }),
+      ]);
 
     // Buscar nomes dos top AI users
     const topAiUserIds = topAiUsers.map((u) => u.userId);
@@ -181,18 +184,27 @@ export class AdminService {
     await this.verifyAdmin(userId);
 
     const [dbActiveConnections, dbUptime, activeUsers30d] = await Promise.all([
-      this.prisma.$queryRaw`SELECT count(*)::int as count FROM pg_stat_activity WHERE state = 'active'`,
-      this.prisma.$queryRaw`SELECT extract(epoch from now() - pg_postmaster_start_time())::int as uptime_seconds`,
+      this.prisma
+        .$queryRaw`SELECT count(*)::int as count FROM pg_stat_activity WHERE state = 'active'`,
+      this.prisma
+        .$queryRaw`SELECT extract(epoch from now() - pg_postmaster_start_time())::int as uptime_seconds`,
       this.prisma.user.count({
-        where: { updatedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+        where: {
+          updatedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        },
       }),
     ]);
 
     return {
       database: {
         status: 'up',
-        activeConnections: Number((dbActiveConnections as Array<{ count: number }>)[0]?.count ?? 0),
-        uptimeSeconds: Number((dbUptime as Array<{ uptime_seconds: number }>)[0]?.uptime_seconds ?? 0),
+        activeConnections: Number(
+          (dbActiveConnections as Array<{ count: number }>)[0]?.count ?? 0,
+        ),
+        uptimeSeconds: Number(
+          (dbUptime as Array<{ uptime_seconds: number }>)[0]?.uptime_seconds ??
+            0,
+        ),
         activeUsers30d,
       },
     };
@@ -209,7 +221,9 @@ export class AdminService {
 
     // Prevent self-promotion (admin cannot change their own plan)
     if (adminUserId === targetUserId) {
-      throw new ForbiddenException('Administradores não podem alterar o próprio plano');
+      throw new ForbiddenException(
+        'Administradores não podem alterar o próprio plano',
+      );
     }
 
     const validPlans: AdminPlanType[] = ['free', 'premium'];
@@ -263,28 +277,53 @@ export class AdminService {
 
     // Cannot delete self or another admin
     if (adminUserId === targetUserId) {
-      throw new ForbiddenException('Administradores não podem excluir a própria conta pelo painel');
+      throw new ForbiddenException(
+        'Administradores não podem excluir a própria conta pelo painel',
+      );
     }
-    const target = await this.prisma.user.findUnique({ where: { id: targetUserId }, select: { isAdmin: true } });
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { isAdmin: true },
+    });
     if (target?.isAdmin) {
-      throw new ForbiddenException('Não é possível excluir outro administrador');
+      throw new ForbiddenException(
+        'Não é possível excluir outro administrador',
+      );
     }
 
     // Delete in dependency order (same order as Prisma schema requires)
-    await this.prisma.creditCardInstallment.deleteMany({ where: { userId: targetUserId } });
-    await this.prisma.creditCardInvoice.deleteMany({ where: { userId: targetUserId } });
-    await this.prisma.transaction.deleteMany({ where: { userId: targetUserId } });
-    await this.prisma.recurringTransaction.deleteMany({ where: { userId: targetUserId } });
-    await this.prisma.creditCard.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.creditCardInstallment.deleteMany({
+      where: { userId: targetUserId },
+    });
+    await this.prisma.creditCardInvoice.deleteMany({
+      where: { userId: targetUserId },
+    });
+    await this.prisma.transaction.deleteMany({
+      where: { userId: targetUserId },
+    });
+    await this.prisma.recurringTransaction.deleteMany({
+      where: { userId: targetUserId },
+    });
+    await this.prisma.creditCard.deleteMany({
+      where: { userId: targetUserId },
+    });
     await this.prisma.account.deleteMany({ where: { userId: targetUserId } });
     await this.prisma.budget.deleteMany({ where: { userId: targetUserId } });
     await this.prisma.goal.deleteMany({ where: { userId: targetUserId } });
     await this.prisma.category.deleteMany({ where: { userId: targetUserId } });
-    await this.prisma.notification.deleteMany({ where: { userId: targetUserId } });
-    await this.prisma.aiRequestLog.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.notification.deleteMany({
+      where: { userId: targetUserId },
+    });
+    await this.prisma.aiRequestLog.deleteMany({
+      where: { userId: targetUserId },
+    });
     await this.prisma.feedback.deleteMany({ where: { userId: targetUserId } });
-    await this.prisma.subscription.deleteMany({ where: { userId: targetUserId } });
-    await this.prisma.refreshToken.deleteMany({ where: { userId: targetUserId } });
+    await this.prisma.subscription.deleteMany({
+      where: { userId: targetUserId },
+    });
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId: targetUserId },
+    });
     await this.prisma.auditLog.deleteMany({ where: { actorId: targetUserId } });
     await this.prisma.user.delete({ where: { id: targetUserId } });
 
@@ -307,7 +346,10 @@ export class AdminService {
     const expiringSoon = await this.prisma.subscription.findMany({
       where: {
         plan: 'premium',
-        expiresAt: { not: null, lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+        expiresAt: {
+          not: null,
+          lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
       },
       select: {
         userId: true,

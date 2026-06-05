@@ -32,7 +32,13 @@ import { RefreshTokenService } from './refresh-token.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, VerifiedEmailGuard, AdminGuard, RefreshTokenService], // V11
+  providers: [
+    AuthService,
+    JwtStrategy,
+    VerifiedEmailGuard,
+    AdminGuard,
+    RefreshTokenService,
+  ], // V11
   exports: [AuthService, VerifiedEmailGuard, AdminGuard, RefreshTokenService], // V11 + RefreshTokenService Pilar 1
 })
 export class AuthModule {}

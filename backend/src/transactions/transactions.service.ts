@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { TransferTransactionDto } from './dto/transfer-transaction.dto';
@@ -6,10 +11,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { SocialService } from '../social/social.service';
 import { AuditService } from '../audit/audit.service';
-import { ImportTransactionData, AiSuggestion, AccountLockRow } from './interfaces/import-transaction.interface';
+import {
+  ImportTransactionData,
+  AiSuggestion,
+} from './interfaces/import-transaction.interface';
 import { Prisma } from '@prisma/client';
 import { EncryptionService } from '../common/services/encryption.service';
-import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
+import {
+  encryptAmount,
+  decryptAmount,
+  atomicBalanceUpdate,
+} from '../common/services/balance-helper';
 import { normalizeDesc } from '../common/utils/normalize';
 
 @Injectable()
@@ -26,34 +38,54 @@ export class TransactionsService {
     const amount = Number(createTransactionDto.amount);
     const date = new Date(createTransactionDto.date);
     if (date > new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) {
-      throw new BadRequestException('Data não pode ser mais que 2 dias no futuro');
+      throw new BadRequestException(
+        'Data não pode ser mais que 2 dias no futuro',
+      );
     }
 
     // TRANSFER type must go through the dedicated /transfer endpoint
     if (createTransactionDto.type === 'TRANSFER') {
-      throw new BadRequestException('Use o endpoint de transferência para criar transferências');
+      throw new BadRequestException(
+        'Use o endpoint de transferência para criar transferências',
+      );
     }
 
     const { type, accountId, categoryId, creditCardId } = createTransactionDto;
 
     // Validate FK ownership: accountId, categoryId, creditCardId must belong to the user
     if (accountId) {
-      const account = await this.prisma.account.findFirst({ where: { id: accountId, userId } });
-      if (!account) throw new NotFoundException('Account not found or does not belong to user');
+      const account = await this.prisma.account.findFirst({
+        where: { id: accountId, userId },
+      });
+      if (!account)
+        throw new NotFoundException(
+          'Account not found or does not belong to user',
+        );
     }
     if (categoryId) {
-      const category = await this.prisma.category.findFirst({ where: { id: categoryId, userId } });
-      if (!category) throw new NotFoundException('Category not found or does not belong to user');
+      const category = await this.prisma.category.findFirst({
+        where: { id: categoryId, userId },
+      });
+      if (!category)
+        throw new NotFoundException(
+          'Category not found or does not belong to user',
+        );
     }
     if (creditCardId) {
-      const card = await this.prisma.creditCard.findFirst({ where: { id: creditCardId, userId } });
-      if (!card) throw new NotFoundException('Credit card not found or does not belong to user');
+      const card = await this.prisma.creditCard.findFirst({
+        where: { id: creditCardId, userId },
+      });
+      if (!card)
+        throw new NotFoundException(
+          'Credit card not found or does not belong to user',
+        );
     }
 
     return this.prisma.$transaction(async (tx) => {
       // CRITICAL: Balance check + row lock before EXPENSE to prevent overdraft
       if (type === 'EXPENSE' && accountId) {
-        const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
+        const rows =
+          await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE`;
         const account = rows[0];
         if (!account) throw new NotFoundException('Account not found');
         const currentBalance = decryptAmount(account.balance, this.encryption);
@@ -62,7 +94,7 @@ export class TransactionsService {
         }
       }
 
-      const { amount: _amount, ...dtoRest } = createTransactionDto;
+      const { ...dtoRest } = createTransactionDto;
       const encryptedAmount = encryptAmount(amount, this.encryption);
 
       const transaction = await tx.transaction.create({
@@ -79,7 +111,13 @@ export class TransactionsService {
         const adjustment =
           type === 'INCOME' ? amount : type === 'EXPENSE' ? -amount : 0;
         if (adjustment !== 0) {
-          await atomicBalanceUpdate(tx, accountId, userId, adjustment, this.encryption);
+          await atomicBalanceUpdate(
+            tx,
+            accountId,
+            userId,
+            adjustment,
+            this.encryption,
+          );
         }
       }
 
@@ -96,7 +134,12 @@ export class TransactionsService {
       }
 
       // Audit log
-      this.auditService.log({ action: 'transaction.create', actorId: userId, targetType: 'Transaction', targetId: transaction.id });
+      void this.auditService.log({
+        action: 'transaction.create',
+        actorId: userId,
+        targetType: 'Transaction',
+        targetId: transaction.id,
+      });
 
       return transaction;
     });
@@ -130,7 +173,10 @@ export class TransactionsService {
     return match?.category ?? null;
   }
 
-  async validateImport(transactionsData: ImportTransactionData[], userId: string) {
+  async validateImport(
+    transactionsData: ImportTransactionData[],
+    userId: string,
+  ) {
     if (!transactionsData || transactionsData.length === 0)
       return { valid: [], duplicateFitIds: [] };
 
@@ -165,7 +211,9 @@ export class TransactionsService {
       userCategories.map((c) => [c.name.toLowerCase().trim(), c.id]),
     );
 
-    const fitIds = transactionsData.map((t) => t.fitId).filter(Boolean) as string[];
+    const fitIds = transactionsData
+      .map((t) => t.fitId)
+      .filter(Boolean) as string[];
     const targetAccountId = transactionsData[0]?.accountId;
 
     // 1. Silent Skip: FITIDs já confirmados no banco (transação salva)
@@ -226,7 +274,10 @@ export class TransactionsService {
     const fuzzySet = new Set(
       existingContent
         .filter((t) => t.accountId === targetAccountId)
-        .map((t) => `${t.date.toISOString().split('T')[0]}_${decryptAmount(t.amount, this.encryption)}`),
+        .map(
+          (t) =>
+            `${t.date.toISOString().split('T')[0]}_${decryptAmount(t.amount, this.encryption)}`,
+        ),
     );
 
     const toReview: ImportTransactionData[] = [];
@@ -271,7 +322,10 @@ export class TransactionsService {
 
     if (descriptionsToClassify.size > 0) {
       const descriptionsArray = Array.from(descriptionsToClassify);
-      aiClassifications = await this.aiService.classifyTransactions(descriptionsArray, categoryNames);
+      aiClassifications = await this.aiService.classifyTransactions(
+        descriptionsArray,
+        categoryNames,
+      );
     }
 
     const finalPreview = toReview.map((tx) => {
@@ -398,14 +452,22 @@ export class TransactionsService {
     const maxFutureDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
     for (const t of transactionsData) {
       if (new Date(t.date) > maxFutureDate) {
-        throw new BadRequestException('Transaction dates cannot be more than 2 days in the future');
+        throw new BadRequestException(
+          'Transaction dates cannot be more than 2 days in the future',
+        );
       }
     }
 
     // Validate FK ownership for all imported transactions
-    const uniqueAccountIds = Array.from(new Set(transactionsData.map((t) => t.accountId).filter(Boolean))) as string[];
-    const uniqueCategoryIds = Array.from(new Set(transactionsData.map((t) => t.categoryId).filter(Boolean))) as string[];
-    const uniqueCreditCardIds = Array.from(new Set(transactionsData.map((t) => t.creditCardId).filter(Boolean))) as string[];
+    const uniqueAccountIds = Array.from(
+      new Set(transactionsData.map((t) => t.accountId).filter(Boolean)),
+    ) as string[];
+    const uniqueCategoryIds = Array.from(
+      new Set(transactionsData.map((t) => t.categoryId).filter(Boolean)),
+    ) as string[];
+    const uniqueCreditCardIds = Array.from(
+      new Set(transactionsData.map((t) => t.creditCardId).filter(Boolean)),
+    ) as string[];
 
     if (uniqueAccountIds.length > 0) {
       const ownedAccounts = await this.prisma.account.findMany({
@@ -413,9 +475,13 @@ export class TransactionsService {
         select: { id: true },
       });
       const ownedAccountSet = new Set(ownedAccounts.map((a) => a.id));
-      const invalidIds = uniqueAccountIds.filter((id) => !ownedAccountSet.has(id));
+      const invalidIds = uniqueAccountIds.filter(
+        (id) => !ownedAccountSet.has(id),
+      );
       if (invalidIds.length > 0) {
-        throw new ForbiddenException('One or more accountIds do not belong to the authenticated user');
+        throw new ForbiddenException(
+          'One or more accountIds do not belong to the authenticated user',
+        );
       }
     }
 
@@ -425,9 +491,13 @@ export class TransactionsService {
         select: { id: true },
       });
       const ownedCategorySet = new Set(ownedCategories.map((c) => c.id));
-      const invalidIds = uniqueCategoryIds.filter((id) => !ownedCategorySet.has(id));
+      const invalidIds = uniqueCategoryIds.filter(
+        (id) => !ownedCategorySet.has(id),
+      );
       if (invalidIds.length > 0) {
-        throw new ForbiddenException('One or more categoryIds do not belong to the authenticated user');
+        throw new ForbiddenException(
+          'One or more categoryIds do not belong to the authenticated user',
+        );
       }
     }
 
@@ -437,15 +507,21 @@ export class TransactionsService {
         select: { id: true },
       });
       const ownedCardSet = new Set(ownedCards.map((c) => c.id));
-      const invalidIds = uniqueCreditCardIds.filter((id) => !ownedCardSet.has(id));
+      const invalidIds = uniqueCreditCardIds.filter(
+        (id) => !ownedCardSet.has(id),
+      );
       if (invalidIds.length > 0) {
-        throw new ForbiddenException('One or more creditCardIds do not belong to the authenticated user');
+        throw new ForbiddenException(
+          'One or more creditCardIds do not belong to the authenticated user',
+        );
       }
     }
 
     return this.prisma.$transaction(async (tx) => {
       // Verificação final de FITIDs duplicados antes de inserir
-      const fitIds = transactionsData.map((t) => t.fitId).filter(Boolean) as string[];
+      const fitIds = transactionsData
+        .map((t) => t.fitId)
+        .filter(Boolean) as string[];
       let existingFitIds = new Set<string>();
       if (fitIds.length > 0) {
         const existing = await tx.transaction.findMany({
@@ -488,17 +564,15 @@ export class TransactionsService {
         if (t.accountId) {
           const amt = Number(t.amount);
           const adj =
-            t.type === 'INCOME'
-              ? amt
-              : t.type === 'EXPENSE'
-                ? -amt
-                : 0;
+            t.type === 'INCOME' ? amt : t.type === 'EXPENSE' ? -amt : 0;
           accountDeltas[t.accountId] = (accountDeltas[t.accountId] || 0) + adj;
         }
       }
 
       // V3: Overdraft check — fetch current balances and validate no account goes negative
-      const accountIdsWithDeltas = Object.keys(accountDeltas).filter(id => accountDeltas[id] < 0);
+      const accountIdsWithDeltas = Object.keys(accountDeltas).filter(
+        (id) => accountDeltas[id] < 0,
+      );
       if (accountIdsWithDeltas.length > 0) {
         const currentBalances = await tx.account.findMany({
           where: { id: { in: accountIdsWithDeltas }, userId },
@@ -509,7 +583,7 @@ export class TransactionsService {
           const projected = currentBal + (accountDeltas[acc.id] || 0);
           if (projected < 0) {
             throw new BadRequestException(
-              `Import would cause negative balance on account ${acc.id}. Current: ${currentBal}, projected: ${projected}`
+              `Import would cause negative balance on account ${acc.id}. Current: ${currentBal}, projected: ${projected}`,
             );
           }
         }
@@ -528,7 +602,12 @@ export class TransactionsService {
       await this.saveImportHistory(userId, acceptedFitIds, rejectedFitIds, tx);
 
       // Audit log
-      this.auditService.log({ action: 'transaction.import', actorId: userId, targetType: 'Transaction', details: { importedCount: result.count } });
+      void this.auditService.log({
+        action: 'transaction.import',
+        actorId: userId,
+        targetType: 'Transaction',
+        details: { importedCount: result.count },
+      });
 
       return { importedCount: result.count };
     });
@@ -564,7 +643,7 @@ export class TransactionsService {
         client.importedFitId.upsert({
           where: { userId_fitId: { userId, fitId } },
           create: { fitId, userId, status: 'REJECTED' },
-          update: {},  // Não atualiza se já existe — preserva ACCEPTED
+          update: {}, // Não atualiza se já existe — preserva ACCEPTED
         }),
       );
     }
@@ -573,7 +652,10 @@ export class TransactionsService {
   }
 
   findAll(userId: string, year?: number, month?: number) {
-    const whereClause: Prisma.TransactionWhereInput = { userId, deletedAt: null };
+    const whereClause: Prisma.TransactionWhereInput = {
+      userId,
+      deletedAt: null,
+    };
 
     if (year !== undefined && month !== undefined) {
       const startOfMonth = new Date(Date.UTC(year, month, 1));
@@ -621,25 +703,26 @@ export class TransactionsService {
   }
 
   async exportReport(userId: string) {
-    const [transactions, accounts, creditCards, categories, invoices] = await Promise.all([
-      this.prisma.transaction.findMany({
-        where: { userId, deletedAt: null },
-        orderBy: { date: 'desc' },
-        include: { category: true, account: true, creditCard: true },
-      }),
-      this.prisma.account.findMany({ where: { userId, deletedAt: null } }),
-      this.prisma.creditCard.findMany({
-        where: { userId, deletedAt: null },
-        include: { invoices: { where: { isPaid: false } } },
-      }),
-      this.prisma.category.findMany({ where: { userId, deletedAt: null } }),
-      this.prisma.creditCardInvoice.findMany({
-        where: { userId },
-        orderBy: [{ referenceYear: 'desc' }, { referenceMonth: 'desc' }],
-        include: { creditCard: true },
-        take: 12,
-      }),
-    ]);
+    const [transactions, accounts, creditCards, categories, invoices] =
+      await Promise.all([
+        this.prisma.transaction.findMany({
+          where: { userId, deletedAt: null },
+          orderBy: { date: 'desc' },
+          include: { category: true, account: true, creditCard: true },
+        }),
+        this.prisma.account.findMany({ where: { userId, deletedAt: null } }),
+        this.prisma.creditCard.findMany({
+          where: { userId, deletedAt: null },
+          include: { invoices: { where: { isPaid: false } } },
+        }),
+        this.prisma.category.findMany({ where: { userId, deletedAt: null } }),
+        this.prisma.creditCardInvoice.findMany({
+          where: { userId },
+          orderBy: [{ referenceYear: 'desc' }, { referenceMonth: 'desc' }],
+          include: { creditCard: true },
+          take: 12,
+        }),
+      ]);
 
     // Group by month for summaries
     const byMonth = new Map<string, { income: number; expense: number }>();
@@ -652,11 +735,18 @@ export class TransactionsService {
       else if (t.type === 'EXPENSE') m.expense += Number(t.amount);
     });
 
-    const balance = accounts.reduce((sum, a) => sum + decryptAmount(a.balance, this.encryption), 0);
+    const balance = accounts.reduce(
+      (sum, a) => sum + decryptAmount(a.balance, this.encryption),
+      0,
+    );
     const creditCardDebt = creditCards.reduce(
       (sum, c) =>
-        sum + c.invoices.reduce(
-          (invSum, inv) => invSum + decryptAmount(inv.totalAmount, this.encryption) - decryptAmount(inv.paidAmount, this.encryption),
+        sum +
+        c.invoices.reduce(
+          (invSum, inv) =>
+            invSum +
+            decryptAmount(inv.totalAmount, this.encryption) -
+            decryptAmount(inv.paidAmount, this.encryption),
           0,
         ),
       0,
@@ -666,11 +756,20 @@ export class TransactionsService {
       exportedAt: new Date().toISOString(),
       balance,
       creditCardDebt,
-      accounts: accounts.map((a) => ({ name: a.name, balance: decryptAmount(a.balance, this.encryption) })),
+      accounts: accounts.map((a) => ({
+        name: a.name,
+        balance: decryptAmount(a.balance, this.encryption),
+      })),
       creditCards: creditCards.map((c) => ({
         name: c.name,
         limit: Number(c.limit),
-        debt: c.invoices.reduce((s, i) => s + decryptAmount(i.totalAmount, this.encryption) - decryptAmount(i.paidAmount, this.encryption), 0),
+        debt: c.invoices.reduce(
+          (s, i) =>
+            s +
+            decryptAmount(i.totalAmount, this.encryption) -
+            decryptAmount(i.paidAmount, this.encryption),
+          0,
+        ),
       })),
       monthlySummary: Array.from(byMonth.entries())
         .sort(([a], [b]) => b.localeCompare(a))
@@ -680,7 +779,9 @@ export class TransactionsService {
         reference: `${String(i.referenceMonth).padStart(2, '0')}/${i.referenceYear}`,
         totalAmount: decryptAmount(i.totalAmount, this.encryption),
         paidAmount: decryptAmount(i.paidAmount, this.encryption),
-        remaining: decryptAmount(i.totalAmount, this.encryption) - decryptAmount(i.paidAmount, this.encryption),
+        remaining:
+          decryptAmount(i.totalAmount, this.encryption) -
+          decryptAmount(i.paidAmount, this.encryption),
         isPaid: i.isPaid,
         dueDate: i.dueDate,
       })),
@@ -713,22 +814,39 @@ export class TransactionsService {
     if (updateTransactionDto.date) {
       const date = new Date(updateTransactionDto.date);
       if (date > new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) {
-        throw new BadRequestException('Data não pode ser mais que 2 dias no futuro');
+        throw new BadRequestException(
+          'Data não pode ser mais que 2 dias no futuro',
+        );
       }
     }
 
     // VULN-04: Validate FK ownership before entering the transaction
     if (updateTransactionDto.accountId) {
-      const account = await this.prisma.account.findFirst({ where: { id: updateTransactionDto.accountId, userId } });
-      if (!account) throw new NotFoundException('Account not found or does not belong to user');
+      const account = await this.prisma.account.findFirst({
+        where: { id: updateTransactionDto.accountId, userId },
+      });
+      if (!account)
+        throw new NotFoundException(
+          'Account not found or does not belong to user',
+        );
     }
     if (updateTransactionDto.categoryId) {
-      const category = await this.prisma.category.findFirst({ where: { id: updateTransactionDto.categoryId, userId } });
-      if (!category) throw new NotFoundException('Category not found or does not belong to user');
+      const category = await this.prisma.category.findFirst({
+        where: { id: updateTransactionDto.categoryId, userId },
+      });
+      if (!category)
+        throw new NotFoundException(
+          'Category not found or does not belong to user',
+        );
     }
     if (updateTransactionDto.creditCardId) {
-      const card = await this.prisma.creditCard.findFirst({ where: { id: updateTransactionDto.creditCardId, userId } });
-      if (!card) throw new NotFoundException('Credit card not found or does not belong to user');
+      const card = await this.prisma.creditCard.findFirst({
+        where: { id: updateTransactionDto.creditCardId, userId },
+      });
+      if (!card)
+        throw new NotFoundException(
+          'Credit card not found or does not belong to user',
+        );
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -753,7 +871,13 @@ export class TransactionsService {
               ? oldAmount
               : 0;
         if (revertAdj !== 0) {
-          await atomicBalanceUpdate(tx, oldTx.accountId, userId, revertAdj, this.encryption);
+          await atomicBalanceUpdate(
+            tx,
+            oldTx.accountId,
+            userId,
+            revertAdj,
+            this.encryption,
+          );
         }
       }
 
@@ -776,7 +900,8 @@ export class TransactionsService {
 
       // VULN-03: Overdraft check — after reverting old balance, before applying new one
       if (newType === 'EXPENSE' && newAccountId) {
-        const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
+        const rows =
+          await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE`;
         const account = rows[0];
         if (!account) throw new NotFoundException('Account not found');
         if (decryptAmount(account.balance, this.encryption) < newAmount) {
@@ -789,7 +914,9 @@ export class TransactionsService {
         where: { id, userId },
         data: {
           ...updateRest,
-          amount: updateAmount ? encryptAmount(Number(updateAmount), this.encryption) : undefined,
+          amount: updateAmount
+            ? encryptAmount(Number(updateAmount), this.encryption)
+            : undefined,
           date: updateTransactionDto.date
             ? new Date(updateTransactionDto.date)
             : undefined,
@@ -805,12 +932,23 @@ export class TransactionsService {
               ? -newAmount
               : 0;
         if (applyAdj !== 0) {
-          await atomicBalanceUpdate(tx, newAccountId, userId, applyAdj, this.encryption);
+          await atomicBalanceUpdate(
+            tx,
+            newAccountId,
+            userId,
+            applyAdj,
+            this.encryption,
+          );
         }
       }
 
       // Audit log
-      this.auditService.log({ action: 'transaction.update', actorId: userId, targetType: 'Transaction', targetId: id });
+      void this.auditService.log({
+        action: 'transaction.update',
+        actorId: userId,
+        targetType: 'Transaction',
+        targetId: id,
+      });
 
       return tx.transaction.findFirst({
         where: { id, userId, deletedAt: null },
@@ -840,7 +978,9 @@ export class TransactionsService {
       const deletedIds: string[] = [id];
       if (oldTx.currentInstallment && oldTx.installmentCount) {
         // Extract base description: "Compra (2/5)" → "Compra"
-        const baseDescription = oldTx.description.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
+        const baseDescription = oldTx.description
+          .replace(/\s*\(\d+\/\d+\)\s*$/, '')
+          .trim();
         const siblingIds = await tx.transaction.findMany({
           where: {
             userId,
@@ -855,14 +995,14 @@ export class TransactionsService {
         if (siblingIds.length > 0) {
           const siblingResult = await tx.transaction.updateMany({
             where: {
-              id: { in: siblingIds.map(s => s.id) },
+              id: { in: siblingIds.map((s) => s.id) },
               userId,
               deletedAt: null,
             },
             data: { deletedAt: new Date() },
           });
           siblingCount = siblingResult.count;
-          deletedIds.push(...siblingIds.map(s => s.id));
+          deletedIds.push(...siblingIds.map((s) => s.id));
 
           // Revert balance for each sibling that has an accountId
           for (const sibling of siblingIds) {
@@ -872,10 +1012,20 @@ export class TransactionsService {
             if (sibTx?.accountId) {
               const sibAmount = Number(sibTx.amount);
               const revertAdj =
-                sibTx.type === 'INCOME' ? -sibAmount : sibTx.type === 'EXPENSE' ? sibAmount : 0;
+                sibTx.type === 'INCOME'
+                  ? -sibAmount
+                  : sibTx.type === 'EXPENSE'
+                    ? sibAmount
+                    : 0;
               if (revertAdj !== 0) {
-          await atomicBalanceUpdate(tx, sibTx.accountId, userId, revertAdj, this.encryption);
-        }
+                await atomicBalanceUpdate(
+                  tx,
+                  sibTx.accountId,
+                  userId,
+                  revertAdj,
+                  this.encryption,
+                );
+              }
             }
           }
         }
@@ -890,7 +1040,13 @@ export class TransactionsService {
               ? oldAmount
               : 0;
         if (revertAdj !== 0) {
-          await atomicBalanceUpdate(tx, oldTx.accountId, userId, revertAdj, this.encryption);
+          await atomicBalanceUpdate(
+            tx,
+            oldTx.accountId,
+            userId,
+            revertAdj,
+            this.encryption,
+          );
         }
       }
 
@@ -898,7 +1054,13 @@ export class TransactionsService {
       // (future enhancement — currently no installmentId on transactions)
 
       // Audit log
-      this.auditService.log({ action: 'transaction.delete', actorId: userId, targetType: 'Transaction', targetId: id, severity: 'warn' });
+      void this.auditService.log({
+        action: 'transaction.delete',
+        actorId: userId,
+        targetType: 'Transaction',
+        targetId: id,
+        severity: 'warn',
+      });
 
       return { count: deleteResult.count + siblingCount, deletedIds };
     });
@@ -908,23 +1070,30 @@ export class TransactionsService {
     const amount = Number(transferDto.amount);
     const date = new Date(transferDto.date);
     if (date > new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) {
-      throw new BadRequestException('Data não pode ser mais que 2 dias no futuro');
+      throw new BadRequestException(
+        'Data não pode ser mais que 2 dias no futuro',
+      );
     }
     const { sourceAccountId, destinationAccountId, description } = transferDto;
 
     return this.prisma.$transaction(async (tx) => {
       // CRITICAL: Balance check + row lock for source account before transfer
-      const sourceRows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${sourceAccountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
+      const sourceRows =
+        await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${sourceAccountId} AND "userId" = ${userId} FOR UPDATE`;
       const sourceAccount = sourceRows[0];
-      if (!sourceAccount) throw new NotFoundException('Conta de origem não encontrada');
+      if (!sourceAccount)
+        throw new NotFoundException('Conta de origem não encontrada');
       if (decryptAmount(sourceAccount.balance, this.encryption) < amount) {
         throw new BadRequestException('Saldo insuficiente para transferência');
       }
 
       // Lock the destination account row too — and validate it belongs to the user
-      const destRows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${destinationAccountId} AND "userId" = ${userId} FOR UPDATE` as AccountLockRow[];
+      const destRows =
+        await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${destinationAccountId} AND "userId" = ${userId} FOR UPDATE`;
       if (!destRows[0]) {
-        throw new NotFoundException('Conta de destino não encontrada ou não pertence ao usuário');
+        throw new NotFoundException(
+          'Conta de destino não encontrada ou não pertence ao usuário',
+        );
       }
 
       // 1. Ensure a "Transferência" category exists for the user
@@ -980,11 +1149,28 @@ export class TransactionsService {
       });
 
       // 4. Update balances
-      await atomicBalanceUpdate(tx, sourceAccountId, userId, -amount, this.encryption);
-      await atomicBalanceUpdate(tx, destinationAccountId, userId, amount, this.encryption);
+      await atomicBalanceUpdate(
+        tx,
+        sourceAccountId,
+        userId,
+        -amount,
+        this.encryption,
+      );
+      await atomicBalanceUpdate(
+        tx,
+        destinationAccountId,
+        userId,
+        amount,
+        this.encryption,
+      );
 
       // Audit log
-      this.auditService.log({ action: 'transaction.transfer', actorId: userId, targetType: 'Transaction', details: { sourceAccountId, destinationAccountId, amount } });
+      void this.auditService.log({
+        action: 'transaction.transfer',
+        actorId: userId,
+        targetType: 'Transaction',
+        details: { sourceAccountId, destinationAccountId, amount },
+      });
 
       return { outTx, inTx };
     });

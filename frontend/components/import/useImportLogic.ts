@@ -174,12 +174,12 @@ export function useImportLogic(
             });
             const { preview, skippedCount } = response.data;
             if (skippedCount > 0) {
-                console.log(`Silent Skip: ${skippedCount} transações ignoradas (FITID já existia).`);
+              // silent skip
             }
             buildReviewScreen(preview);
         } catch (error) {
-            console.error('Erro ao processar OFX:', error);
-            alert('Falha ao processar o arquivo OFX.');
+            const msg = 'Falha ao processar o arquivo OFX.';
+            alert(msg);
         } finally {
             setIsLoading(false);
             setAiStatus('');

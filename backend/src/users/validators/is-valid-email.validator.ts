@@ -42,7 +42,7 @@ export class IsValidEmailConstraint implements ValidatorConstraintInterface {
     try {
       const records = await resolveMx(domain);
       return records && records.length > 0;
-    } catch (e) {
+    } catch {
       return false; // Domain does not exist or has no MX record
     }
   }

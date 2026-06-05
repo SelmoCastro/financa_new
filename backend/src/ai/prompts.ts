@@ -91,7 +91,6 @@ export const SYSTEM_PROMPTS = {
         - [Emoji Temático] **[Título Curto e Chamativo]:** [Seu conselho empático e direto ao ponto].
         - [Emoji Temático] **[Título Curto e Chamativo]:** [Seu conselho empático e direto ao ponto].`,
 
-
   // Prompt para extração de dados de fotos/comprovantes (imagens e PDFs)
   VISION_EXTRACTOR: (
     categories: string[],

@@ -43,8 +43,10 @@ export class PaymentsService {
     private subscriptionService: SubscriptionService,
     private auditService: AuditService,
   ) {
-    this.accessToken = this.configService.get<string>('MERCADOPAGO_ACCESS_TOKEN') || '';
-    this.webhookSecret = this.configService.get<string>('MERCADOPAGO_WEBHOOK_SECRET') || '';
+    this.accessToken =
+      this.configService.get<string>('MERCADOPAGO_ACCESS_TOKEN') || '';
+    this.webhookSecret =
+      this.configService.get<string>('MERCADOPAGO_WEBHOOK_SECRET') || '';
     this.mpProxyUrl = this.configService.get<string>('MP_PROXY_URL') || '';
     if (this.mpProxyUrl) {
       this.logger.log(`Using MP proxy: ${this.mpProxyUrl}`);
@@ -63,7 +65,9 @@ export class PaymentsService {
    */
   verifyWebhookSignature(dataId: string, xSignature: string): boolean {
     if (!this.webhookSecret) {
-      this.logger.warn('No MERCADOPAGO_WEBHOOK_SECRET set — rejecting webhook signature verification');
+      this.logger.warn(
+        'No MERCADOPAGO_WEBHOOK_SECRET set — rejecting webhook signature verification',
+      );
       return false;
     }
 
@@ -94,9 +98,12 @@ export class PaymentsService {
     );
   }
 
-  private async mpRequest(path: string, options: RequestInit = {}): Promise<any> {
+  private async mpRequest(
+    path: string,
+    options: RequestInit = {},
+  ): Promise<any> {
     const headers: Record<string, string> = {
-      'Authorization': `Bearer ${this.accessToken}`,
+      Authorization: `Bearer ${this.accessToken}`,
       'Content-Type': 'application/json',
     };
 
@@ -104,12 +111,17 @@ export class PaymentsService {
     const url = `${baseUrl}${path}`;
     const response = await fetch(url, {
       ...options,
-      headers: { ...headers, ...((options.headers as Record<string, string>) || {}) },
+      headers: {
+        ...headers,
+        ...((options.headers as Record<string, string>) || {}),
+      },
     });
 
     if (!response.ok) {
       const body = await response.text();
-      this.logger.error(`MercadoPago API error ${response.status}: ${body.substring(0, 200)}`);
+      this.logger.error(
+        `MercadoPago API error ${response.status}: ${body.substring(0, 200)}`,
+      );
       throw new Error(`MercadoPago API error ${response.status}`);
     }
 
@@ -117,27 +129,51 @@ export class PaymentsService {
   }
 
   async createPreference(userId: string, plan: PlanId) {
-    const prices: Record<PlanId, { amount: number; title: string; durationDays: number }> = {
-      premium_monthly: { amount: 19.9, title: 'Finanza Premium — Mensal', durationDays: 30 },
-      premium_quarterly: { amount: 54.9, title: 'Finanza Premium — Trimestral', durationDays: 90 },
-      premium_semiannual: { amount: 99.9, title: 'Finanza Premium — Semestral', durationDays: 180 },
-      premium_annual: { amount: 179.9, title: 'Finanza Premium — Anual', durationDays: 365 },
+    const prices: Record<
+      PlanId,
+      { amount: number; title: string; durationDays: number }
+    > = {
+      premium_monthly: {
+        amount: 19.9,
+        title: 'Finanza Premium — Mensal',
+        durationDays: 30,
+      },
+      premium_quarterly: {
+        amount: 54.9,
+        title: 'Finanza Premium — Trimestral',
+        durationDays: 90,
+      },
+      premium_semiannual: {
+        amount: 99.9,
+        title: 'Finanza Premium — Semestral',
+        durationDays: 180,
+      },
+      premium_annual: {
+        amount: 179.9,
+        title: 'Finanza Premium — Anual',
+        durationDays: 365,
+      },
     };
 
     const { amount, title } = prices[plan];
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://finanzaai.tech';
-    const webhookUrl = this.configService.get<string>('MERCADOPAGO_WEBHOOK_URL')
-      || `${this.configService.get<string>('API_URL') || 'https://api.finanzaai.tech'}/v1/payments/webhook`;
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ||
+      'https://finanzaai.tech';
+    const webhookUrl =
+      this.configService.get<string>('MERCADOPAGO_WEBHOOK_URL') ||
+      `${this.configService.get<string>('API_URL') || 'https://api.finanzaai.tech'}/v1/payments/webhook`;
 
     const preference: MercadoPagoPreference = {
-      items: [{
-        id: plan,
-        title,
-        description: title,
-        quantity: 1,
-        currency_id: 'BRL',
-        unit_price: amount,
-      }],
+      items: [
+        {
+          id: plan,
+          title,
+          description: title,
+          quantity: 1,
+          currency_id: 'BRL',
+          unit_price: amount,
+        },
+      ],
       external_reference: userId,
       notification_url: webhookUrl,
       back_urls: {
@@ -182,7 +218,11 @@ export class PaymentsService {
     }
   }
 
-  async handleWebhook(dto: MercadoPagoWebhookDto, xSignature?: string, xRequestId?: string) {
+  async handleWebhook(
+    dto: MercadoPagoWebhookDto,
+    xSignature?: string,
+    xRequestId?: string,
+  ) {
     this.logger.log(`Webhook received: type=${dto.type}, action=${dto.action}`);
 
     if (dto.type !== 'payment') {
@@ -201,7 +241,9 @@ export class PaymentsService {
 
     // Verify x-signature before processing any payment. Fail closed when secret/header is missing.
     if (!xSignature || !this.verifyWebhookSignature(paymentId, xSignature)) {
-      this.logger.warn(`Webhook signature verification failed for payment ${paymentId}`);
+      this.logger.warn(
+        `Webhook signature verification failed for payment ${paymentId}`,
+      );
       this.logPaymentAlert('payments.webhook_signature_failed', 'critical', {
         mpPaymentId: paymentId,
         requestId: xRequestId,
@@ -215,7 +257,9 @@ export class PaymentsService {
   async processPayment(mpPaymentId: string) {
     // Race condition protection: skip if already processing this payment
     if (this.processingPayments.has(mpPaymentId)) {
-      this.logger.log(`Payment ${mpPaymentId} already being processed, skipping duplicate`);
+      this.logger.log(
+        `Payment ${mpPaymentId} already being processed, skipping duplicate`,
+      );
       return { processed: true, skipped: true };
     }
     this.processingPayments.add(mpPaymentId);
@@ -233,7 +277,9 @@ export class PaymentsService {
         where: { mpPaymentId },
       });
       if (existing && existing.status !== 'pending') {
-        this.logger.log(`Payment ${mpPaymentId} already processed with status: ${existing.status}`);
+        this.logger.log(
+          `Payment ${mpPaymentId} already processed with status: ${existing.status}`,
+        );
         return { processed: true, skipped: true };
       }
 
@@ -244,15 +290,28 @@ export class PaymentsService {
       const status = mpData.status;
       const paymentMethod = mpData.payment_method_id;
       const amount = mpData.transaction_amount || 0;
-      const planId = mpData.additional_info?.items?.[0]?.id || 'premium_monthly';
+      const planId =
+        mpData.additional_info?.items?.[0]?.id || 'premium_monthly';
 
       // Validate planId is a recognized plan
-      const validPlans = ['premium_monthly', 'premium_quarterly', 'premium_semiannual', 'premium_annual'];
+      const validPlans = [
+        'premium_monthly',
+        'premium_quarterly',
+        'premium_semiannual',
+        'premium_annual',
+      ];
       if (!validPlans.includes(planId)) {
-        this.logger.warn(`Invalid planId from MP payment ${mpPaymentId}: ${planId}, defaulting to premium_monthly`);
-        this.logPaymentAlert('payments.invalid_plan', 'warn', { mpPaymentId, planId });
+        this.logger.warn(
+          `Invalid planId from MP payment ${mpPaymentId}: ${planId}, defaulting to premium_monthly`,
+        );
+        this.logPaymentAlert('payments.invalid_plan', 'warn', {
+          mpPaymentId,
+          planId,
+        });
       }
-      const safePlanId = validPlans.includes(planId) ? planId : 'premium_monthly';
+      const safePlanId = validPlans.includes(planId)
+        ? planId
+        : 'premium_monthly';
 
       // Validate amount matches expected plan price
       const prices: Record<string, number> = {
@@ -263,7 +322,9 @@ export class PaymentsService {
       };
       const expectedAmount = prices[safePlanId];
       if (expectedAmount && Math.abs(amount - expectedAmount) > 1) {
-        this.logger.warn(`Amount mismatch for payment ${mpPaymentId}: expected ${expectedAmount}, got ${amount}`);
+        this.logger.warn(
+          `Amount mismatch for payment ${mpPaymentId}: expected ${expectedAmount}, got ${amount}`,
+        );
         this.logPaymentAlert('payments.amount_mismatch', 'critical', {
           mpPaymentId,
           expectedAmount,
@@ -297,12 +358,16 @@ export class PaymentsService {
           premium_annual: 365,
         };
         const durationDays = planDurations[safePlanId] || 30;
-        const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+        const expiresAt = new Date(
+          Date.now() + durationDays * 24 * 60 * 60 * 1000,
+        );
 
         await this.subscriptionService.upgrade(userId, 'premium', expiresAt);
 
         // Link payment to subscription
-        const sub = await this.prisma.subscription.findUnique({ where: { userId } });
+        const sub = await this.prisma.subscription.findUnique({
+          where: { userId },
+        });
         if (sub) {
           await this.prisma.payment.update({
             where: { id: paymentRecord.id },
@@ -311,10 +376,15 @@ export class PaymentsService {
         }
 
         this.logger.log(`User ${userId} upgraded to ${safePlanId}`);
-        this.logPaymentAlert('payments.approved', 'info', {
-          mpPaymentId,
-          planId: safePlanId,
-        }, userId);
+        this.logPaymentAlert(
+          'payments.approved',
+          'info',
+          {
+            mpPaymentId,
+            planId: safePlanId,
+          },
+          userId,
+        );
       }
 
       return {
@@ -322,7 +392,9 @@ export class PaymentsService {
         upgraded: status === 'approved',
       };
     } catch (error: any) {
-      this.logger.error(`Failed to process payment ${mpPaymentId}: ${error.message}`);
+      this.logger.error(
+        `Failed to process payment ${mpPaymentId}: ${error.message}`,
+      );
       this.logPaymentAlert('payments.processing_failed', 'critical', {
         mpPaymentId,
         error: error?.message || 'unknown',
@@ -338,11 +410,14 @@ export class PaymentsService {
     details: Record<string, unknown>,
     actorId?: string,
   ) {
-    this.auditService.log({
+    void this.auditService.log({
       action,
       actorId,
       targetType: 'Payment',
-      targetId: typeof details.mpPaymentId === 'string' ? details.mpPaymentId : undefined,
+      targetId:
+        typeof details.mpPaymentId === 'string'
+          ? details.mpPaymentId
+          : undefined,
       severity,
       details,
     });

@@ -17,6 +17,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 import { PlanGuard } from '../subscription/plan.guard';
 import { REQUIRED_PLAN_KEY } from '../subscription/plan.guard';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'accounts',
@@ -30,23 +31,26 @@ export class AccountsController {
   @RequireVerifiedEmail()
   @UseGuards(PlanGuard) // V15: Enforce plan limits on account creation
   @SetMetadata(REQUIRED_PLAN_KEY, 'free') // V15: Check limits (free=3 accounts max)
-  create(@Body() createAccountDto: CreateAccountDto, @Request() req) {
+  create(
+    @Body() createAccountDto: CreateAccountDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.accountsService.create(createAccountDto, req.user.userId);
   }
 
   @Get()
-  findAll(@Request() req) {
+  findAll(@Request() req: RequestWithUser) {
     return this.accountsService.findAll(req.user.userId);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req) {
+  async findOne(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.accountsService.findOne(id, req.user.userId);
   }
 
   @Post(':id/reconcile')
   @RequireVerifiedEmail()
-  async reconcile(@Param('id') id: string, @Request() req) {
+  async reconcile(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.accountsService.reconcile(id, req.user.userId);
   }
 
@@ -55,14 +59,14 @@ export class AccountsController {
   update(
     @Param('id') id: string,
     @Body() updateAccountDto: UpdateAccountDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.accountsService.update(id, updateAccountDto, req.user.userId);
   }
 
   @Delete(':id')
   @RequireVerifiedEmail()
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.accountsService.remove(id, req.user.userId);
   }
 }

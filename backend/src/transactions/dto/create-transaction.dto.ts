@@ -1,10 +1,8 @@
 import {
   IsBoolean,
   IsDateString,
-  IsEnum,
   IsIn,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -27,7 +25,9 @@ export class CreateTransactionDto {
   @MaxLength(500)
   description: string;
 
-  @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
+  @Transform(({ value }) =>
+    value !== null && value !== undefined ? Number(value) : value,
+  )
   @Min(0.01, { message: 'O valor deve ser positivo' })
   @Max(99999999.99, { message: 'O valor deve ser menor que R$ 100.000.000' })
   amount: number;
@@ -52,7 +52,9 @@ export class CreateTransactionDto {
   @IsOptional()
   creditCardId?: string;
 
-  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'], { message: 'Tipo deve ser INCOME, EXPENSE ou TRANSFER' })
+  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'], {
+    message: 'Tipo deve ser INCOME, EXPENSE ou TRANSFER',
+  })
   type: TransactionType;
 
   @IsBoolean()

@@ -12,6 +12,7 @@ import { FeedbackService } from './feedback.service';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'feedback',
@@ -23,7 +24,7 @@ export class FeedbackController {
 
   @Post()
   async submitFeedback(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Body() body: CreateFeedbackDto,
   ) {
     return this.feedbackService.submitFeedback(
@@ -35,13 +36,16 @@ export class FeedbackController {
 
   @Get()
   @UseGuards(AdminGuard)
-  async getAllFeedbacks(@Request() req) {
+  async getAllFeedbacks(@Request() req: RequestWithUser) {
     return this.feedbackService.findAllFeedbacks(req.user.userId);
   }
 
   @Delete(':id')
   @UseGuards(AdminGuard)
-  async deleteFeedback(@Param('id') id: string, @Request() req) {
+  async deleteFeedback(
+    @Param('id') id: string,
+    @Request() req: RequestWithUser,
+  ) {
     return this.feedbackService.deleteFeedback(id, req.user.userId);
   }
 }

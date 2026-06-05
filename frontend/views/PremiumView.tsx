@@ -22,6 +22,7 @@ const plans = [
     duration: '1 mês',
     features: premiumFeatures,
     highlight: false,
+    subtext: undefined,
   },
   {
     id: 'premium_quarterly',

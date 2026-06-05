@@ -14,6 +14,7 @@ import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 import { AiRequestGuard } from '../subscription/ai-request.guard';
 import { AiChatDto } from './dto/ai-chat.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'ai',
@@ -30,7 +31,7 @@ export class AiController {
   @Get('insights')
   @RequireVerifiedEmail()
   async getInsights(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Query('year') year?: string,
     @Query('month') month?: string,
   ) {
@@ -43,7 +44,9 @@ export class AiController {
     const profile = await this.reportsService.getFinancialProfile(userId, y, m);
 
     // Conta a requisição antes da chamada externa para evitar bypass por chamadas lentas/falhas.
-    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'insights' } });
+    await this.prisma.aiRequestLog.create({
+      data: { userId, endpoint: 'insights' },
+    });
 
     // Gera os insights usando o perfil como contexto (ajustando para o mês se necessário)
     const insights = await this.aiService.getFinancialInsights(profile);
@@ -53,14 +56,16 @@ export class AiController {
 
   @Post('chat')
   @RequireVerifiedEmail()
-  async postChat(@Request() req, @Body() body: AiChatDto) {
+  async postChat(@Request() req: RequestWithUser, @Body() body: AiChatDto) {
     const userId = req.user.userId;
     const { message } = body;
 
     // Contexto completo: metas, orçamentos e gastos
     const profile = await this.reportsService.getFinancialProfile(userId);
 
-    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'chat' } });
+    await this.prisma.aiRequestLog.create({
+      data: { userId, endpoint: 'chat' },
+    });
 
     const response = await this.aiService.chat(message, profile);
 
@@ -68,12 +73,14 @@ export class AiController {
   }
 
   @Get('forecast')
-  async getForecast(@Request() req) {
+  async getForecast(@Request() req: RequestWithUser) {
     const userId = req.user.userId;
 
     const historicalData =
       await this.reportsService.getHistoricalSpending(userId);
-    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'forecast' } });
+    await this.prisma.aiRequestLog.create({
+      data: { userId, endpoint: 'forecast' },
+    });
 
     const forecast = await this.aiService.getSpendingForecast(historicalData);
 
@@ -81,12 +88,14 @@ export class AiController {
   }
 
   @Get('subscriptions')
-  async getSubscriptions(@Request() req) {
+  async getSubscriptions(@Request() req: RequestWithUser) {
     const userId = req.user.userId;
 
     const recentTxs =
       await this.reportsService.getRecentTransactionsForAudit(userId);
-    await this.prisma.aiRequestLog.create({ data: { userId, endpoint: 'subscriptions' } });
+    await this.prisma.aiRequestLog.create({
+      data: { userId, endpoint: 'subscriptions' },
+    });
 
     const auditResult =
       await this.aiService.findRecurringSubscriptions(recentTxs);

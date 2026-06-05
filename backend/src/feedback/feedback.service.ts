@@ -18,7 +18,7 @@ export class FeedbackService {
     });
   }
 
-  async findAllFeedbacks(userId: string) {
+  async findAllFeedbacks() {
     // AdminGuard already verified admin status at controller level
 
     return this.prisma.feedback.findMany({
@@ -35,7 +35,8 @@ export class FeedbackService {
   }
 
   async deleteFeedback(id: string, _adminId: string) {
-    // AdminGuard already verified admin status at controller level
+    // _adminId is validated by AdminGuard at controller level
+    void _adminId;
     return this.prisma.feedback.delete({
       where: { id },
     });

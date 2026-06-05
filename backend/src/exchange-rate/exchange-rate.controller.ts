@@ -14,7 +14,9 @@ export class ExchangeRateController {
   @Get()
   async getRates() {
     const rates = await this.exchangeRateService.getRates();
-    this.logger.log(`Cotação servida: USD=${rates.USD} EUR=${rates.EUR} fonte=${rates.source}`);
+    this.logger.log(
+      `Cotação servida: USD=${rates.USD} EUR=${rates.EUR} fonte=${rates.source}`,
+    );
     return rates;
   }
 }

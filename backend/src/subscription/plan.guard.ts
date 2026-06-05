@@ -1,5 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { SubscriptionService, PLAN_LIMITS, PlanType } from './subscription.service';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
+import { SubscriptionService, PlanType } from './subscription.service';
 import { Reflector } from '@nestjs/core';
 
 export const REQUIRED_PLAN_KEY = 'requiredPlan';
@@ -12,10 +17,10 @@ export class PlanGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPlan = this.reflector.getAllAndOverride<PlanType>(REQUIRED_PLAN_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredPlan = this.reflector.getAllAndOverride<PlanType>(
+      REQUIRED_PLAN_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiredPlan) return true;
 

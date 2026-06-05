@@ -6,7 +6,11 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EncryptionService } from '../common/services/encryption.service';
-import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
+import {
+  encryptAmount,
+  decryptAmount,
+  atomicBalanceUpdate,
+} from '../common/services/balance-helper';
 
 @Injectable()
 export class SocialService {
@@ -30,10 +34,16 @@ export class SocialService {
     // 1. Verify originalTransactionId belongs to sender (if provided)
     if (data.originalTransactionId) {
       const originalTx = await this.prisma.transaction.findFirst({
-        where: { id: data.originalTransactionId, userId: senderId, deletedAt: null },
+        where: {
+          id: data.originalTransactionId,
+          userId: senderId,
+          deletedAt: null,
+        },
       });
       if (!originalTx) {
-        throw new BadRequestException('Transação original não encontrada ou não pertence ao remetente');
+        throw new BadRequestException(
+          'Transação original não encontrada ou não pertence ao remetente',
+        );
       }
     }
 
@@ -95,12 +105,28 @@ export class SocialService {
     return this.prisma.$transaction(async (tx) => {
       // Verify that accountId belongs to this user AND lock the row (FOR UPDATE)
       // CRITICAL: Use SELECT ... FOR UPDATE to prevent concurrent overdraft
-      let account: { id: string; userId: string; balance: string; deletedAt: Date | null } | null = null;
+      let account: {
+        id: string;
+        userId: string;
+        balance: string;
+        deletedAt: Date | null;
+      } | null = null;
       if (accountId) {
-        const rows = await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE`;
-        account = (rows as Array<{ id: string; userId: string; balance: string; deletedAt: Date | null }>)[0] || null;
+        const rows =
+          await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE`;
+        account =
+          (
+            rows as Array<{
+              id: string;
+              userId: string;
+              balance: string;
+              deletedAt: Date | null;
+            }>
+          )[0] || null;
         if (!account || account.deletedAt) {
-          throw new BadRequestException('Conta não encontrada ou não pertence ao usuário');
+          throw new BadRequestException(
+            'Conta não encontrada ou não pertence ao usuário',
+          );
         }
       }
 
@@ -110,7 +136,9 @@ export class SocialService {
           where: { id: categoryId, userId, deletedAt: null },
         });
         if (!category) {
-          throw new BadRequestException('Categoria não encontrada ou não pertence ao usuário');
+          throw new BadRequestException(
+            'Categoria não encontrada ou não pertence ao usuário',
+          );
         }
       }
 
@@ -119,7 +147,9 @@ export class SocialService {
       if (invite.type === 'EXPENSE' && account) {
         const currentBalance = decryptAmount(account.balance, this.encryption);
         if (currentBalance < inviteAmount) {
-          throw new BadRequestException('Saldo insuficiente na conta para esta despesa');
+          throw new BadRequestException(
+            'Saldo insuficiente na conta para esta despesa',
+          );
         }
       }
 
@@ -137,8 +167,15 @@ export class SocialService {
       });
 
       // Atualizar Saldo da Conta atomicamente
-      const adjustment = invite.type === 'INCOME' ? inviteAmount : -inviteAmount;
-      await atomicBalanceUpdate(tx, accountId, userId, adjustment, this.encryption);
+      const adjustment =
+        invite.type === 'INCOME' ? inviteAmount : -inviteAmount;
+      await atomicBalanceUpdate(
+        tx,
+        accountId,
+        userId,
+        adjustment,
+        this.encryption,
+      );
 
       // 2. Update invite status
       await tx.transactionInvite.update({

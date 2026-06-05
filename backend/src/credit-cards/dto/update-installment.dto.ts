@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, Min, Max, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  Min,
+  Max,
+  IsUUID,
+} from 'class-validator';
 
 export class UpdateInstallmentDto {
   @IsString()

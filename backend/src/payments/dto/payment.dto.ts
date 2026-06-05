@@ -1,10 +1,19 @@
 import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
 
-export type PlanId = 'premium_monthly' | 'premium_quarterly' | 'premium_semiannual' | 'premium_annual';
+export type PlanId =
+  | 'premium_monthly'
+  | 'premium_quarterly'
+  | 'premium_semiannual'
+  | 'premium_annual';
 
 export class CreatePreferenceDto {
   @IsString()
-  @IsIn(['premium_monthly', 'premium_quarterly', 'premium_semiannual', 'premium_annual'])
+  @IsIn([
+    'premium_monthly',
+    'premium_quarterly',
+    'premium_semiannual',
+    'premium_annual',
+  ])
   plan!: PlanId;
 
   @IsString()

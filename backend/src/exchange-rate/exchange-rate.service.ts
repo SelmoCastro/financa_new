@@ -53,13 +53,20 @@ export class ExchangeRateService {
 
     // Último recurso: cache expirado
     if (this.cache) {
-      this.logger.warn(`Usando cache expirado de ${new Date(this.cache.fetchedAt).toISOString()}`);
+      this.logger.warn(
+        `Usando cache expirado de ${new Date(this.cache.fetchedAt).toISOString()}`,
+      );
       return { ...this.cache.rates, source: 'cache-expired' };
     }
 
     // Nada funcionou — retorna fallback hardcoded
     this.logger.error('Todas as fontes de cotação falharam!');
-    return { USD: 0.1835, EUR: 0.1680, date: new Date().toISOString().slice(0, 10), source: 'fallback-hardcoded' };
+    return {
+      USD: 0.1835,
+      EUR: 0.168,
+      date: new Date().toISOString().slice(0, 10),
+      source: 'fallback-hardcoded',
+    };
   }
 
   // ─── Cache ───────────────────────────────────────
@@ -67,7 +74,10 @@ export class ExchangeRateService {
   private getFromCache(): ExchangeRates | null {
     if (!this.cache) return null;
     if (Date.now() - this.cache.fetchedAt < this.CACHE_TTL) {
-      return { ...this.cache.rates, source: this.cache.rates.source + '-cached' };
+      return {
+        ...this.cache.rates,
+        source: this.cache.rates.source + '-cached',
+      };
     }
     return null;
   }

@@ -40,7 +40,10 @@ export class ErrorsService {
   private sanitizeForLog(value: string): string {
     return value
       .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[REDACTED_EMAIL]')
-      .replace(/(access_token|refreshToken|authorization|password|senha)=?\s*[^\s&]+/gi, '$1=[REDACTED]')
+      .replace(
+        /(access_token|refreshToken|authorization|password|senha)=?\s*[^\s&]+/gi,
+        '$1=[REDACTED]',
+      )
       .slice(0, 300);
   }
 }

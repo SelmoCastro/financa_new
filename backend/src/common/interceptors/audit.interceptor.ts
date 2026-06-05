@@ -7,7 +7,10 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, tap } from 'rxjs';
-import { AUDIT_LOG_KEY, AuditLogMetadata } from '../decorators/audit-log.decorator';
+import {
+  AUDIT_LOG_KEY,
+  AuditLogMetadata,
+} from '../decorators/audit-log.decorator';
 import { AuditService } from '../../audit/audit.service';
 import { Request } from 'express';
 
@@ -51,18 +54,27 @@ export class AuditInterceptor implements NestInterceptor {
               url: request.originalUrl,
               params: request.params,
             } as any,
-            ip: (request.ip || (Array.isArray(request.headers['x-forwarded-for']) ? request.headers['x-forwarded-for'][0] : request.headers['x-forwarded-for']) || null) as string,
+            ip: (request.ip ||
+              (Array.isArray(request.headers['x-forwarded-for'])
+                ? request.headers['x-forwarded-for'][0]
+                : request.headers['x-forwarded-for']) ||
+              null) as string,
             userAgent: request.headers['user-agent'] || null,
             severity: metadata.severity || 'info',
           })
           .catch((err) => {
-            this.logger.error(`Audit log failed: ${err instanceof Error ? err.message : String(err)}`);
+            this.logger.error(
+              `Audit log failed: ${err instanceof Error ? err.message : String(err)}`,
+            );
           });
       }),
     );
   }
 
-  private extractTargetId(request: RequestWithUser, result: any): string | null {
+  private extractTargetId(
+    request: RequestWithUser,
+    result: any,
+  ): string | null {
     // Try to extract the ID from URL params first
     if (request.params?.id) return String(request.params.id);
 

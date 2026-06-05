@@ -18,6 +18,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 import { PlanGuard, REQUIRED_PLAN_KEY } from '../subscription/plan.guard';
 import { SetMetadata } from '@nestjs/common';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'credit-cards',
@@ -31,17 +32,20 @@ export class CreditCardsController {
   @RequireVerifiedEmail()
   @UseGuards(PlanGuard)
   @SetMetadata(REQUIRED_PLAN_KEY, 'free')
-  create(@Body() createCreditCardDto: CreateCreditCardDto, @Request() req) {
+  create(
+    @Body() createCreditCardDto: CreateCreditCardDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.creditCardsService.create(createCreditCardDto, req.user.userId);
   }
 
   @Get()
-  findAll(@Request() req) {
+  findAll(@Request() req: RequestWithUser) {
     return this.creditCardsService.findAll(req.user.userId);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req) {
+  async findOne(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.creditCardsService.findOne(id, req.user.userId);
   }
 
@@ -50,7 +54,7 @@ export class CreditCardsController {
   update(
     @Param('id') id: string,
     @Body() updateCreditCardDto: UpdateCreditCardDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.creditCardsService.update(
       id,
@@ -61,7 +65,7 @@ export class CreditCardsController {
 
   @Delete(':id')
   @RequireVerifiedEmail()
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.creditCardsService.remove(id, req.user.userId);
   }
 
@@ -72,27 +76,37 @@ export class CreditCardsController {
   createInstallment(
     @Param('cardId') cardId: string,
     @Body() dto: CreateInstallmentDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
-    return this.creditCardsService.createInstallment(cardId, dto, req.user.userId);
+    return this.creditCardsService.createInstallment(
+      cardId,
+      dto,
+      req.user.userId,
+    );
   }
 
   @Get(':cardId/installments')
   getInstallments(
     @Param('cardId') cardId: string,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.creditCardsService.getInstallments(req.user.userId, cardId);
   }
 
   @Get('installments/all')
-  getAllInstallments(@Request() req) {
+  getAllInstallments(@Request() req: RequestWithUser) {
     return this.creditCardsService.getInstallments(req.user.userId);
   }
 
   @Get('installments/:id/schedule')
-  getInstallmentSchedule(@Param('id') id: string, @Request() req) {
-    return this.creditCardsService.getInstallmentScheduleForUser(id, req.user.userId);
+  getInstallmentSchedule(
+    @Param('id') id: string,
+    @Request() req: RequestWithUser,
+  ) {
+    return this.creditCardsService.getInstallmentScheduleForUser(
+      id,
+      req.user.userId,
+    );
   }
 
   @Patch('installments/:id')
@@ -100,14 +114,14 @@ export class CreditCardsController {
   updateInstallment(
     @Param('id') id: string,
     @Body() dto: UpdateInstallmentDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.creditCardsService.updateInstallment(id, dto, req.user.userId);
   }
 
   @Delete('installments/:id')
   @RequireVerifiedEmail()
-  deleteInstallment(@Param('id') id: string, @Request() req) {
+  deleteInstallment(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.creditCardsService.deleteInstallment(id, req.user.userId);
   }
 }

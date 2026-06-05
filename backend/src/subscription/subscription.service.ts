@@ -4,9 +4,30 @@ import { PrismaService } from '../prisma/prisma.service';
 export type PlanType = 'free' | 'premium';
 export type ResourceType = 'account' | 'budget' | 'creditCard' | 'goal';
 
-export const PLAN_LIMITS: Record<PlanType, { aiRequestsPerDay: number; maxAccounts: number; maxBudgets: number; maxCreditCards: number; maxGoals: number }> = {
-  free: { aiRequestsPerDay: 10, maxAccounts: 1, maxBudgets: 3, maxCreditCards: 1, maxGoals: 3 },
-  premium: { aiRequestsPerDay: -1, maxAccounts: -1, maxBudgets: -1, maxCreditCards: -1, maxGoals: -1 }, // -1 = unlimited
+export const PLAN_LIMITS: Record<
+  PlanType,
+  {
+    aiRequestsPerDay: number;
+    maxAccounts: number;
+    maxBudgets: number;
+    maxCreditCards: number;
+    maxGoals: number;
+  }
+> = {
+  free: {
+    aiRequestsPerDay: 10,
+    maxAccounts: 1,
+    maxBudgets: 3,
+    maxCreditCards: 1,
+    maxGoals: 3,
+  },
+  premium: {
+    aiRequestsPerDay: -1,
+    maxAccounts: -1,
+    maxBudgets: -1,
+    maxCreditCards: -1,
+    maxGoals: -1,
+  }, // -1 = unlimited
 };
 
 @Injectable()
@@ -17,11 +38,16 @@ export class SubscriptionService {
   constructor(private prisma: PrismaService) {}
 
   /** Execute a function with a per-user lock to prevent race conditions */
-  private async withUserLock<T>(userId: string, fn: () => Promise<T>): Promise<T> {
+  private async withUserLock<T>(
+    userId: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
     const previousLock = this.resourceLocks.get(userId);
-    const lock = (previousLock || Promise.resolve()).finally(() => {
-      this.resourceLocks.delete(userId);
-    }).then(fn);
+    const lock = (previousLock || Promise.resolve())
+      .finally(() => {
+        this.resourceLocks.delete(userId);
+      })
+      .then(fn);
     this.resourceLocks.set(userId, lock);
     return lock;
   }
@@ -115,16 +141,24 @@ export class SubscriptionService {
       let count: number;
       switch (resourceType) {
         case 'account':
-          count = await this.prisma.account.count({ where: { userId, deletedAt: null } });
+          count = await this.prisma.account.count({
+            where: { userId, deletedAt: null },
+          });
           break;
         case 'budget':
-          count = await this.prisma.budget.count({ where: { userId, deletedAt: null } });
+          count = await this.prisma.budget.count({
+            where: { userId, deletedAt: null },
+          });
           break;
         case 'creditCard':
-          count = await this.prisma.creditCard.count({ where: { userId, deletedAt: null } });
+          count = await this.prisma.creditCard.count({
+            where: { userId, deletedAt: null },
+          });
           break;
         case 'goal':
-          count = await this.prisma.goal.count({ where: { userId, deletedAt: null } });
+          count = await this.prisma.goal.count({
+            where: { userId, deletedAt: null },
+          });
           break;
       }
 
@@ -148,7 +182,10 @@ export class SubscriptionService {
    * Retorna os IDs dos recursos excedentes (read-only) para um tipo.
    * Recursos criados primeiro = dentro do limite; os demais = excedentes.
    */
-  async getExceedingIds(userId: string, resourceType: ResourceType): Promise<string[]> {
+  async getExceedingIds(
+    userId: string,
+    resourceType: ResourceType,
+  ): Promise<string[]> {
     const plan = await this.getPlan(userId);
     if (plan === 'premium') return [];
 
@@ -194,7 +231,11 @@ export class SubscriptionService {
    * Verifica se um recurso específico está excedente (read-only).
    * Lança ForbiddenException se estiver.
    */
-  async checkNotExceeding(userId: string, resourceType: ResourceType, resourceId: string): Promise<void> {
+  async checkNotExceeding(
+    userId: string,
+    resourceType: ResourceType,
+    resourceId: string,
+  ): Promise<void> {
     const exceedingIds = await this.getExceedingIds(userId, resourceType);
     if (exceedingIds.includes(resourceId)) {
       throw new ForbiddenException(
@@ -206,7 +247,9 @@ export class SubscriptionService {
   /**
    * Retorna todos os recursos excedentes de um usuário (para o frontend).
    */
-  async getAllExceeding(userId: string): Promise<Record<ResourceType, string[]>> {
+  async getAllExceeding(
+    userId: string,
+  ): Promise<Record<ResourceType, string[]>> {
     const types: ResourceType[] = ['account', 'budget', 'creditCard', 'goal'];
     const result = {} as Record<ResourceType, string[]>;
     for (const t of types) {

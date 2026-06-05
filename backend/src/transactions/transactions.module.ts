@@ -9,7 +9,14 @@ import { SocialModule } from '../social/social.module';
 import { AuditModule } from '../audit/audit.module';
 
 @Module({
-  imports: [PrismaModule, ReportsModule, AiModule, OcrModule, SocialModule, AuditModule],
+  imports: [
+    PrismaModule,
+    ReportsModule,
+    AiModule,
+    OcrModule,
+    SocialModule,
+    AuditModule,
+  ],
   controllers: [TransactionsController],
   providers: [TransactionsService],
   exports: [TransactionsService],

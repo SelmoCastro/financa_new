@@ -13,6 +13,7 @@ import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../common/guards/admin.guard';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'users',
@@ -24,12 +25,12 @@ export class UsersController {
 
   @Get()
   @UseGuards(AdminGuard)
-  findAll(@Request() req) {
+  findAll(@Request() req: RequestWithUser) {
     return this.usersService.findAll(req.user.userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Request() req) {
+  findOne(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.usersService.findOne(id, req.user.userId);
   }
 
@@ -37,13 +38,13 @@ export class UsersController {
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.usersService.update(id, updateUserDto, req.user.userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id') id: string, @Request() req: RequestWithUser) {
     if (id !== req.user.userId) {
       throw new ForbiddenException('You can only delete your own profile');
     }

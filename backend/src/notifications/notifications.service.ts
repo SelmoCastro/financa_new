@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../common/services/encryption.service';
-import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
+import {
+  encryptAmount,
+  decryptAmount,
+  atomicBalanceUpdate,
+} from '../common/services/balance-helper';
 
 @Injectable()
 export class NotificationsService {
@@ -27,9 +35,13 @@ export class NotificationsService {
         title: data.title,
         message: data.message,
         type: data.type,
-        metadata: data.metadata ? JSON.parse(JSON.stringify(data.metadata)) : {},
+        metadata: data.metadata
+          ? JSON.parse(JSON.stringify(data.metadata))
+          : {},
         actionType: data.actionType,
-        actionMeta: data.actionMeta ? JSON.parse(JSON.stringify(data.actionMeta)) : undefined,
+        actionMeta: data.actionMeta
+          ? JSON.parse(JSON.stringify(data.actionMeta))
+          : undefined,
       },
     });
   }
@@ -101,39 +113,57 @@ export class NotificationsService {
         }
 
         if (!amount || isNaN(amount)) {
-          throw new BadRequestException('Valor da fatura indisponível — exclua esta notificação');
+          throw new BadRequestException(
+            'Valor da fatura indisponível — exclua esta notificação',
+          );
         }
 
         // Use interactive transaction for atomicity
-        const result = await this.prisma.$transaction(async (tx) => {
+        await this.prisma.$transaction(async (tx) => {
           // 1. Lock and verify the account
           const rows = await tx.$queryRaw<
             { id: string; balance: string }[]
           >`SELECT id, balance FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE`;
 
           if (!rows[0]) {
-            throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+            throw new BadRequestException(
+              'Conta não encontrada ou não pertence a este usuário',
+            );
           }
-          const currentBalance = decryptAmount(rows[0].balance, this.encryption);
+          const currentBalance = decryptAmount(
+            rows[0].balance,
+            this.encryption,
+          );
           if (currentBalance < amount) {
-            throw new BadRequestException('Saldo insuficiente para pagar a fatura');
+            throw new BadRequestException(
+              'Saldo insuficiente para pagar a fatura',
+            );
           }
 
           // 2. Debit the account using atomic encrypted balance update
-          await atomicBalanceUpdate(tx, accountId, userId, -amount, this.encryption);
+          await atomicBalanceUpdate(
+            tx,
+            accountId,
+            userId,
+            -amount,
+            this.encryption,
+          );
 
           // 3. Update the invoice (paidAmount is now a String field, verify ownership first)
           const existingInvoice = await tx.creditCardInvoice.findFirst({
             where: { id: invoiceId, userId },
           });
           if (!existingInvoice) {
-            throw new BadRequestException('Fatura não encontrada ou não pertence a este usuário');
+            throw new BadRequestException(
+              'Fatura não encontrada ou não pertence a este usuário',
+            );
           }
-          const invoice = await tx.creditCardInvoice.updateMany({
+          await tx.creditCardInvoice.updateMany({
             where: { id: invoiceId, userId },
             data: {
               paidAmount: encryptAmount(
-                decryptAmount(existingInvoice.paidAmount, this.encryption) + amount,
+                decryptAmount(existingInvoice.paidAmount, this.encryption) +
+                  amount,
                 this.encryption,
               ),
               isPaid: true,
@@ -142,7 +172,6 @@ export class NotificationsService {
           });
 
           // 4. Create a traceability transaction (amount is now encrypted string)
-          const ccInvoice = await tx.creditCardInvoice.findUnique({ where: { id: invoiceId } });
           await tx.transaction.create({
             data: {
               description: meta.description || `Pagamento fatura`,
@@ -159,8 +188,6 @@ export class NotificationsService {
             where: { id, userId },
             data: { isRead: true },
           });
-
-          return invoice;
         });
 
         return {
@@ -174,12 +201,14 @@ export class NotificationsService {
         notif.type === 'ACTION_RECURRING' ||
         notif.type === 'ACTION_INSTALLMENT'
       ) {
-        let amount = meta.amount;
+        const amount = meta.amount;
         const type = meta.transactionType || 'EXPENSE';
 
         // Guard against null/NaN amount (from old notifications)
         if (amount == null || isNaN(Number(amount))) {
-          throw new BadRequestException('Valor da notificação indisponível — exclua e aguarde a próxima');
+          throw new BadRequestException(
+            'Valor da notificação indisponível — exclua e aguarde a próxima',
+          );
         }
         const numericAmount = Number(amount);
 
@@ -190,12 +219,16 @@ export class NotificationsService {
               { id: string; balance: string }[]
             >`SELECT id, balance FROM "Account" WHERE id = ${meta.accountId} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE`;
             if (!lockedRows[0]) {
-              throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+              throw new BadRequestException(
+                'Conta não encontrada ou não pertence a este usuário',
+              );
             }
             if (type === 'EXPENSE') {
               const bal = decryptAmount(lockedRows[0].balance, this.encryption);
               if (bal < numericAmount) {
-                throw new BadRequestException('Saldo insuficiente para esta operação');
+                throw new BadRequestException(
+                  'Saldo insuficiente para esta operação',
+                );
               }
             }
           }
@@ -219,8 +252,15 @@ export class NotificationsService {
 
           // 3. Update account balance if needed
           if (meta.accountId) {
-            const adjustment = type === 'INCOME' ? numericAmount : -numericAmount;
-            await atomicBalanceUpdate(tx, meta.accountId as string, userId, adjustment, this.encryption);
+            const adjustment =
+              type === 'INCOME' ? numericAmount : -numericAmount;
+            await atomicBalanceUpdate(
+              tx,
+              meta.accountId as string,
+              userId,
+              adjustment,
+              this.encryption,
+            );
           }
 
           // 4. If installment, advance the tracker

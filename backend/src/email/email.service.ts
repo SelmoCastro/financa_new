@@ -19,9 +19,14 @@ export class EmailService implements OnModuleInit {
     // Prioridade 1: Resend (API, mais confiável)
     if (resendApiKey && resendApiKey !== 'placeholder') {
       this.resend = new Resend(resendApiKey);
-      this.fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL || 'Finanza <noreply@finanzaai.tech>';
+      this.fromEmail =
+        process.env.EMAIL_FROM ||
+        process.env.RESEND_FROM_EMAIL ||
+        'Finanza <noreply@finanzaai.tech>';
       this.useResend = true;
-      this.logger.log(`✅ Resend API configurada! Emails via Resend. Remetente: ${this.fromEmail}`);
+      this.logger.log(
+        `✅ Resend API configurada! Emails via Resend. Remetente: ${this.fromEmail}`,
+      );
       return;
     }
 
@@ -135,7 +140,10 @@ export class EmailService implements OnModuleInit {
             return this.sendViaSmtp(to, subject, html);
           }
           // Se nao tem SMTP configurado, aviso claro
-          if (error.message?.includes('verify a domain') || error.message?.includes('testing emails')) {
+          if (
+            error.message?.includes('verify a domain') ||
+            error.message?.includes('testing emails')
+          ) {
             this.logger.error(
               '💡 DICA: Configure um domínio verificado no Resend (resend.com/domains) OU adicione credenciais SMTP (SMTP_HOST, SMTP_USER, SMTP_PASS) no .env para envio de emails.',
             );
@@ -172,7 +180,9 @@ export class EmailService implements OnModuleInit {
       });
       this.logger.log(`✅ Email sent to ${this.maskEmail(to)} via SMTP`);
     } catch (error) {
-      this.logger.error(`SMTP error sending to ${this.maskEmail(to)}: ${error.message}`);
+      this.logger.error(
+        `SMTP error sending to ${this.maskEmail(to)}: ${error.message}`,
+      );
     }
   }
 

@@ -17,6 +17,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 import { PlanGuard, REQUIRED_PLAN_KEY } from '../subscription/plan.guard';
 import { SetMetadata } from '@nestjs/common';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'budgets',
@@ -30,13 +31,16 @@ export class BudgetsController {
   @RequireVerifiedEmail()
   @UseGuards(PlanGuard)
   @SetMetadata(REQUIRED_PLAN_KEY, 'free')
-  create(@Body() createBudgetDto: CreateBudgetDto, @Request() req) {
+  create(
+    @Body() createBudgetDto: CreateBudgetDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.budgetsService.create(createBudgetDto, req.user.userId);
   }
 
   @Get()
   findAll(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Query('year') year?: string,
     @Query('month') month?: string,
   ) {
@@ -52,14 +56,14 @@ export class BudgetsController {
   update(
     @Param('id') id: string,
     @Body() updateBudgetDto: UpdateBudgetDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.budgetsService.update(id, updateBudgetDto, req.user.userId);
   }
 
   @Delete(':id')
   @RequireVerifiedEmail()
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.budgetsService.remove(id, req.user.userId);
   }
 }

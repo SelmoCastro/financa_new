@@ -1,4 +1,8 @@
-import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -19,8 +23,7 @@ function generateNonce(): string {
 
 export function configureApp(app: INestApplication) {
   // CORS (Aceita Regex)
-  const frontendUrl =
-    process.env.FRONTEND_URL || 'https://finanzaai.tech';
+  const frontendUrl = process.env.FRONTEND_URL || 'https://finanzaai.tech';
   const isProduction = process.env.NODE_ENV === 'production';
   const allowedOriginsCORS = [
     frontendUrl,
@@ -46,7 +49,12 @@ export function configureApp(app: INestApplication) {
   const allowedOriginsCSP = [
     frontendUrl,
     ...(!isProduction
-      ? ['http://localhost:5173', 'http://localhost:3000', 'http://192.168.*', 'exp://*']
+      ? [
+          'http://localhost:5173',
+          'http://localhost:3000',
+          'http://192.168.*',
+          'exp://*',
+        ]
       : []),
     'https://*.vercel.app',
     'https://*.finanzaai.tech',
@@ -55,7 +63,10 @@ export function configureApp(app: INestApplication) {
   // Custom origin validator: only echo CORS headers for whitelisted origins.
   // When callback(null, false), NestJS omits Access-Control-Allow-Origin from the
   // preflight response, causing browsers to block the actual request entirely.
-  const corsOriginValidator = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  const corsOriginValidator = (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void,
+  ) => {
     if (!origin) {
       // Non-browser requests (curl, server-to-server) — allow
       return callback(null, true);
@@ -107,7 +118,9 @@ export function configureApp(app: INestApplication) {
             'https://www.googletagmanager.com',
             'https://www.google-analytics.com',
             // Swagger in dev needs unpkg/esm.sh, never in production
-            ...(process.env.NODE_ENV !== 'production' ? ['https://unpkg.com', 'https://esm.sh'] : []),
+            ...(process.env.NODE_ENV !== 'production'
+              ? ['https://unpkg.com', 'https://esm.sh']
+              : []),
           ],
           styleSrc: [
             "'self'",
@@ -115,7 +128,11 @@ export function configureApp(app: INestApplication) {
             'https://fonts.googleapis.com',
           ],
           imgSrc: ["'self'", 'data:', 'https:'],
-          connectSrc: ["'self'", ...allowedOriginsCSP, 'https://www.google-analytics.com'],
+          connectSrc: [
+            "'self'",
+            ...allowedOriginsCSP,
+            'https://www.google-analytics.com',
+          ],
           fontSrc: ["'self'", 'https://fonts.gstatic.com'],
           objectSrc: ["'none'"],
           baseUri: ["'self'"],
@@ -131,7 +148,10 @@ export function configureApp(app: INestApplication) {
   // Additional security headers not covered by Helmet
   app.use((req: Request, res: Response, next: NextFunction) => {
     // Disable browser features we don't use (camera, mic, geolocation, etc.)
-    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self)');
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self)',
+    );
     // Prevent MIME-type sniffing (redundant with helmet noSniff but explicit)
     res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
@@ -146,11 +166,15 @@ export function configureApp(app: INestApplication) {
       const start = Date.now();
       const method = req.method;
       const url = req.originalUrl || req.url;
-      const hasAuth = !!(req.cookies?.access_token || req.headers?.authorization);
+      const hasAuth = !!(
+        req.cookies?.access_token || req.headers?.authorization
+      );
       _res.on('finish', () => {
         const duration = Date.now() - start;
         const status = _res.statusCode;
-        console.log(`[HTTP] ${method} ${url} ${status} ${duration}ms auth:${hasAuth}`);
+        console.log(
+          `[HTTP] ${method} ${url} ${status} ${duration}ms auth:${hasAuth}`,
+        );
       });
       next();
     });
@@ -160,7 +184,9 @@ export function configureApp(app: INestApplication) {
   // Para requests de escrita (POST/PUT/PATCH/DELETE), exige header x-csrf-token = cookie csrf-token
   // Rotas de auth (login, register, etc.) são excluídas
   const csrfMiddleware = new CsrfMiddleware();
-  app.use((req: Request, res: Response, next: NextFunction) => csrfMiddleware.use(req, res, next));
+  app.use((req: Request, res: Response, next: NextFunction) =>
+    csrfMiddleware.use(req, res, next),
+  );
 
   // API Versioning
   app.enableVersioning({

@@ -7,7 +7,6 @@ import {
   Res,
   UseGuards,
   HttpStatus,
-  UnauthorizedException,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -45,7 +44,7 @@ export class PaymentsController {
 
   /**
    * Public webhook endpoint — called by Mercado Pago servers.
-   * 
+   *
    * Security:
    * - No auth guard (MP sends their own x-signature header)
    * - In production, x-signature is verified to prevent forgery
@@ -56,7 +55,11 @@ export class PaymentsController {
   @SkipThrottle()
   @Post('webhook')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: false }))
-  async webhook(@Body() dto: MercadoPagoWebhookDto, @Req() req: Request, @Res() res: Response) {
+  async webhook(
+    @Body() dto: MercadoPagoWebhookDto,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     // Verify x-signature in production to prevent webhook forgery
     const xSignature = req.headers['x-signature'] as string;
     const xRequestId = req.headers['x-request-id'] as string;
@@ -68,7 +71,7 @@ export class PaymentsController {
     }
 
     try {
-      const result = await this.paymentsService.handleWebhook(dto, xSignature, xRequestId);
+      await this.paymentsService.handleWebhook(dto, xSignature, xRequestId);
       return res.status(HttpStatus.OK).json({ received: true });
     } catch {
       // Always return 200 — never expose errors to caller

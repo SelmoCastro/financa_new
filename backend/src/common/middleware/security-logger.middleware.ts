@@ -31,9 +31,10 @@ export class SecurityLoggerMiddleware implements NestMiddleware {
 
       // Only log: errors, mutations, auth routes, and slow requests (>5s)
       if (isError || isMutating || isAuthRoute || duration > 5000) {
-        const severity = status >= 500 ? 'CRITICAL' : status >= 400 ? 'WARN' : 'INFO';
+        const severity =
+          status >= 500 ? 'CRITICAL' : status >= 400 ? 'WARN' : 'INFO';
         this.logger.log(
-          `${severity} ${method} ${this.sanitizeUrl(originalUrl)} ${status} ${duration}ms ip=${ip}`
+          `${severity} ${method} ${this.sanitizeUrl(originalUrl)} ${status} ${duration}ms ip=${ip}`,
         );
       }
     });

@@ -1,4 +1,13 @@
-import { IsString, IsUUID, IsNotEmpty, IsOptional, IsNumber, Min, Max, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsUUID,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateCreditCardDto {
   @IsString()

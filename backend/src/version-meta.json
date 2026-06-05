@@ -1,6 +1,6 @@
 {
-  "version": "1.10.7",
-  "mobileVersion": "1.10.7",
+  "version": "1.10.8",
+  "mobileVersion": "1.10.8",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Segurança: CORS ancorado, exceções sanitizadas, throttle menos agressivo em 401, GTM externalizado para CSP sem inline, cache offline mobile criptografado em AES com chave no SecureStore"
+  "releaseNotes": "Lint 76% limpo: eslint de 1547→375 problemas, 78/78 testes, tsc frontend zerado, todos os controllers tipados com RequestWithUser, floating promises tratadas, unused vars removidas"
 }

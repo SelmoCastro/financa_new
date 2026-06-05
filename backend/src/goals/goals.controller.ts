@@ -18,6 +18,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 import { PlanGuard, REQUIRED_PLAN_KEY } from '../subscription/plan.guard';
 import { SetMetadata } from '@nestjs/common';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'goals',
@@ -31,7 +32,10 @@ export class GoalsController {
   @RequireVerifiedEmail()
   @UseGuards(PlanGuard)
   @SetMetadata(REQUIRED_PLAN_KEY, 'free')
-  create(@Body() createGoalDto: CreateGoalDto, @Request() req) {
+  create(
+    @Body() createGoalDto: CreateGoalDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.goalsService.create(createGoalDto, req.user.userId);
   }
 
@@ -40,22 +44,26 @@ export class GoalsController {
   async deposit(
     @Param('id') id: string,
     @Body() body: DepositGoalDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     const goal = await this.goalsService.findOne(id, req.user.userId);
     if (!goal) throw new NotFoundException('Meta não encontrada');
-    
+
     const currentAmount = Number(goal.currentAmount) + Number(body.amount);
-    return this.goalsService.update(id, { currentAmount } as any, req.user.userId);
+    return this.goalsService.update(
+      id,
+      { currentAmount } as any,
+      req.user.userId,
+    );
   }
 
   @Get()
-  findAll(@Request() req) {
+  findAll(@Request() req: RequestWithUser) {
     return this.goalsService.findAll(req.user.userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Request() req) {
+  findOne(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.goalsService.findOne(id, req.user.userId);
   }
 
@@ -64,14 +72,14 @@ export class GoalsController {
   update(
     @Param('id') id: string,
     @Body() updateGoalDto: UpdateGoalDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.goalsService.update(id, updateGoalDto, req.user.userId);
   }
 
   @Delete(':id')
   @RequireVerifiedEmail()
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.goalsService.remove(id, req.user.userId);
   }
 }

@@ -12,6 +12,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { SocialService } from './social.service';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'social',
@@ -22,7 +23,7 @@ export class SocialController {
   constructor(private readonly socialService: SocialService) {}
 
   @Get('invites')
-  async findAllInvites(@Request() req) {
+  async findAllInvites(@Request() req: RequestWithUser) {
     return this.socialService.findAllReceived(req.user.userId);
   }
 
@@ -31,7 +32,7 @@ export class SocialController {
   async acceptInvite(
     @Param('id') id: string,
     @Body() body: AcceptInviteDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.socialService.acceptInvite(
       id,
@@ -42,7 +43,7 @@ export class SocialController {
   }
 
   @Patch('invites/:id/reject')
-  async rejectInvite(@Param('id') id: string, @Request() req) {
+  async rejectInvite(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.socialService.rejectInvite(id, req.user.userId);
   }
 }

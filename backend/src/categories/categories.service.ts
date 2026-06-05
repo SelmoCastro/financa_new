@@ -19,7 +19,12 @@ const STANDARD_CATEGORIES = [
     color: '#6ee7b7',
     icon: 'RefreshCw',
   },
-  { name: 'Empréstimo Recebido', type: 'INCOME', color: '#a7f3d0', icon: 'Handshake' },
+  {
+    name: 'Empréstimo Recebido',
+    type: 'INCOME',
+    color: '#a7f3d0',
+    icon: 'Handshake',
+  },
 
   // Necessidades (Essencial)
   { name: 'Moradia', type: 'EXPENSE', color: '#ef4444', icon: 'Home' },
@@ -29,7 +34,12 @@ const STANDARD_CATEGORIES = [
     color: '#dc2626',
     icon: 'Lightbulb',
   },
-  { name: 'Mercado / Padaria', type: 'EXPENSE', color: '#f87171', icon: 'ShoppingCart' },
+  {
+    name: 'Mercado / Padaria',
+    type: 'EXPENSE',
+    color: '#f87171',
+    icon: 'ShoppingCart',
+  },
   { name: 'Transporte Fixo', type: 'EXPENSE', color: '#b91c1c', icon: 'Bus' },
   {
     name: 'Combustível / Gasolina',
@@ -37,15 +47,30 @@ const STANDARD_CATEGORIES = [
     color: '#ea580c',
     icon: 'Fuel',
   },
-  { name: 'Saúde e Farmácia', type: 'EXPENSE', color: '#fca5a5', icon: 'Stethoscope' },
-  { name: 'Educação', type: 'EXPENSE', color: '#991b1b', icon: 'GraduationCap' },
+  {
+    name: 'Saúde e Farmácia',
+    type: 'EXPENSE',
+    color: '#fca5a5',
+    icon: 'Stethoscope',
+  },
+  {
+    name: 'Educação',
+    type: 'EXPENSE',
+    color: '#991b1b',
+    icon: 'GraduationCap',
+  },
   {
     name: 'Impostos Anuais e Seguros',
     type: 'EXPENSE',
     color: '#7f1d1d',
     icon: 'Shield',
   },
-  { name: 'Impostos Mensais', type: 'EXPENSE', color: '#fecaca', icon: 'FileText' },
+  {
+    name: 'Impostos Mensais',
+    type: 'EXPENSE',
+    color: '#fecaca',
+    icon: 'FileText',
+  },
 
   // Desejos (Estilo de Vida)
   {
@@ -67,7 +92,12 @@ const STANDARD_CATEGORIES = [
     color: '#b45309',
     icon: 'ShoppingBag',
   },
-  { name: 'Cuidados Pessoais', type: 'EXPENSE', color: '#fcd34d', icon: 'Sparkles' },
+  {
+    name: 'Cuidados Pessoais',
+    type: 'EXPENSE',
+    color: '#fcd34d',
+    icon: 'Sparkles',
+  },
   { name: 'Cuidados com Pets', type: 'EXPENSE', color: '#fb923c', icon: 'Dog' },
   { name: 'Viagens', type: 'EXPENSE', color: '#78350f', icon: 'Plane' },
 
@@ -153,9 +183,12 @@ export class CategoriesService {
       where: { id, userId, deletedAt: null },
       data: updateCategoryDto,
     });
-    if (result.count === 0) throw new NotFoundException('Categoria não encontrada');
+    if (result.count === 0)
+      throw new NotFoundException('Categoria não encontrada');
     // IDOR fix: include userId in findFirst to prevent cross-tenant data access
-    return this.prisma.category.findFirst({ where: { id, userId, deletedAt: null } });
+    return this.prisma.category.findFirst({
+      where: { id, userId, deletedAt: null },
+    });
   }
 
   async remove(id: string, userId: string) {
@@ -164,7 +197,8 @@ export class CategoriesService {
       where: { id, userId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
-    if (result.count === 0) throw new NotFoundException('Categoria não encontrada');
+    if (result.count === 0)
+      throw new NotFoundException('Categoria não encontrada');
     return { deleted: true };
   }
 }

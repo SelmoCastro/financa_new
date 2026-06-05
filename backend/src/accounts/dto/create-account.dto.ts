@@ -1,4 +1,13 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, Min, Max, IsIn, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Min,
+  Max,
+  IsIn,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateAccountDto {
   @IsString()
@@ -6,10 +15,10 @@ export class CreateAccountDto {
   @MaxLength(100)
   name: string;
 
-   @IsString()
-   @IsNotEmpty()
-   @IsIn(['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH', 'WALLET', 'OTHER'])
-   type: string;
+  @IsString()
+  @IsNotEmpty()
+  @IsIn(['CHECKING', 'SAVINGS', 'INVESTMENT', 'CASH', 'WALLET', 'OTHER'])
+  type: string;
 
   @IsNumber()
   @IsOptional()

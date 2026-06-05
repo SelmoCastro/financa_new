@@ -2,13 +2,16 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { PayInvoiceDto } from './dto/pay-invoice.dto';
-import { Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+
 import { EncryptionService } from '../common/services/encryption.service';
-import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
+import {
+  encryptAmount,
+  decryptAmount,
+  atomicBalanceUpdate,
+} from '../common/services/balance-helper';
 
 /**
  * Serviço de faturas de cartão de crédito.
@@ -36,7 +39,9 @@ export class CreditCardInvoiceService {
       where: { id: creditCardId, userId, deletedAt: null },
     });
     if (!card) {
-      throw new NotFoundException('Cartão de crédito não encontrado ou não pertence a este usuário');
+      throw new NotFoundException(
+        'Cartão de crédito não encontrado ou não pertence a este usuário',
+      );
     }
     return card;
   }
@@ -50,7 +55,9 @@ export class CreditCardInvoiceService {
       include: { creditCard: true },
     });
     if (!invoice) {
-      throw new NotFoundException('Fatura não encontrada ou não pertence a este usuário');
+      throw new NotFoundException(
+        'Fatura não encontrada ou não pertence a este usuário',
+      );
     }
     return invoice;
   }
@@ -71,7 +78,11 @@ export class CreditCardInvoiceService {
   ) {
     // Data de fechamento no mês de referência
     // O último dia do mês pode ser 28, 29, 30 ou 31 — usamos Date para resolver
-    const closingDate = new Date(refYear, refMonth - 1, Math.min(closingDay, 28));
+    const closingDate = new Date(
+      refYear,
+      refMonth - 1,
+      Math.min(closingDay, 28),
+    );
     // Ajusta para o último dia do mês se closingDay > dias do mês
     if (closingDate.getMonth() !== refMonth - 1) {
       closingDate.setDate(0); // último dia do mês anterior (refMonth - 1)
@@ -144,7 +155,15 @@ export class CreditCardInvoiceService {
     }
 
     const startDate = new Date(prevYear, prevMonth - 1, closingDay + 1);
-    const endDate = new Date(refYear, refMonth - 1, closingDay, 23, 59, 59, 999);
+    const endDate = new Date(
+      refYear,
+      refMonth - 1,
+      closingDay,
+      23,
+      59,
+      59,
+      999,
+    );
 
     return { startDate, endDate };
   }
@@ -183,12 +202,6 @@ export class CreditCardInvoiceService {
       card.dueDay,
       refMonth,
       refYear,
-    );
-
-    const { startDate, endDate } = this.getTransactionPeriod(
-      refMonth,
-      refYear,
-      card.closingDay,
     );
 
     // Busca TODAS as transações de crédito não faturadas (sem filtro de data restrito)
@@ -250,7 +263,9 @@ export class CreditCardInvoiceService {
       },
     });
     if (existing) {
-      throw new BadRequestException('Já existe uma fatura fechada para este período');
+      throw new BadRequestException(
+        'Já existe uma fatura fechada para este período',
+      );
     }
 
     const { closingDate, dueDate } = this.calcInvoiceDates(
@@ -337,13 +352,8 @@ export class CreditCardInvoiceService {
    * - Se paidAmount >= totalAmount, marca isPaid=true e paidAt=now
    * - Se a fatura já está paga (isPaid=true), lança erro
    */
-  async payInvoice(
-    invoiceId: string,
-    dto: PayInvoiceDto,
-    userId: string,
-  ) {
+  async payInvoice(invoiceId: string, dto: PayInvoiceDto, userId: string) {
     const invoice = await this.getInvoiceOrThrow(invoiceId, userId);
-
     if (invoice.isPaid) {
       throw new BadRequestException('Esta fatura já está paga');
     }
@@ -353,10 +363,14 @@ export class CreditCardInvoiceService {
       where: { id: dto.accountId, userId, deletedAt: null },
     });
     if (!account) {
-      throw new NotFoundException('Conta não encontrada ou não pertence a este usuário');
+      throw new NotFoundException(
+        'Conta não encontrada ou não pertence a este usuário',
+      );
     }
 
-    const remaining = decryptAmount(invoice.totalAmount, this.encryption) - decryptAmount(invoice.paidAmount, this.encryption);
+    const remaining =
+      decryptAmount(invoice.totalAmount, this.encryption) -
+      decryptAmount(invoice.paidAmount, this.encryption);
     const payAmount = dto.amount !== undefined ? dto.amount : remaining;
 
     if (payAmount <= 0) {
@@ -371,10 +385,19 @@ export class CreditCardInvoiceService {
 
     return this.prisma.$transaction(async (tx) => {
       // Debita da conta using atomic balance update with overdraft check
-      await atomicBalanceUpdate(tx, dto.accountId, userId, -payAmount, this.encryption, true);
+      await atomicBalanceUpdate(
+        tx,
+        dto.accountId,
+        userId,
+        -payAmount,
+        this.encryption,
+        true,
+      );
 
-      const newPaidAmount = decryptAmount(invoice.paidAmount, this.encryption) + payAmount;
-      const isPaid = newPaidAmount >= decryptAmount(invoice.totalAmount, this.encryption);
+      const newPaidAmount =
+        decryptAmount(invoice.paidAmount, this.encryption) + payAmount;
+      const isPaid =
+        newPaidAmount >= decryptAmount(invoice.totalAmount, this.encryption);
 
       // Atualiza a fatura (updateMany não aceita include, fazemos em seguida)
       await tx.creditCardInvoice.updateMany({
@@ -388,7 +411,10 @@ export class CreditCardInvoiceService {
 
       const updated = await tx.creditCardInvoice.findUnique({
         where: { id: invoiceId },
-        include: { transactions: { include: { category: true } }, creditCard: true },
+        include: {
+          transactions: { include: { category: true } },
+          creditCard: true,
+        },
       });
 
       // Cria transação de pagamento da fatura para rastreabilidade
@@ -442,7 +468,13 @@ export class CreditCardInvoiceService {
     // Busca todos os cartões ativos cujo fechamento é hoje
     const cards = await this.prisma.creditCard.findMany({
       where: { deletedAt: null },
-      select: { id: true, userId: true, closingDay: true, dueDay: true, name: true },
+      select: {
+        id: true,
+        userId: true,
+        closingDay: true,
+        dueDay: true,
+        name: true,
+      },
     });
 
     const dueCards = cards.filter((c) => c.closingDay === closingDay);
@@ -477,7 +509,10 @@ export class CreditCardInvoiceService {
         closed++;
       } catch (error) {
         // Log but don't fail the batch — one failing card shouldn't block others
-        console.error(`Failed to close invoice for card ${card.id.slice(0, 8)}...:`, (error as Error).message);
+        console.error(
+          `Failed to close invoice for card ${card.id.slice(0, 8)}...:`,
+          (error as Error).message,
+        );
         skipped++;
       }
     }
@@ -494,8 +529,7 @@ export class CreditCardInvoiceService {
    * - Deleta a fatura
    */
   async remove(invoiceId: string, userId: string) {
-    const invoice = await this.getInvoiceOrThrow(invoiceId, userId);
-
+    await this.getInvoiceOrThrow(invoiceId, userId);
     return this.prisma.$transaction(async (tx) => {
       // 1. Busca transações de PAGAMENTO vinculadas a esta fatura
       //    (criadas pelo payInvoice — são EXPENSE com accountId + invoiceId)
@@ -516,7 +550,13 @@ export class CreditCardInvoiceService {
         if (p.accountId) {
           const payAmount = decryptAmount(p.amount, this.encryption);
           // Reverte: pagamento é EXPENSE que decrementou → agora incrementa
-          await atomicBalanceUpdate(tx, p.accountId, userId, payAmount, this.encryption);
+          await atomicBalanceUpdate(
+            tx,
+            p.accountId,
+            userId,
+            payAmount,
+            this.encryption,
+          );
         }
       }
 
@@ -541,7 +581,10 @@ export class CreditCardInvoiceService {
 
       return {
         deleted: true,
-        revertedAmount: paymentTxs.reduce((sum, t) => sum + decryptAmount(t.amount, this.encryption), 0),
+        revertedAmount: paymentTxs.reduce(
+          (sum, t) => sum + decryptAmount(t.amount, this.encryption),
+          0,
+        ),
         revertedPayments: paymentTxs.length,
       };
     });

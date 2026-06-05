@@ -1,9 +1,9 @@
 /**
  * encrypt-existing-data.ts
- * 
+ *
  * One-time migration: encrypts all existing plaintext financial fields
  * using AES-256-GCM. Idempotent — skips already-encrypted records.
- * 
+ *
  * Usage: ENCRYPTION_KEY=xxx npx ts-node -r tsconfig-paths/register src/scripts/encrypt-existing-data.ts
  */
 
@@ -47,15 +47,34 @@ const MODELS: MigrateConfig[] = [
   { model: 'transaction', pk: 'id', fields: ['amount'], softDelete: true },
   { model: 'account', pk: 'id', fields: ['balance'], softDelete: true },
   { model: 'creditCard', pk: 'id', fields: ['limit'], softDelete: true },
-  { model: 'creditCardInvoice', pk: 'id', fields: ['totalAmount', 'paidAmount'], softDelete: false },
-  { model: 'creditCardInstallment', pk: 'id', fields: ['totalAmount', 'amountPerMonth', 'entryAmount'], softDelete: false },
+  {
+    model: 'creditCardInvoice',
+    pk: 'id',
+    fields: ['totalAmount', 'paidAmount'],
+    softDelete: false,
+  },
+  {
+    model: 'creditCardInstallment',
+    pk: 'id',
+    fields: ['totalAmount', 'amountPerMonth', 'entryAmount'],
+    softDelete: false,
+  },
   { model: 'budget', pk: 'id', fields: ['amount'], softDelete: true },
-  { model: 'goal', pk: 'id', fields: ['targetAmount', 'currentAmount'], softDelete: true },
-  { model: 'recurringTransaction', pk: 'id', fields: ['amount'], softDelete: false },
+  {
+    model: 'goal',
+    pk: 'id',
+    fields: ['targetAmount', 'currentAmount'],
+    softDelete: true,
+  },
+  {
+    model: 'recurringTransaction',
+    pk: 'id',
+    fields: ['amount'],
+    softDelete: false,
+  },
 ];
 
 async function migrateModel(cfg: MigrateConfig) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const model: any = (prisma as any)[cfg.model];
   if (!model) {
     console.error(`❌ Model ${cfg.model} not found`);
@@ -77,7 +96,11 @@ async function migrateModel(cfg: MigrateConfig) {
 
     for (const field of cfg.fields) {
       const value = record[field];
-      if (value !== null && value !== undefined && !isEncrypted(String(value))) {
+      if (
+        value !== null &&
+        value !== undefined &&
+        !isEncrypted(String(value))
+      ) {
         updates[field] = encrypt(String(value));
         needsUpdate = true;
       }
@@ -112,4 +135,4 @@ async function main() {
   }
 }
 
-main();
+void main();

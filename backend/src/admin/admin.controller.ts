@@ -1,6 +1,16 @@
-import { Controller, Get, Patch, Delete, Param, Body, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../common/guards/admin.guard';
+import { RequestWithUser } from '../common/types/request-with-user';
 import { AdminService } from './admin.service';
 import { UpdatePlanDto } from './dto/update-plan.dto';
 
@@ -14,31 +24,31 @@ export class AdminController {
 
   /** GET /v1/admin/stats — Numeros gerais */
   @Get('stats')
-  getStats(@Request() req) {
+  getStats(@Request() req: RequestWithUser) {
     return this.adminService.getStats(req.user.userId);
   }
 
   /** GET /v1/admin/users — Lista usuarios com contadores */
   @Get('users')
-  getUsers(@Request() req) {
+  getUsers(@Request() req: RequestWithUser) {
     return this.adminService.getUsers(req.user.userId);
   }
 
   /** GET /v1/admin/activity — Atividade recente */
   @Get('activity')
-  getRecentActivity(@Request() req) {
+  getRecentActivity(@Request() req: RequestWithUser) {
     return this.adminService.getRecentActivity(req.user.userId);
   }
 
   /** GET /v1/admin/health — Saude do sistema */
   @Get('health')
-  getSystemHealth(@Request() req) {
+  getSystemHealth(@Request() req: RequestWithUser) {
     return this.adminService.getSystemHealth(req.user.userId);
   }
 
   /** GET /v1/admin/plans — Stats de planos */
   @Get('plans')
-  getPlanStats(@Request() req) {
+  getPlanStats(@Request() req: RequestWithUser) {
     return this.adminService.getPlanStats(req.user.userId);
   }
 
@@ -47,7 +57,7 @@ export class AdminController {
   updateUserPlan(
     @Param('id') userId: string,
     @Body() dto: UpdatePlanDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.adminService.updateUserPlan(
       req.user.userId,
@@ -59,13 +69,13 @@ export class AdminController {
 
   /** GET /v1/admin/security — Security stats: behavioral throttle, audit summary */
   @Get('security')
-  getSecurityStats(@Request() req) {
+  getSecurityStats(@Request() req: RequestWithUser) {
     return this.adminService.getSecurityStats(req.user.userId);
   }
 
   /** DELETE /v1/admin/users/:id — Delete a user and all their data */
   @Delete('users/:id')
-  deleteUser(@Param('id') userId: string, @Request() req) {
+  deleteUser(@Param('id') userId: string, @Request() req: RequestWithUser) {
     return this.adminService.deleteUser(req.user.userId, userId);
   }
 }

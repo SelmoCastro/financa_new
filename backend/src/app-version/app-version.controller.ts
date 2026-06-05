@@ -31,11 +31,11 @@ export class AppVersionController {
       // but path.resolve(__dirname, '..', '..') resolves to project root, not dist/
       // So try dist/ first, then fallback to src/ (for dev), then project root
       const possiblePaths = [
-        path.resolve(__dirname, '..', 'version-meta.json'),     // dist/version-meta.json
-        path.resolve(__dirname, '..', '..', 'src', 'version-meta.json'),  // src/version-meta.json
-        path.resolve(__dirname, '..', '..', 'version-meta.json'),  // root version-meta.json
+        path.resolve(__dirname, '..', 'version-meta.json'), // dist/version-meta.json
+        path.resolve(__dirname, '..', '..', 'src', 'version-meta.json'), // src/version-meta.json
+        path.resolve(__dirname, '..', '..', 'version-meta.json'), // root version-meta.json
       ];
-      
+
       let metaPath = possiblePaths[0];
       for (const p of possiblePaths) {
         if (fs.existsSync(p)) {
@@ -43,7 +43,7 @@ export class AppVersionController {
           break;
         }
       }
-      
+
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
       minRequiredVersion = meta.minRequiredVersion || '1.0.0';
       // Use mobileVersion from meta if set, otherwise fall back to package.json version

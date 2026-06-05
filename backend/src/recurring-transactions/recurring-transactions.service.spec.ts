@@ -31,9 +31,7 @@ describe('RecurringTransactionsService', () => {
   });
 
   it('returns zero weight when there is no income in the current month', async () => {
-    prisma.recurringTransaction.findMany.mockResolvedValue([
-      { amount: '132' },
-    ]);
+    prisma.recurringTransaction.findMany.mockResolvedValue([{ amount: '132' }]);
     prisma.transaction.findMany.mockResolvedValue([]);
 
     const result = await service.getWeight('user-1');
@@ -51,9 +49,7 @@ describe('RecurringTransactionsService', () => {
       { amount: '132' },
       { amount: '68' },
     ]);
-    prisma.transaction.findMany.mockResolvedValue([
-      { amount: '1000' },
-    ]);
+    prisma.transaction.findMany.mockResolvedValue([{ amount: '1000' }]);
 
     const result = await service.getWeight('user-1');
 

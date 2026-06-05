@@ -33,6 +33,7 @@ import { OcrService } from '../common/services/ocr.service';
 import { ReportsService } from '../reports/reports.service';
 import { memoryStorage } from 'multer';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'transactions',
@@ -50,7 +51,10 @@ export class TransactionsController {
 
   @Post()
   @RequireVerifiedEmail()
-  create(@Body() createTransactionDto: CreateTransactionDto, @Request() req) {
+  create(
+    @Body() createTransactionDto: CreateTransactionDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.transactionsService.create(
       createTransactionDto,
       req.user.userId,
@@ -59,15 +63,19 @@ export class TransactionsController {
 
   @Post('transfer')
   @RequireVerifiedEmail()
-  transfer(@Body() transferDto: TransferTransactionDto, @Request() req) {
+  transfer(
+    @Body() transferDto: TransferTransactionDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.transactionsService.transfer(transferDto, req.user.userId);
   }
 
   @Post('import/validate')
   @RequireVerifiedEmail()
   validateImport(
-    @Body(new ParseArrayPipe({ items: ImportValidateTransactionDto })) importData: ImportValidateTransactionDto[],
-    @Request() req,
+    @Body(new ParseArrayPipe({ items: ImportValidateTransactionDto }))
+    importData: ImportValidateTransactionDto[],
+    @Request() req: RequestWithUser,
   ) {
     if (importData && importData.length > 500) {
       throw new BadRequestException('Maximum 500 transactions per import');
@@ -103,7 +111,7 @@ export class TransactionsController {
   )
   async importReceipt(
     @UploadedFile() file: Express.Multer.File,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     try {
       if (!file) {
@@ -140,7 +148,10 @@ export class TransactionsController {
           this.logger.log(
             'Visão não conseguiu extrair dados, tentando OCR local como fallback... ',
           );
-          const ocrText = await this.ocrService.extractText(fileBuffer, mimeType);
+          const ocrText = await this.ocrService.extractText(
+            fileBuffer,
+            mimeType,
+          );
           if (ocrText) {
             this.logger.log('OCR local OK, enviando texto para IA...');
             const ocrResult = await this.aiService.extractFromOcrText(
@@ -177,7 +188,9 @@ export class TransactionsController {
           }
         } else {
           // Fallback: envia PDF diretamente para modelo de visão (OpenRouter)
-          this.logger.log('OCR falhou/indisponivel ou ficou fraco, usando modelo de visao...');
+          this.logger.log(
+            'OCR falhou/indisponivel ou ficou fraco, usando modelo de visao...',
+          );
           result = await this.aiService.extractFromReceipt(
             fileBase64,
             mimeType,
@@ -268,7 +281,10 @@ export class TransactionsController {
 
   @Post('import/confirm')
   @RequireVerifiedEmail()
-  confirmImport(@Body() payload: ImportConfirmPayloadDto, @Request() req) {
+  confirmImport(
+    @Body() payload: ImportConfirmPayloadDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.transactionsService.confirmImport(
       payload.transactions,
       req.user.userId,
@@ -278,7 +294,7 @@ export class TransactionsController {
 
   @Get()
   findAll(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Query('year') year?: string,
     @Query('month') month?: string,
   ) {
@@ -292,13 +308,13 @@ export class TransactionsController {
   }
 
   @Get('projection')
-  getProjection(@Request() req) {
+  getProjection(@Request() req: RequestWithUser) {
     return this.reportsService.getProjection(req.user.userId);
   }
 
   @Get('dashboard-summary')
   getDashboardSummary(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Query('year') year?: string,
     @Query('month') month?: string,
   ) {
@@ -307,12 +323,14 @@ export class TransactionsController {
     return this.reportsService.getDashboardSummary(
       req.user.userId,
       parsedYear !== undefined && !isNaN(parsedYear) ? parsedYear : undefined,
-      parsedMonth !== undefined && !isNaN(parsedMonth) ? parsedMonth : undefined,
+      parsedMonth !== undefined && !isNaN(parsedMonth)
+        ? parsedMonth
+        : undefined,
     );
   }
 
   @Get('export')
-  async export(@Request() req, @Res() res: Response) {
+  async export(@Request() req: RequestWithUser, @Res() res: Response) {
     const csvData = await this.transactionsService.export(req.user.userId);
     res.header('Content-Type', 'text/csv; charset=utf-8');
     res.attachment('financa_export.csv');
@@ -321,12 +339,15 @@ export class TransactionsController {
   }
 
   @Get('export/report')
-  async exportReport(@Request() req) {
+  async exportReport(@Request() req: RequestWithUser) {
     return this.transactionsService.exportReport(req.user.userId);
   }
 
   @Get(':id')
-  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Request() req) {
+  findOne(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Request() req: RequestWithUser,
+  ) {
     return this.transactionsService.findOne(id, req.user.userId);
   }
 
@@ -335,7 +356,7 @@ export class TransactionsController {
   update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateTransactionDto: UpdateTransactionDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.transactionsService.update(
       id,
@@ -346,7 +367,10 @@ export class TransactionsController {
 
   @Delete(':id')
   @RequireVerifiedEmail()
-  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Request() req) {
+  remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Request() req: RequestWithUser,
+  ) {
     return this.transactionsService.remove(id, req.user.userId);
   }
 }

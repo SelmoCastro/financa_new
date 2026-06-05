@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRecurringTransactionDto } from './dto/create-recurring-transaction.dto';
 import { UpdateRecurringTransactionDto } from './dto/update-recurring-transaction.dto';
 import { EncryptionService } from '../common/services/encryption.service';
-import { encryptAmount, decryptAmount } from '../common/services/balance-helper';
+import {
+  encryptAmount,
+  decryptAmount,
+} from '../common/services/balance-helper';
 
 @Injectable()
 export class RecurringTransactionsService {
@@ -12,24 +19,36 @@ export class RecurringTransactionsService {
     private encryption: EncryptionService,
   ) {}
 
-  private async validateFkOwnership(dto: { accountId?: string; categoryId?: string; creditCardId?: string }, userId: string) {
+  private async validateFkOwnership(
+    dto: { accountId?: string; categoryId?: string; creditCardId?: string },
+    userId: string,
+  ) {
     if (dto.accountId) {
       const account = await this.prisma.account.findFirst({
         where: { id: dto.accountId, userId, deletedAt: null },
       });
-      if (!account) throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+      if (!account)
+        throw new BadRequestException(
+          'Conta não encontrada ou não pertence a este usuário',
+        );
     }
     if (dto.categoryId) {
       const category = await this.prisma.category.findFirst({
         where: { id: dto.categoryId, userId, deletedAt: null },
       });
-      if (!category) throw new BadRequestException('Categoria não encontrada ou não pertence a este usuário');
+      if (!category)
+        throw new BadRequestException(
+          'Categoria não encontrada ou não pertence a este usuário',
+        );
     }
     if (dto.creditCardId) {
       const card = await this.prisma.creditCard.findFirst({
         where: { id: dto.creditCardId, userId, deletedAt: null },
       });
-      if (!card) throw new BadRequestException('Cartão não encontrado ou não pertence a este usuário');
+      if (!card)
+        throw new BadRequestException(
+          'Cartão não encontrado ou não pertence a este usuário',
+        );
     }
   }
 
@@ -73,15 +92,22 @@ export class RecurringTransactionsService {
       where: { id, userId },
       data: {
         ...rest,
-        ...(amount !== undefined ? { amount: encryptAmount(amount, this.encryption) } : {}),
+        ...(amount !== undefined
+          ? { amount: encryptAmount(amount, this.encryption) }
+          : {}),
       },
     });
-    return this.prisma.recurringTransaction.findFirst({ where: { id, userId }, include: { category: true, account: true, creditCard: true } });
+    return this.prisma.recurringTransaction.findFirst({
+      where: { id, userId },
+      include: { category: true, account: true, creditCard: true },
+    });
   }
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    await this.prisma.recurringTransaction.deleteMany({ where: { id, userId } });
+    await this.prisma.recurringTransaction.deleteMany({
+      where: { id, userId },
+    });
     return { deleted: true };
   }
 
@@ -91,7 +117,10 @@ export class RecurringTransactionsService {
       where: { id, userId },
       data: { isActive: !rt.isActive },
     });
-    return this.prisma.recurringTransaction.findFirst({ where: { id, userId }, include: { category: true, account: true, creditCard: true } });
+    return this.prisma.recurringTransaction.findFirst({
+      where: { id, userId },
+      include: { category: true, account: true, creditCard: true },
+    });
   }
 
   /**
@@ -122,9 +151,10 @@ export class RecurringTransactionsService {
       (sum, t) => sum + decryptAmount(t.amount, this.encryption),
       0,
     );
-    const weight = monthlyIncome > 0
-      ? Math.round((totalFixedExpense / monthlyIncome) * 100)
-      : 0;
+    const weight =
+      monthlyIncome > 0
+        ? Math.round((totalFixedExpense / monthlyIncome) * 100)
+        : 0;
 
     return {
       totalFixedExpense: Math.round(totalFixedExpense * 100) / 100,

@@ -9,13 +9,13 @@ import { REQUIRE_VERIFIED_EMAIL_KEY } from './require-verified-email.decorator';
 
 /**
  * Guard de verificação de email.
- * 
+ *
  * Com SMTP configurado (Hostinger), novos usuários recebem email de verificação.
  * Usuários existentes com isEmailVerified=true continuam funcionando normalmente.
- * 
+ *
  * Para ATIVAR a verificação obrigatória (bloquear acesso Se email nao verificado):
  * Descomentar o bloco com ForbiddenException e remover o warning.
- * 
+ *
  * Por enquanto: loga warning mas permite acesso (soft mode).
  */
 @Injectable()
@@ -23,11 +23,10 @@ export class VerifiedEmailGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requireVerified =
-      this.reflector.getAllAndOverride<boolean>(
-        REQUIRE_VERIFIED_EMAIL_KEY,
-        [context.getHandler(), context.getClass()],
-      );
+    const requireVerified = this.reflector.getAllAndOverride<boolean>(
+      REQUIRE_VERIFIED_EMAIL_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requireVerified) {
       return true;

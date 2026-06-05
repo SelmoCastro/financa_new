@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  UseGuards,
-  Request,
-  Version,
-  VERSION_NEUTRAL,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards, VERSION_NEUTRAL } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from './common/guards/admin.guard';
@@ -23,7 +16,7 @@ export class AppController {
 
   @Get('health/email')
   @UseGuards(AuthGuard('jwt'), AdminGuard)
-  checkEmailConfig(@Request() req: { user?: { id?: string } }) {
+  checkEmailConfig() {
     const hasKey = !!process.env.RESEND_API_KEY;
     return {
       resendConfigured: hasKey,

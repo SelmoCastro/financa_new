@@ -1,11 +1,13 @@
-import { IsString, IsNumber, IsOptional, IsPositive, Min, IsUUID } from 'class-validator';
+import { IsNumber, IsOptional, IsPositive, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * DTO para pagamento (parcial ou total) de uma fatura.
  */
 export class PayInvoiceDto {
-  @ApiPropertyOptional({ description: 'Valor a pagar (padrão = valor restante da fatura)' })
+  @ApiPropertyOptional({
+    description: 'Valor a pagar (padrão = valor restante da fatura)',
+  })
   @IsOptional()
   @IsNumber()
   @IsPositive()

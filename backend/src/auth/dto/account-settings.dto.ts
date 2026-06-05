@@ -1,4 +1,11 @@
-import { IsString, MinLength, IsEmail, IsOptional, MaxLength, Matches, IsUUID } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  IsEmail,
+  IsOptional,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 
 export class ChangePasswordDto {
   @IsString()
@@ -9,7 +16,9 @@ export class ChangePasswordDto {
   @IsString()
   @MinLength(8) // V7: Aligned with CreateUserDto/ResetPasswordDto
   @MaxLength(72) // bcrypt truncates >72 bytes
-  @Matches(/^(?=.*[a-zA-Z])(?=.*\d)/, { message: 'Senha deve conter pelo menos uma letra e um número' })
+  @Matches(/^(?=.*[a-zA-Z])(?=.*\d)/, {
+    message: 'Senha deve conter pelo menos uma letra e um número',
+  })
   newPassword: string;
 }
 

@@ -91,9 +91,9 @@ export class AuditService {
           actorId: input.actorId || null,
           targetType: input.targetType || null,
           targetId: input.targetId || null,
-          previousState: input.previousState as any ?? undefined,
-          newState: input.newState as any ?? undefined,
-          details: input.details as any ?? {},
+          previousState: (input.previousState as any) ?? undefined,
+          newState: (input.newState as any) ?? undefined,
+          details: (input.details as any) ?? {},
           ip: input.ip || null,
           userAgent: input.userAgent || null,
           severity: input.severity || 'info',
@@ -105,7 +105,9 @@ export class AuditService {
     } catch (error) {
       // Audit logging must NEVER block the main operation.
       // Log the error but don't throw.
-      this.logger.error(`Failed to write audit log: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to write audit log: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -114,7 +116,9 @@ export class AuditService {
    * Returns { valid: boolean, brokenAt: string | null }
    * If the chain is broken, brokenAt contains the ID of the first invalid entry.
    */
-  async verifyChain(limit = 1000): Promise<{ valid: boolean; brokenAt: string | null; checked: number }> {
+  async verifyChain(
+    limit = 1000,
+  ): Promise<{ valid: boolean; brokenAt: string | null; checked: number }> {
     const entries = await this.prisma.auditLog.findMany({
       orderBy: { createdAt: 'asc' },
       take: limit,
@@ -134,7 +138,11 @@ export class AuditService {
     for (const entry of entries) {
       // Verify chain linkage
       if (entry.previousHash !== previousHash) {
-        return { valid: false, brokenAt: entry.id, checked: entries.indexOf(entry) + 1 };
+        return {
+          valid: false,
+          brokenAt: entry.id,
+          checked: entries.indexOf(entry) + 1,
+        };
       }
 
       // Verify hash integrity
@@ -150,7 +158,11 @@ export class AuditService {
       const expectedHash = createHash('sha256').update(hashInput).digest('hex');
 
       if (entry.hash !== expectedHash) {
-        return { valid: false, brokenAt: entry.id, checked: entries.indexOf(entry) + 1 };
+        return {
+          valid: false,
+          brokenAt: entry.id,
+          checked: entries.indexOf(entry) + 1,
+        };
       }
 
       previousHash = entry.hash;

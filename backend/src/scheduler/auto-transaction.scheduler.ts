@@ -203,7 +203,10 @@ export class AutoTransactionScheduler {
         );
       }
     } catch (error) {
-      this.logger.error('❌ Error processing invoice closing:', (error as Error).message);
+      this.logger.error(
+        '❌ Error processing invoice closing:',
+        (error as Error).message,
+      );
     }
 
     // 2. Notify users of unpaid invoices whose dueDay is today
@@ -251,8 +254,14 @@ export class AutoTransactionScheduler {
         continue;
       }
 
-      const invoiceTotalAmount = decryptAmount(invoice.totalAmount, this.encryption);
-      const invoicePaidAmount = decryptAmount(invoice.paidAmount, this.encryption);
+      const invoiceTotalAmount = decryptAmount(
+        invoice.totalAmount,
+        this.encryption,
+      );
+      const invoicePaidAmount = decryptAmount(
+        invoice.paidAmount,
+        this.encryption,
+      );
       const invoiceRemaining = invoiceTotalAmount - invoicePaidAmount;
 
       await this.notificationsService.create(invoice.userId, {

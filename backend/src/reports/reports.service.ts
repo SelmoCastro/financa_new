@@ -110,39 +110,54 @@ export class ReportsService {
     });
 
     const categoryAliases: Record<string, string> = {
-      'Assinaturas': 'Lazer / Assinaturas',
-      'Lazer': 'Lazer / Assinaturas',
-      'Alimentação': 'Mercado / Padaria',
-      'Mercado': 'Mercado / Padaria',
-      'Transporte': 'Transporte Fixo',
-      'Compras': 'Compras / Vestuário',
-      'Saúde': 'Saúde e Farmácia',
-      'Moradia': 'Moradia',
-      'Contas': 'Contas Residenciais',
+      Assinaturas: 'Lazer / Assinaturas',
+      Lazer: 'Lazer / Assinaturas',
+      Alimentação: 'Mercado / Padaria',
+      Mercado: 'Mercado / Padaria',
+      Transporte: 'Transporte Fixo',
+      Compras: 'Compras / Vestuário',
+      Saúde: 'Saúde e Farmácia',
+      Moradia: 'Moradia',
+      Contas: 'Contas Residenciais',
       'Contas e Serviços': 'Contas Residenciais',
-      'Educação': 'Educação',
+      Educação: 'Educação',
       'Investimentos (Aporte)': 'Aplicações / Poupança',
-      'Investimentos': 'Aplicações / Poupança',
-      'Poupança': 'Aplicações / Poupança',
-      'Dívidas': 'Pagamento de Dívidas',
-      'Celular': 'Contas Residenciais',
+      Investimentos: 'Aplicações / Poupança',
+      Poupança: 'Aplicações / Poupança',
+      Dívidas: 'Pagamento de Dívidas',
+      Celular: 'Contas Residenciais',
       'Manutenção Veicular': 'Transporte Fixo',
-      'Roupas': 'Compras / Vestuário',
+      Roupas: 'Compras / Vestuário',
       'Cartao Credito': 'Compras / Vestuário',
       'Cuidados Pessoais': 'Cuidados Pessoais',
     };
 
-    const transferCategoryNames = ['Transferência Recebida', 'Transferência Enviada'];
+    const transferCategoryNames = [
+      'Transferência Recebida',
+      'Transferência Enviada',
+    ];
 
     const needsCategories = [
-      'Moradia', 'Contas Residenciais', 'Mercado / Padaria',
-      'Transporte Fixo', 'Combustível / Gasolina', 'Saúde e Farmácia',
-      'Educação', 'Impostos Anuais e Seguros', 'Impostos Mensais',
+      'Moradia',
+      'Contas Residenciais',
+      'Mercado / Padaria',
+      'Transporte Fixo',
+      'Combustível / Gasolina',
+      'Saúde e Farmácia',
+      'Educação',
+      'Impostos Anuais e Seguros',
+      'Impostos Mensais',
     ];
     const wantsCategories = [
-      'Restaurante / Delivery', 'Transporte App', 'Lazer / Assinaturas',
-      'Compras / Vestuário', 'Cuidados Pessoais', 'Cuidados com Pets',
-      'Viagens', 'Outros', 'Cartao Credito',
+      'Restaurante / Delivery',
+      'Transporte App',
+      'Lazer / Assinaturas',
+      'Compras / Vestuário',
+      'Cuidados Pessoais',
+      'Cuidados com Pets',
+      'Viagens',
+      'Outros',
+      'Cartao Credito',
     ];
     const savingsCategories = ['Aplicações / Poupança', 'Pagamento de Dívidas'];
 
@@ -156,22 +171,31 @@ export class ReportsService {
     });
     const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
-    const classifyCategory = (catName: string): { name: string; isTransfer: boolean } => {
-      if (!catName || catName === 'null' || catName === 'undefined') return { name: 'Outros', isTransfer: false };
-      if (transferCategoryNames.includes(catName)) return { name: catName, isTransfer: true };
+    const classifyCategory = (
+      catName: string,
+    ): { name: string; isTransfer: boolean } => {
+      if (!catName || catName === 'null' || catName === 'undefined')
+        return { name: 'Outros', isTransfer: false };
+      if (transferCategoryNames.includes(catName))
+        return { name: catName, isTransfer: true };
       return { name: categoryAliases[catName] || catName, isTransfer: false };
     };
 
-    const excludedExpenseCategories = ['Outras Receitas', 'Entradas', 'Rendimento de Investimentos'];
+    const excludedExpenseCategories = [
+      'Outras Receitas',
+      'Entradas',
+      'Rendimento de Investimentos',
+    ];
 
     // Build category sums manually
     const categorySums = new Map<string, number>();
     for (const t of categoryTxs) {
       const val = this.dec(t.amount);
-      const rawCatName =
-        t.categoryId
-          ? categoryMap.get(t.categoryId)
-          : (t.categoryLegacy && t.categoryLegacy !== 'null' ? t.categoryLegacy : null);
+      const rawCatName = t.categoryId
+        ? categoryMap.get(t.categoryId)
+        : t.categoryLegacy && t.categoryLegacy !== 'null'
+          ? t.categoryLegacy
+          : null;
 
       const classified = classifyCategory(rawCatName || 'Outros');
       if (classified.isTransfer) continue;
@@ -196,7 +220,9 @@ export class ReportsService {
     categorySummary.sort((a, b) => b.value - a.value);
 
     // 5. Monthly History (Bar Chart)
-    const twelveMonthsAgo = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 11, 1));
+    const twelveMonthsAgo = new Date(
+      Date.UTC(now.getFullYear(), now.getMonth() - 11, 1),
+    );
     const allTxs = await this.prisma.transaction.findMany({
       where: {
         userId,
@@ -208,12 +234,18 @@ export class ReportsService {
       orderBy: { date: 'asc' },
     });
 
-    const monthlyMap = new Map<string, { income: number; expenses: number; month: string }>();
+    const monthlyMap = new Map<
+      string,
+      { income: number; expenses: number; month: string }
+    >();
     for (const t of allTxs) {
       const d = new Date(t.date);
       const monthKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
       if (!monthlyMap.has(monthKey)) {
-        const formatter = new Intl.DateTimeFormat('pt-BR', { month: 'short', timeZone: 'UTC' });
+        const formatter = new Intl.DateTimeFormat('pt-BR', {
+          month: 'short',
+          timeZone: 'UTC',
+        });
         const monthName = formatter.format(d);
         monthlyMap.set(monthKey, {
           income: 0,
@@ -257,7 +289,9 @@ export class ReportsService {
       select: { id: true, name: true, closingDay: true, dueDay: true },
     });
 
-    const closedCardIds = new Set(validUnpaidInvoices.map((inv) => inv.creditCardId));
+    const closedCardIds = new Set(
+      validUnpaidInvoices.map((inv) => inv.creditCardId),
+    );
     const currentMonth = new Date().getMonth() + 1;
     const currentYear = new Date().getFullYear();
 
@@ -290,7 +324,11 @@ export class ReportsService {
       const total = unlinkedTxs.reduce((sum, t) => sum + this.dec(t.amount), 0);
       if (total === 0) continue;
 
-      const closingDate = new Date(currentYear, currentMonth - 1, card.closingDay);
+      const closingDate = new Date(
+        currentYear,
+        currentMonth - 1,
+        card.closingDay,
+      );
       const dueDate = new Date(currentYear, currentMonth, card.dueDay);
 
       openInvoices.push({
@@ -307,14 +345,20 @@ export class ReportsService {
       });
     }
 
-    const allPendingInvoices = [...validUnpaidInvoices.map((inv) => ({
-      ...inv,
-      remaining: this.dec(inv.totalAmount) - this.dec(inv.paidAmount),
-      creditCardName: inv.creditCard.name,
-    })), ...openInvoices];
+    const allPendingInvoices = [
+      ...validUnpaidInvoices.map((inv) => ({
+        ...inv,
+        remaining: this.dec(inv.totalAmount) - this.dec(inv.paidAmount),
+        creditCardName: inv.creditCard.name,
+      })),
+      ...openInvoices,
+    ];
 
     const creditCardDebt = allPendingInvoices.reduce(
-      (sum, inv) => sum + (inv.remaining || (this.dec(inv.totalAmount as any) - this.dec(inv.paidAmount as any))),
+      (sum, inv) =>
+        sum +
+        (inv.remaining ||
+          this.dec(inv.totalAmount as any) - this.dec(inv.paidAmount as any)),
       0,
     );
 
@@ -330,19 +374,27 @@ export class ReportsService {
       rule503020: {
         needs: {
           value: needs,
-          percent: expenseBase > 0 ? Math.round((needs / expenseBase) * 1000) / 10 : 0,
+          percent:
+            expenseBase > 0 ? Math.round((needs / expenseBase) * 1000) / 10 : 0,
         },
         wants: {
           value: wants,
-          percent: expenseBase > 0 ? Math.round((wants / expenseBase) * 1000) / 10 : 0,
+          percent:
+            expenseBase > 0 ? Math.round((wants / expenseBase) * 1000) / 10 : 0,
         },
         savings: {
           value: savings,
-          percent: expenseBase > 0 ? Math.round((savings / expenseBase) * 1000) / 10 : 0,
+          percent:
+            expenseBase > 0
+              ? Math.round((savings / expenseBase) * 1000) / 10
+              : 0,
         },
         uncategorized: {
           value: uncategorized,
-          percent: expenseBase > 0 ? Math.round((uncategorized / expenseBase) * 1000) / 10 : 0,
+          percent:
+            expenseBase > 0
+              ? Math.round((uncategorized / expenseBase) * 1000) / 10
+              : 0,
         },
       },
       categorySummary,
@@ -397,8 +449,13 @@ export class ReportsService {
     // Aggregate manually and sort by amount desc
     const categoryAgg = new Map<string, number>();
     for (const t of topExpenseTxs) {
-      const catName = (t.categoryId ? categoryMap.get(t.categoryId) : t.categoryLegacy) || 'Outros';
-      categoryAgg.set(catName, (categoryAgg.get(catName) || 0) + this.dec(t.amount));
+      const catName =
+        (t.categoryId ? categoryMap.get(t.categoryId) : t.categoryLegacy) ||
+        'Outros';
+      categoryAgg.set(
+        catName,
+        (categoryAgg.get(catName) || 0) + this.dec(t.amount),
+      );
     }
     const formattedTopExpenses = Array.from(categoryAgg.entries())
       .map(([category, amount]) => ({ category, amount }))
@@ -423,8 +480,12 @@ export class ReportsService {
 
   async getHistoricalSpending(userId: string) {
     const now = new Date();
-    const startOfHistory = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 3, 1));
-    const endOfHistory = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999));
+    const startOfHistory = new Date(
+      Date.UTC(now.getFullYear(), now.getMonth() - 3, 1),
+    );
+    const endOfHistory = new Date(
+      Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999),
+    );
 
     const transactions = await this.prisma.transaction.findMany({
       where: {
@@ -433,7 +494,12 @@ export class ReportsService {
         deletedAt: null,
         date: { gte: startOfHistory, lte: endOfHistory },
       },
-      select: { amount: true, date: true, categoryId: true, categoryLegacy: true },
+      select: {
+        amount: true,
+        date: true,
+        categoryId: true,
+        categoryLegacy: true,
+      },
     });
 
     const categories = await this.prisma.category.findMany({
@@ -445,7 +511,8 @@ export class ReportsService {
       amount: this.dec(t.amount),
       date: t.date,
       category:
-        (t.categoryId ? categoryMap.get(t.categoryId) : t.categoryLegacy) || 'Outros',
+        (t.categoryId ? categoryMap.get(t.categoryId) : t.categoryLegacy) ||
+        'Outros',
     }));
   }
 
@@ -469,7 +536,6 @@ export class ReportsService {
 
   async getProjection(userId: string) {
     const now = new Date();
-    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     const userAccounts = await this.prisma.account.findMany({
       where: { userId, deletedAt: null },
@@ -491,7 +557,9 @@ export class ReportsService {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
-    const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999));
+    const endOfMonth = new Date(
+      Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999),
+    );
 
     const activeRecurring = await this.prisma.recurringTransaction.findMany({
       where: {
@@ -510,17 +578,28 @@ export class ReportsService {
       },
       select: { description: true },
     });
-    const confirmedSet = new Set(confirmedDescriptions.map((t) => t.description.toLowerCase().trim()));
+    const confirmedSet = new Set(
+      confirmedDescriptions.map((t) => t.description.toLowerCase().trim()),
+    );
 
     const upcomingIncome = activeRecurring
-      .filter((r) => r.type === 'INCOME' && !confirmedSet.has(r.description.toLowerCase().trim()))
+      .filter(
+        (r) =>
+          r.type === 'INCOME' &&
+          !confirmedSet.has(r.description.toLowerCase().trim()),
+      )
       .reduce((sum, r) => sum + this.dec(r.amount), 0);
 
     const upcomingExpenses = activeRecurring
-      .filter((r) => r.type === 'EXPENSE' && !confirmedSet.has(r.description.toLowerCase().trim()))
+      .filter(
+        (r) =>
+          r.type === 'EXPENSE' &&
+          !confirmedSet.has(r.description.toLowerCase().trim()),
+      )
       .reduce((sum, r) => sum + this.dec(r.amount), 0);
 
-    const projectedBalance = currentBalance + upcomingIncome - upcomingExpenses - creditCardDebt;
+    const projectedBalance =
+      currentBalance + upcomingIncome - upcomingExpenses - creditCardDebt;
 
     const days: Array<{ date: string; balance: number; events: string[] }> = [];
     const startDate = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
@@ -535,11 +614,18 @@ export class ReportsService {
       orderBy: { date: 'asc' },
     });
 
-    const txByDate = new Map<string, { type: string; amount: number; desc: string }[]>();
+    const txByDate = new Map<
+      string,
+      { type: string; amount: number; desc: string }[]
+    >();
     for (const tx of recentTxs) {
       const key = tx.date.toISOString().split('T')[0];
       if (!txByDate.has(key)) txByDate.set(key, []);
-      txByDate.get(key)!.push({ type: tx.type, amount: this.dec(tx.amount), desc: tx.description });
+      txByDate.get(key)!.push({
+        type: tx.type,
+        amount: this.dec(tx.amount),
+        desc: tx.description,
+      });
     }
 
     // Manual sum instead of aggregate _sum
@@ -563,8 +649,9 @@ export class ReportsService {
       },
       select: { amount: true },
     });
-    let runningBalance = incomeBeforeTxs.reduce((s, t) => s + this.dec(t.amount), 0)
-      - expenseBeforeTxs.reduce((s, t) => s + this.dec(t.amount), 0);
+    let runningBalance =
+      incomeBeforeTxs.reduce((s, t) => s + this.dec(t.amount), 0) -
+      expenseBeforeTxs.reduce((s, t) => s + this.dec(t.amount), 0);
 
     for (let i = 0; i < 30; i++) {
       const day = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
@@ -587,7 +674,9 @@ export class ReportsService {
 
       if (day >= now) {
         const dayItems = activeRecurring.filter(
-          (r) => r.dueDay === dayDueDay && !confirmedSet.has(r.description.toLowerCase().trim()),
+          (r) =>
+            r.dueDay === dayDueDay &&
+            !confirmedSet.has(r.description.toLowerCase().trim()),
         );
         for (const item of dayItems) {
           const val = this.dec(item.amount);
@@ -602,8 +691,12 @@ export class ReportsService {
 
         for (const inv of unpaidInvoices) {
           const dueDate = new Date(inv.dueDate);
-          if (dueDate.getDate() === dayDueDay && dueDate.getMonth() + 1 === dayMonth) {
-            const remaining = this.dec(inv.totalAmount) - this.dec(inv.paidAmount);
+          if (
+            dueDate.getDate() === dayDueDay &&
+            dueDate.getMonth() + 1 === dayMonth
+          ) {
+            const remaining =
+              this.dec(inv.totalAmount) - this.dec(inv.paidAmount);
             if (remaining > 0) {
               events.push(`Fatura cartão vence: R$${remaining.toFixed(2)}`);
             }

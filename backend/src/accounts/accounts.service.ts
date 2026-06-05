@@ -1,11 +1,14 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
-import { Prisma } from '@prisma/client';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { EncryptionService } from '../common/services/encryption.service';
-import { encryptAmount, decryptAmount, atomicBalanceUpdate } from '../common/services/balance-helper';
+import {
+  encryptAmount,
+  decryptAmount,
+  atomicBalanceUpdate,
+} from '../common/services/balance-helper';
 
 @Injectable()
 export class AccountsService {
@@ -17,58 +20,71 @@ export class AccountsService {
 
   async create(createAccountDto: CreateAccountDto, userId: string) {
     // V15: Atomic limit check + create to prevent race conditions
-    return this.subscriptionService.createWithLimitCheck(userId, 'account', async () => {
-      return this.prisma.$transaction(async (tx) => {
-      // 1. Create the account — balance starts at 0; the atomicBalanceUpdate below applies the initial balance.
-      // Using ...createAccountDto would set balance twice (once from DTO, once from update).
-      const { balance: _dtoBalance, ...accountData } = createAccountDto;
-      const account = await tx.account.create({
-        data: {
-          ...accountData,
-          balance: encryptAmount(0, this.encryption),
-          userId,
-        },
-      });
-
-      // 2. If initial balance is not zero, create a matching transaction record
-      const initialBalance = Number(createAccountDto.balance) || 0;
-      if (initialBalance !== 0) {
-        // Find or create 'Saldo Inicial' category
-        let category = await tx.category.findFirst({
-          where: { userId, name: 'Saldo Inicial', deletedAt: null },
-        });
-
-        if (!category) {
-          category = await tx.category.create({
+    return this.subscriptionService.createWithLimitCheck(
+      userId,
+      'account',
+      async () => {
+        return this.prisma.$transaction(async (tx) => {
+          // 1. Create the account — balance starts at 0; the atomicBalanceUpdate below applies the initial balance.
+          // Using ...createAccountDto would set balance twice (once from DTO, once from update).
+          const accountData = { ...createAccountDto, balance: undefined };
+          const account = await tx.account.create({
             data: {
-              name: 'Saldo Inicial',
+              ...accountData,
+              balance: encryptAmount(0, this.encryption),
               userId,
-              type: initialBalance > 0 ? 'INCOME' : 'EXPENSE',
-              icon: '💰',
             },
           });
-        }
 
-        await tx.transaction.create({
-          data: {
-            userId,
-            accountId: account.id,
-            categoryId: category.id,
-            description: 'Saldo Inicial',
-            amount: encryptAmount(Math.abs(initialBalance), this.encryption),
-            type: initialBalance > 0 ? 'INCOME' : 'EXPENSE',
-            date: new Date(), // Current date as starting point
-            classificationRule: 20, // Objectives/Savings by default
-          },
+          // 2. If initial balance is not zero, create a matching transaction record
+          const initialBalance = Number(createAccountDto.balance) || 0;
+          if (initialBalance !== 0) {
+            // Find or create 'Saldo Inicial' category
+            let category = await tx.category.findFirst({
+              where: { userId, name: 'Saldo Inicial', deletedAt: null },
+            });
+
+            if (!category) {
+              category = await tx.category.create({
+                data: {
+                  name: 'Saldo Inicial',
+                  userId,
+                  type: initialBalance > 0 ? 'INCOME' : 'EXPENSE',
+                  icon: '💰',
+                },
+              });
+            }
+
+            await tx.transaction.create({
+              data: {
+                userId,
+                accountId: account.id,
+                categoryId: category.id,
+                description: 'Saldo Inicial',
+                amount: encryptAmount(
+                  Math.abs(initialBalance),
+                  this.encryption,
+                ),
+                type: initialBalance > 0 ? 'INCOME' : 'EXPENSE',
+                date: new Date(), // Current date as starting point
+                classificationRule: 20, // Objectives/Savings by default
+              },
+            });
+
+            // 3. Update account balance with the initial balance
+            await atomicBalanceUpdate(
+              tx,
+              account.id,
+              userId,
+              initialBalance,
+              this.encryption,
+            );
+          }
+
+          return account;
         });
-
-        // 3. Update account balance with the initial balance
-        await atomicBalanceUpdate(tx, account.id, userId, initialBalance, this.encryption);
-      }
-
-      return account;
-      });
-    });
+      },
+    );
   }
 
   async findAll(userId: string) {
@@ -95,7 +111,9 @@ export class AccountsService {
     });
     if (result.count === 0) throw new NotFoundException('Conta não encontrada');
     // IDOR fix: include userId in findFirst to prevent cross-tenant data access
-    return this.prisma.account.findFirst({ where: { id, userId, deletedAt: null } });
+    return this.prisma.account.findFirst({
+      where: { id, userId, deletedAt: null },
+    });
   }
 
   async remove(id: string, userId: string) {
@@ -109,8 +127,10 @@ export class AccountsService {
       });
       let delta = 0;
       for (const t of transactions) {
-        if (t.type === 'INCOME') delta += decryptAmount(t.amount, this.encryption);
-        else if (t.type === 'EXPENSE') delta -= decryptAmount(t.amount, this.encryption);
+        if (t.type === 'INCOME')
+          delta += decryptAmount(t.amount, this.encryption);
+        else if (t.type === 'EXPENSE')
+          delta -= decryptAmount(t.amount, this.encryption);
         // TRANSFER handled by the other side
       }
       // Reverse the delta to bring account balance back to zero net contribution
@@ -141,7 +161,8 @@ export class AccountsService {
         where: { id, userId, deletedAt: null },
         data: { deletedAt: new Date() },
       });
-      if (result.count === 0) throw new NotFoundException('Conta não encontrada');
+      if (result.count === 0)
+        throw new NotFoundException('Conta não encontrada');
       return { deleted: true };
     });
   }
@@ -154,10 +175,13 @@ export class AccountsService {
     await this.subscriptionService.checkNotExceeding(userId, 'account', id);
     // V18: Lock the account row to prevent concurrent balance changes during reconciliation
     return this.prisma.$transaction(async (tx) => {
-      const accounts = await tx.$queryRaw<Array<{ id: string; balance: string }>>`
+      const accounts = await tx.$queryRaw<
+        Array<{ id: string; balance: string }>
+      >`
         SELECT id, balance FROM "Account" WHERE id = ${id} AND "userId" = ${userId} AND "deletedAt" IS NULL FOR UPDATE
       `;
-      if (accounts.length === 0) throw new NotFoundException('Conta não encontrada');
+      if (accounts.length === 0)
+        throw new NotFoundException('Conta não encontrada');
 
       // Sum all active transactions for this account
       const transactions = await tx.transaction.findMany({
@@ -167,11 +191,16 @@ export class AccountsService {
 
       let calculatedBalance = 0;
       for (const t of transactions) {
-        if (t.type === 'INCOME') calculatedBalance += decryptAmount(t.amount, this.encryption);
-        else if (t.type === 'EXPENSE') calculatedBalance -= decryptAmount(t.amount, this.encryption);
+        if (t.type === 'INCOME')
+          calculatedBalance += decryptAmount(t.amount, this.encryption);
+        else if (t.type === 'EXPENSE')
+          calculatedBalance -= decryptAmount(t.amount, this.encryption);
       }
 
-      const currentBalance = decryptAmount(accounts[0].balance, this.encryption);
+      const currentBalance = decryptAmount(
+        accounts[0].balance,
+        this.encryption,
+      );
       const drift = calculatedBalance - currentBalance;
 
       if (drift !== 0) {

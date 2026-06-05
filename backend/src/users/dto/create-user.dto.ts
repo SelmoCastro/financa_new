@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsOptional, IsString, MinLength, MaxLength, Matches, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  Matches,
+  IsBoolean,
+} from 'class-validator';
 import { IsValidEmail } from '../validators/is-valid-email.validator';
 
 export class CreateUserDto {
@@ -20,6 +28,8 @@ export class CreateUserDto {
   name?: string;
 
   @IsBoolean()
-  @IsNotEmpty({ message: 'Você deve aceitar os termos de uso para criar uma conta' })
+  @IsNotEmpty({
+    message: 'Você deve aceitar os termos de uso para criar uma conta',
+  })
   termsAccepted: boolean;
 }

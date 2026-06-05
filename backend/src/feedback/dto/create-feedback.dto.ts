@@ -7,7 +7,9 @@ export class CreateFeedbackDto {
   content: string;
 
   @IsString()
-  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase() : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase() : value,
+  )
   @IsIn(['web', 'mobile'])
   platform: string;
 }

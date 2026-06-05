@@ -14,7 +14,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   private sanitizeText(value: string) {
     return value
-      .replace(/([?&](?:token|refreshToken|access_token|password|email)=)[^&]*/gi, '$1[REDACTED]')
+      .replace(
+        /([?&](?:token|refreshToken|access_token|password|email)=)[^&]*/gi,
+        '$1[REDACTED]',
+      )
       .replace(/bearer\s+[a-z0-9._-]+/gi, 'Bearer [REDACTED]');
   }
 
@@ -29,12 +32,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (value && typeof value === 'object') {
       return Object.fromEntries(
-        Object.entries(value as Record<string, unknown>).map(([key, entryValue]) => {
-          if (/(token|password|authorization|cookie|email)/i.test(key)) {
-            return [key, '[REDACTED]'];
-          }
-          return [key, this.sanitizeUnknown(entryValue)];
-        }),
+        Object.entries(value as Record<string, unknown>).map(
+          ([key, entryValue]) => {
+            if (/(token|password|authorization|cookie|email)/i.test(key)) {
+              return [key, '[REDACTED]'];
+            }
+            return [key, this.sanitizeUnknown(entryValue)];
+          },
+        ),
       );
     }
 
@@ -61,12 +66,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const safePath = this.sanitizeText(request.url);
 
     if (exception instanceof HttpException && status >= 400 && status < 500) {
-      this.logger.warn(`HTTP ${status} ${request.method} ${safePath}: ${JSON.stringify(exceptionResponse)}`);
+      this.logger.warn(
+        `HTTP ${status} ${request.method} ${safePath}: ${JSON.stringify(exceptionResponse)}`,
+      );
     }
 
     let errorBody: Record<string, unknown>;
     if (typeof exceptionResponse === 'string') {
-      const sanitized = exceptionResponse.replace(/^Expected .+ in JSON at position \d+$/, 'Invalid request body');
+      const sanitized = exceptionResponse.replace(
+        /^Expected .+ in JSON at position \d+$/,
+        'Invalid request body',
+      );
       errorBody = { message: sanitized };
     } else if (isProduction && status >= 500) {
       errorBody = { message: 'Internal Server Error' };
@@ -74,9 +84,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const resp = exceptionResponse as Record<string, unknown>;
       errorBody = { message: resp.message || 'An error occurred' };
     } else {
-      errorBody = typeof exceptionResponse === 'object' && exceptionResponse !== null
-        ? exceptionResponse as Record<string, unknown>
-        : { message: String(exceptionResponse) };
+      errorBody =
+        typeof exceptionResponse === 'object' && exceptionResponse !== null
+          ? (exceptionResponse as Record<string, unknown>)
+          : { message: String(exceptionResponse) };
     }
 
     if (!(exception instanceof HttpException)) {

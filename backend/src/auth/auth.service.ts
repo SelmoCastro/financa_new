@@ -51,7 +51,13 @@ export class AuthService {
         data: { failedLoginAttempts: 0, lockedUntil: null },
       });
       // Audit log - successful login
-      this.auditService.log({ action: 'auth.login', actorId: user.id, targetType: 'User', targetId: user.id });
+      void this.auditService.log({
+        action: 'auth.login',
+        actorId: user.id,
+        targetType: 'User',
+        targetId: user.id,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user;
       return result;
     }
@@ -72,7 +78,13 @@ export class AuthService {
     });
 
     // Audit log - failed login
-    this.auditService.log({ action: 'auth.login_failed', actorId: user.id, targetType: 'User', targetId: user.id, severity: 'warn' });
+    void this.auditService.log({
+      action: 'auth.login_failed',
+      actorId: user.id,
+      targetType: 'User',
+      targetId: user.id,
+      severity: 'warn',
+    });
 
     throw new UnauthorizedException('Credenciais inválidas');
   }
@@ -82,18 +94,36 @@ export class AuthService {
    * The refresh token is NOT a JWT — it's a random opaque token tracked in the RefreshToken table.
    * This enables token rotation and replay detection (RFC 6819).
    */
-  async generateTokens(userId: string, email: string, isEmailVerified: boolean, isAdmin: boolean = false) {
+  async generateTokens(
+    userId: string,
+    email: string,
+    isEmailVerified: boolean,
+    isAdmin: boolean = false,
+  ) {
     const payload = { sub: userId, email, isEmailVerified, isAdmin };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
 
     // Use RefreshTokenService for opaque refresh tokens (Pilar 1: token family)
-    const { token: refreshToken } = await this.refreshTokenService.createFamily(userId);
+    const { token: refreshToken } =
+      await this.refreshTokenService.createFamily(userId);
 
     return { accessToken, refreshToken };
   }
 
-  async login(user: { id: string; email: string; password?: string; name?: string | null; isEmailVerified: boolean; isAdmin: boolean }) {
-    const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified, user.isAdmin);
+  async login(user: {
+    id: string;
+    email: string;
+    password?: string;
+    name?: string | null;
+    isEmailVerified: boolean;
+    isAdmin: boolean;
+  }) {
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.isEmailVerified,
+      user.isAdmin,
+    );
 
     return {
       access_token: tokens.accessToken, // Keeping for backward compatibility with mobile initially
@@ -120,12 +150,20 @@ export class AuthService {
   async refreshTokens(userId: string, refreshToken: string) {
     // Try RefreshTokenService first (Pilar 1: opaque token rotation)
     try {
-      const result = await this.refreshTokenService.rotate(userId, refreshToken);
+      const result = await this.refreshTokenService.rotate(
+        userId,
+        refreshToken,
+      );
       // Generate new access token
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) throw new Error('User not found');
       const accessToken = this.jwtService.sign(
-        { sub: userId, email: user.email, isEmailVerified: user.isEmailVerified, isAdmin: user.isAdmin },
+        {
+          sub: userId,
+          email: user.email,
+          isEmailVerified: user.isEmailVerified,
+          isAdmin: user.isAdmin,
+        },
         { expiresIn: '15m' },
       );
       return {
@@ -133,7 +171,10 @@ export class AuthService {
         refreshToken: result.token,
       };
     } catch (err: any) {
-      if (err.message === 'REFRESH_TOKEN_EXPIRED' || err.message === 'REFRESH_TOKEN_REUSE') {
+      if (
+        err.message === 'REFRESH_TOKEN_EXPIRED' ||
+        err.message === 'REFRESH_TOKEN_REUSE'
+      ) {
         throw new UnauthorizedException('Access Denied: ' + err.message);
       }
       // REFRESH_TOKEN_INVALID → fall through to legacy JWT path below
@@ -144,7 +185,10 @@ export class AuthService {
     if (!user || !user.hashedRefreshToken) {
       throw new UnauthorizedException('Access Denied');
     }
-    const refreshTokenMatches = await bcrypt.compare(refreshToken, user.hashedRefreshToken);
+    const refreshTokenMatches = await bcrypt.compare(
+      refreshToken,
+      user.hashedRefreshToken,
+    );
     if (!refreshTokenMatches) {
       await this.prisma.user.update({
         where: { id: userId },
@@ -152,13 +196,23 @@ export class AuthService {
       });
       throw new UnauthorizedException('Access Denied: Invalid Refresh Token');
     }
-    const tokens = await this.generateTokens(user.id, user.email, user.isEmailVerified, user.isAdmin);
-    return { access_token: tokens.accessToken, refreshToken: tokens.refreshToken };
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.isEmailVerified,
+      user.isAdmin,
+    );
+    return {
+      access_token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
   }
 
   async register(createUserDto: CreateUserDto) {
     if (!createUserDto.termsAccepted) {
-      throw new ForbiddenException('Você deve aceitar os termos de uso para criar uma conta');
+      throw new ForbiddenException(
+        'Você deve aceitar os termos de uso para criar uma conta',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
@@ -175,7 +229,11 @@ export class AuthService {
     // 🎁 Trial: 2 meses de premium grátis para novos usuários
     const twoMonthsFromNow = new Date();
     twoMonthsFromNow.setMonth(twoMonthsFromNow.getMonth() + 2);
-    await this.subscriptionService.upgrade(user.id, 'premium', twoMonthsFromNow);
+    await this.subscriptionService.upgrade(
+      user.id,
+      'premium',
+      twoMonthsFromNow,
+    );
 
     // Gerar token de verificação de email e enviar
     const verifyToken = crypto.randomBytes(32).toString('hex');
@@ -211,11 +269,15 @@ export class AuthService {
     // Find all EMAIL_VERIFY tokens and compare with bcrypt
     // (tokens are stored hashed, so we can't look up by plaintext)
     const candidates = await this.prisma.verificationToken.findMany({
-      where: { type: 'EMAIL_VERIFY', expiresAt: { gte: new Date() }, createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+      where: {
+        type: 'EMAIL_VERIFY',
+        expiresAt: { gte: new Date() },
+        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
       include: { user: true },
     });
 
-    let verificationToken: typeof candidates[number] | null = null;
+    let verificationToken: (typeof candidates)[number] | null = null;
     for (const candidate of candidates) {
       if (await bcrypt.compare(token, candidate.token)) {
         verificationToken = candidate;
@@ -289,11 +351,15 @@ export class AuthService {
   async resetPassword(token: string, newPassword: string) {
     // Find all PASSWORD_RESET tokens and compare with bcrypt (tokens are stored hashed)
     const candidates = await this.prisma.verificationToken.findMany({
-      where: { type: 'PASSWORD_RESET', expiresAt: { gte: new Date() }, createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) } },
+      where: {
+        type: 'PASSWORD_RESET',
+        expiresAt: { gte: new Date() },
+        createdAt: { gte: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+      },
       include: { user: true },
     });
 
-    let verificationToken: typeof candidates[number] | null = null;
+    let verificationToken: (typeof candidates)[number] | null = null;
     for (const candidate of candidates) {
       if (await bcrypt.compare(token, candidate.token)) {
         verificationToken = candidate;
@@ -318,13 +384,23 @@ export class AuthService {
     });
 
     // Audit log - password reset
-      this.auditService.log({ action: 'auth.password_change', actorId: verificationToken.userId, targetType: 'User', targetId: verificationToken.userId, severity: 'warn' });
+    void this.auditService.log({
+      action: 'auth.password_change',
+      actorId: verificationToken.userId,
+      targetType: 'User',
+      targetId: verificationToken.userId,
+      severity: 'warn',
+    });
 
     return { message: 'Password has been successfully updated' };
   }
 
   /** V2: Verify JWT signature instead of just decoding (prevents token forgery) */
-  decodeJwt(token: string): { sub: string; email: string; [key: string]: unknown } {
+  decodeJwt(token: string): {
+    sub: string;
+    email: string;
+    [key: string]: unknown;
+  } {
     return this.jwtService.verify(token, { ignoreExpiration: true });
   }
 
@@ -362,7 +438,11 @@ export class AuthService {
     return { name };
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
@@ -374,7 +454,9 @@ export class AuthService {
     }
 
     if (newPassword.length < 8) {
-      throw new BadRequestException('A nova senha deve ter pelo menos 8 caracteres');
+      throw new BadRequestException(
+        'A nova senha deve ter pelo menos 8 caracteres',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -384,7 +466,13 @@ export class AuthService {
     });
     await this.refreshTokenService.revokeAll(userId);
 
-    this.auditService.log({ action: 'auth.password_change', actorId: userId, targetType: 'User', targetId: userId, severity: 'warn' });
+    void this.auditService.log({
+      action: 'auth.password_change',
+      actorId: userId,
+      targetType: 'User',
+      targetId: userId,
+      severity: 'warn',
+    });
 
     return { message: 'Senha alterada com sucesso' };
   }
@@ -401,7 +489,9 @@ export class AuthService {
     }
 
     // Check if email is already in use
-    const existing = await this.prisma.user.findUnique({ where: { email: newEmail } });
+    const existing = await this.prisma.user.findUnique({
+      where: { email: newEmail },
+    });
     if (existing) {
       throw new BadRequestException('Este e-mail já está em uso');
     }
@@ -409,7 +499,11 @@ export class AuthService {
     // Update email and mark as unverified, revoke all sessions
     await this.prisma.user.update({
       where: { id: userId },
-      data: { email: newEmail, isEmailVerified: false, hashedRefreshToken: null },
+      data: {
+        email: newEmail,
+        isEmailVerified: false,
+        hashedRefreshToken: null,
+      },
     });
     await this.refreshTokenService.revokeAll(userId);
 
@@ -429,11 +523,16 @@ export class AuthService {
       .sendVerificationEmail(newEmail, user.name || 'Usuário', verifyToken)
       .catch(() => {
         if (process.env.NODE_ENV !== 'production') {
-          console.error('Falha ao enviar verification email para novo endereço');
+          console.error(
+            'Falha ao enviar verification email para novo endereço',
+          );
         }
       });
 
-    return { message: 'E-mail alterado. Verifique seu novo endereço para confirmar.', email: newEmail };
+    return {
+      message: 'E-mail alterado. Verifique seu novo endereço para confirmar.',
+      email: newEmail,
+    };
   }
 
   async deleteAccount(userId: string, password: string) {
@@ -455,16 +554,38 @@ export class AuthService {
 
   // LGPD: Direito de portabilidade — exportação completa de dados pessoais
   async exportAllData(userId: string) {
-    const [user, accounts, creditCards, transactions, categories, budgets, goals, notifications, aiLogs] = await Promise.all([
-      this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, createdAt: true } }),
+    const [
+      user,
+      accounts,
+      creditCards,
+      transactions,
+      categories,
+      budgets,
+      goals,
+      notifications,
+      aiLogs,
+    ] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, email: true, createdAt: true },
+      }),
       this.prisma.account.findMany({ where: { userId } }),
       this.prisma.creditCard.findMany({ where: { userId } }),
-      this.prisma.transaction.findMany({ where: { userId }, orderBy: { date: 'desc' } }),
+      this.prisma.transaction.findMany({
+        where: { userId },
+        orderBy: { date: 'desc' },
+      }),
       this.prisma.category.findMany({ where: { userId } }),
       this.prisma.budget.findMany({ where: { userId } }),
       this.prisma.goal.findMany({ where: { userId } }),
-      this.prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } }),
-      this.prisma.aiRequestLog.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } }),
+      this.prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.aiRequestLog.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      }),
     ]);
 
     return {

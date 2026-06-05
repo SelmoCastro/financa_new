@@ -7,9 +7,7 @@ import {
   IsBoolean,
   IsArray,
   ArrayMaxSize,
-  Min,
   IsIn,
-  Max,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
@@ -20,7 +18,9 @@ export class ImportValidateTransactionDto {
   @MaxLength(500)
   description: string;
 
-  @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
+  @Transform(({ value }) =>
+    value !== null && value !== undefined ? Number(value) : value,
+  )
   @IsNumber()
   amount: number;
 
@@ -45,7 +45,9 @@ export class ImportConfirmTransactionDto {
   @MaxLength(500)
   description: string;
 
-  @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
+  @Transform(({ value }) =>
+    value !== null && value !== undefined ? Number(value) : value,
+  )
   @IsNumber()
   amount: number;
 
@@ -73,7 +75,9 @@ export class ImportConfirmTransactionDto {
   @MaxLength(100)
   categoryLegacy?: string;
 
-  @Transform(({ value }) => (value !== null && value !== undefined ? Number(value) : value))
+  @Transform(({ value }) =>
+    value !== null && value !== undefined ? Number(value) : value,
+  )
   @IsOptional()
   classificationRule?: number;
 

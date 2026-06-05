@@ -6,9 +6,6 @@ import { SubscriptionService } from '../subscription/subscription.service';
 import { AuditService } from '../audit/audit.service';
 import * as crypto from 'crypto';
 
-// Keep a reference to the real crypto for tests that need real hashing
-const realCrypto = { ...crypto };
-
 describe('PaymentsService', () => {
   let service: PaymentsService;
   let prisma: {
@@ -258,11 +255,20 @@ describe('PaymentsService', () => {
       await buildService();
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue({ id: 'pref-x', init_point: 'https://mp.com/x' }),
+        json: jest
+          .fn()
+          .mockResolvedValue({ id: 'pref-x', init_point: 'https://mp.com/x' }),
       });
       prisma.payment.create.mockResolvedValue(mockPayment);
 
-      const plans: Array<{ plan: 'premium_monthly' | 'premium_quarterly' | 'premium_semiannual' | 'premium_annual'; expectedPrice: number }> = [
+      const plans: Array<{
+        plan:
+          | 'premium_monthly'
+          | 'premium_quarterly'
+          | 'premium_semiannual'
+          | 'premium_annual';
+        expectedPrice: number;
+      }> = [
         { plan: 'premium_monthly', expectedPrice: 19.9 },
         { plan: 'premium_quarterly', expectedPrice: 54.9 },
         { plan: 'premium_semiannual', expectedPrice: 99.9 },
@@ -272,7 +278,9 @@ describe('PaymentsService', () => {
       for (let i = 0; i < plans.length; i++) {
         const { plan, expectedPrice } = plans[i];
         await service.createPreference(userId, plan);
-        const sentBody = JSON.parse((global.fetch as jest.Mock).mock.calls[i][1].body);
+        const sentBody = JSON.parse(
+          (global.fetch as jest.Mock).mock.calls[i][1].body,
+        );
         expect(sentBody.items[0].unit_price).toBe(expectedPrice);
       }
 
@@ -280,7 +288,10 @@ describe('PaymentsService', () => {
       expect(prisma.payment.create).toHaveBeenCalledTimes(4);
       expect(prisma.payment.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ amount: 179.9, planPurchased: 'premium_annual' }),
+          data: expect.objectContaining({
+            amount: 179.9,
+            planPurchased: 'premium_annual',
+          }),
         }),
       );
     });
@@ -299,11 +310,15 @@ describe('PaymentsService', () => {
     });
 
     it('should use MP_PROXY_URL when configured', async () => {
-      const cfg = buildConfigMock({ MP_PROXY_URL: 'https://mp-proxy.example.com' });
+      const cfg = buildConfigMock({
+        MP_PROXY_URL: 'https://mp-proxy.example.com',
+      });
       await buildService(cfg);
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
-        json: jest.fn().mockResolvedValue({ id: 'pref-x', init_point: 'https://mp.com/x' }),
+        json: jest
+          .fn()
+          .mockResolvedValue({ id: 'pref-x', init_point: 'https://mp.com/x' }),
       });
       prisma.payment.create.mockResolvedValue(mockPayment);
 
@@ -349,7 +364,9 @@ describe('PaymentsService', () => {
       const result = await service.handleWebhook(dto as any);
       expect(result).toEqual({ received: true, processed: false });
       expect(auditService.log).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'payments.webhook_missing_payment_id' }),
+        expect.objectContaining({
+          action: 'payments.webhook_missing_payment_id',
+        }),
       );
     });
 
@@ -357,7 +374,9 @@ describe('PaymentsService', () => {
       await buildService();
       // Mock verifyWebhookSignature to pass (we're testing ID extraction, not sig verification)
       jest.spyOn(service, 'verifyWebhookSignature').mockReturnValue(true);
-      jest.spyOn(service as any, 'processPayment').mockResolvedValue({ processed: true, upgraded: false });
+      jest
+        .spyOn(service as any, 'processPayment')
+        .mockResolvedValue({ processed: true, upgraded: false });
 
       const dto = { type: 'payment', action: 'created', data_id: mpPaymentId };
       const result = await service.handleWebhook(dto as any, 'ts=1,v1=valid');
@@ -369,7 +388,9 @@ describe('PaymentsService', () => {
     it('should extract payment id from id field when data_id is absent', async () => {
       await buildService();
       jest.spyOn(service, 'verifyWebhookSignature').mockReturnValue(true);
-      jest.spyOn(service as any, 'processPayment').mockResolvedValue({ processed: true, upgraded: false });
+      jest
+        .spyOn(service as any, 'processPayment')
+        .mockResolvedValue({ processed: true, upgraded: false });
 
       const dto = { type: 'payment', action: 'created', id: 98765 };
       const result = await service.handleWebhook(dto as any, 'ts=1,v1=valid');
@@ -408,7 +429,10 @@ describe('PaymentsService', () => {
         json: jest.fn().mockResolvedValue(mpData),
       });
       prisma.payment.findUnique.mockResolvedValue(null);
-      prisma.payment.upsert.mockResolvedValue({ ...mockPayment, status: 'approved' });
+      prisma.payment.upsert.mockResolvedValue({
+        ...mockPayment,
+        status: 'approved',
+      });
       prisma.subscription.findUnique.mockResolvedValue(mockSubscription);
       subscriptionService.upgrade.mockResolvedValue(mockSubscription);
 
@@ -426,7 +450,10 @@ describe('PaymentsService', () => {
     // --- Idempotency ---
     it('should skip already-processed payment (idempotency)', async () => {
       await buildService();
-      prisma.payment.findUnique.mockResolvedValue({ ...mockPayment, status: 'approved' });
+      prisma.payment.findUnique.mockResolvedValue({
+        ...mockPayment,
+        status: 'approved',
+      });
 
       const result = await service.processPayment(mpPaymentId);
 
@@ -450,8 +477,14 @@ describe('PaymentsService', () => {
         ok: true,
         json: jest.fn().mockResolvedValue(mpData),
       });
-      prisma.payment.findUnique.mockResolvedValue({ ...mockPayment, status: 'pending' });
-      prisma.payment.upsert.mockResolvedValue({ ...mockPayment, status: 'approved' });
+      prisma.payment.findUnique.mockResolvedValue({
+        ...mockPayment,
+        status: 'pending',
+      });
+      prisma.payment.upsert.mockResolvedValue({
+        ...mockPayment,
+        status: 'approved',
+      });
       prisma.subscription.findUnique.mockResolvedValue(mockSubscription);
       subscriptionService.upgrade.mockResolvedValue(mockSubscription);
 
@@ -478,7 +511,11 @@ describe('PaymentsService', () => {
         json: jest.fn().mockResolvedValue(mpData),
       });
       prisma.payment.findUnique.mockResolvedValue(null);
-      prisma.payment.upsert.mockResolvedValue({ ...mockPayment, status: 'approved', paymentMethod: 'pix' });
+      prisma.payment.upsert.mockResolvedValue({
+        ...mockPayment,
+        status: 'approved',
+        paymentMethod: 'pix',
+      });
       prisma.subscription.findUnique.mockResolvedValue(mockSubscription);
       subscriptionService.upgrade.mockResolvedValue(mockSubscription);
 
@@ -541,8 +578,14 @@ describe('PaymentsService', () => {
         json: jest.fn().mockResolvedValue(mpData),
       });
       prisma.payment.findUnique.mockResolvedValue(null);
-      prisma.payment.upsert.mockResolvedValue({ ...mockPayment, status: 'approved' });
-      prisma.subscription.findUnique.mockResolvedValue({ ...mockSubscription, plan: 'premium' });
+      prisma.payment.upsert.mockResolvedValue({
+        ...mockPayment,
+        status: 'approved',
+      });
+      prisma.subscription.findUnique.mockResolvedValue({
+        ...mockSubscription,
+        plan: 'premium',
+      });
 
       const result = await service.processPayment(mpPaymentId);
 
@@ -577,7 +620,10 @@ describe('PaymentsService', () => {
         json: jest.fn().mockResolvedValue(mpData),
       });
       prisma.payment.findUnique.mockResolvedValue(null);
-      prisma.payment.upsert.mockResolvedValue({ ...mockPayment, status: 'refunded' });
+      prisma.payment.upsert.mockResolvedValue({
+        ...mockPayment,
+        status: 'refunded',
+      });
 
       const result = await service.processPayment(mpPaymentId);
 
@@ -602,7 +648,10 @@ describe('PaymentsService', () => {
         json: jest.fn().mockResolvedValue(mpData),
       });
       prisma.payment.findUnique.mockResolvedValue(null);
-      prisma.payment.upsert.mockResolvedValue({ ...mockPayment, status: 'rejected' });
+      prisma.payment.upsert.mockResolvedValue({
+        ...mockPayment,
+        status: 'rejected',
+      });
 
       const result = await service.processPayment(mpPaymentId);
 
@@ -627,7 +676,11 @@ describe('PaymentsService', () => {
         json: jest.fn().mockResolvedValue(mpData),
       });
       prisma.payment.findUnique.mockResolvedValue(null);
-      prisma.payment.upsert.mockResolvedValue({ ...mockPayment, amount: 5.0, status: 'approved' });
+      prisma.payment.upsert.mockResolvedValue({
+        ...mockPayment,
+        amount: 5.0,
+        status: 'approved',
+      });
 
       const result = await service.processPayment(mpPaymentId);
 
@@ -658,7 +711,10 @@ describe('PaymentsService', () => {
         json: jest.fn().mockResolvedValue(mpData),
       });
       prisma.payment.findUnique.mockResolvedValue(null);
-      prisma.payment.upsert.mockResolvedValue({ ...mockPayment, status: 'approved' });
+      prisma.payment.upsert.mockResolvedValue({
+        ...mockPayment,
+        status: 'approved',
+      });
       prisma.subscription.findUnique.mockResolvedValue(mockSubscription);
 
       const result = await service.processPayment(mpPaymentId);
@@ -710,7 +766,10 @@ describe('PaymentsService', () => {
         json: jest.fn().mockResolvedValue(mpData),
       });
       prisma.payment.findUnique.mockResolvedValue(null);
-      prisma.payment.upsert.mockResolvedValue({ ...mockPayment, status: 'approved' });
+      prisma.payment.upsert.mockResolvedValue({
+        ...mockPayment,
+        status: 'approved',
+      });
       prisma.subscription.findUnique.mockResolvedValue(mockSubscription);
 
       const result = await service.processPayment(mpPaymentId);
@@ -723,7 +782,7 @@ describe('PaymentsService', () => {
       );
 
       // Verify expiresAt is ~90 days from now
-      const expiresAt = (subscriptionService.upgrade as jest.Mock).mock.calls[0][2];
+      const expiresAt = subscriptionService.upgrade.mock.calls[0][2];
       const expectedMs = 90 * 24 * 60 * 60 * 1000;
       const diffMs = expiresAt.getTime() - Date.now();
       expect(diffMs).toBeGreaterThan(expectedMs - 5000);
@@ -853,7 +912,10 @@ describe('PaymentsService', () => {
         json: jest.fn().mockResolvedValue(mpData),
       });
       prisma.payment.findUnique.mockResolvedValue(null);
-      prisma.payment.upsert.mockResolvedValue({ ...mockPayment, status: 'approved' });
+      prisma.payment.upsert.mockResolvedValue({
+        ...mockPayment,
+        status: 'approved',
+      });
       prisma.subscription.findUnique.mockResolvedValue(mockSubscription);
       subscriptionService.upgrade.mockResolvedValue(mockSubscription);
 

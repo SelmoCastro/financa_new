@@ -1,12 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateCreditCardDto } from './dto/create-credit-card.dto';
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto';
 import { CreateInstallmentDto } from './dto/create-installment.dto';
 import { UpdateInstallmentDto } from './dto/update-installment.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { EncryptionService } from '../common/services/encryption.service';
-import { encryptAmount, decryptAmount } from '../common/services/balance-helper';
+import {
+  encryptAmount,
+  decryptAmount,
+} from '../common/services/balance-helper';
 
 @Injectable()
 export class CreditCardsService {
@@ -16,13 +23,18 @@ export class CreditCardsService {
     private encryption: EncryptionService,
   ) {}
 
-  private async validateInstallmentFkOwnership(dto: { accountId?: string | null; categoryId?: string | null }, userId: string) {
+  private async validateInstallmentFkOwnership(
+    dto: { accountId?: string | null; categoryId?: string | null },
+    userId: string,
+  ) {
     if (dto.accountId) {
       const account = await this.prisma.account.findFirst({
         where: { id: dto.accountId, userId, deletedAt: null },
       });
       if (!account) {
-        throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+        throw new BadRequestException(
+          'Conta não encontrada ou não pertence a este usuário',
+        );
       }
     }
     if (dto.categoryId) {
@@ -30,34 +42,48 @@ export class CreditCardsService {
         where: { id: dto.categoryId, userId, deletedAt: null },
       });
       if (!category) {
-        throw new BadRequestException('Categoria não encontrada ou não pertence a este usuário');
+        throw new BadRequestException(
+          'Categoria não encontrada ou não pertence a este usuário',
+        );
       }
     }
   }
 
   async create(createCreditCardDto: CreateCreditCardDto, userId: string) {
     // V15: Atomic limit check + create to prevent race conditions
-    return this.subscriptionService.createWithLimitCheck(userId, 'creditCard', async () => {
-      // V4: Validate accountId ownership
-      if (createCreditCardDto.accountId) {
-        const account = await this.prisma.account.findFirst({
-          where: { id: createCreditCardDto.accountId, userId, deletedAt: null },
-        });
-        if (!account) {
-          throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+    return this.subscriptionService.createWithLimitCheck(
+      userId,
+      'creditCard',
+      async () => {
+        // V4: Validate accountId ownership
+        if (createCreditCardDto.accountId) {
+          const account = await this.prisma.account.findFirst({
+            where: {
+              id: createCreditCardDto.accountId,
+              userId,
+              deletedAt: null,
+            },
+          });
+          if (!account) {
+            throw new BadRequestException(
+              'Conta não encontrada ou não pertence a este usuário',
+            );
+          }
         }
-      }
-      return this.prisma.creditCard.create({
-        data: {
-          name: createCreditCardDto.name,
-          limit: encryptAmount(createCreditCardDto.limit, this.encryption),
-          closingDay: createCreditCardDto.closingDay,
-          dueDay: createCreditCardDto.dueDay,
-          userId,
-          ...(createCreditCardDto.accountId ? { accountId: createCreditCardDto.accountId } : {}),
-        },
-      });
-    });
+        return this.prisma.creditCard.create({
+          data: {
+            name: createCreditCardDto.name,
+            limit: encryptAmount(createCreditCardDto.limit, this.encryption),
+            closingDay: createCreditCardDto.closingDay,
+            dueDay: createCreditCardDto.dueDay,
+            userId,
+            ...(createCreditCardDto.accountId
+              ? { accountId: createCreditCardDto.accountId }
+              : {}),
+          },
+        });
+      },
+    );
   }
 
   async findAll(userId: string) {
@@ -91,7 +117,9 @@ export class CreditCardsService {
         where: { id: updateCreditCardDto.accountId, userId, deletedAt: null },
       });
       if (!account) {
-        throw new BadRequestException('Conta não encontrada ou não pertence a este usuário');
+        throw new BadRequestException(
+          'Conta não encontrada ou não pertence a este usuário',
+        );
       }
     }
     // Extract limit if provided and encrypt it
@@ -104,9 +132,13 @@ export class CreditCardsService {
       where: { id, userId, deletedAt: null },
       data: data as any,
     });
-    if (result.count === 0) throw new NotFoundException('Cartão de crédito não encontrado');
+    if (result.count === 0)
+      throw new NotFoundException('Cartão de crédito não encontrado');
     // IDOR fix: include userId in findFirst to prevent cross-tenant data access
-    return this.prisma.creditCard.findFirst({ where: { id, userId, deletedAt: null }, include: { account: true } });
+    return this.prisma.creditCard.findFirst({
+      where: { id, userId, deletedAt: null },
+      include: { account: true },
+    });
   }
 
   async remove(id: string, userId: string) {
@@ -116,17 +148,26 @@ export class CreditCardsService {
       where: { id, userId, deletedAt: null },
       data: { deletedAt: new Date() },
     });
-    if (result.count === 0) throw new NotFoundException('Cartão de crédito não encontrado');
+    if (result.count === 0)
+      throw new NotFoundException('Cartão de crédito não encontrado');
     return { deleted: true };
   }
 
   // ─── Installment Methods ───
 
-  async createInstallment(creditCardId: string, dto: CreateInstallmentDto, userId: string) {
+  async createInstallment(
+    creditCardId: string,
+    dto: CreateInstallmentDto,
+    userId: string,
+  ) {
     // Bloquear se cartão é excedente (read-only)
-    await this.subscriptionService.checkNotExceeding(userId, 'creditCard', creditCardId);
+    await this.subscriptionService.checkNotExceeding(
+      userId,
+      'creditCard',
+      creditCardId,
+    );
     // Validate card belongs to user
-    const card = await this.findOne(creditCardId, userId);
+    await this.findOne(creditCardId, userId);
     await this.validateInstallmentFkOwnership(dto, userId);
 
     const totalAmount = Number(dto.totalAmount);
@@ -143,7 +184,8 @@ export class CreditCardsService {
         );
       }
       amounts = dto.installmentValues.map((iv) => Number(iv.amount));
-      const sumValues = Math.round(amounts.reduce((a, b) => a + b, 0) * 100) / 100;
+      const sumValues =
+        Math.round(amounts.reduce((a, b) => a + b, 0) * 100) / 100;
       if (Math.abs(sumValues - totalAmount) > 0.02) {
         throw new BadRequestException(
           `Sum of installment values (${sumValues}) must match totalAmount (${totalAmount})`,
@@ -154,18 +196,29 @@ export class CreditCardsService {
       const entryAmount = dto.entryAmount ? Number(dto.entryAmount) : 0;
       let amountPerMonth: number;
       if (entryAmount > 0 && installmentCount > 1) {
-        amountPerMonth = Math.round(((totalAmount - entryAmount) / (installmentCount - 1)) * 100) / 100;
+        amountPerMonth =
+          Math.round(
+            ((totalAmount - entryAmount) / (installmentCount - 1)) * 100,
+          ) / 100;
       } else {
-        amountPerMonth = Math.round((totalAmount / installmentCount) * 100) / 100;
+        amountPerMonth =
+          Math.round((totalAmount / installmentCount) * 100) / 100;
       }
       amounts = Array.from({ length: installmentCount }, (_, i) =>
-        (entryAmount > 0 && installmentCount > 1 && i === 0) ? entryAmount : amountPerMonth,
+        entryAmount > 0 && installmentCount > 1 && i === 0
+          ? entryAmount
+          : amountPerMonth,
       );
     }
 
-    const amountPerMonth = amounts.length > 1
-      ? Math.round(amounts.slice(1).reduce((a, b) => a + b, 0) / (amounts.length - 1) * 100) / 100
-      : amounts[0];
+    const amountPerMonth =
+      amounts.length > 1
+        ? Math.round(
+            (amounts.slice(1).reduce((a, b) => a + b, 0) /
+              (amounts.length - 1)) *
+              100,
+          ) / 100
+        : amounts[0];
 
     const installment = await this.prisma.creditCardInstallment.create({
       data: {
@@ -173,7 +226,10 @@ export class CreditCardsService {
         totalAmount: encryptAmount(dto.totalAmount, this.encryption),
         installmentCount: dto.installmentCount,
         amountPerMonth: encryptAmount(amountPerMonth, this.encryption),
-        entryAmount: dto.entryAmount != null ? encryptAmount(dto.entryAmount, this.encryption) : null,
+        entryAmount:
+          dto.entryAmount != null
+            ? encryptAmount(dto.entryAmount, this.encryption)
+            : null,
         startDate: new Date(),
         dueDay: dto.dueDay,
         accountId: dto.accountId,
@@ -190,7 +246,11 @@ export class CreditCardsService {
 
     for (let i = 0; i < installmentCount; i++) {
       const monthOffset = i;
-      const dueDate = new Date(startDate.getFullYear(), startDate.getMonth() + monthOffset, dto.dueDay);
+      const dueDate = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth() + monthOffset,
+        dto.dueDay,
+      );
       // Clamp day if month has fewer days
       const expectedMonth = (startDate.getMonth() + monthOffset) % 12;
       if (dueDate.getMonth() !== expectedMonth) {
@@ -229,7 +289,7 @@ export class CreditCardsService {
   async getInstallments(userId: string, creditCardId?: string) {
     const where: { userId: string; creditCardId?: string } = { userId };
     if (creditCardId) where.creditCardId = creditCardId;
-    
+
     return this.prisma.creditCardInstallment.findMany({
       where,
       include: { category: true, account: true, creditCard: true },
@@ -246,9 +306,17 @@ export class CreditCardsService {
     return inst;
   }
 
-  async updateInstallment(id: string, dto: UpdateInstallmentDto, userId: string) {
+  async updateInstallment(
+    id: string,
+    dto: UpdateInstallmentDto,
+    userId: string,
+  ) {
     const inst = await this.findOneInstallment(id, userId);
-    await this.subscriptionService.checkNotExceeding(userId, 'creditCard', inst.creditCardId);
+    await this.subscriptionService.checkNotExceeding(
+      userId,
+      'creditCard',
+      inst.creditCardId,
+    );
     await this.validateInstallmentFkOwnership(dto, userId);
     // Extract financial fields and encrypt them
     const { totalAmount, ...rest } = dto;
@@ -260,14 +328,22 @@ export class CreditCardsService {
       where: { id, userId },
       data: data as any,
     });
-    if (result.count === 0) throw new NotFoundException('Parcela não encontrada');
+    if (result.count === 0)
+      throw new NotFoundException('Parcela não encontrada');
     // IDOR fix: include userId in findFirst to prevent cross-tenant data access
-    return this.prisma.creditCardInstallment.findFirst({ where: { id, userId }, include: { category: true, account: true, creditCard: true } });
+    return this.prisma.creditCardInstallment.findFirst({
+      where: { id, userId },
+      include: { category: true, account: true, creditCard: true },
+    });
   }
 
   async deleteInstallment(id: string, userId: string) {
     const inst = await this.findOneInstallment(id, userId);
-    await this.subscriptionService.checkNotExceeding(userId, 'creditCard', inst.creditCardId);
+    await this.subscriptionService.checkNotExceeding(
+      userId,
+      'creditCard',
+      inst.creditCardId,
+    );
 
     // Excluir transações associadas a este parcelamento
     // Busca transações que correspondem à descrição do parcelamento no cartão
@@ -284,7 +360,8 @@ export class CreditCardsService {
     const result = await this.prisma.creditCardInstallment.deleteMany({
       where: { id, userId },
     });
-    if (result.count === 0) throw new NotFoundException('Parcela não encontrada');
+    if (result.count === 0)
+      throw new NotFoundException('Parcela não encontrada');
     return { deleted: true };
   }
 
@@ -317,14 +394,26 @@ export class CreditCardsService {
     startDate: Date;
     dueDay: number;
   }) {
-    const entryAmount = inst.entryAmount ? decryptAmount(inst.entryAmount, this.encryption) : 0;
-    const schedule: { installmentNumber: number; month: number; year: number; dueDate: string; amount: number }[] = [];
+    const entryAmount = inst.entryAmount
+      ? decryptAmount(inst.entryAmount, this.encryption)
+      : 0;
+    const schedule: {
+      installmentNumber: number;
+      month: number;
+      year: number;
+      dueDate: string;
+      amount: number;
+    }[] = [];
     const start = new Date(inst.startDate);
 
     for (let i = 1; i <= inst.installmentCount; i++) {
       // Calculate month offset: 1st installment starts at startDate month
       const monthOffset = i - 1;
-      const dueDate = new Date(start.getFullYear(), start.getMonth() + monthOffset, inst.dueDay);
+      const dueDate = new Date(
+        start.getFullYear(),
+        start.getMonth() + monthOffset,
+        inst.dueDay,
+      );
       // Clamp day if month has fewer days (e.g. dueDay=31 in Feb → Feb 28)
       // JS Date already handles this by rolling over, but we want the last day instead
       const expectedMonth = (start.getMonth() + monthOffset) % 12;
@@ -333,7 +422,10 @@ export class CreditCardsService {
         dueDate.setDate(0); // goes to last day of previous month (which is the expected month)
       }
 
-      const amount = (entryAmount > 0 && i === 1) ? entryAmount : decryptAmount(inst.amountPerMonth, this.encryption);
+      const amount =
+        entryAmount > 0 && i === 1
+          ? entryAmount
+          : decryptAmount(inst.amountPerMonth, this.encryption);
 
       schedule.push({
         installmentNumber: i,

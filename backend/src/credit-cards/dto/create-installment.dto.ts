@@ -1,4 +1,16 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, Min, Max, IsUUID, IsArray, ValidateNested, ArrayMinSize } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  Min,
+  Max,
+  IsUUID,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class InstallmentValueDto {

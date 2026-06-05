@@ -1,4 +1,13 @@
-import { IsIn, IsString, IsOptional, IsNumber, IsBoolean, Min, Max, IsUUID } from 'class-validator';
+import {
+  IsIn,
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  Min,
+  Max,
+  IsUUID,
+} from 'class-validator';
 
 export class UpdateRecurringTransactionDto {
   @IsString()

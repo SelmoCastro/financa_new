@@ -87,7 +87,10 @@ export class CsrfMiddleware implements NestMiddleware {
     }
     const cookieBuf = Buffer.from(String(cookieToken));
     const headerBuf = Buffer.from(String(headerToken));
-    if (cookieBuf.length !== headerBuf.length || !crypto.timingSafeEqual(cookieBuf, headerBuf)) {
+    if (
+      cookieBuf.length !== headerBuf.length ||
+      !crypto.timingSafeEqual(cookieBuf, headerBuf)
+    ) {
       throw new ForbiddenException(
         'CSRF token mismatch. Refresh the page and try again.',
       );

@@ -7,13 +7,13 @@ import {
   Request,
   UseGuards,
   Param,
-  BadRequestException,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { NotificationsService } from './notifications.service';
 import { HandleActionDto } from '../payments/dto/payment.dto';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'notifications',
@@ -24,23 +24,23 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  async findAll(@Request() req) {
+  async findAll(@Request() req: RequestWithUser) {
     return this.notificationsService.findAll(req.user.userId);
   }
 
   @Get('unread-count')
-  async countUnread(@Request() req) {
+  async countUnread(@Request() req: RequestWithUser) {
     const count = await this.notificationsService.countUnread(req.user.userId);
     return { count };
   }
 
   @Patch(':id/read')
-  async markAsRead(@Param('id') id: string, @Request() req) {
+  async markAsRead(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.notificationsService.markAsRead(id, req.user.userId);
   }
 
   @Post('read-all')
-  async markAllAsRead(@Request() req) {
+  async markAllAsRead(@Request() req: RequestWithUser) {
     return this.notificationsService.markAllAsRead(req.user.userId);
   }
 
@@ -49,7 +49,7 @@ export class NotificationsController {
   async handleAction(
     @Param('id') id: string,
     @Body() dto: HandleActionDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.notificationsService.handleAction(
       id,

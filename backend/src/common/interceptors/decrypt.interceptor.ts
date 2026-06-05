@@ -9,35 +9,25 @@ import { map } from 'rxjs/operators';
 import { EncryptionService } from '../services/encryption.service';
 
 /**
- * Fields in each model that are encrypted and need decryption before sending to clients.
- * Maps Prisma model names to their encrypted field names.
- */
-const ENCRYPTED_FIELDS_BY_MODEL: Record<string, string[]> = {
-  account: ['balance'],
-  transaction: ['amount'],
-  creditCard: ['limit'],
-  creditCardInvoice: ['totalAmount', 'paidAmount'],
-  creditCardInstallment: ['totalAmount', 'amountPerMonth', 'entryAmount'],
-  budget: ['amount'],
-  goal: ['targetAmount', 'currentAmount'],
-  recurringTransaction: ['amount'],
-  notification: [], // notifications don't have encrypted financial fields
-};
-
-/**
  * Recursively walk a response object and decrypt any encrypted amount fields.
  * Handles arrays, nested objects, and primitives.
  */
 function decryptDeep(obj: any, encryption: EncryptionService): any {
   if (obj === null || obj === undefined) return obj;
-  if (Array.isArray(obj)) return obj.map((item) => decryptDeep(item, encryption));
+  if (Array.isArray(obj))
+    return obj.map((item) => decryptDeep(item, encryption));
   if (typeof obj !== 'object') return obj;
 
   // Check if this object has a model type indicator (e.g., from Prisma)
   // We determine which fields to decrypt based on the fields present
   for (const field of Object.keys(obj)) {
     const value = obj[field];
-    if (value !== null && value !== undefined && typeof value === 'string' && value.startsWith('enc:')) {
+    if (
+      value !== null &&
+      value !== undefined &&
+      typeof value === 'string' &&
+      value.startsWith('enc:')
+    ) {
       // This is an encrypted field — decrypt it
       // Convert string number back to number for the client
       try {

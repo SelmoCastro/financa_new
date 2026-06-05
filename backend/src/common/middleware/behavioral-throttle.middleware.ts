@@ -22,13 +22,16 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
   private readonly logger = new Logger(BehavioralThrottleMiddleware.name);
 
   // Track error counts per IP — public for admin monitoring
-  public ipTracker = new Map<string, {
-    errorCount: number;
-    lastActivity: number;
-    penaltyUntil: number;
-    totalRequests: number;
-    windowStart: number;
-  }>();
+  public ipTracker = new Map<
+    string,
+    {
+      errorCount: number;
+      lastActivity: number;
+      penaltyUntil: number;
+      totalRequests: number;
+      windowStart: number;
+    }
+  >();
 
   // Cleanup stale entries every 10 minutes
   private cleanupInterval = setInterval(() => this.cleanup(), 10 * 60 * 1000);
@@ -52,16 +55,22 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
     // Check if IP is currently penalized
     if (now < tracker.penaltyUntil) {
       const multiplier = this.calculateMultiplier(tracker.errorCount);
-      const effectiveLimit = Math.max(1, Math.floor(this.BASE_LIMIT / multiplier));
+      const effectiveLimit = Math.max(
+        1,
+        Math.floor(this.BASE_LIMIT / multiplier),
+      );
 
       if (tracker.totalRequests >= effectiveLimit) {
-        const retryAfter = Math.ceil((tracker.penaltyUntil - Date.now()) / 1000);
+        const retryAfter = Math.ceil(
+          (tracker.penaltyUntil - Date.now()) / 1000,
+        );
         res.setHeader('Retry-After', String(retryAfter));
         res.setHeader('X-RateLimit-Limit', String(effectiveLimit));
         res.setHeader('X-RateLimit-Penalty', String(multiplier));
         res.status(429).json({
           statusCode: 429,
-          message: 'Too many requests — behavioral limit exceeded. Reduce error rates.',
+          message:
+            'Too many requests — behavioral limit exceeded. Reduce error rates.',
           error: 'Too Many Requests',
         });
         return;
@@ -76,7 +85,11 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
     // - 401 já é coberto por throttles específicos de auth/refresh
     // - 404 não indica abuso, apenas recurso inexistente
     res.on('finish', () => {
-      if (res.statusCode >= 400 && res.statusCode !== 401 && res.statusCode !== 404) {
+      if (
+        res.statusCode >= 400 &&
+        res.statusCode !== 401 &&
+        res.statusCode !== 404
+      ) {
         this.onError(ip);
       } else {
         this.onSuccess(ip);
@@ -142,7 +155,12 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
     if (typeof forwarded === 'string') {
       return forwarded.split(',')[0].trim();
     }
-    return req.headers['x-real-ip'] as string || req.ip || req.connection.remoteAddress || 'unknown';
+    return (
+      (req.headers['x-real-ip'] as string) ||
+      req.ip ||
+      req.connection.remoteAddress ||
+      'unknown'
+    );
   }
 
   private cleanup(): void {

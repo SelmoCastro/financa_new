@@ -1,10 +1,13 @@
-import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { SubscriptionService, PLAN_LIMITS } from '../subscription/subscription.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { EncryptionService } from '../common/services/encryption.service';
-import { encryptAmount, decryptAmount } from '../common/services/balance-helper';
+import {
+  encryptAmount,
+  decryptAmount,
+} from '../common/services/balance-helper';
 
 @Injectable()
 export class BudgetsService {
@@ -16,33 +19,37 @@ export class BudgetsService {
 
   async create(createBudgetDto: CreateBudgetDto, userId: string) {
     // V15: Atomic limit check + create to prevent race conditions
-    return this.subscriptionService.createWithLimitCheck(userId, 'budget', async () => {
-      const { categoryId, amount } = createBudgetDto;
+    return this.subscriptionService.createWithLimitCheck(
+      userId,
+      'budget',
+      async () => {
+        const { categoryId, amount } = createBudgetDto;
 
-      // Verify category exists, belongs to user, and is not soft-deleted
-      const cat = await this.prisma.category.findFirst({
-        where: { id: categoryId, userId, deletedAt: null },
-      });
-      if (!cat) {
-        throw new BadRequestException('Category not found');
-      }
+        // Verify category exists, belongs to user, and is not soft-deleted
+        const cat = await this.prisma.category.findFirst({
+          where: { id: categoryId, userId, deletedAt: null },
+        });
+        if (!cat) {
+          throw new BadRequestException('Category not found');
+        }
 
-      // Upsert: update amount if budget for this category already exists, or create new
-      return this.prisma.budget.upsert({
-      where: {
-        userId_categoryId: {
-          userId,
-          categoryId,
-        },
+        // Upsert: update amount if budget for this category already exists, or create new
+        return this.prisma.budget.upsert({
+          where: {
+            userId_categoryId: {
+              userId,
+              categoryId,
+            },
+          },
+          update: { amount: encryptAmount(Number(amount), this.encryption) },
+          create: {
+            userId,
+            categoryId,
+            amount: encryptAmount(Number(amount), this.encryption),
+          },
+        });
       },
-      update: { amount: encryptAmount(Number(amount), this.encryption) },
-      create: {
-        userId,
-        categoryId,
-        amount: encryptAmount(Number(amount), this.encryption),
-      },
-      });
-    });
+    );
   }
 
   async findAll(userId: string, year?: number, month?: number) {
@@ -78,7 +85,10 @@ export class BudgetsService {
           },
           select: { amount: true },
         });
-        const spent = expenseRows.reduce((sum, t) => sum + decryptAmount(t.amount, this.encryption), 0);
+        const spent = expenseRows.reduce(
+          (sum, t) => sum + decryptAmount(t.amount, this.encryption),
+          0,
+        );
         const budgetAmount = decryptAmount(budget.amount, this.encryption);
         const percentage = budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0;
 

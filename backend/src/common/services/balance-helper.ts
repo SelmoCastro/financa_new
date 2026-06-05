@@ -1,20 +1,19 @@
 /**
  * Balance Operations Helper — Atomic read-lock-compute-encrypt-write.
- * 
+ *
  * Since financial fields are now encrypted strings (not Decimal),
  * Prisma's native increment/decrement operations don't work.
  * This module provides atomic balance operations using raw SQL with FOR UPDATE locks.
- * 
+ *
  * Usage in services:
  *   import { atomicBalanceUpdate } from '../common/services/balance-helper';
- *   
+ *
  *   // Instead of: { balance: { increment: amount } }
  *   // Use: await atomicBalanceUpdate(tx, accountId, userId, +amount, encryptionService)
  */
 
 import { EncryptionService } from './encryption.service';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TransactionClient = any;
 
 interface BalanceRow {
@@ -26,7 +25,7 @@ interface BalanceRow {
 /**
  * Atomically update an account's encrypted balance.
  * Uses SELECT FOR UPDATE to prevent concurrent modifications.
- * 
+ *
  * @param tx - Prisma transaction client (from $transaction callback)
  * @param accountId - The account ID
  * @param userId - The user ID (for security: must own the account)
@@ -51,7 +50,9 @@ export async function atomicBalanceUpdate(
   `;
 
   if (!rows || rows.length === 0) {
-    throw new Error(`Account ${accountId} not found or does not belong to user ${userId}`);
+    throw new Error(
+      `Account ${accountId} not found or does not belong to user ${userId}`,
+    );
   }
 
   const currentEncrypted = rows[0].balance;
@@ -62,7 +63,9 @@ export async function atomicBalanceUpdate(
   const newBalance = currentBalance + delta;
 
   if (checkOverdraft && newBalance < 0) {
-    throw new Error(`Saldo insuficiente. Saldo atual: ${currentBalance}, tentativa: ${delta}`);
+    throw new Error(
+      `Saldo insuficiente. Saldo atual: ${currentBalance}, tentativa: ${delta}`,
+    );
   }
 
   const newEncrypted = encryption.encryptDecimal(newBalance);
@@ -79,7 +82,10 @@ export async function atomicBalanceUpdate(
  * Get the decrypted balance of an account.
  * Works with both encrypted ('enc:...') and plaintext values.
  */
-export function decryptBalance(balanceStr: string | null, encryption: EncryptionService): number {
+export function decryptBalance(
+  balanceStr: string | null,
+  encryption: EncryptionService,
+): number {
   if (balanceStr === null || balanceStr === undefined) return 0;
   if (encryption.isEnabled() && balanceStr.startsWith('enc:')) {
     return Number(encryption.decryptDecimal(balanceStr));
@@ -91,7 +97,10 @@ export function decryptBalance(balanceStr: string | null, encryption: Encryption
  * Encrypt a numeric amount for storage.
  * Returns plaintext if encryption is disabled.
  */
-export function encryptAmount(amount: number | string, encryption: EncryptionService): string {
+export function encryptAmount(
+  amount: number | string,
+  encryption: EncryptionService,
+): string {
   if (encryption.isEnabled()) {
     return encryption.encryptDecimal(amount) ?? String(amount);
   }
@@ -102,7 +111,10 @@ export function encryptAmount(amount: number | string, encryption: EncryptionSer
  * Decrypt an encrypted amount for computation.
  * Returns a number for arithmetic operations.
  */
-export function decryptAmount(encrypted: string | null | undefined, encryption: EncryptionService): number {
+export function decryptAmount(
+  encrypted: string | null | undefined,
+  encryption: EncryptionService,
+): number {
   if (encrypted === null || encrypted === undefined) return 0;
   if (encryption.isEnabled() && encrypted.startsWith('enc:')) {
     return Number(encryption.decryptDecimal(encrypted));
@@ -123,8 +135,13 @@ export function decryptRecordAmounts(
   for (const record of records) {
     for (const field of fields) {
       if (record[field] !== null && record[field] !== undefined) {
-        if (encryption.isEnabled() && String(record[field]).startsWith('enc:')) {
-          record[field] = Number(encryption.decryptDecimal(String(record[field])));
+        if (
+          encryption.isEnabled() &&
+          String(record[field]).startsWith('enc:')
+        ) {
+          record[field] = Number(
+            encryption.decryptDecimal(String(record[field])),
+          );
         } else {
           record[field] = Number(record[field]);
         }
@@ -146,7 +163,9 @@ export function decryptRecord(
   for (const field of fields) {
     if (record[field] !== null && record[field] !== undefined) {
       if (encryption.isEnabled() && String(record[field]).startsWith('enc:')) {
-        (record as any)[field] = Number(encryption.decryptDecimal(String(record[field])));
+        (record as any)[field] = Number(
+          encryption.decryptDecimal(String(record[field])),
+        );
       } else {
         (record as any)[field] = Number(record[field]);
       }

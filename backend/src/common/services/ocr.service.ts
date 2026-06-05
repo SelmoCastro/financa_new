@@ -63,10 +63,7 @@ export class OcrService {
           );
           const imgFile = fs
             .readdirSync(tmpDir)
-            .find(
-              (f) =>
-                f.startsWith(`ppm_${stamp}`) && f.endsWith('.png'),
-            );
+            .find((f) => f.startsWith(`ppm_${stamp}`) && f.endsWith('.png'));
           if (imgFile) {
             const imgFull = path.join(tmpDir, imgFile);
             const { stdout } = await execPromise(

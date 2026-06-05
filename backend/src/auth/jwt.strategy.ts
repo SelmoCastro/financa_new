@@ -15,7 +15,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     const secret = configService.get<string>('JWT_SECRET');
     if (!secret) {
-      throw new Error('JWT_SECRET is not configured. Application cannot start.');
+      throw new Error(
+        'JWT_SECRET is not configured. Application cannot start.',
+      );
     }
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -42,7 +44,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    */
   async validate(
     req: Request,
-    payload: { sub: string; email: string; isEmailVerified: boolean; isAdmin: boolean },
+    payload: {
+      sub: string;
+      email: string;
+      isEmailVerified: boolean;
+      isAdmin: boolean;
+    },
   ) {
     // Verify user still exists (prevents deleted-user token usage)
     const user = await this.prisma.user.findUnique({
@@ -54,18 +61,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     // Pilar 1b: Context validation (optional, enabled via env STRICT_JWT_CONTEXT=true)
-    const strictContext = this.configService.get<string>('STRICT_JWT_CONTEXT') === 'true';
+    const strictContext =
+      this.configService.get<string>('STRICT_JWT_CONTEXT') === 'true';
     if (strictContext) {
-      const currentIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
-        || req.headers['x-real-ip'] as string
-        || req.ip
-        || 'unknown';
-      const currentUa = (req.headers['user-agent'] || 'unknown').substring(0, 128);
+      const currentIp =
+        (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+        (req.headers['x-real-ip'] as string) ||
+        req.ip ||
+        'unknown';
+      const currentUa = (req.headers['user-agent'] || 'unknown').substring(
+        0,
+        128,
+      );
 
       // Log context for audit (always, regardless of strict mode)
-      this.logger.debug(`JWT context: ip=${currentIp} ua=${currentUa.substring(0, 40)}`);
+      this.logger.debug(
+        `JWT context: ip=${currentIp} ua=${currentUa.substring(0, 40)}`,
+      );
     }
 
-    return { userId: payload.sub, email: payload.email, isEmailVerified: payload.isEmailVerified, isAdmin: payload.isAdmin };
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      isEmailVerified: payload.isEmailVerified,
+      isAdmin: payload.isAdmin,
+    };
   }
 }

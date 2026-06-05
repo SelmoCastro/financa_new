@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsDateString, IsNotEmpty, MaxLength, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsNotEmpty,
+  MaxLength,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateErrorReportDto {
   @IsString()

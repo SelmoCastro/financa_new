@@ -1,4 +1,16 @@
-import { Controller, Post, Body, UseGuards, Request, Get, UnauthorizedException, BadRequestException, ForbiddenException, Res, Req, Patch, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  Get,
+  UnauthorizedException,
+  Res,
+  Req,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
@@ -7,7 +19,12 @@ import { AuditLog } from '../common/decorators/audit-log.decorator';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ChangePasswordDto, ChangeEmailDto, ChangeNameDto, DeleteAccountDto } from './dto/account-settings.dto';
+import {
+  ChangePasswordDto,
+  ChangeEmailDto,
+  ChangeNameDto,
+  DeleteAccountDto,
+} from './dto/account-settings.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -15,6 +32,7 @@ import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { Response, Request as ExpressRequest } from 'express';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { RefreshTokenService } from './refresh-token.service';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'auth',
@@ -59,14 +77,17 @@ export class AuthController {
     }
     const responseData = await this.authService.register(createUserDto);
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[AUTH] REGISTER OK - isEmailVerified: ${responseData.user?.isEmailVerified}`);
+      console.log(
+        `[AUTH] REGISTER OK - isEmailVerified: ${responseData.user?.isEmailVerified}`,
+      );
     }
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
     // V1: Use x-platform header for reliable mobile detection.
     // Web: refreshToken stays in HttpOnly cookie only (never in body).
     // Mobile: refreshToken in body because SecureStore can't access cookies.
-    const isMobile = req.headers['x-platform'] === 'mobile' ||
-                     req.headers['x-platform'] === 'react-native';
+    const isMobile =
+      req.headers['x-platform'] === 'mobile' ||
+      req.headers['x-platform'] === 'react-native';
     return {
       message: responseData.message,
       userId: responseData.userId,
@@ -79,7 +100,11 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @AuditLog({ action: 'auth.login', targetType: 'User' })
   @Post('login')
-  async login(@Body() body: LoginDto, @Req() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
+  async login(
+    @Body() body: LoginDto,
+    @Req() req: ExpressRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     // V5: No PII in logs
     if (process.env.NODE_ENV !== 'production') {
       console.log('[AUTH] LOGIN ATTEMPT');
@@ -93,15 +118,18 @@ export class AuthController {
     }
     const responseData = await this.authService.login(user);
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[AUTH] LOGIN OK - isEmailVerified: ${responseData.user?.isEmailVerified}`);
+      console.log(
+        `[AUTH] LOGIN OK - isEmailVerified: ${responseData.user?.isEmailVerified}`,
+      );
     }
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
 
     // V1: Use x-platform header for reliable mobile detection.
     // Web: refreshToken stays in HttpOnly cookie only (never in body).
     // Mobile: refreshToken in body because SecureStore can't access cookies.
-    const isMobile = req.headers['x-platform'] === 'mobile' ||
-                     req.headers['x-platform'] === 'react-native';
+    const isMobile =
+      req.headers['x-platform'] === 'mobile' ||
+      req.headers['x-platform'] === 'react-native';
     return {
       access_token: responseData.access_token,
       ...(isMobile && { refreshToken: responseData.refreshToken }),
@@ -131,31 +159,53 @@ export class AuthController {
     try {
       const result = await this.refreshTokenService.rotateByToken(refreshToken);
       // Generate new access token
-      const user = await this.prisma.user.findUnique({ where: { id: result.userId } });
+      const user = await this.prisma.user.findUnique({
+        where: { id: result.userId },
+      });
       if (!user) throw new UnauthorizedException('User not found');
       const accessToken = this.jwtService.sign(
-        { sub: result.userId, email: user.email, isEmailVerified: user.isEmailVerified, isAdmin: user.isAdmin },
+        {
+          sub: result.userId,
+          email: user.email,
+          isEmailVerified: user.isEmailVerified,
+          isAdmin: user.isAdmin,
+        },
         { expiresIn: '15m' },
       );
       this.setCookies(res, accessToken, result.token);
 
-      const isMobile = request.headers['x-platform'] === 'mobile' ||
-                       request.headers['x-platform'] === 'react-native';
+      const isMobile =
+        request.headers['x-platform'] === 'mobile' ||
+        request.headers['x-platform'] === 'react-native';
       return {
         access_token: accessToken,
         ...(isMobile && { refreshToken: result.token }),
       };
     } catch (err: any) {
-      if (err.message === 'REFRESH_TOKEN_REUSE' || err.message === 'REFRESH_TOKEN_EXPIRED') {
-        const isMobile = request.headers['x-platform'] === 'mobile' ||
-                         request.headers['x-platform'] === 'react-native';
+      if (
+        err.message === 'REFRESH_TOKEN_REUSE' ||
+        err.message === 'REFRESH_TOKEN_EXPIRED'
+      ) {
+        const isMobile =
+          request.headers['x-platform'] === 'mobile' ||
+          request.headers['x-platform'] === 'react-native';
         if (!isMobile) {
           // Web: clear cookies on token reuse — force re-login
           const isProduction = process.env.NODE_ENV === 'production';
-          res.clearCookie('access_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
-          res.clearCookie('refresh_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
+          res.clearCookie('access_token', {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'lax' as const,
+          });
+          res.clearCookie('refresh_token', {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'lax' as const,
+          });
         }
-        throw new UnauthorizedException('Session expired or compromised. Please login again.');
+        throw new UnauthorizedException(
+          'Session expired or compromised. Please login again.',
+        );
       }
       // REFRESH_TOKEN_INVALID → fall through to legacy JWT path
     }
@@ -173,11 +223,15 @@ export class AuthController {
       throw new UnauthorizedException('Refresh Token inválido: userId ausente');
     }
 
-    const responseData = await this.authService.refreshTokens(userId, refreshToken);
+    const responseData = await this.authService.refreshTokens(
+      userId,
+      refreshToken,
+    );
     this.setCookies(res, responseData.access_token, responseData.refreshToken);
 
-    const isMobile = request.headers['x-platform'] === 'mobile' ||
-                     request.headers['x-platform'] === 'react-native';
+    const isMobile =
+      request.headers['x-platform'] === 'mobile' ||
+      request.headers['x-platform'] === 'react-native';
     return {
       access_token: responseData.access_token,
       ...(isMobile && { refreshToken: responseData.refreshToken }),
@@ -186,7 +240,10 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(AuthGuard('jwt'))
-  async logout(@Request() req, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Request() req: RequestWithUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     await this.authService.logout(req.user.userId);
 
     const isProduction = process.env.NODE_ENV === 'production';
@@ -223,13 +280,13 @@ export class AuthController {
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('resend-verification')
   @UseGuards(AuthGuard('jwt'))
-  async resendVerification(@Request() req) {
+  async resendVerification(@Request() req: RequestWithUser) {
     return this.authService.resendVerification(req.user.userId);
   }
 
   @Post('verify-all-emails')
   @UseGuards(AuthGuard('jwt'), AdminGuard) // V11: Reusable AdminGuard instead of ad-hoc DB check
-  async verifyAllEmails(@Request() req) {
+  async verifyAllEmails() {
     const result = await this.prisma.user.updateMany({
       where: { isEmailVerified: false },
       data: { isEmailVerified: true },
@@ -240,54 +297,106 @@ export class AuthController {
   @SkipThrottle()
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
-  async getProfile(@Request() req) {
+  async getProfile(@Request() req: RequestWithUser) {
     const user = await this.authService.getFullProfile(req.user.userId);
     return { user };
   }
 
   @Patch('change-name')
   @UseGuards(AuthGuard('jwt'))
-  async changeName(@Request() req, @Body() dto: ChangeNameDto) {
+  async changeName(
+    @Request() req: RequestWithUser,
+    @Body() dto: ChangeNameDto,
+  ) {
     return this.authService.changeName(req.user.userId, dto.name || '');
   }
 
-  @AuditLog({ action: 'auth.password_change', targetType: 'User', severity: 'warn' })
+  @AuditLog({
+    action: 'auth.password_change',
+    targetType: 'User',
+    severity: 'warn',
+  })
   @Post('change-password')
   @UseGuards(AuthGuard('jwt'))
-  async changePassword(@Request() req, @Body() dto: ChangePasswordDto, @Res({ passthrough: true }) res: Response) {
-    await this.authService.changePassword(req.user.userId, dto.currentPassword, dto.newPassword);
+  async changePassword(
+    @Request() req: RequestWithUser,
+    @Body() dto: ChangePasswordDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.changePassword(
+      req.user.userId,
+      dto.currentPassword,
+      dto.newPassword,
+    );
     // Revoga sessões em outros dispositivos — limpa cookies para forçar novo login
     const isProduction = process.env.NODE_ENV === 'production';
-    res.clearCookie('access_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
-    res.clearCookie('refresh_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+    });
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+    });
     return { message: 'Senha alterada com sucesso' };
   }
 
   @Post('change-email')
   @UseGuards(AuthGuard('jwt'))
-  async changeEmail(@Request() req, @Body() dto: ChangeEmailDto, @Res({ passthrough: true }) res: Response) {
-    await this.authService.changeEmail(req.user.userId, dto.newEmail, dto.password);
+  async changeEmail(
+    @Request() req: RequestWithUser,
+    @Body() dto: ChangeEmailDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.changeEmail(
+      req.user.userId,
+      dto.newEmail,
+      dto.password,
+    );
     // Revoga sessões — limpa cookies para forçar novo login com novo email
     const isProduction = process.env.NODE_ENV === 'production';
-    res.clearCookie('access_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
-    res.clearCookie('refresh_token', { httpOnly: true, secure: isProduction, sameSite: 'lax' as const });
-    return { message: 'E-mail alterado. Verifique seu novo endereço para confirmar.' };
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+    });
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+    });
+    return {
+      message: 'E-mail alterado. Verifique seu novo endereço para confirmar.',
+    };
   }
 
-  @AuditLog({ action: 'user.delete_account', targetType: 'User', severity: 'critical' })
+  @AuditLog({
+    action: 'user.delete_account',
+    targetType: 'User',
+    severity: 'critical',
+  })
   @Delete('delete-account')
   @UseGuards(AuthGuard('jwt'))
-  async deleteAccount(@Request() req, @Body() body: DeleteAccountDto) { // V13: Proper DTO
+  async deleteAccount(
+    @Request() req: RequestWithUser,
+    @Body() body: DeleteAccountDto,
+  ) {
+    // V13: Proper DTO
     return this.authService.deleteAccount(req.user.userId, body.password);
   }
 
   // LGPD: Direito de portabilidade — exportação completa de dados pessoais
   @Get('export-data')
   @UseGuards(AuthGuard('jwt'))
-  async exportData(@Request() req, @Res() res: Response) {
+  async exportData(@Request() req: RequestWithUser, @Res() res: Response) {
     const data = await this.authService.exportAllData(req.user.userId);
     res.header('Content-Type', 'application/json; charset=utf-8');
-    res.header('Content-Disposition', 'attachment; filename=finanza-dados-pessoais.json');
+    res.header(
+      'Content-Disposition',
+      'attachment; filename=finanza-dados-pessoais.json',
+    );
     res.send(JSON.stringify(data, null, 2));
   }
 }

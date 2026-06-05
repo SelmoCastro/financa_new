@@ -28,8 +28,7 @@ export class AiService {
   constructor() {
     // Prioridade: AI_API_KEY > OPENROUTER_API_KEY
     const apiKey = process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY;
-    const baseURL =
-      process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1';
+    const baseURL = process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1';
 
     if (apiKey) {
       const isZen = baseURL.includes('opencode.ai');
@@ -91,7 +90,9 @@ export class AiService {
         rawData.transactions || rawData.classifications || rawData;
 
       const parsedData: Record<string, ClassificationResult> = {};
-      for (const [key, value] of Object.entries(dataToProcess as Record<string, ClassificationResult>)) {
+      for (const [key, value] of Object.entries(
+        dataToProcess as Record<string, ClassificationResult>,
+      )) {
         parsedData[key] = {
           category: value.c || value.category || 'Outros',
           rule:
@@ -116,7 +117,9 @@ export class AiService {
   /**
    * Gera insights financeiros baseados no resumo do mês.
    */
-  async getFinancialInsights(summary: Record<string, unknown> | unknown[]): Promise<string> {
+  async getFinancialInsights(
+    summary: Record<string, unknown> | unknown[],
+  ): Promise<string> {
     if (!this.openai) {
       return 'Serviço AI não disponível no momento.';
     }
@@ -151,13 +154,16 @@ export class AiService {
    * The full financial profile can be large and may include raw encrypted values
    * from direct Prisma reads. Insights only need dashboard aggregates + top risks.
    */
-  private buildInsightsSummary(summary: Record<string, unknown> | unknown[]): string {
+  private buildInsightsSummary(
+    summary: Record<string, unknown> | unknown[],
+  ): string {
     const profile = Array.isArray(summary)
       ? { data: summary }
       : (summary as Record<string, any>);
     const userSummary = profile?.userSummary || profile || {};
     const currentMonth = userSummary?.currentMonth || {};
-    const rule503020 = userSummary?.rule503020 || userSummary?.rule50_30_20 || {};
+    const rule503020 =
+      userSummary?.rule503020 || userSummary?.rule50_30_20 || {};
     const categorySummary = Array.isArray(userSummary?.categorySummary)
       ? userSummary.categorySummary.slice(0, 6)
       : [];
@@ -181,7 +187,8 @@ export class AiService {
           income: currentMonth.income ?? userSummary.currentIncome ?? 0,
           expenses: currentMonth.expenses ?? userSummary.currentExpense ?? 0,
           balance: userSummary.balance ?? 0,
-          available: userSummary.available ?? userSummary.availableReal ?? undefined,
+          available:
+            userSummary.available ?? userSummary.availableReal ?? undefined,
           creditCardDebt: userSummary.creditCardDebt ?? 0,
         },
         trends: {
@@ -237,7 +244,10 @@ export class AiService {
   /**
    * Chat financeiro interativo que recebe contexto profundo do perfil.
    */
-  async chat(message: string, profile: Record<string, unknown> | unknown[]): Promise<string> {
+  async chat(
+    message: string,
+    profile: Record<string, unknown> | unknown[],
+  ): Promise<string> {
     if (!this.openai) {
       return 'Serviço de chat não disponível.';
     }
@@ -272,7 +282,9 @@ export class AiService {
    * Análise Preditiva - Com base no histórico de gastos recentes,
    * prevê como o mês atual vai terminar e destaca riscos.
    */
-  async getSpendingForecast(historicalData: Record<string, unknown> | unknown[]): Promise<string> {
+  async getSpendingForecast(
+    historicalData: Record<string, unknown> | unknown[],
+  ): Promise<string> {
     if (!this.openai) {
       return 'Serviço de previsão AI não disponível no momento.';
     }
@@ -306,7 +318,9 @@ export class AiService {
    * Análise Preditiva - Identifica possíveis assinaturas pagas
    * ou serviços esquecidos recorrentes nos últimos meses.
    */
-  async findRecurringSubscriptions(recentTransactions: Record<string, unknown> | unknown[]): Promise<string> {
+  async findRecurringSubscriptions(
+    recentTransactions: Record<string, unknown> | unknown[],
+  ): Promise<string> {
     if (!this.openai) {
       return 'Scanner de assinaturas não disponível no momento.';
     }
@@ -386,7 +400,11 @@ export class AiService {
             role: 'system',
             content: SYSTEM_PROMPTS.VISION_EXTRACTOR(categories),
           },
-          { role: 'user', content: contentParts as unknown as OpenAI.ChatCompletionContentPart[] },
+          {
+            role: 'user',
+            content:
+              contentParts as unknown as OpenAI.ChatCompletionContentPart[],
+          },
         ],
         response_format: { type: 'json_object' },
         max_tokens: 4096,
@@ -475,7 +493,10 @@ export class AiService {
       return { transactions: parsed, error: null };
     } catch (error: unknown) {
       const err = error as Error & { status?: number };
-      this.logger.error('Erro ao extrair via OCR + IA:', err?.message || String(error));
+      this.logger.error(
+        'Erro ao extrair via OCR + IA:',
+        err?.message || String(error),
+      );
       return { transactions: [], error: 'unknown_error' };
     }
   }

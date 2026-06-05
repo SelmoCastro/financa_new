@@ -1,6 +1,5 @@
 import { Controller, Get, Query, UseGuards, Req } from '@nestjs/common';
 import { AuditService } from './audit.service';
-import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { Request } from 'express';
 

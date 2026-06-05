@@ -17,14 +17,25 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   /** Versao de create() que permite setar isEmailVerified internamente (auth.service) */
-  async createWithEmailVerified(data: { email: string; name: string; password: string; isEmailVerified: boolean; termsAccepted?: boolean; termsAcceptedAt?: Date }) {
+  async createWithEmailVerified(data: {
+    email: string;
+    name: string;
+    password: string;
+    isEmailVerified: boolean;
+    termsAccepted?: boolean;
+    termsAcceptedAt?: Date;
+  }) {
     try {
       return await this.prisma.user.create({
         data,
         select: excludePassword,
       });
     } catch (error: unknown) {
-      if (error instanceof Error && 'code' in error && (error as { code: string }).code === 'P2002') {
+      if (
+        error instanceof Error &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2002'
+      ) {
         throw new ForbiddenException(
           'Este e-mail já está cadastrado em nossa base.',
         );
@@ -72,26 +83,32 @@ export class UsersService {
     });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto, requestingUserId?: string) {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    requestingUserId?: string,
+  ) {
     // VULN-10: Verify requesting user matches the target user
     if (requestingUserId !== undefined && requestingUserId !== id) {
       throw new ForbiddenException('You can only update your own profile');
     }
 
-    return this.prisma.user.updateMany({
-      where: { id },
-      data: updateUserDto,
-    }).then(() =>
-      this.prisma.user.findUnique({
+    return this.prisma.user
+      .updateMany({
         where: { id },
-        select: excludePassword,
+        data: updateUserDto,
       })
-    );
+      .then(() =>
+        this.prisma.user.findUnique({
+          where: { id },
+          select: excludePassword,
+        }),
+      );
   }
 
   async remove(id: string) {
-    // V26: Use hard delete for the user. Linked data will be handled by DB-level Cascade 
-    // defined in schema.prisma. We first remove tokens and sensitive logs manually 
+    // V26: Use hard delete for the user. Linked data will be handled by DB-level Cascade
+    // defined in schema.prisma. We first remove tokens and sensitive logs manually
     // to be safe before the big bang.
     return this.prisma.$transaction(async (tx) => {
       // Deleting the user row will cascade to all other tables due to onDelete: Cascade

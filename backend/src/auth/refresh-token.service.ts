@@ -29,7 +29,9 @@ export class RefreshTokenService {
    * Create a new token family on login.
    * Returns the family ID (used internally) and the hashed token to store.
    */
-  async createFamily(userId: string): Promise<{ familyId: string; tokenHash: string; token: string }> {
+  async createFamily(
+    userId: string,
+  ): Promise<{ familyId: string; tokenHash: string; token: string }> {
     const familyId = crypto.randomUUID();
     const token = crypto.randomBytes(48).toString('hex');
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
@@ -55,7 +57,9 @@ export class RefreshTokenService {
       data: { hashedRefreshToken: hashedLegacy },
     });
 
-    this.logger.log(`Created token family ${familyId.substring(0, 8)}... for user ${userId.substring(0, 8)}`);
+    this.logger.log(
+      `Created token family ${familyId.substring(0, 8)}... for user ${userId.substring(0, 8)}`,
+    );
     return { familyId, tokenHash, token };
   }
 
@@ -68,12 +72,26 @@ export class RefreshTokenService {
    * Looks up the token hash, validates family/reuse/expiry, rotates.
    * Used by AuthController.refresh() where userId is unknown upfront.
    */
-  async rotateByToken(refreshToken: string): Promise<{ token: string; accessToken: string; userId: string }> {
-    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+  async rotateByToken(
+    refreshToken: string,
+  ): Promise<{ token: string; accessToken: string; userId: string }> {
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
 
     const stored = await this.prisma.refreshToken.findUnique({
       where: { tokenHash },
-      include: { user: { select: { id: true, email: true, isEmailVerified: true, isAdmin: true } } },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            isEmailVerified: true,
+            isAdmin: true,
+          },
+        },
+      },
     });
 
     if (!stored) {
@@ -88,7 +106,9 @@ export class RefreshTokenService {
 
     if (!stored.active) {
       // Replay detected!
-      this.logger.warn(`⚠️ Refresh token reuse detected! Revoking family ${stored.familyId.substring(0, 8)}.`);
+      this.logger.warn(
+        `⚠️ Refresh token reuse detected! Revoking family ${stored.familyId.substring(0, 8)}.`,
+      );
       await this.revokeFamily(stored.userId, stored.familyId);
       await this.prisma.user.update({
         where: { id: stored.userId },
@@ -107,7 +127,10 @@ export class RefreshTokenService {
     });
 
     const newToken = crypto.randomBytes(48).toString('hex');
-    const newTokenHash = crypto.createHash('sha256').update(newToken).digest('hex');
+    const newTokenHash = crypto
+      .createHash('sha256')
+      .update(newToken)
+      .digest('hex');
 
     await this.prisma.refreshToken.create({
       data: {
@@ -125,13 +148,21 @@ export class RefreshTokenService {
       data: { hashedRefreshToken: hashedLegacy },
     });
 
-    this.logger.log(`Rotated token in family ${stored.familyId.substring(0, 8)} for user ${userId.substring(0, 8)}`);
+    this.logger.log(
+      `Rotated token in family ${stored.familyId.substring(0, 8)} for user ${userId.substring(0, 8)}`,
+    );
 
     return { token: newToken, accessToken: stored.familyId, userId: user.id };
   }
 
-  async rotate(userId: string, refreshToken: string): Promise<{ token: string; accessToken: string } | never> {
-    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+  async rotate(
+    userId: string,
+    refreshToken: string,
+  ): Promise<{ token: string; accessToken: string } | never> {
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
 
     // Find the token
     const stored = await this.prisma.refreshToken.findFirst({
@@ -152,7 +183,9 @@ export class RefreshTokenService {
 
     if (!stored.active) {
       // Token was already rotated — REPLAY ATTACK
-      this.logger.warn(`⚠️ Refresh token reuse detected for user ${userId.substring(0, 8)}! Revoking family ${stored.familyId.substring(0, 8)}.`);
+      this.logger.warn(
+        `⚠️ Refresh token reuse detected for user ${userId.substring(0, 8)}! Revoking family ${stored.familyId.substring(0, 8)}.`,
+      );
       await this.revokeFamily(userId, stored.familyId);
       await this.prisma.user.update({
         where: { id: userId },
@@ -168,7 +201,10 @@ export class RefreshTokenService {
     });
 
     const newToken = crypto.randomBytes(48).toString('hex');
-    const newTokenHash = crypto.createHash('sha256').update(newToken).digest('hex');
+    const newTokenHash = crypto
+      .createHash('sha256')
+      .update(newToken)
+      .digest('hex');
 
     await this.prisma.refreshToken.create({
       data: {
@@ -197,7 +233,9 @@ export class RefreshTokenService {
       where: { userId, familyId },
       data: { active: false },
     });
-    this.logger.warn(`Revoked token family ${familyId.substring(0, 8)} for user ${userId.substring(0, 8)}`);
+    this.logger.warn(
+      `Revoked token family ${familyId.substring(0, 8)} for user ${userId.substring(0, 8)}`,
+    );
   }
 
   /**
@@ -211,6 +249,8 @@ export class RefreshTokenService {
       where: { id: userId },
       data: { hashedRefreshToken: null },
     });
-    this.logger.log(`Revoked all refresh tokens for user ${userId.substring(0, 8)}`);
+    this.logger.log(
+      `Revoked all refresh tokens for user ${userId.substring(0, 8)}`,
+    );
   }
 }

@@ -14,7 +14,10 @@ export class ErrorsController {
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 reports per minute per IP
   @UseGuards(OptionalJwtAuthGuard)
   @Post('report')
-  async reportError(@Body() dto: CreateErrorReportDto, @Request() req: { user?: { userId?: string } }) {
+  async reportError(
+    @Body() dto: CreateErrorReportDto,
+    @Request() req: { user?: { userId?: string } },
+  ) {
     // If user is authenticated, override userId from JWT token (not from client body)
     if (req.user?.userId) {
       dto.userId = req.user.userId;

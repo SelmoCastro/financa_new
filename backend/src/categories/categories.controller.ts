@@ -14,6 +14,7 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RequireVerifiedEmail } from '../auth/require-verified-email.decorator';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'categories',
@@ -25,17 +26,20 @@ export class CategoriesController {
 
   @Post()
   @RequireVerifiedEmail()
-  create(@Body() createCategoryDto: CreateCategoryDto, @Request() req) {
+  create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.categoriesService.create(createCategoryDto, req.user.userId);
   }
 
   @Get()
-  findAll(@Request() req) {
+  findAll(@Request() req: RequestWithUser) {
     return this.categoriesService.findAll(req.user.userId);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req) {
+  async findOne(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.categoriesService.findOne(id, req.user.userId);
   }
 
@@ -44,7 +48,7 @@ export class CategoriesController {
   update(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
-    @Request() req,
+    @Request() req: RequestWithUser,
   ) {
     return this.categoriesService.update(
       id,
@@ -55,7 +59,7 @@ export class CategoriesController {
 
   @Delete(':id')
   @RequireVerifiedEmail()
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.categoriesService.remove(id, req.user.userId);
   }
 }

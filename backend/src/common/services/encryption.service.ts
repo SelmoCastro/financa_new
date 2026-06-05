@@ -39,7 +39,7 @@ export class EncryptionService implements OnModuleInit {
     if (!encryptionKey && !encryptionKeys) {
       console.warn(
         '⚠️  [EncryptionService] ENCRYPTION_KEY não definida — criptografia de campos desabilitada. ' +
-        'Dados financeiros serão armazenados em plaintext.',
+          'Dados financeiros serão armazenados em plaintext.',
       );
       this.enabled = false;
       return;
@@ -72,7 +72,7 @@ export class EncryptionService implements OnModuleInit {
         );
       }
       this.currentVersion = 'v1';
-      this.keys.set('v1', Buffer.from(encryptionKey!, 'hex'));
+      this.keys.set('v1', Buffer.from(encryptionKey, 'hex'));
     }
 
     this.enabled = true;
@@ -98,7 +98,9 @@ export class EncryptionService implements OnModuleInit {
     const iv = crypto.randomBytes(this.IV_BYTES);
     const key = this.keys.get(this.currentVersion);
     if (!key) {
-      throw new Error(`Chave de encriptação não encontrada para versão ${this.currentVersion}`);
+      throw new Error(
+        `Chave de encriptação não encontrada para versão ${this.currentVersion}`,
+      );
     }
 
     const cipher = crypto.createCipheriv(this.ALGORITHM, key, iv);
@@ -132,7 +134,7 @@ export class EncryptionService implements OnModuleInit {
     if (!key) {
       throw new Error(
         `Chave de decriptação não encontrada para versão ${version}. ` +
-        `Chaves disponíveis: ${Array.from(this.keys.keys()).join(', ')}`,
+          `Chaves disponíveis: ${Array.from(this.keys.keys()).join(', ')}`,
       );
     }
 
@@ -162,9 +164,18 @@ export class EncryptionService implements OnModuleInit {
     }
     if (value === null || value === undefined) return null;
     // CRITICAL: never encrypt NaN — it destroys the balance permanently
-    const normalized = typeof value === 'number' ? value.toFixed(2) : String(value);
-    if (normalized === 'NaN' || normalized === 'null' || normalized === 'undefined') {
-      console.error('[EncryptionService] encryptDecimal received invalid value: ' + String(value) + ' — storing as "0.00"');
+    const normalized =
+      typeof value === 'number' ? value.toFixed(2) : String(value);
+    if (
+      normalized === 'NaN' ||
+      normalized === 'null' ||
+      normalized === 'undefined'
+    ) {
+      console.error(
+        '[EncryptionService] encryptDecimal received invalid value: ' +
+          String(value) +
+          ' — storing as "0.00"',
+      );
       return this.encrypt('0.00');
     }
     return this.encrypt(normalized);
@@ -198,7 +209,8 @@ export class EncryptionService implements OnModuleInit {
    * Called after rotating keys to migrate data to the new key.
    */
   reEncrypt(encrypted: string | null | undefined): string | null {
-    if (!encrypted || !encrypted.startsWith(this.PREFIX)) return encrypted as string | null;
+    if (!encrypted || !encrypted.startsWith(this.PREFIX))
+      return encrypted as string | null;
     // Decrypt with whatever version it was encrypted with
     const plaintext = this.decrypt(encrypted);
     // Re-encrypt with current key version
