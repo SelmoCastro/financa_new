@@ -1,6 +1,6 @@
 {
-  "version": "1.10.8",
-  "mobileVersion": "1.10.8",
+  "version": "1.10.9",
+  "mobileVersion": "1.10.9",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Lint 76% limpo: eslint de 1547→375 problemas, 78/78 testes, tsc frontend zerado, todos os controllers tipados com RequestWithUser, floating promises tratadas, unused vars removidas"
+  "releaseNotes": "Refatoração: transactions.service partido em 3 serviços (570→490+124 linhas). Lint 88% limpo (1547→180). Tipagem de catch(error), $queryRaw, Mercado Pago APIs. Testes 78/78."
 }
