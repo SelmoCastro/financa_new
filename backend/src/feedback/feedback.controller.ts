@@ -37,7 +37,7 @@ export class FeedbackController {
   @Get()
   @UseGuards(AdminGuard)
   async getAllFeedbacks(@Request() req: RequestWithUser) {
-    return this.feedbackService.findAllFeedbacks(req.user.userId);
+    return this.feedbackService.findAllFeedbacks();
   }
 
   @Delete(':id')

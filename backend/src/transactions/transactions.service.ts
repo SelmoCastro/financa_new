@@ -24,6 +24,8 @@ import {
 } from '../common/services/balance-helper';
 import { normalizeDesc } from '../common/utils/normalize';
 
+type AccountRow = { id: string; userId: string; balance: string; deletedAt: Date | null };
+
 @Injectable()
 export class TransactionsService {
   constructor(
@@ -85,7 +87,7 @@ export class TransactionsService {
       // CRITICAL: Balance check + row lock before EXPENSE to prevent overdraft
       if (type === 'EXPENSE' && accountId) {
         const rows =
-          await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE`;
+          await tx.$queryRaw<AccountRow[]>`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE`;
         const account = rows[0];
         if (!account) throw new NotFoundException('Account not found');
         const currentBalance = decryptAmount(account.balance, this.encryption);
@@ -895,13 +897,13 @@ export class TransactionsService {
 
       // VULN-05: Lock the new account row with userId scoping if it's different from the old one
       if (newAccountId && newAccountId !== oldTx.accountId) {
-        await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE`;
+        await tx.$queryRaw<AccountRow[]>`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE`;
       }
 
       // VULN-03: Overdraft check — after reverting old balance, before applying new one
       if (newType === 'EXPENSE' && newAccountId) {
         const rows =
-          await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE`;
+          await tx.$queryRaw<AccountRow[]>`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE`;
         const account = rows[0];
         if (!account) throw new NotFoundException('Account not found');
         if (decryptAmount(account.balance, this.encryption) < newAmount) {
@@ -1079,7 +1081,7 @@ export class TransactionsService {
     return this.prisma.$transaction(async (tx) => {
       // CRITICAL: Balance check + row lock for source account before transfer
       const sourceRows =
-        await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${sourceAccountId} AND "userId" = ${userId} FOR UPDATE`;
+        await tx.$queryRaw<AccountRow[]>`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${sourceAccountId} AND "userId" = ${userId} FOR UPDATE`;
       const sourceAccount = sourceRows[0];
       if (!sourceAccount)
         throw new NotFoundException('Conta de origem não encontrada');
@@ -1089,7 +1091,7 @@ export class TransactionsService {
 
       // Lock the destination account row too — and validate it belongs to the user
       const destRows =
-        await tx.$queryRaw`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${destinationAccountId} AND "userId" = ${userId} FOR UPDATE`;
+        await tx.$queryRaw<AccountRow[]>`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${destinationAccountId} AND "userId" = ${userId} FOR UPDATE`;
       if (!destRows[0]) {
         throw new NotFoundException(
           'Conta de destino não encontrada ou não pertence ao usuário',
