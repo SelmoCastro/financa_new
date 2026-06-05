@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.7](https://github.com/SelmoCastro/financa_new/compare/v1.10.6...v1.10.7) (2026-06-05)
+
+All notable changes to this project will be documented in this file.
+
 ## [1.10.6](https://github.com/SelmoCastro/financa_new/compare/v1.10.5...v1.10.6) (2026-06-05)
 
 All notable changes to this project will be documented in this file.

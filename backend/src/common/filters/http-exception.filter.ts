@@ -12,6 +12,35 @@ import { Request, Response } from 'express';
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
+  private sanitizeText(value: string) {
+    return value
+      .replace(/([?&](?:token|refreshToken|access_token|password|email)=)[^&]*/gi, '$1[REDACTED]')
+      .replace(/bearer\s+[a-z0-9._-]+/gi, 'Bearer [REDACTED]');
+  }
+
+  private sanitizeUnknown(value: unknown): unknown {
+    if (typeof value === 'string') {
+      return this.sanitizeText(value);
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.sanitizeUnknown(item));
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([key, entryValue]) => {
+          if (/(token|password|authorization|cookie|email)/i.test(key)) {
+            return [key, '[REDACTED]'];
+          }
+          return [key, this.sanitizeUnknown(entryValue)];
+        }),
+      );
+    }
+
+    return value;
+  }
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -22,30 +51,27 @@ export class HttpExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const exceptionResponse =
+    const rawExceptionResponse =
       exception instanceof HttpException
         ? exception.getResponse()
         : { message: 'Internal Server Error' };
 
+    const exceptionResponse = this.sanitizeUnknown(rawExceptionResponse);
     const isProduction = process.env.NODE_ENV === 'production';
+    const safePath = this.sanitizeText(request.url);
 
-    // Log 4xx validation errors in detail
     if (exception instanceof HttpException && status >= 400 && status < 500) {
-      this.logger.warn(`HTTP ${status} ${request.method} ${request.url}: ${JSON.stringify(exceptionResponse)}`);
+      this.logger.warn(`HTTP ${status} ${request.method} ${safePath}: ${JSON.stringify(exceptionResponse)}`);
     }
 
     let errorBody: Record<string, unknown>;
     if (typeof exceptionResponse === 'string') {
-      // Sanitize JSON parse errors — don't leak parser details
-      const sanitized = exceptionResponse.replace(/^Expected .+ in JSON at position \d+$/,
-        'Invalid request body');
+      const sanitized = exceptionResponse.replace(/^Expected .+ in JSON at position \d+$/, 'Invalid request body');
       errorBody = { message: sanitized };
     } else if (isProduction && status >= 500) {
-      // In production, don't leak internal error details for 5xx errors
       errorBody = { message: 'Internal Server Error' };
     } else if (isProduction) {
-      // In production for 4xx, only return the message (not full validation details stack)
-      const resp = exceptionResponse as Record<string, any>;
+      const resp = exceptionResponse as Record<string, unknown>;
       errorBody = { message: resp.message || 'An error occurred' };
     } else {
       errorBody = typeof exceptionResponse === 'object' && exceptionResponse !== null
@@ -54,13 +80,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     if (!(exception instanceof HttpException)) {
-      console.error('Unhandled internal exception:', exception);
+      const err = exception as { message?: string; stack?: string } | undefined;
+      this.logger.error(
+        `Unhandled internal exception on ${request.method} ${safePath}: ${this.sanitizeText(err?.message || 'Unknown error')}`,
+        isProduction ? undefined : err?.stack,
+      );
     }
 
     response.status(status).json({
       statusCode: status,
       ...errorBody,
-      path: request.url,
+      path: safePath,
       timestamp: new Date().toISOString(),
     });
   }

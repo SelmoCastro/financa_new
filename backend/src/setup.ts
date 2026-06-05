@@ -28,8 +28,14 @@ export function configureApp(app: INestApplication) {
     'http://localhost:3000',
     // Only allow specific Vercel deploys in production (prevent wildcard subdomain abuse)
     ...(isProduction
-      ? [/^https:\/\/financa-new-[a-z0-9-]+\.vercel\.app$/, /finanzaai\.tech$/]
-      : [/\.vercel\.app$/, /\.finanzaai\.tech$/]),
+      ? [
+          /^https:\/\/financa-new-[a-z0-9-]+\.vercel\.app$/,
+          /^https:\/\/([a-z0-9-]+\.)?finanzaai\.tech$/,
+        ]
+      : [
+          /^https?:\/\/([a-z0-9-]+\.)?vercel\.app(?::\d+)?$/,
+          /^https?:\/\/([a-z0-9-]+\.)?finanzaai\.tech(?::\d+)?$/,
+        ]),
     /^exp:\/\//,
     // Local network only in development
     ...(!isProduction ? [/^http:\/\/192\.168\.\d+\.\d+:\d+$/] : []),

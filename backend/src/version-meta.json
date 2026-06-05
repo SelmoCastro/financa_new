@@ -1,6 +1,6 @@
 {
-  "version": "1.10.6",
-  "mobileVersion": "1.10.6",
+  "version": "1.10.7",
+  "mobileVersion": "1.10.7",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Segurança: chat web sem persistência local, API URL centralizada no mobile, proteção biométrica opcional, SSL pinning no app para api.finanzaai.tech"
+  "releaseNotes": "Segurança: CORS ancorado, exceções sanitizadas, throttle menos agressivo em 401, GTM externalizado para CSP sem inline, cache offline mobile criptografado em AES com chave no SecureStore"
 }

@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import api from './api';
 import { buildScopedCacheKey, getCachedJson, setCachedJson } from './cache';
 import { deleteLocalEntity, deleteQueueItem, enqueueOfflineMutation, upsertLocalEntity } from './localDb';
+import { getEncryptedJson, setEncryptedJson } from './secureLocalData';
 import { Transaction } from '../types';
 
 const QUEUE_PREFIX = '@finanza:offline-transaction-queue';
@@ -111,11 +112,9 @@ function normalizeQueueItem(item: any): PendingQueueItem | null {
 }
 
 async function readQueue(): Promise<QueueState> {
-  const raw = await AsyncStorage.getItem(await getQueueKey());
-  if (!raw) return [];
-
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = await getEncryptedJson<unknown[]>(await getQueueKey());
+    if (!parsed) return [];
     return Array.isArray(parsed) ? parsed.map(normalizeQueueItem).filter((item): item is PendingQueueItem => Boolean(item)) : [];
   } catch {
     return [];
@@ -123,7 +122,7 @@ async function readQueue(): Promise<QueueState> {
 }
 
 async function writeQueue(queue: QueueState) {
-  await AsyncStorage.setItem(await getQueueKey(), JSON.stringify(queue));
+  await setEncryptedJson(await getQueueKey(), queue as unknown[]);
 }
 
 async function getTransactionsCacheKey() {

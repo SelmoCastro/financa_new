@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import * as SecureStore from 'expo-secure-store';
+import { decryptString, encryptString } from './secureLocalData';
 
 const DB_NAME = 'finanza-offline.db';
 
@@ -110,6 +111,9 @@ export async function enqueueOfflineMutation(input: {
   const userId = await getCurrentUserIdScope();
   const now = new Date().toISOString();
   const id = input.id || makeLocalId(input.entityType);
+  const encryptedPayload = input.payload === undefined
+    ? null
+    : await encryptString(JSON.stringify(input.payload));
 
   await db.runAsync(
     `INSERT OR REPLACE INTO offline_queue (
@@ -123,7 +127,7 @@ export async function enqueueOfflineMutation(input: {
       input.operation,
       input.endpoint,
       input.method,
-      input.payload === undefined ? null : JSON.stringify(input.payload),
+      encryptedPayload,
       input.localEntityId ?? null,
       now,
       now,
@@ -133,23 +137,35 @@ export async function enqueueOfflineMutation(input: {
   return id;
 }
 
+async function decryptQueueRows(rows: OfflineQueueRow[]) {
+  return Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      payload_json: await decryptString(row.payload_json),
+    })),
+  );
+}
+
 export async function listPendingQueue(entityTypes?: OfflineEntityType[]) {
   await initLocalDb();
   const db = await getDb();
   const userId = await getCurrentUserIdScope();
+  let rows: OfflineQueueRow[];
 
   if (!entityTypes || entityTypes.length === 0) {
-    return db.getAllAsync<OfflineQueueRow>(
+    rows = await db.getAllAsync<OfflineQueueRow>(
       `SELECT * FROM offline_queue WHERE user_id = ? AND status IN ('pending', 'failed') ORDER BY created_at ASC`,
       [userId]
     );
+  } else {
+    const placeholders = entityTypes.map(() => '?').join(', ');
+    rows = await db.getAllAsync<OfflineQueueRow>(
+      `SELECT * FROM offline_queue WHERE user_id = ? AND status IN ('pending', 'failed') AND entity_type IN (${placeholders}) ORDER BY created_at ASC`,
+      [userId, ...entityTypes]
+    );
   }
 
-  const placeholders = entityTypes.map(() => '?').join(', ');
-  return db.getAllAsync<OfflineQueueRow>(
-    `SELECT * FROM offline_queue WHERE user_id = ? AND status IN ('pending', 'failed') AND entity_type IN (${placeholders}) ORDER BY created_at ASC`,
-    [userId, ...entityTypes]
-  );
+  return decryptQueueRows(rows);
 }
 
 export async function markQueueSynced(id: string) {
@@ -191,6 +207,7 @@ export async function upsertLocalEntity<T>(input: {
   const userId = await getCurrentUserIdScope();
   const now = new Date().toISOString();
   const id = input.id || makeLocalId(input.entityType);
+  const encryptedData = await encryptString(JSON.stringify(input.data));
 
   await db.runAsync(
     `INSERT INTO local_entities (
@@ -208,7 +225,7 @@ export async function upsertLocalEntity<T>(input: {
       userId,
       input.entityType,
       input.serverId ?? null,
-      JSON.stringify(input.data),
+      encryptedData,
       input.pendingSync ? 1 : 0,
       input.deletedLocally ? 1 : 0,
       now,
@@ -231,13 +248,27 @@ export async function listLocalEntities<T>(entityType: OfflineEntityType, option
     [userId, entityType]
   );
 
-  return rows.map((row) => {
-    try {
-      return { ...row, data: JSON.parse(row.data_json) as T };
-    } catch {
-      return row;
-    }
-  });
+  return Promise.all(
+    rows.map(async (row) => {
+      const decrypted = await decryptString(row.data_json);
+      if (!decrypted) {
+        return row;
+      }
+
+      try {
+        return {
+          ...row,
+          data_json: decrypted,
+          data: JSON.parse(decrypted) as T,
+        };
+      } catch {
+        return {
+          ...row,
+          data_json: decrypted,
+        };
+      }
+    }),
+  );
 }
 
 export async function deleteLocalEntity(id: string) {

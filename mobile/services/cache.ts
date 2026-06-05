@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { getEncryptedJson, removeEncryptedItem, setEncryptedJson } from './secureLocalData';
 
 const CACHE_PREFIX = '@finanza:api-cache';
 const CACHE_INDEX_PREFIX = '@finanza:api-cache-index';
@@ -41,12 +42,8 @@ async function getIndexKey() {
 }
 
 async function readIndex(): Promise<string[]> {
-  const key = await getIndexKey();
-  const raw = await AsyncStorage.getItem(key);
-  if (!raw) return [];
-
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = await getEncryptedJson<unknown[]>(await getIndexKey());
     return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
   } catch {
     return [];
@@ -54,9 +51,8 @@ async function readIndex(): Promise<string[]> {
 }
 
 async function writeIndex(keys: string[]) {
-  const key = await getIndexKey();
   const unique = Array.from(new Set(keys));
-  await AsyncStorage.setItem(key, JSON.stringify(unique));
+  await setEncryptedJson(await getIndexKey(), unique);
 }
 
 async function trackKey(cacheKey: string) {
@@ -82,16 +78,14 @@ export async function setCachedJson<T>(cacheKey: string, value: T, ttlMs?: numbe
     ttlMs,
   };
 
-  await AsyncStorage.setItem(cacheKey, JSON.stringify(envelope));
+  await setEncryptedJson(cacheKey, envelope as unknown as Record<string, unknown>);
   await trackKey(cacheKey);
 }
 
 export async function getCachedJson<T>(cacheKey: string): Promise<T | null> {
-  const raw = await AsyncStorage.getItem(cacheKey);
-  if (!raw) return null;
-
   try {
-    const parsed = JSON.parse(raw) as CacheEnvelope<T>;
+    const parsed = await getEncryptedJson<CacheEnvelope<T> & Record<string, unknown>>(cacheKey);
+    if (!parsed) return null;
     if (parsed?.ttlMs && Date.now() - parsed.savedAt > parsed.ttlMs) {
       await removeCachedJson(cacheKey);
       return null;
@@ -104,7 +98,7 @@ export async function getCachedJson<T>(cacheKey: string): Promise<T | null> {
 }
 
 export async function removeCachedJson(cacheKey: string) {
-  await AsyncStorage.removeItem(cacheKey);
+  await removeEncryptedItem(cacheKey);
   await untrackKey(cacheKey);
 }
 

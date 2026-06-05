@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { DeviceEventEmitter } from 'react-native';
 import api from './api';
+import { getEncryptedJson, setEncryptedJson } from './secureLocalData';
 import {
   deleteLocalEntity,
   deleteQueueItem,
@@ -87,19 +88,17 @@ async function getQueueKey() {
 }
 
 async function readQueue(): Promise<QueueState> {
-  const raw = await AsyncStorage.getItem(await getQueueKey());
-  if (!raw) return [];
-
   try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = await getEncryptedJson<unknown[]>(await getQueueKey());
+    if (!parsed) return [];
+    return Array.isArray(parsed) ? (parsed as QueueState) : [];
   } catch {
     return [];
   }
 }
 
 async function writeQueue(queue: QueueState) {
-  await AsyncStorage.setItem(await getQueueKey(), JSON.stringify(queue));
+  await setEncryptedJson(await getQueueKey(), queue as unknown[]);
 }
 
 async function queueRecurringCreate(payload: RecurringCreatePayload) {

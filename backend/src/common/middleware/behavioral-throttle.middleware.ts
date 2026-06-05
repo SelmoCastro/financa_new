@@ -72,9 +72,11 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
     tracker.lastActivity = Date.now();
 
     // Track response status
-    // BUG-SEC-04: Excluir 404 do contador de erros — não indicam abuso, apenas recursos inexistentes
+    // Excluir 401/404 do contador de erros:
+    // - 401 já é coberto por throttles específicos de auth/refresh
+    // - 404 não indica abuso, apenas recurso inexistente
     res.on('finish', () => {
-      if (res.statusCode >= 400 && res.statusCode !== 404) {
+      if (res.statusCode >= 400 && res.statusCode !== 401 && res.statusCode !== 404) {
         this.onError(ip);
       } else {
         this.onSuccess(ip);
