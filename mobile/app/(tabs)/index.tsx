@@ -384,11 +384,11 @@ export default function DashboardScreen() {
 
                         <View style={[styles.card, styles.cardGreen, styles.glassEffectGreen]}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                <Text style={[styles.cardLabelGreen, { marginBottom: 0 }]}>{t('dashboard.monthIncome')}</Text>
+                                <Text style={[styles.cardLabelGreen, { marginBottom: 0, flex: 1 }]} numberOfLines={1}>{t('dashboard.monthIncome')}</Text>
                                 {totals.incomeTrend !== 0 && (totals.currentIncome || 0) > 0 && (
-                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#dcfce7', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 }}>
-                                    <MaterialIcons name={totals.incomeTrend >= 0 ? "trending-up" : "trending-down"} size={10} color="#059669" />
-                                    <Text style={{ fontSize: 9, fontWeight: '700', color: '#059669', marginLeft: 2 }}>{Math.abs(totals.incomeTrend).toFixed(1)}%</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#dcfce7', paddingHorizontal: 3, paddingVertical: 1, borderRadius: 4 }}>
+                                    <MaterialIcons name={totals.incomeTrend >= 0 ? "trending-up" : "trending-down"} size={8} color="#059669" />
+                                    <Text style={{ fontSize: 8, fontWeight: '700', color: '#059669', marginLeft: 1 }}>{Math.round(Math.abs(totals.incomeTrend))}%</Text>
                                 </View>
                                 )}
                             </View>
@@ -397,11 +397,11 @@ export default function DashboardScreen() {
 
                         <View style={[styles.card, styles.cardRed, styles.glassEffectRed]}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                <Text style={[styles.cardLabelRed, { marginBottom: 0 }]}>{t('dashboard.monthExpense')}</Text>
+                                <Text style={[styles.cardLabelRed, { marginBottom: 0, flex: 1 }]} numberOfLines={1}>{t('dashboard.monthExpense')}</Text>
                                 {totals.expenseTrend !== 0 && (totals.currentExpense || 0) > 0 && (
-                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffe4e6', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 }}>
-                                    <MaterialIcons name={totals.expenseTrend <= 0 ? "trending-down" : "trending-up"} size={10} color="#e11d48" />
-                                    <Text style={{ fontSize: 9, fontWeight: '700', color: '#e11d48', marginLeft: 2 }}>{Math.abs(totals.expenseTrend).toFixed(1)}%</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffe4e6', paddingHorizontal: 3, paddingVertical: 1, borderRadius: 4 }}>
+                                    <MaterialIcons name={totals.expenseTrend <= 0 ? "trending-down" : "trending-up"} size={8} color="#e11d48" />
+                                    <Text style={{ fontSize: 8, fontWeight: '700', color: '#e11d48', marginLeft: 1 }}>{Math.round(Math.abs(totals.expenseTrend))}%</Text>
                                 </View>
                                 )}
                             </View>
@@ -614,7 +614,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     btnSecondarySmall: { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 12, padding: 8 },
     btnSecondary: { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 999, padding: 8 },
     cardsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
-    card: { width: '48%', padding: 16, borderRadius: 24 },
+    card: { width: '48%', padding: 16, borderRadius: 24, overflow: 'hidden' },
     glassEffect: {
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.2)',

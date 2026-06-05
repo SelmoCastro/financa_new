@@ -1,6 +1,6 @@
 {
-  "version": "1.10.3",
-  "mobileVersion": "1.10.3",
+  "version": "1.10.4",
+  "mobileVersion": "1.10.4",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corrigir badges de tendência 100% falsos quando mês atual sem transações"
+  "releaseNotes": "Corrigir badge de tendência estourando o card no mobile (tamanho menor, overflow hidden)"
 }
