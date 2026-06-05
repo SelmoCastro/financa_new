@@ -12,9 +12,10 @@
  *   // Use: await atomicBalanceUpdate(tx, accountId, userId, +amount, encryptionService)
  */
 
+import type { Prisma } from '@prisma/client';
 import { EncryptionService } from './encryption.service';
 
-type TransactionClient = any;
+type TransactionClient = Prisma.TransactionClient;
 
 interface BalanceRow {
   id: string;
@@ -68,11 +69,11 @@ export async function atomicBalanceUpdate(
     );
   }
 
-  const newEncrypted = encryption.encryptDecimal(newBalance);
+  const newEncrypted: string = encryption.encryptDecimal(newBalance) ?? '0.00';
 
   await tx.account.update({
     where: { id: accountId },
-    data: { balance: newEncrypted },
+    data: { balance: newEncrypted ?? '0.00' },
   });
 
   return newBalance;
@@ -128,10 +129,10 @@ export function decryptAmount(
  * This allows the API responses to return numeric values while the DB stores encrypted strings.
  */
 export function decryptRecordAmounts(
-  records: Record<string, any>[],
+  records: Record<string, unknown>[],
   fields: string[],
   encryption: EncryptionService,
-): Record<string, any>[] {
+): Record<string, unknown>[] {
   for (const record of records) {
     for (const field of fields) {
       if (record[field] !== null && record[field] !== undefined) {
@@ -156,18 +157,18 @@ export function decryptRecordAmounts(
  * Returns a new object with numeric values.
  */
 export function decryptRecord(
-  record: Record<string, any>,
+  record: Record<string, unknown>,
   fields: string[],
   encryption: EncryptionService,
-): Record<string, any> {
+): Record<string, unknown> {
   for (const field of fields) {
     if (record[field] !== null && record[field] !== undefined) {
       if (encryption.isEnabled() && String(record[field]).startsWith('enc:')) {
-        (record as any)[field] = Number(
+        record[field] = Number(
           encryption.decryptDecimal(String(record[field])),
         );
       } else {
-        (record as any)[field] = Number(record[field]);
+        record[field] = Number(record[field]);
       }
     }
   }

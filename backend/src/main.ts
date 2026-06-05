@@ -52,7 +52,7 @@ async function bootstrap() {
         `\n❌ FATAL: JWT_SECRET tem ${jwtSecret.length} caracteres — mínimo exigido: 32`,
       );
       console.error(
-        '   Gere uma chave forte com: node -e "console.log(require(\"crypto\").randomBytes(32).toString(\"hex\"))"',
+        `   Gere uma chave forte com: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`,
       );
       process.exit(1);
     }
@@ -66,7 +66,7 @@ async function bootstrap() {
         '   Valor atual começa com: "' + jwtSecret.substring(0, 8) + '..."',
       );
       console.error(
-        '   Gere uma chave forte com: node -e "console.log(require(\"crypto\").randomBytes(32).toString(\"hex\"))"',
+        `   Gere uma chave forte com: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`,
       );
       process.exit(1);
     }
@@ -132,12 +132,13 @@ async function bootstrap() {
     const host = process.env.HOST || '127.0.0.1';
     await app.listen(port, host);
     console.log(`🚀 Aplicação online na porta: ${port} (host: ${host})`);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('\n❌ ERRO FATAL AO INICIAR O SERVIDOR NESTJS ❌\n');
-    console.error('Nome do Erro:', error?.name);
-    console.error('Mensagem:', error?.message);
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('Nome do Erro:', err.name);
+    console.error('Mensagem:', err.message);
     if (process.env.NODE_ENV !== 'production') {
-      console.error('Stack Trace Completa:', error?.stack);
+      console.error('Stack Trace Completa:', err.stack);
     }
     console.error(
       '\nO Servidor está morrendo intencionalmente após logar o erro acima.',
