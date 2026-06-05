@@ -3,8 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { DeviceEventEmitter } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { buildScopedCacheKey, getCachedJson, setCachedJson } from './cache';
-
-const API_URL = 'https://api.finanzaai.tech/v1';
+import { API_URL } from './appConfig';
 
 const api = axios.create({
   baseURL: API_URL,

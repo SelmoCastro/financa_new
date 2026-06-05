@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { useLanguage } from './LanguageContext';
+import { API_URL } from '../services/appConfig';
 
 export type CurrencyCode = 'BRL' | 'USD' | 'EUR';
 
@@ -24,7 +25,6 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 
 const RATES_CACHE_KEY = 'finanza_exchange_rates';
 const RATES_CACHE_TTL = 30 * 60 * 1000; // 30 minutos
-const API_URL = 'https://api.finanzaai.tech/v1';
 
 export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [currency, setCurrencyState] = useState<CurrencyCode>('BRL');

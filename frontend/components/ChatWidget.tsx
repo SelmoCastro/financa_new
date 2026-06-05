@@ -17,43 +17,15 @@ const QUICK_SUGGESTIONS = [
     "Previsão de fechamento"
 ];
 
-const STORAGE_KEY = 'finanza_chat_history';
-
-const loadHistory = (): Message[] => {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return [];
-        return parsed.map((m: Message) => ({ ...m, timestamp: new Date(m.timestamp) }));
-    } catch {
-        return [];
-    }
-};
-
-const saveHistory = (msgs: Message[]) => {
-    try {
-        // Keep last 50 messages to avoid storage bloat
-        const trimmed = msgs.slice(-50);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-    } catch {
-        // Storage full — silently ignore
-    }
-};
-
 export const ChatWidget: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState('');
-    const [messages, setMessages] = useState<Message[]>(() => {
-        const saved = loadHistory();
-        if (saved.length > 0) return saved;
-        return [{
-            id: 'welcome',
-            text: 'Olá! Sou seu assistente Finanza AI. Como posso ajudar com suas finanças hoje?',
-            sender: 'ai',
-            timestamp: new Date()
-        }];
-    });
+    const [messages, setMessages] = useState<Message[]>([{
+        id: 'welcome',
+        text: 'Olá! Sou seu assistente Finanza AI. Como posso ajudar com suas finanças hoje?',
+        sender: 'ai',
+        timestamp: new Date()
+    }]);
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -65,11 +37,6 @@ export const ChatWidget: React.FC = () => {
     useEffect(() => {
         if (isOpen) scrollToBottom();
     }, [messages, isOpen]);
-
-    // Save history whenever messages change
-    useEffect(() => {
-        saveHistory(messages);
-    }, [messages]);
 
     // Cleanup: abort in-flight request on unmount
     useEffect(() => {
@@ -114,7 +81,7 @@ export const ChatWidget: React.FC = () => {
         } catch (error: any) {
             // Don't show error for aborted requests
             if (error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError' || error?.name === 'AbortError') return;
-            console.error('Chat error:', error);
+            if (import.meta.env.DEV) console.error('Chat error:', error?.response?.status || error?.message || 'Unknown error');
             setMessages(prev => [...prev, {
                 id: crypto.randomUUID(),
                 text: 'Desculpe, tive um problema ao processar sua pergunta.',

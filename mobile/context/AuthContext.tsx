@@ -12,8 +12,6 @@ import { offlineRecurringQueue } from '../services/offlineRecurringQueue';
 import { offlineBudgetQueue } from '../services/offlineBudgetQueue';
 import { offlineGoalQueue } from '../services/offlineGoalQueue';
 
-const API_URL = 'https://api.finanzaai.tech/v1';
-
 interface UserProfile {
     id: string;
     name: string;

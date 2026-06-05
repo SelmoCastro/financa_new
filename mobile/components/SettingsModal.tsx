@@ -10,6 +10,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Switch,
   useColorScheme,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
 import { getThemePreference, setThemePreference, ThemePreference } from '../services/themePreference';
 import { useCurrency, CurrencyCode } from '../context/CurrencyContext';
 import { useLanguage, AppLanguage } from '../context/LanguageContext';
+import { authenticateBiometric, getBiometricLockEnabled, isBiometricProtectionAvailable, setBiometricLockEnabled } from '../services/biometricLock';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -63,6 +65,10 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
   const [themeSaving, setThemeSaving] = useState(false);
 
+  // Proteção do app
+  const [biometricEnabled, setBiometricEnabledState] = useState(false);
+  const [biometricSaving, setBiometricSaving] = useState(false);
+
   // Sincronizar nameValue quando user muda
   React.useEffect(() => {
     if (user?.name) setNameValue(user.name);
@@ -71,6 +77,7 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
   React.useEffect(() => {
     if (!visible) return;
     getThemePreference().then(setThemePreferenceState).catch(() => setThemePreferenceState('system'));
+    getBiometricLockEnabled().then(setBiometricEnabledState).catch(() => setBiometricEnabledState(false));
   }, [visible]);
 
   const handleSaveName = async () => {
@@ -166,6 +173,41 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
     await setLanguage(nextLanguage);
   };
 
+  const handleToggleBiometric = async (nextValue: boolean) => {
+    if (biometricSaving) return;
+
+    setBiometricSaving(true);
+    try {
+      if (nextValue) {
+        const available = await isBiometricProtectionAvailable();
+        if (!available) {
+          Alert.alert(t('settings.error'), t('settings.biometric.unavailable'));
+          return;
+        }
+
+        const result = await authenticateBiometric({
+          promptMessage: t('settings.biometric.enablePrompt'),
+          cancelLabel: t('settings.cancel'),
+        });
+
+        if (!result.success) {
+          return;
+        }
+      }
+
+      await setBiometricLockEnabled(nextValue);
+      setBiometricEnabledState(nextValue);
+      Alert.alert(
+        t('settings.success'),
+        nextValue ? t('settings.biometric.enabled') : t('settings.biometric.disabled')
+      );
+    } catch {
+      Alert.alert(t('settings.error'), t('settings.biometric.error'));
+    } finally {
+      setBiometricSaving(false);
+    }
+  };
+
   const isPremium = user?.plan === 'premium';
 
   return (
@@ -220,6 +262,22 @@ export default function SettingsModal({ visible, onClose }: SettingsModalProps) 
                       </TouchableOpacity>
                     );
                   })}
+                </View>
+              </View>
+
+              <View style={styles.preferenceBlock}>
+                <View style={styles.switchRow}>
+                  <View style={styles.switchTextWrap}>
+                    <Text style={styles.preferenceLabel}>{t('settings.biometric')}</Text>
+                    <Text style={styles.helperText}>{t('settings.biometric.helper')}</Text>
+                  </View>
+                  <Switch
+                    value={biometricEnabled}
+                    onValueChange={handleToggleBiometric}
+                    disabled={biometricSaving}
+                    trackColor={{ false: '#94a3b8', true: '#818cf8' }}
+                    thumbColor={biometricEnabled ? '#4f46e5' : '#f8fafc'}
+                  />
                 </View>
               </View>
 
@@ -632,6 +690,16 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     color: isDark ? '#e2e8f0' : '#334155',
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  switchTextWrap: {
+    flex: 1,
+    gap: 4,
   },
   themeGroup: {
     flexDirection: 'row',

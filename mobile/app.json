@@ -2,7 +2,7 @@
   "expo": {
     "name": "Financa New",
     "slug": "mobile",
-    "version": "1.10.5",
+    "version": "1.10.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
@@ -27,7 +27,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 123,
+      "versionCode": 124,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.RECORD_AUDIO"
@@ -42,6 +42,12 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use sua biometria para desbloquear o Finanza AI."
+        }
+      ],
       "@react-native-community/datetimepicker",
       "expo-web-browser",
       [
@@ -58,6 +64,7 @@
     },
     "extra": {
       "router": {},
+      "apiUrl": "https://api.finanzaai.tech",
       "eas": {
         "projectId": "c9801d6e-4636-4c78-ae32-9702a4b93bd0"
       }
@@ -66,6 +73,6 @@
       "url": "https://u.expo.dev/c9801d6e-4636-4c78-ae32-9702a4b93bd0"
     }
   },
-  "version": "1.10.5",
-  "versionCode": 123
+  "version": "1.10.6",
+  "versionCode": 124
 }

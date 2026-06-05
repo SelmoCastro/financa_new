@@ -1,6 +1,6 @@
 {
-  "version": "1.10.5",
-  "mobileVersion": "1.10.5",
+  "version": "1.10.6",
+  "mobileVersion": "1.10.6",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Segurança: npm audit fix frontend (0 vulns), remover CSP duplicado Nginx, logs mobile sanitizados sem PII/tokens, dotfiles bloqueados (403), headers Helmet não duplicam mais"
+  "releaseNotes": "Segurança: chat web sem persistência local, API URL centralizada no mobile, proteção biométrica opcional, SSL pinning no app para api.finanzaai.tech"
 }
