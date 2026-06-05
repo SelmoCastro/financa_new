@@ -12,6 +12,20 @@ interface CacheEntry {
   fetchedAt: number;
 }
 
+interface FrankfurterResponse {
+  rates?: {
+    USD?: number | string;
+    EUR?: number | string;
+  };
+  date?: string;
+}
+
+interface BcbResponse {
+  value?: Array<{
+    cotacaoVenda?: number | string;
+  }>;
+}
+
 /**
  * Serviço de cotação multi-camada:
  * 1. Frankfurter (primário — grátis, sem key, multi-moeda)
@@ -24,6 +38,18 @@ export class ExchangeRateService {
   private readonly logger = new Logger(ExchangeRateService.name);
   private cache: CacheEntry | null = null;
   private readonly CACHE_TTL = 60 * 60 * 1000; // 1 hora
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return String(error);
+  }
+
+  private async readJson(response: Response): Promise<unknown> {
+    return response.json() as Promise<unknown>;
+  }
 
   /**
    * Retorna as taxas de câmbio BRL → USD/EUR.
@@ -38,8 +64,8 @@ export class ExchangeRateService {
       const rates = await this.fetchFrankfurter();
       this.setCache(rates);
       return rates;
-    } catch (err: any) {
-      this.logger.warn(`Frankfurter falhou: ${err?.message || err}`);
+    } catch (error: unknown) {
+      this.logger.warn(`Frankfurter falhou: ${this.getErrorMessage(error)}`);
     }
 
     // Fallback: BCB PTAX (USD) + Frankfurter só EUR
@@ -47,8 +73,8 @@ export class ExchangeRateService {
       const rates = await this.fetchBCBWithEURFallback();
       this.setCache(rates);
       return rates;
-    } catch (err: any) {
-      this.logger.warn(`BCB fallback falhou: ${err?.message || err}`);
+    } catch (error: unknown) {
+      this.logger.warn(`BCB fallback falhou: ${this.getErrorMessage(error)}`);
     }
 
     // Último recurso: cache expirado
@@ -96,10 +122,21 @@ export class ExchangeRateService {
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const data = await res.json();
+    const data = (await this.readJson(res)) as FrankfurterResponse;
+    const usd = data.rates?.USD;
+    const eur = data.rates?.EUR;
+
+    if (
+      typeof usd === 'undefined' ||
+      typeof eur === 'undefined' ||
+      typeof data.date !== 'string'
+    ) {
+      throw new Error('Resposta inválida da Frankfurter');
+    }
+
     return {
-      USD: Number(data.rates.USD),
-      EUR: Number(data.rates.EUR),
+      USD: Number(usd),
+      EUR: Number(eur),
       date: data.date,
       source: 'frankfurter',
     };
@@ -118,11 +155,14 @@ export class ExchangeRateService {
 
     let usdRate = 0;
     if (bcbRes.ok) {
-      const bcbData = await bcbRes.json();
-      const cotacao = bcbData?.value?.[0]?.cotacaoVenda;
-      if (cotacao) {
+      const bcbData = (await this.readJson(bcbRes)) as BcbResponse;
+      const cotacao = bcbData.value?.[0]?.cotacaoVenda;
+      if (typeof cotacao !== 'undefined') {
         // BCB retorna BRL por 1 USD — inverter
-        usdRate = 1 / Number(cotacao);
+        const cotacaoNumerica = Number(cotacao);
+        if (Number.isFinite(cotacaoNumerica) && cotacaoNumerica !== 0) {
+          usdRate = 1 / cotacaoNumerica;
+        }
       }
     }
 
@@ -133,8 +173,13 @@ export class ExchangeRateService {
         { signal: AbortSignal.timeout(5000) },
       );
       if (ffRes.ok) {
-        const ffData = await ffRes.json();
-        usdRate = Number(ffData.rates.USD);
+        const ffData = (await this.readJson(ffRes)) as FrankfurterResponse;
+        const usd = ffData.rates?.USD;
+        if (typeof usd === 'undefined') {
+          usdRate = 0.1835; // fallback hardcoded
+        } else {
+          usdRate = Number(usd);
+        }
       } else {
         usdRate = 0.1835; // fallback hardcoded
       }
@@ -148,10 +193,16 @@ export class ExchangeRateService {
         { signal: AbortSignal.timeout(5000) },
       );
       if (eurRes.ok) {
-        const eurData = await eurRes.json();
-        eurRate = Number(eurData.rates.EUR);
+        const eurData = (await this.readJson(eurRes)) as FrankfurterResponse;
+        const eur = eurData.rates?.EUR;
+        if (typeof eur === 'undefined') {
+          throw new Error('Resposta inválida da Frankfurter');
+        }
+
+        eurRate = Number(eur);
       }
-    } catch {
+    } catch (error: unknown) {
+      void error;
       // EUR via cross-rate USD/EUR
       eurRate = usdRate * 0.92; // aproximação
     }

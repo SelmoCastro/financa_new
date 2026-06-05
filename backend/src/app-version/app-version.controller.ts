@@ -2,6 +2,31 @@ import { Controller, Get } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null;
+};
+
+const readString = (value: unknown, fallback: string): string => {
+  return typeof value === 'string' ? value : fallback;
+};
+
+const readStringOrStringArray = (
+  value: unknown,
+): string | string[] | undefined => {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (
+    Array.isArray(value) &&
+    value.every((item): item is string => typeof item === 'string')
+  ) {
+    return value;
+  }
+
+  return undefined;
+};
+
 @Controller('v1/app')
 export class AppVersionController {
   /**
@@ -19,8 +44,13 @@ export class AppVersionController {
 
     try {
       const pkgPath = path.resolve(__dirname, '..', '..', '..', 'package.json');
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-      version = pkg.version || '0.0.0';
+      const pkg: unknown = JSON.parse(
+        fs.readFileSync(pkgPath, 'utf-8'),
+      ) as unknown;
+
+      if (isRecord(pkg)) {
+        version = readString(pkg.version, '0.0.0');
+      }
     } catch {
       // fallback
     }
@@ -44,15 +74,19 @@ export class AppVersionController {
         }
       }
 
-      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-      minRequiredVersion = meta.minRequiredVersion || '1.0.0';
-      // Use mobileVersion from meta if set, otherwise fall back to package.json version
-      mobileVersion = meta.mobileVersion || version;
+      const meta: unknown = JSON.parse(
+        fs.readFileSync(metaPath, 'utf-8'),
+      ) as unknown;
 
-      if (Array.isArray(meta.releaseNotes)) {
-        releaseNotes = meta.releaseNotes;
-      } else if (typeof meta.releaseNotes === 'string') {
-        releaseNotes = meta.releaseNotes;
+      if (isRecord(meta)) {
+        minRequiredVersion = readString(meta.minRequiredVersion, '1.0.0');
+        // Use mobileVersion from meta if set, otherwise fall back to package.json version
+        mobileVersion = readString(meta.mobileVersion, version);
+
+        const notes = readStringOrStringArray(meta.releaseNotes);
+        if (notes !== undefined) {
+          releaseNotes = notes;
+        }
       }
     } catch {
       // fallback to package.json version

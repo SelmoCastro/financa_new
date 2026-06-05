@@ -12,42 +12,45 @@ import { EncryptionService } from '../services/encryption.service';
  * Recursively walk a response object and decrypt any encrypted amount fields.
  * Handles arrays, nested objects, and primitives.
  */
-function decryptDeep(obj: any, encryption: EncryptionService): any {
-  if (obj === null || obj === undefined) return obj;
-  if (Array.isArray(obj))
-    return obj.map((item) => decryptDeep(item, encryption));
-  if (typeof obj !== 'object') return obj;
+function decryptDeep(value: unknown, encryption: EncryptionService): unknown {
+  if (value === null || value === undefined) return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => decryptDeep(item, encryption));
+  }
+  if (typeof value !== 'object') return value;
 
   // Check if this object has a model type indicator (e.g., from Prisma)
   // We determine which fields to decrypt based on the fields present
-  for (const field of Object.keys(obj)) {
-    const value = obj[field];
+  const record = value as Record<string, unknown>;
+
+  for (const field of Object.keys(record)) {
+    const fieldValue = record[field];
     if (
-      value !== null &&
-      value !== undefined &&
-      typeof value === 'string' &&
-      value.startsWith('enc:')
+      fieldValue !== null &&
+      fieldValue !== undefined &&
+      typeof fieldValue === 'string' &&
+      fieldValue.startsWith('enc:')
     ) {
       // This is an encrypted field — decrypt it
       // Convert string number back to number for the client
       try {
         if (encryption.isEnabled()) {
-          obj[field] = Number(encryption.decryptDecimal(value));
+          record[field] = Number(encryption.decryptDecimal(fieldValue));
         } else {
-          obj[field] = Number(value);
+          record[field] = Number(fieldValue);
         }
       } catch {
         // If decryption fails, leave the value as-is (will show as NaN on frontend)
         // This shouldn't happen if encryption is working correctly
-        obj[field] = 0;
+        record[field] = 0;
       }
-    } else if (typeof value === 'object') {
+    } else if (typeof fieldValue === 'object') {
       // Recurse into nested objects/arrays
-      obj[field] = decryptDeep(value, encryption);
+      record[field] = decryptDeep(fieldValue, encryption);
     }
   }
 
-  return obj;
+  return record;
 }
 
 /**
@@ -60,12 +63,15 @@ function decryptDeep(obj: any, encryption: EncryptionService): any {
  * Any field value starting with 'enc:' will be automatically decrypted.
  */
 @Injectable()
-export class DecryptInterceptor implements NestInterceptor {
+export class DecryptInterceptor implements NestInterceptor<unknown, unknown> {
   constructor(private readonly encryption: EncryptionService) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler<unknown>,
+  ): Observable<unknown> {
     return next.handle().pipe(
-      map((data) => {
+      map((data: unknown) => {
         if (!this.encryption.isEnabled()) return data;
         return decryptDeep(data, this.encryption);
       }),

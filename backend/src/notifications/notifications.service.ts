@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../common/services/encryption.service';
 import {
@@ -11,6 +12,28 @@ import {
   atomicBalanceUpdate,
 } from '../common/services/balance-helper';
 
+type NotificationActionMeta = {
+  invoiceId?: string;
+  accountId?: string;
+  amount?: number;
+  description?: string;
+  transactionType?: 'INCOME' | 'EXPENSE';
+  categoryId?: string | null;
+  creditCardId?: string | null;
+  currentInstallment?: number | null;
+  installmentCount?: number | null;
+  installmentId?: string;
+};
+
+type NotificationCreateData = {
+  title: string;
+  message: string;
+  type: string;
+  metadata?: Prisma.InputJsonObject | null;
+  actionType?: string;
+  actionMeta?: Prisma.InputJsonObject | null;
+};
+
 @Injectable()
 export class NotificationsService {
   constructor(
@@ -18,29 +41,17 @@ export class NotificationsService {
     private encryption: EncryptionService,
   ) {}
 
-  async create(
-    userId: string,
-    data: {
-      title: string;
-      message: string;
-      type: string;
-      metadata?: Record<string, unknown> | null;
-      actionType?: string;
-      actionMeta?: Record<string, unknown> | null;
-    },
-  ) {
+  async create(userId: string, data: NotificationCreateData) {
     return this.prisma.notification.create({
       data: {
         userId,
         title: data.title,
         message: data.message,
         type: data.type,
-        metadata: data.metadata
-          ? JSON.parse(JSON.stringify(data.metadata))
-          : {},
+        metadata: data.metadata ? structuredClone(data.metadata) : {},
         actionType: data.actionType,
         actionMeta: data.actionMeta
-          ? JSON.parse(JSON.stringify(data.actionMeta))
+          ? structuredClone(data.actionMeta)
           : undefined,
       },
     });
@@ -74,6 +85,65 @@ export class NotificationsService {
     });
   }
 
+  private parseActionMeta(
+    actionMeta: Prisma.JsonValue | null | undefined,
+  ): NotificationActionMeta {
+    if (
+      !actionMeta ||
+      typeof actionMeta !== 'object' ||
+      Array.isArray(actionMeta)
+    ) {
+      return {};
+    }
+
+    const meta = actionMeta as Record<string, unknown>;
+
+    return {
+      invoiceId: this.getString(meta.invoiceId),
+      accountId: this.getString(meta.accountId),
+      amount: this.getNumber(meta.amount),
+      description: this.getString(meta.description),
+      transactionType: this.getTransactionType(meta.transactionType),
+      categoryId: this.getNullableString(meta.categoryId),
+      creditCardId: this.getNullableString(meta.creditCardId),
+      currentInstallment: this.getNullableNumber(meta.currentInstallment),
+      installmentCount: this.getNullableNumber(meta.installmentCount),
+      installmentId: this.getString(meta.installmentId),
+    };
+  }
+
+  private getString(value: unknown): string | undefined {
+    return typeof value === 'string' ? value : undefined;
+  }
+
+  private getNullableString(value: unknown): string | null | undefined {
+    if (value === null) {
+      return null;
+    }
+
+    return typeof value === 'string' ? value : undefined;
+  }
+
+  private getNumber(value: unknown): number | undefined {
+    return typeof value === 'number' && Number.isFinite(value)
+      ? value
+      : undefined;
+  }
+
+  private getNullableNumber(value: unknown): number | null | undefined {
+    if (value === null) {
+      return null;
+    }
+
+    return typeof value === 'number' && Number.isFinite(value)
+      ? value
+      : undefined;
+  }
+
+  private getTransactionType(value: unknown): 'INCOME' | 'EXPENSE' | undefined {
+    return value === 'INCOME' || value === 'EXPENSE' ? value : undefined;
+  }
+
   /**
    * Processa ação do usuário em notificação interativa.
    * - confirm: cria transação + atualiza saldo + incrementa parcela (se aplicável)
@@ -86,14 +156,14 @@ export class NotificationsService {
     });
     if (!notif) throw new NotFoundException('Notificação não encontrada');
 
-    const meta = (notif.actionMeta || {}) as Record<string, any>;
+    const meta = this.parseActionMeta(notif.actionMeta);
 
     if (action === 'confirm') {
       // ACTION_INVOICE_DUE: pay the credit card invoice
       if (notif.type === 'ACTION_INVOICE_DUE') {
-        const invoiceId = meta.invoiceId as string;
-        const accountId = meta.accountId as string;
-        let amount = meta.amount as number;
+        const invoiceId = meta.invoiceId;
+        const accountId = meta.accountId;
+        let amount = meta.amount;
 
         if (!invoiceId || !accountId) {
           throw new BadRequestException('Dados da fatura incompletos');
@@ -117,6 +187,7 @@ export class NotificationsService {
             'Valor da fatura indisponível — exclua esta notificação',
           );
         }
+        const invoiceAmount = amount;
 
         // Use interactive transaction for atomicity
         await this.prisma.$transaction(async (tx) => {
@@ -134,7 +205,7 @@ export class NotificationsService {
             rows[0].balance,
             this.encryption,
           );
-          if (currentBalance < amount) {
+          if (currentBalance < invoiceAmount) {
             throw new BadRequestException(
               'Saldo insuficiente para pagar a fatura',
             );
@@ -145,7 +216,7 @@ export class NotificationsService {
             tx,
             accountId,
             userId,
-            -amount,
+            -invoiceAmount,
             this.encryption,
           );
 
@@ -163,7 +234,7 @@ export class NotificationsService {
             data: {
               paidAmount: encryptAmount(
                 decryptAmount(existingInvoice.paidAmount, this.encryption) +
-                  amount,
+                  invoiceAmount,
                 this.encryption,
               ),
               isPaid: true,
@@ -175,7 +246,7 @@ export class NotificationsService {
           await tx.transaction.create({
             data: {
               description: meta.description || `Pagamento fatura`,
-              amount: encryptAmount(amount, this.encryption),
+              amount: encryptAmount(invoiceAmount, this.encryption),
               date: new Date(),
               type: 'EXPENSE',
               accountId,
@@ -193,7 +264,7 @@ export class NotificationsService {
         return {
           success: true,
           invoiceId,
-          message: `Fatura paga com sucesso! R$ ${amount.toFixed(2)} debitado da conta.`,
+          message: `Fatura paga com sucesso! R$ ${invoiceAmount.toFixed(2)} debitado da conta.`,
         };
       }
 
@@ -210,7 +281,7 @@ export class NotificationsService {
             'Valor da notificação indisponível — exclua e aguarde a próxima',
           );
         }
-        const numericAmount = Number(amount);
+        const numericAmount = amount;
 
         const [transaction] = await this.prisma.$transaction(async (tx) => {
           // 1. If accountId present, verify ownership AND sufficient balance (atomic)
@@ -236,17 +307,17 @@ export class NotificationsService {
           // 2. Create the transaction (amount is now encrypted string)
           const txn = await tx.transaction.create({
             data: {
-              description: meta.description,
+              description: meta.description!,
               amount: encryptAmount(numericAmount, this.encryption),
               date: new Date(),
               type,
-              categoryId: meta.categoryId || null,
-              accountId: meta.accountId || null,
-              creditCardId: meta.creditCardId || null,
+              categoryId: meta.categoryId ?? null,
+              accountId: meta.accountId ?? null,
+              creditCardId: meta.creditCardId ?? null,
               userId,
               isFixed: true,
-              currentInstallment: meta.currentInstallment || null,
-              installmentCount: meta.installmentCount || null,
+              currentInstallment: meta.currentInstallment ?? null,
+              installmentCount: meta.installmentCount ?? null,
             },
           });
 
@@ -256,7 +327,7 @@ export class NotificationsService {
               type === 'INCOME' ? numericAmount : -numericAmount;
             await atomicBalanceUpdate(
               tx,
-              meta.accountId as string,
+              meta.accountId,
               userId,
               adjustment,
               this.encryption,
