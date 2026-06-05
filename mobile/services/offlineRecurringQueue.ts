@@ -242,11 +242,11 @@ async function syncPendingRecurringQueue() {
 
       // Keep the item in the queue when the network is unstable
       if (status == null || code === 'ERR_NETWORK' || code === 'ECONNABORTED') {
-        break;
+        continue;
       }
 
       // For 4xx/5xx errors, also keep in queue for retry
-      break;
+      continue;
     }
   }
 

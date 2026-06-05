@@ -204,8 +204,8 @@ async function syncPendingGoalQueue() {
 
       const status = error?.response?.status;
       const code = error?.code;
-      if (status == null || code === 'ERR_NETWORK' || code === 'ECONNABORTED') break;
-      break;
+      if (status == null || code === 'ERR_NETWORK' || code === 'ECONNABORTED') continue;
+      continue;
     }
   }
 

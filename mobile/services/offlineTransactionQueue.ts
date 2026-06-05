@@ -463,10 +463,11 @@ async function syncPendingTransactionQueue() {
         error?.message ||
         'Erro desconhecido';
 
-      // Network/unstable error: keep item in queue, stop loop
+      // Network/unstable error: keep item in queue, try next item
       if (status == null || code === 'ERR_NETWORK' || code === 'ECONNABORTED') {
         errors.push({ itemId: item.id, description: item.payload.description, error: errorMessage, status });
-        break;
+        // Don't break — try subsequent items in case they work
+        continue;
       }
 
       // HTTP error (4xx/5xx): capture message, remove item from queue, continue with next
