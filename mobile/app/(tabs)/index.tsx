@@ -385,7 +385,7 @@ export default function DashboardScreen() {
                         <View style={[styles.card, styles.cardGreen, styles.glassEffectGreen]}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                                 <Text style={[styles.cardLabelGreen, { marginBottom: 0 }]}>{t('dashboard.monthIncome')}</Text>
-                                {totals.incomeTrend !== 0 && (
+                                {totals.incomeTrend !== 0 && (totals.currentIncome || 0) > 0 && (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#dcfce7', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 }}>
                                     <MaterialIcons name={totals.incomeTrend >= 0 ? "trending-up" : "trending-down"} size={10} color="#059669" />
                                     <Text style={{ fontSize: 9, fontWeight: '700', color: '#059669', marginLeft: 2 }}>{Math.abs(totals.incomeTrend).toFixed(1)}%</Text>
@@ -398,7 +398,7 @@ export default function DashboardScreen() {
                         <View style={[styles.card, styles.cardRed, styles.glassEffectRed]}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                                 <Text style={[styles.cardLabelRed, { marginBottom: 0 }]}>{t('dashboard.monthExpense')}</Text>
-                                {totals.expenseTrend !== 0 && (
+                                {totals.expenseTrend !== 0 && (totals.currentExpense || 0) > 0 && (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffe4e6', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 }}>
                                     <MaterialIcons name={totals.expenseTrend <= 0 ? "trending-down" : "trending-up"} size={10} color="#e11d48" />
                                     <Text style={{ fontSize: 9, fontWeight: '700', color: '#e11d48', marginLeft: 2 }}>{Math.abs(totals.expenseTrend).toFixed(1)}%</Text>

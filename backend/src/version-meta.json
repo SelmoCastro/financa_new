@@ -1,6 +1,6 @@
 {
-  "version": "1.10.2",
-  "mobileVersion": "1.10.2",
+  "version": "1.10.3",
+  "mobileVersion": "1.10.3",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Correção de bugs no dashboard mobile: i18n (AiInsightsWidget, MonthlyBarChart, CategoryChart), nome no welcome, fixos pendentes nos cards de income/expenses, layout Performance Mensal"
+  "releaseNotes": "Corrigir badges de tendência 100% falsos quando mês atual sem transações"
 }
