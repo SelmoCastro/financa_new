@@ -1,6 +1,6 @@
 {
-  "version": "1.10.4",
-  "mobileVersion": "1.10.4",
+  "version": "1.10.5",
+  "mobileVersion": "1.10.5",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corrigir badge de tendência estourando o card no mobile (tamanho menor, overflow hidden)"
+  "releaseNotes": "Segurança: npm audit fix frontend (0 vulns), remover CSP duplicado Nginx, logs mobile sanitizados sem PII/tokens, dotfiles bloqueados (403), headers Helmet não duplicam mais"
 }

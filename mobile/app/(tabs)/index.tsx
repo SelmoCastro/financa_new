@@ -56,7 +56,7 @@ export default function DashboardScreen() {
                 setAccounts(accRes.data);
                 setCategories(catRes.data);
             } catch (err) {
-                console.error('Error fetching data for import:', err);
+                if (__DEV__) console.error('Error fetching data for import:', (err as any)?.response?.status || (err as any)?.message);
             }
         };
         fetchFiltersData();

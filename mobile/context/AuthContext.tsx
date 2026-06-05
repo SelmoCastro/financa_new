@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { safeLog } from '../services/safeLog';
 import { DeviceEventEmitter, AppState, AppStateStatus } from 'react-native';
 import { router } from 'expo-router';
 import api from '../services/api';
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 });
             }
         } catch (e) {
-            console.warn('[AuthContext] Erro ao buscar perfil:', e);
+            safeLog('[AuthContext] Erro ao buscar perfil', e);
         }
     }, []);
 
@@ -86,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     warmOfflineCache().catch(() => {});
                 }
             } catch (e) {
-                console.warn('[AuthContext] Init profile fetch failed (expected if token expired):', e);
+                safeLog('[AuthContext] Init profile fetch failed', e);
             } finally {
                 if (mounted) setIsLoading(false);
             }

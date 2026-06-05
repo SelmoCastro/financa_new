@@ -52,7 +52,7 @@ export const TransactionsProvider = ({ children }: { children: ReactNode }) => {
             ]);
             setTransactions(mergePendingTransactions(response.data, pendingTransactions));
         } catch (err) {
-            console.error(err);
+            if (__DEV__) console.error('[TransactionsContext]', (err as any)?.response?.status || (err as any)?.message || 'Unknown error');
             setError('Falha ao carregar transações');
 
             try {
