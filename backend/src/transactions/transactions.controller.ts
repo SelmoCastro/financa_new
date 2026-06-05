@@ -19,6 +19,8 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TransactionsService } from './transactions.service';
+import { TransactionsImportService } from './transactions-import.service';
+import { TransactionsTransferService } from './transactions-transfer.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -44,6 +46,8 @@ export class TransactionsController {
   private readonly logger = new Logger(TransactionsController.name);
   constructor(
     private readonly transactionsService: TransactionsService,
+    private readonly transactionsImportService: TransactionsImportService,
+    private readonly transactionsTransferService: TransactionsTransferService,
     private readonly aiService: AiService,
     private readonly reportsService: ReportsService,
     private readonly ocrService: OcrService,
@@ -67,7 +71,10 @@ export class TransactionsController {
     @Body() transferDto: TransferTransactionDto,
     @Request() req: RequestWithUser,
   ) {
-    return this.transactionsService.transfer(transferDto, req.user.userId);
+    return this.transactionsTransferService.transfer(
+      transferDto,
+      req.user.userId,
+    );
   }
 
   @Post('import/validate')
@@ -80,7 +87,10 @@ export class TransactionsController {
     if (importData && importData.length > 500) {
       throw new BadRequestException('Maximum 500 transactions per import');
     }
-    return this.transactionsService.validateImport(importData, req.user.userId);
+    return this.transactionsImportService.validateImport(
+      importData,
+      req.user.userId,
+    );
   }
 
   @Post('import/receipt')
@@ -258,7 +268,7 @@ export class TransactionsController {
             icon: t.suggestedIcon,
             confidence: t.confidence,
           };
-          return this.transactionsService.enrichTransactionWithAi(
+          return this.transactionsImportService.enrichTransactionWithAi(
             { ...t, cnpj: t.cnpj },
             suggestion,
             t.description,
@@ -285,7 +295,7 @@ export class TransactionsController {
     @Body() payload: ImportConfirmPayloadDto,
     @Request() req: RequestWithUser,
   ) {
-    return this.transactionsService.confirmImport(
+    return this.transactionsImportService.confirmImport(
       payload.transactions,
       req.user.userId,
       payload.rejectedFitIds || [],
