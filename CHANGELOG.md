@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.2](https://github.com/SelmoCastro/financa_new/compare/v1.10.1...v1.10.2) (2026-06-04)
+
+### ✨ Features
+
+* 2 meses premium grátis para novos usuários
+* conversão real de moeda com taxa de câmbio (BCB + Frankfurter)
+* i18n completo no frontend (Dashboard, History, Goals, Budgets, Timeline, Recurring, Settings)
+* (admin) add 6m and 12m duration options in plan selector
+* (mobile) add plan picker modal with prices before MP checkout
+
+### 🐛 Bug Fixes
+
+* AI daily limit increased from 1 to 10 for free plan
+* (mobile) replace broken /premium redirect with direct MP checkout flow
+* (deploy) backup and validate .env critical vars during VPS deploy
+* receipt import - Content-Type race condition + AI category learning
+
+### 🧹 Chores
+
+* release v1.10.0
+* sync versions across all packages (1.9.2)
+* release v1.9.1 - CurrencyContext, i18n mobile, ajustes UI
+* release v1.9.0
+* release v1.8.98
+* release v1.8.97
+* release v1.8.96
+* release v1.8.95
+* release v1.8.89
+* release v1.8.81
+* release v1.8.80
+
+All notable changes to this project will be documented in this file.
+
 ## [1.9.0](https://github.com/SelmoCastro/financa_new/compare/v1.8.98...v1.9.0) (2026-06-01)
 
 All notable changes to this project will be documented in this file.

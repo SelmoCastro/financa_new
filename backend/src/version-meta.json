@@ -1,6 +1,6 @@
 {
-  "version": "1.10.0",
-  "mobileVersion": "1.10.0",
+  "version": "1.10.2",
+  "mobileVersion": "1.10.2",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "v1.10.0 - Conversão real de moeda (BCB + Frankfurter), IA atualizada (gemini-2.5-flash), limite IA 10/dia"
+  "releaseNotes": "Correção de bugs no dashboard mobile: i18n (AiInsightsWidget, MonthlyBarChart, CategoryChart), nome no welcome, fixos pendentes nos cards de income/expenses, layout Performance Mensal"
 }

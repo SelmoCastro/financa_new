@@ -22,6 +22,7 @@ import { InviteNotification } from '../../components/InviteNotification';
 import { NotificationBell } from './_layout';
 import { useCurrency } from '../../context/CurrencyContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import { offlineTransactionQueue } from '../../services/offlineTransactionQueue';
 
 
@@ -34,6 +35,7 @@ export default function DashboardScreen() {
     const { transactions, loading, refreshing, onRefresh, isPrivacyEnabled, togglePrivacy } = useTransactions();
     const { formatCurrency } = useCurrency();
     const { t, language } = useLanguage();
+    const { user } = useAuth();
 
     const [modalVisible, setModalVisible] = useState(false);
     const [importModalVisible, setImportModalVisible] = useState(false);
@@ -165,6 +167,17 @@ export default function DashboardScreen() {
 
     const forecast = useFixedTransactions(transactions, totals);
 
+    const missingFixedIncome = useMemo(() =>
+        forecast.missingFixed.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0),
+    [forecast.missingFixed]);
+
+    const missingFixedExpense = useMemo(() =>
+        forecast.missingFixed.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0),
+    [forecast.missingFixed]);
+
+    const displayIncome = (totals.currentIncome || 0) + missingFixedIncome;
+    const displayExpense = (totals.currentExpense || 0) + missingFixedExpense;
+
     const topVillains = useMemo(() => {
         if (!forecast?.topVillains) return [];
         return forecast.topVillains.slice(0, 3);
@@ -238,7 +251,7 @@ export default function DashboardScreen() {
     return (
         <View style={[styles.container, { position: 'relative' }]}>
             <ScrollView
-                contentContainerStyle={{ paddingBottom: 100 }}
+                contentContainerStyle={{ paddingBottom: 140 }}
                 refreshControl={<RefreshControl refreshing={refreshing || summaryLoading} onRefresh={handleRefresh} />}
             >
                 {/* Header */}
@@ -246,7 +259,7 @@ export default function DashboardScreen() {
                     {/* Top Row: Welcome & Profile Actions */}
                     <View style={styles.headerTopRow}>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.welcomeText} numberOfLines={1}>{t('dashboard.welcomeBack')}</Text>
+                            <Text style={styles.welcomeText} numberOfLines={1}>{user?.name ? `${t('dashboard.welcomeBack')}, ${user.name.split(' ')[0]}` : t('dashboard.welcomeBack')}</Text>
                         </View>
                         <View style={styles.headerButtonsSmall}>
                             <NotificationBell />
@@ -372,23 +385,27 @@ export default function DashboardScreen() {
                         <View style={[styles.card, styles.cardGreen, styles.glassEffectGreen]}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                                 <Text style={[styles.cardLabelGreen, { marginBottom: 0 }]}>{t('dashboard.monthIncome')}</Text>
+                                {totals.incomeTrend !== 0 && (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#dcfce7', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 }}>
                                     <MaterialIcons name={totals.incomeTrend >= 0 ? "trending-up" : "trending-down"} size={10} color="#059669" />
                                     <Text style={{ fontSize: 9, fontWeight: '700', color: '#059669', marginLeft: 2 }}>{Math.abs(totals.incomeTrend).toFixed(1)}%</Text>
                                 </View>
+                                )}
                             </View>
-                            <Text style={styles.cardValueGreen}>{formatValue(totals.currentIncome)}</Text>
+                            <Text style={styles.cardValueGreen}>{formatValue(displayIncome)}</Text>
                         </View>
 
                         <View style={[styles.card, styles.cardRed, styles.glassEffectRed]}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                                 <Text style={[styles.cardLabelRed, { marginBottom: 0 }]}>{t('dashboard.monthExpense')}</Text>
+                                {totals.expenseTrend !== 0 && (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffe4e6', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 }}>
                                     <MaterialIcons name={totals.expenseTrend <= 0 ? "trending-down" : "trending-up"} size={10} color="#e11d48" />
                                     <Text style={{ fontSize: 9, fontWeight: '700', color: '#e11d48', marginLeft: 2 }}>{Math.abs(totals.expenseTrend).toFixed(1)}%</Text>
                                 </View>
+                                )}
                             </View>
-                            <Text style={styles.cardValueRed}>{formatValue(totals.currentExpense)}</Text>
+                            <Text style={styles.cardValueRed}>{formatValue(displayExpense)}</Text>
                         </View>
                     </View>
                 </View>

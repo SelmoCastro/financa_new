@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, ActivityIndicator, Pressable, LayoutAnimation, 
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useMonth } from '../context/MonthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getYearMonth } from '../utils/dateUtils';
 import * as Haptics from 'expo-haptics';
 
 export function AiInsightsWidget() {
     const { selectedDate } = useMonth();
+    const { t } = useLanguage();
     const [insightsData, setInsightsData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export function AiInsightsWidget() {
             }
         } catch (err: any) {
             console.error('Error fetching AI insights:', err);
-            setError('Não foi possível carregar os insights. A IA pode estar indisponível.');
+            setError(t('ai.error'));
             setInsightsData(null);
         } finally {
             setLoading(false);
@@ -78,7 +80,7 @@ export function AiInsightsWidget() {
                 <MaterialIcons name="error-outline" size={24} color="#f43f5e" />
                 <Text style={styles.errorText}>{error}</Text>
                 <Pressable onPress={handleRefresh} style={styles.retryButton}>
-                    <Text style={styles.retryText}>Tentar Novamente</Text>
+                    <Text style={styles.retryText}>{t('ai.retry')}</Text>
                 </Pressable>
             </View>
         );
@@ -88,7 +90,7 @@ export function AiInsightsWidget() {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#6366f1" />
-                <Text style={styles.loadingText}>A IA está analisando seu mês...</Text>
+                <Text style={styles.loadingText}>{t('ai.loading')}</Text>
             </View>
         );
     }
@@ -99,17 +101,17 @@ export function AiInsightsWidget() {
                 <View style={styles.promptContainer}>
                     <View style={styles.promptHeader}>
                         <MaterialIcons name="auto-awesome" size={24} color="#8b5cf6" />
-                        <Text style={styles.promptTitle}>Finanza AI</Text>
+                        <Text style={styles.promptTitle}>{t('ai.title')}</Text>
                     </View>
                     <Text style={styles.promptText}>
-                        Gera um resumo inteligente dos seus gastos de {getYearMonth(selectedDate).month}/{getYearMonth(selectedDate).year} e receba alertas sobre o seu orçamento.
+                        {t('ai.promptText', { month: String(getYearMonth(selectedDate).month + 1), year: String(getYearMonth(selectedDate).year) })}
                     </Text>
                     <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                         <Pressable
                             style={({ pressed }) => [styles.analyzeBtn, pressed && { opacity: 0.8 }]}
                             onPress={() => fetchInsights(false)}
                         >
-                            <Text style={styles.analyzeBtnText}>Analisar Mês Lançando a Magia</Text>
+                            <Text style={styles.analyzeBtnText}>{t('ai.analyzeButton')}</Text>
                         </Pressable>
                     </Animated.View>
                 </View>
@@ -123,7 +125,7 @@ export function AiInsightsWidget() {
             <View style={styles.header}>
                 <View style={styles.titleRow}>
                     <MaterialIcons name="auto-awesome" size={20} color="#8b5cf6" />
-                    <Text style={styles.title}>Insights da IA</Text>
+                    <Text style={styles.title}>{t('ai.insightsTitle')}</Text>
                 </View>
                 <Pressable onPress={handleRefresh} style={({ pressed }) => [styles.refreshButton, pressed && { opacity: 0.7 }]}>
                     {loading ? <ActivityIndicator size="small" color="#8b5cf6" /> : <MaterialIcons name="refresh" size={18} color="#94a3b8" />}
@@ -143,7 +145,7 @@ export function AiInsightsWidget() {
                 ) : null}
             </View>
             <View style={styles.footer}>
-                <Text style={styles.footerText}>Análise baseada nos gastos de {getYearMonth(selectedDate).month}/{getYearMonth(selectedDate).year}</Text>
+                <Text style={styles.footerText}>{t('ai.footer', { month: String(getYearMonth(selectedDate).month + 1), year: String(getYearMonth(selectedDate).year) })}</Text>
             </View>
         </View>
     );

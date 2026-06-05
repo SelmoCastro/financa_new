@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
 import { useCurrency } from '../context/CurrencyContext';
+import { useLanguage } from '../context/LanguageContext';
 
 interface CategoryData {
     name: string;
@@ -17,6 +18,9 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 
 export const CategoryChart: React.FC<CategoryChartProps> = ({ data, isPrivacyEnabled }) => {
     const { formatCurrency } = useCurrency();
+    const { t } = useLanguage();
+
+    const totalValue = React.useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data]);
 
     const chartData = React.useMemo(() => data.map((item, index) => ({
         value: item.value,
@@ -26,18 +30,20 @@ export const CategoryChart: React.FC<CategoryChartProps> = ({ data, isPrivacyEna
 
     const renderCenterLabel = React.useCallback(() => (
         <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ fontSize: 10, color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Despesas</Text>
-            <Text style={{ fontSize: 18, color: '#1e293b', fontWeight: '900' }}>100%</Text>
+            <Text style={{ fontSize: 10, color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>{t('category.centerLabel')}</Text>
+            <Text style={{ fontSize: 18, color: '#1e293b', fontWeight: '900' }}>
+                {totalValue > 0 ? t('category.centerPercent') : t('category.centerEmpty')}
+            </Text>
         </View>
-    ), []);
+    ), [t, totalValue]);
 
     if (!data || data.length === 0) return null;
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Alocação de Recursos</Text>
-                <Text style={styles.subtitle}>Despesas por Categoria</Text>
+                <Text style={styles.title}>{t('category.title')}</Text>
+                <Text style={styles.subtitle}>{t('category.subtitle')}</Text>
             </View>
 
             <View style={styles.chartWrapper}>

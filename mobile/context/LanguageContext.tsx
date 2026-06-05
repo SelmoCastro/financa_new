@@ -93,7 +93,7 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'accounts.dueDay': 'Vence dia {{day}}',
     'accounts.limit': 'Limite',
 
-    'dashboard.welcomeBack': 'Bem-vindo de volta,',
+    'dashboard.welcomeBack': 'Bem-vindo de volta',
     'dashboard.title': 'Resumo Financeiro',
     'dashboard.quickAdd': 'Lançamento',
     'dashboard.quickImport': 'Importar (IA)',
@@ -133,6 +133,26 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'offline.title': 'Sem internet',
     'offline.subtitle': 'Exibindo dados salvos',
     'offline.lastChanged': 'última mudança {{time}}',
+
+    'ai.title': 'Finanza AI',
+    'ai.loading': 'A IA está analisando seu mês...',
+    'ai.error': 'Não foi possível carregar os insights. A IA pode estar indisponível.',
+    'ai.retry': 'Tentar Novamente',
+    'ai.promptText': 'Gera um resumo inteligente dos seus gastos de {{month}}/{{year}} e receba alertas sobre o seu orçamento.',
+    'ai.analyzeButton': 'Analisar Mês Lançando a Magia',
+    'ai.insightsTitle': 'Insights da IA',
+    'ai.footer': 'Análise baseada nos gastos de {{month}}/{{year}}',
+
+    'chart.performanceTitle': 'Performance Mensal',
+    'chart.incomeExpense': 'Receitas vs Despesas',
+    'chart.income': 'Receitas',
+    'chart.expenses': 'Despesas',
+
+    'category.title': 'Alocação de Recursos',
+    'category.subtitle': 'Despesas por Categoria',
+    'category.centerLabel': 'Despesas',
+    'category.centerEmpty': 'Sem dados',
+    'category.centerPercent': '100%',
   },
   en: {
     'tabs.home': 'Home',
@@ -212,7 +232,7 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'accounts.dueDay': 'Due on day {{day}}',
     'accounts.limit': 'Limit',
 
-    'dashboard.welcomeBack': 'Welcome back,',
+    'dashboard.welcomeBack': 'Welcome back',
     'dashboard.title': 'Financial Summary',
     'dashboard.quickAdd': 'Entry',
     'dashboard.quickImport': 'Import (AI)',
@@ -252,6 +272,26 @@ const translations: Record<AppLanguage, Record<string, string>> = {
     'offline.title': 'Offline',
     'offline.subtitle': 'Showing saved data',
     'offline.lastChanged': 'last change {{time}}',
+
+    'ai.title': 'Finanza AI',
+    'ai.loading': 'AI is analyzing your month...',
+    'ai.error': 'Could not load insights. AI may be unavailable.',
+    'ai.retry': 'Try Again',
+    'ai.promptText': 'Generate a smart summary of your spending for {{month}}/{{year}} and get budget alerts.',
+    'ai.analyzeButton': 'Analyze Month with Magic',
+    'ai.insightsTitle': 'AI Insights',
+    'ai.footer': 'Analysis based on {{month}}/{{year}} spending',
+
+    'chart.performanceTitle': 'Monthly Performance',
+    'chart.incomeExpense': 'Income vs Expenses',
+    'chart.income': 'Income',
+    'chart.expenses': 'Expenses',
+
+    'category.title': 'Resource Allocation',
+    'category.subtitle': 'Expenses by Category',
+    'category.centerLabel': 'Expenses',
+    'category.centerEmpty': 'No data',
+    'category.centerPercent': '100%',
   },
 };
 
