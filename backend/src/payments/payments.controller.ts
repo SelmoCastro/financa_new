@@ -15,10 +15,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { PaymentsService } from './payments.service';
 import { CreatePreferenceDto, MercadoPagoWebhookDto } from './dto/payment.dto';
-
-interface RequestWithUser {
-  user: { userId: string };
-}
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Controller({
   path: 'payments',

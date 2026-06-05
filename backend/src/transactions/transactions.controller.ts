@@ -30,7 +30,7 @@ import {
   ImportConfirmPayloadDto,
 } from './dto/import-transaction.dto';
 import { TransferTransactionDto } from './dto/transfer-transaction.dto';
-import { AiService } from '../ai/ai.service';
+import { AiService, type ReceiptExtractionResult } from '../ai/ai.service';
 import { OcrService } from '../common/services/ocr.service';
 import { ReportsService } from '../reports/reports.service';
 import { memoryStorage } from 'multer';
@@ -137,7 +137,7 @@ export class TransactionsController {
       );
       const categoryNames = userCategories.map((c) => c.name);
 
-      let result;
+      let result: ReceiptExtractionResult | undefined;
       const isImage = mimeType.startsWith('image/');
       const fileBase64 = fileBuffer.toString('base64');
 
@@ -209,8 +209,21 @@ export class TransactionsController {
         }
       }
 
-      if (result.error) {
-        const errorMessages: Record<string, string> = {
+      const extractionResult = result;
+      if (!extractionResult) {
+        return {
+          preview: [],
+          message:
+            'Falha ao processar o comprovante. Verifique se a imagem está legível.',
+          errorCode: 'unknown_error',
+        };
+      }
+
+      if (extractionResult.error) {
+        const errorMessages: Record<
+          NonNullable<ReceiptExtractionResult['error']>,
+          string
+        > = {
           service_unavailable:
             'Serviço de IA indisponível no momento. Tente novamente mais tarde.',
           no_data_found:
@@ -224,16 +237,15 @@ export class TransactionsController {
           unknown_error:
             'Erro inesperado ao processar o documento. Tente novamente.',
         };
+        const errorCode = extractionResult.error;
         return {
           preview: [],
-          message:
-            errorMessages[result.error] ||
-            'Não foi possível processar este documento.',
-          errorCode: result.error,
+          message: errorMessages[errorCode],
+          errorCode,
         };
       }
 
-      if (result.transactions.length === 0) {
+      if (extractionResult.transactions.length === 0) {
         return {
           preview: [],
           message:
@@ -249,7 +261,7 @@ export class TransactionsController {
 
       // Aprendizado: verifica se o usuário já categorizou cada descrição antes
       const enrichedPreview = await Promise.all(
-        result.transactions.map(async (t) => {
+        extractionResult.transactions.map(async (t) => {
           const learnedCategory =
             await this.transactionsService.findUserCategoryForDescription(
               req.user.userId,
@@ -278,8 +290,13 @@ export class TransactionsController {
       );
 
       return { preview: enrichedPreview };
-    } catch (error) {
-      this.logger.error('Erro inesperado ao processar comprovante:', error);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        'Erro inesperado ao processar comprovante:',
+        errorMessage,
+      );
       return {
         preview: [],
         message:

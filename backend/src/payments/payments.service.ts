@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Payment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanId, MercadoPagoWebhookDto } from './dto/payment.dto';
 import { SubscriptionService } from '../subscription/subscription.service';
@@ -7,6 +8,13 @@ import { AuditService } from '../audit/audit.service';
 import * as crypto from 'crypto';
 
 const MP_API = 'https://api.mercadopago.com';
+
+const VALID_PLAN_IDS = [
+  'premium_monthly',
+  'premium_quarterly',
+  'premium_semiannual',
+  'premium_annual',
+] as const;
 
 interface MercadoPagoPreference {
   items: Array<{
@@ -25,6 +33,57 @@ interface MercadoPagoPreference {
     pending: string;
   };
   auto_return: string;
+}
+
+interface MercadoPagoPreferenceResponse {
+  id: string;
+  init_point: string;
+}
+
+interface MercadoPagoPaymentResponse {
+  external_reference?: string;
+  status: string;
+  payment_method_id?: string;
+  transaction_amount?: number;
+  additional_info?: {
+    items?: Array<{
+      id?: string;
+    }>;
+  };
+}
+
+export interface CreatePreferenceResult {
+  preferenceId: string;
+  initPoint: string;
+  sandbox: boolean;
+  amount: number;
+  plan: PlanId;
+}
+
+interface WebhookReceivedResult {
+  received: true;
+  processed: false;
+}
+
+interface PaymentProcessingResult {
+  processed: boolean;
+  skipped?: boolean;
+  upgraded?: boolean;
+  error?: boolean;
+}
+
+type WebhookResult = WebhookReceivedResult | PaymentProcessingResult;
+
+function isPlanId(value: unknown): value is PlanId {
+  return typeof value === 'string' && VALID_PLAN_IDS.includes(value as PlanId);
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return typeof error === 'string' ? error : 'Unknown error';
 }
 
 @Injectable()
@@ -98,10 +157,10 @@ export class PaymentsService {
     );
   }
 
-  private async mpRequest(
+  private async mpRequest<T>(
     path: string,
     options: RequestInit = {},
-  ): Promise<any> {
+  ): Promise<T> {
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.accessToken}`,
       'Content-Type': 'application/json',
@@ -125,10 +184,14 @@ export class PaymentsService {
       throw new Error(`MercadoPago API error ${response.status}`);
     }
 
-    return response.json();
+    const data: unknown = await response.json();
+    return data as T;
   }
 
-  async createPreference(userId: string, plan: PlanId) {
+  async createPreference(
+    userId: string,
+    plan: PlanId,
+  ): Promise<CreatePreferenceResult> {
     const prices: Record<
       PlanId,
       { amount: number; title: string; durationDays: number }
@@ -185,10 +248,13 @@ export class PaymentsService {
     };
 
     try {
-      const response = await this.mpRequest('/checkout/preferences', {
-        method: 'POST',
-        body: JSON.stringify(preference),
-      });
+      const response = await this.mpRequest<MercadoPagoPreferenceResponse>(
+        '/checkout/preferences',
+        {
+          method: 'POST',
+          body: JSON.stringify(preference),
+        },
+      );
 
       // Store pending payment record
       await this.prisma.payment.create({
@@ -212,8 +278,10 @@ export class PaymentsService {
         amount,
         plan,
       };
-    } catch (error: any) {
-      this.logger.error(`Failed to create preference: ${error.message}`);
+    } catch (error: unknown) {
+      this.logger.error(
+        `Failed to create preference: ${getErrorMessage(error)}`,
+      );
       throw error;
     }
   }
@@ -222,7 +290,7 @@ export class PaymentsService {
     dto: MercadoPagoWebhookDto,
     xSignature?: string,
     xRequestId?: string,
-  ) {
+  ): Promise<WebhookResult> {
     this.logger.log(`Webhook received: type=${dto.type}, action=${dto.action}`);
 
     if (dto.type !== 'payment') {
@@ -254,7 +322,7 @@ export class PaymentsService {
     return this.processPayment(paymentId);
   }
 
-  async processPayment(mpPaymentId: string) {
+  async processPayment(mpPaymentId: string): Promise<PaymentProcessingResult> {
     // Race condition protection: skip if already processing this payment
     if (this.processingPayments.has(mpPaymentId)) {
       this.logger.log(
@@ -270,7 +338,9 @@ export class PaymentsService {
     }
   }
 
-  private async _doProcessPayment(mpPaymentId: string) {
+  private async _doProcessPayment(
+    mpPaymentId: string,
+  ): Promise<PaymentProcessingResult> {
     try {
       // Idempotency check: if already processed, skip
       const existing = await this.prisma.payment.findUnique({
@@ -284,23 +354,18 @@ export class PaymentsService {
       }
 
       // Fetch payment details from Mercado Pago
-      const mpData = await this.mpRequest(`/v1/payments/${mpPaymentId}`);
+      const mpData = await this.mpRequest<MercadoPagoPaymentResponse>(
+        `/v1/payments/${mpPaymentId}`,
+      );
 
       const userId = mpData.external_reference;
       const status = mpData.status;
       const paymentMethod = mpData.payment_method_id;
-      const amount = mpData.transaction_amount || 0;
-      const planId =
-        mpData.additional_info?.items?.[0]?.id || 'premium_monthly';
+      const amount = mpData.transaction_amount ?? 0;
+      const planId = mpData.additional_info?.items?.[0]?.id;
 
       // Validate planId is a recognized plan
-      const validPlans = [
-        'premium_monthly',
-        'premium_quarterly',
-        'premium_semiannual',
-        'premium_annual',
-      ];
-      if (!validPlans.includes(planId)) {
+      if (!isPlanId(planId)) {
         this.logger.warn(
           `Invalid planId from MP payment ${mpPaymentId}: ${planId}, defaulting to premium_monthly`,
         );
@@ -309,12 +374,10 @@ export class PaymentsService {
           planId,
         });
       }
-      const safePlanId = validPlans.includes(planId)
-        ? planId
-        : 'premium_monthly';
+      const safePlanId: PlanId = isPlanId(planId) ? planId : 'premium_monthly';
 
       // Validate amount matches expected plan price
-      const prices: Record<string, number> = {
+      const prices: Record<PlanId, number> = {
         premium_monthly: 19.9,
         premium_quarterly: 54.9,
         premium_semiannual: 99.9,
@@ -391,13 +454,13 @@ export class PaymentsService {
         processed: true,
         upgraded: status === 'approved',
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error(
-        `Failed to process payment ${mpPaymentId}: ${error.message}`,
+        `Failed to process payment ${mpPaymentId}: ${getErrorMessage(error)}`,
       );
       this.logPaymentAlert('payments.processing_failed', 'critical', {
         mpPaymentId,
-        error: error?.message || 'unknown',
+        error: getErrorMessage(error),
       });
       // Don't throw — webhook must always return 200 so MP doesn't retry
       return { processed: false, error: true };
@@ -423,7 +486,7 @@ export class PaymentsService {
     });
   }
 
-  async getUserPayments(userId: string) {
+  async getUserPayments(userId: string): Promise<Payment[]> {
     return this.prisma.payment.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -431,7 +494,7 @@ export class PaymentsService {
     });
   }
 
-  async getPaymentById(paymentId: string) {
+  async getPaymentById(paymentId: string): Promise<Payment | null> {
     return this.prisma.payment.findUnique({ where: { id: paymentId } });
   }
 }

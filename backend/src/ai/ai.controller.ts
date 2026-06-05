@@ -49,7 +49,11 @@ export class AiController {
     });
 
     // Gera os insights usando o perfil como contexto (ajustando para o mês se necessário)
-    const insights = await this.aiService.getFinancialInsights(profile);
+    const insights = await this.aiService.getFinancialInsights(
+      profile as unknown as Parameters<
+        typeof this.aiService.getFinancialInsights
+      >[0],
+    );
 
     return { insights };
   }
@@ -67,7 +71,10 @@ export class AiController {
       data: { userId, endpoint: 'chat' },
     });
 
-    const response = await this.aiService.chat(message, profile);
+    const response = await this.aiService.chat(
+      message,
+      profile as unknown as Parameters<typeof this.aiService.chat>[1],
+    );
 
     return { response };
   }
