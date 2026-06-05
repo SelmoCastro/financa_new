@@ -1,6 +1,6 @@
 {
-  "version": "1.10.9",
-  "mobileVersion": "1.10.9",
+  "version": "1.10.10",
+  "mobileVersion": "1.10.10",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Refatoração: transactions.service partido em 3 serviços (570→490+124 linhas). Lint 88% limpo (1547→180). Tipagem de catch(error), $queryRaw, Mercado Pago APIs. Testes 78/78."
+  "releaseNotes": "Correção offline sync: decryption resilience em decryptQueueRows + listPendingQueue try/catch. v1.10.10"
 }

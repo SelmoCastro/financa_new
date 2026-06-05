@@ -1,6 +1,7 @@
 import { DeviceEventEmitter } from 'react-native';
 import api from './api';
 import {
+  OfflineQueueRow,
   deleteLocalEntity,
   deleteQueueItem,
   enqueueOfflineMutation,
@@ -180,8 +181,14 @@ async function getPendingGoalCount() {
 }
 
 async function syncPendingGoalQueue() {
-  const queue = await listPendingQueue([ENTITY_TYPE]);
-  let synced = 0;
+    let queue: OfflineQueueRow[] = [];
+    try {
+        queue = await listPendingQueue([ENTITY_TYPE]);
+    } catch {
+        if (__DEV__) console.warn('[offlineGoalQueue] Erro ao ler fila pendente, ignorando');
+        return { synced: 0, remaining: 0 };
+    }
+    let synced = 0;
 
   for (const item of queue) {
     try {

@@ -137,13 +137,20 @@ export async function enqueueOfflineMutation(input: {
   return id;
 }
 
-async function decryptQueueRows(rows: OfflineQueueRow[]) {
-  return Promise.all(
+async function decryptQueueRows(rows: OfflineQueueRow[]): Promise<OfflineQueueRow[]> {
+  const results = await Promise.allSettled(
     rows.map(async (row) => ({
       ...row,
       payload_json: await decryptString(row.payload_json),
     })),
   );
+  const decrypted: OfflineQueueRow[] = [];
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      decrypted.push(result.value);
+    }
+  }
+  return decrypted;
 }
 
 export async function listPendingQueue(entityTypes?: OfflineEntityType[]) {
