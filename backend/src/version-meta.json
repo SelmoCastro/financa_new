@@ -1,6 +1,6 @@
 {
-  "version": "1.11.0",
-  "mobileVersion": "1.11.0",
+  "version": "1.11.1",
+  "mobileVersion": "1.11.1",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Programa de revendedores com créditos, portal de revendedor e ativação Premium auditada"
+  "releaseNotes": "Cadastro novo volta ao plano Free; Premium inicial removido do registro"
 }

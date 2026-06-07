@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de autenticação; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import {
   Injectable,
   UnauthorizedException,
@@ -226,14 +229,9 @@ export class AuthService {
       termsAcceptedAt: new Date(),
     });
 
-    // 🎁 Trial: 2 meses de premium grátis para novos usuários
-    const twoMonthsFromNow = new Date();
-    twoMonthsFromNow.setMonth(twoMonthsFromNow.getMonth() + 2);
-    await this.subscriptionService.upgrade(
-      user.id,
-      'premium',
-      twoMonthsFromNow,
-    );
+    // Novo usuário entra em plano free por padrão.
+    // O Premium agora só pode nascer por ativação admin/revendedor ou fluxo explícito de pagamento.
+    await this.subscriptionService.upgrade(user.id, 'free');
 
     // Gerar token de verificação de email e enviar
     const verifyToken = crypto.randomBytes(32).toString('hex');
