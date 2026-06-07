@@ -40,9 +40,12 @@ model User {
   auditLogs              AuditLog[]
   recurringTransactions  RecurringTransaction[]
   creditCardInstallments CreditCardInstallment[]
-  creditCardInvoices    CreditCardInvoice[]
-  payments              Payment[]
-  refreshTokens        RefreshToken[]
+  creditCardInvoices     CreditCardInvoice[]
+  payments               Payment[]
+  refreshTokens          RefreshToken[]
+  createdResellers       Reseller[]                  @relation("ResellerCreatedByAdmin")
+  resellerLedgerEntries  ResellerLedger[]            @relation("ResellerLedgerCreatedByAdmin")
+  resellerPremiumActivations ResellerPremiumActivation[] @relation("ResellerPremiumActivationTarget")
 }
 
 model Account {
@@ -441,4 +444,78 @@ model RefreshToken {
   @@index([userId])
   @@index([userId, familyId])
   @@index([expiresAt])
+}
+
+model Reseller {
+  id                  String                     @id @default(uuid())
+  email               String                     @unique
+  password            String
+  displayName         String
+  companyName         String?
+  phone               String?
+  notes               String?
+  status              String                     @default("active") // active, suspended, disabled
+  failedLoginAttempts Int                        @default(0)
+  lockedUntil         DateTime?
+  hashedRefreshToken  String?
+  creditVersion       Int                        @default(0)
+  lastLoginAt         DateTime?
+  createdByAdminId    String?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+
+  createdByAdmin     User?                      @relation("ResellerCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  ledgerEntries      ResellerLedger[]
+  premiumActivations ResellerPremiumActivation[]
+
+  @@index([status])
+  @@index([createdByAdminId])
+  @@index([createdAt])
+}
+
+model ResellerLedger {
+  id               String   @id @default(uuid())
+  resellerId       String
+  entryType        String // credit_grant, premium_activation, adjustment_credit, adjustment_debit
+  deltaCredits     Int
+  balanceAfter     Int
+  reason           String
+  notes            String
+  referenceType    String?
+  referenceId      String?
+  idempotencyKey   String?  @unique
+  metadata         Json     @default("{}")
+  createdByAdminId String?
+  createdAt        DateTime @default(now())
+
+  reseller       Reseller @relation(fields: [resellerId], references: [id], onDelete: Cascade)
+  createdByAdmin User?    @relation("ResellerLedgerCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([resellerId, createdAt])
+  @@index([entryType])
+  @@index([referenceType, referenceId])
+  @@index([createdByAdminId])
+}
+
+model ResellerPremiumActivation {
+  id                      String   @id @default(uuid())
+  resellerId              String
+  targetUserId            String
+  targetUserEmailSnapshot String
+  targetUserNameSnapshot  String?
+  lookupEmail             String
+  sku                     String // premium_monthly_credit, premium_quarterly_credit, premium_semiannual_credit, premium_annual_credit
+  creditsConsumed         Int
+  durationDays            Int
+  startsAt                DateTime
+  expiresAt               DateTime
+  idempotencyKey          String   @unique
+  createdAt               DateTime @default(now())
+
+  reseller   Reseller @relation(fields: [resellerId], references: [id], onDelete: Cascade)
+  targetUser User     @relation("ResellerPremiumActivationTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([resellerId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([sku])
 }

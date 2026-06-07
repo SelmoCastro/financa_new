@@ -1,17 +1,31 @@
+/**
+ * Tela principal do frontend para Admin; reúne estado visual, ações do usuário e composição de componentes.
+ */
 import React from 'react';
-import { BarChart3, Users, CreditCard, Activity, Server, Shield, RefreshCw } from 'lucide-react';
+import {
+  BarChart3,
+  Users,
+  CreditCard,
+  Activity,
+  Server,
+  Shield,
+  RefreshCw,
+  Store,
+} from 'lucide-react';
 import { useAdminLogic } from './useAdminLogic';
 import { OverviewSection } from './OverviewSection';
 import { UsersSection } from './UsersSection';
 import { PlansSection } from './PlansSection';
 import { ActivitySection } from './ActivitySection';
 import { HealthSection } from './HealthSection';
+import { ResellersSection } from './ResellersSection';
 import type { Tab } from './types';
 
 const sections: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Visão Geral', icon: <BarChart3 className="w-4 h-4" /> },
   { id: 'users', label: 'Usuários', icon: <Users className="w-4 h-4" /> },
   { id: 'plans', label: 'Planos', icon: <CreditCard className="w-4 h-4" /> },
+  { id: 'resellers', label: 'Revendedores', icon: <Store className="w-4 h-4" /> },
   { id: 'activity', label: 'Atividade', icon: <Activity className="w-4 h-4" /> },
   { id: 'health', label: 'Sistema', icon: <Server className="w-4 h-4" /> },
 ];
@@ -35,7 +49,6 @@ export const AdminPanelView: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded-xl">
@@ -43,7 +56,9 @@ export const AdminPanelView: React.FC = () => {
           </div>
           <div>
             <h2 className="text-xl font-black text-slate-800 dark:text-white">Painel Admin</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Controle total do sistema Finanza</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Controle total do sistema Finanza
+            </p>
           </div>
         </div>
         <button
@@ -55,9 +70,8 @@ export const AdminPanelView: React.FC = () => {
         </button>
       </div>
 
-      {/* Tab Navigation */}
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {sections.map(s => (
+        {sections.map((s) => (
           <button
             key={s.id}
             onClick={() => logic.setActiveSection(s.id)}
@@ -72,10 +86,10 @@ export const AdminPanelView: React.FC = () => {
         ))}
       </div>
 
-      {/* Tab Content */}
       {logic.activeSection === 'overview' && <OverviewSection logic={logic} />}
       {logic.activeSection === 'users' && <UsersSection logic={logic} />}
       {logic.activeSection === 'plans' && <PlansSection logic={logic} />}
+      {logic.activeSection === 'resellers' && <ResellersSection logic={logic} />}
       {logic.activeSection === 'activity' && <ActivitySection logic={logic} />}
       {logic.activeSection === 'health' && <HealthSection logic={logic} />}
     </div>

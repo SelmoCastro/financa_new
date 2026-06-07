@@ -1,6 +1,6 @@
 {
-  "version": "1.10.10",
-  "mobileVersion": "1.10.10",
+  "version": "1.11.0",
+  "mobileVersion": "1.11.0",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Correção offline sync: decryption resilience em decryptQueueRows + listPendingQueue try/catch. v1.10.10"
+  "releaseNotes": "Programa de revendedores com créditos, portal de revendedor e ativação Premium auditada"
 }
