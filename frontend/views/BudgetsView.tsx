@@ -1,3 +1,6 @@
+/**
+ * Tela principal do frontend para Budgets; reúne estado visual, ações do usuário e composição de componentes.
+ */
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { getCategoryEmoji } from '../utils/categoryIcons';
@@ -23,10 +26,9 @@ interface Budget {
 interface BudgetsViewProps {
     isPrivacyEnabled: boolean;
     userPlan: string;
-    onUpgrade: () => void;
 }
 
-export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, userPlan, onUpgrade }) => {
+export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, userPlan }) => {
     const { categories } = useData();
     const { selectedDate } = useMonth();
     const { addToast } = useToast();
@@ -42,7 +44,6 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
 
     const showBudgetLimitNotice = () => {
         addToast(t('budgets.freeLimit'), 'info');
-        onUpgrade();
     };
     
     const fetchBudgets = async () => {
@@ -168,19 +169,13 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
             </div>
 
             {isBudgetLimitReached && (
-                <div className="glass-card border border-cyan-100 dark:border-cyan-500/20 bg-cyan-50/70 dark:bg-cyan-500/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="glass-card border border-amber-200 dark:border-amber-500/20 bg-amber-50/70 dark:bg-amber-500/10 rounded-2xl sm:rounded-[2rem] p-4 sm:p-5">
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400 mb-1">{t('budgets.freeLimitTitle')}</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400 mb-1">{t('budgets.freeLimitTitle')}</p>
                         <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
                             {t('budgets.freeLimit')}
                         </p>
                     </div>
-                    <button
-                        onClick={onUpgrade}
-                        className="px-5 py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 whitespace-nowrap"
-                    >
-                        {t('budgets.viewPremium')}
-                    </button>
                 </div>
             )}
 

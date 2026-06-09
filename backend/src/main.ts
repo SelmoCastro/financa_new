@@ -1,3 +1,6 @@
+/**
+ * Ponto de entrada do backend NestJS; cria a aplicação e delega a configuração central para o bootstrap.
+ */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { configureApp } from './setup';

@@ -1,3 +1,6 @@
+/**
+ * Arquivo de suporte do domínio de usuários; dá sustentação ao fluxo principal deste módulo.
+ */
 import {
   registerDecorator,
   ValidationOptions,

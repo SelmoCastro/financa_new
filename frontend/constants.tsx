@@ -1,3 +1,6 @@
+/**
+ * Constantes visuais e semânticas do frontend; evita strings mágicas espalhadas pela interface.
+ */
 
 import { Transaction, Budget, MonthlyData } from './types';
 

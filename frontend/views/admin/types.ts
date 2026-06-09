@@ -1,3 +1,6 @@
+/**
+ * Arquivo de apoio da camada de views; define tipos, hooks ou utilitários usados pelas telas principais.
+ */
 export interface Stats {
   users: { total: number; verified: number };
   transactions: number;
@@ -77,4 +80,71 @@ export interface HealthData {
   };
 }
 
-export type Tab = 'overview' | 'users' | 'plans' | 'activity' | 'health';
+export interface ResellerRow {
+  id: string;
+  email: string;
+  displayName: string;
+  companyName: string | null;
+  phone: string | null;
+  notes: string | null;
+  status: string;
+  creditVersion: number;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdByAdminId: string | null;
+  currentBalance: number;
+  ledgerEntriesCount: number;
+  premiumActivationsCount: number;
+}
+
+export interface ResellerLedgerEntry {
+  id: string;
+  resellerId: string;
+  entryType: string;
+  deltaCredits: number;
+  balanceAfter: number;
+  reason: string;
+  notes: string;
+  referenceType: string | null;
+  referenceId: string | null;
+  idempotencyKey: string | null;
+  createdByAdminId: string | null;
+  createdAt: string;
+}
+
+export interface ResellerActivation {
+  id: string;
+  resellerId: string;
+  targetUserId: string;
+  targetUserEmailSnapshot: string;
+  targetUserNameSnapshot: string | null;
+  lookupEmail: string;
+  sku: string;
+  creditsConsumed: number;
+  durationDays: number;
+  startsAt: string;
+  expiresAt: string;
+  idempotencyKey: string;
+  createdAt: string;
+}
+
+export interface ResellerDetailData {
+  reseller: Omit<ResellerRow, 'currentBalance' | 'ledgerEntriesCount' | 'premiumActivationsCount'>;
+  currentBalance: number;
+  createdByAdmin: {
+    id: string;
+    email: string;
+    name: string | null;
+  } | null;
+  recentLedger: ResellerLedgerEntry[];
+  recentActivations: ResellerActivation[];
+}
+
+export type Tab =
+  | 'overview'
+  | 'users'
+  | 'plans'
+  | 'activity'
+  | 'health'
+  | 'resellers';

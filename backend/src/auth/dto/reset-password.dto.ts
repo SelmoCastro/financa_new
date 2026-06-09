@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de reset password dentro do fluxo de autenticação.
+ */
 import {
   IsString,
   MinLength,

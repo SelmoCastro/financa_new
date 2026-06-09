@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de metas financeiras; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable } from '@nestjs/common';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';

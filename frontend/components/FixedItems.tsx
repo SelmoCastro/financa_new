@@ -1,3 +1,6 @@
+/**
+ * Componente reutilizável do frontend; encapsula uma parte relevante da interface dentro do domínio de componentes reutilizáveis da interface.
+ */
 import React, { useState } from 'react';
 import { Anchor, Check, Info, X } from 'lucide-react';
 import { Transaction, TransactionType } from '../types';

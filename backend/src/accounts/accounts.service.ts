@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de contas bancárias; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';

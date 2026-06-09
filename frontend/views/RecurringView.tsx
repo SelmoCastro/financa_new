@@ -1,3 +1,6 @@
+/**
+ * Tela principal do frontend para Recurring; reúne estado visual, ações do usuário e composição de componentes.
+ */
 import React, { useState, useEffect } from 'react';
 import { recurringService, RecurringTransactionDTO, WeightData } from '../services/recurringService';
 import { getCategoryEmoji } from '../utils/categoryIcons';

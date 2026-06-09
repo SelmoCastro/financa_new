@@ -1,3 +1,6 @@
+/**
+ * Filtro global de exceções; padroniza a forma como erros HTTP e falhas inesperadas são devolvidos ao cliente.
+ */
 import {
   ExceptionFilter,
   Catch,
@@ -82,7 +85,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       errorBody = { message: 'Internal Server Error' };
     } else if (isProduction) {
       const resp = exceptionResponse as Record<string, unknown>;
-      errorBody = { message: resp.message || 'An error occurred' };
+      // Suppress verbose validation errors in production (class-validator arrays)
+      const msg = resp.message;
+      if (Array.isArray(msg)) {
+        errorBody = { message: 'Invalid request data' };
+      } else if (typeof msg === 'string' && (msg.length > 120 || msg.includes('Unexpected token') || msg.includes('is not valid JSON'))) {
+        // Truncate overly verbose messages (e.g. JSON parse errors, long stack traces)
+        errorBody = { message: 'Invalid request' };
+      } else {
+        errorBody = { message: msg || 'An error occurred' };
+      }
     } else {
       errorBody =
         typeof exceptionResponse === 'object' && exceptionResponse !== null

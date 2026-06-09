@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de update user dentro do fluxo de usuários.
+ */
 import { PartialType, OmitType } from '@nestjs/mapped-types';
 import { CreateUserDto } from './create-user.dto';
 

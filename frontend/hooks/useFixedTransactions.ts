@@ -1,3 +1,6 @@
+/**
+ * Hook personalizado do frontend; concentra estado derivado, efeitos colaterais e handlers reutilizáveis.
+ */
 import { useMemo } from 'react';
 import { Transaction, TransactionType } from '../types';
 import { toMidnightDate } from '../utils/dateUtils';

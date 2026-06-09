@@ -1,3 +1,6 @@
+/**
+ * Utilitário puro do frontend; concentra funções auxiliares para parsing, formatação e cálculos sem estado.
+ */
 import { toYYYYMMDD } from './dateUtils';
 
 // Função utility para criar HASH criptográfico simples

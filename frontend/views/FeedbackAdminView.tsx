@@ -1,3 +1,6 @@
+/**
+ * Tela principal do frontend para FeedbackAdmin; reúne estado visual, ações do usuário e composição de componentes.
+ */
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';

@@ -1,3 +1,6 @@
+/**
+ * Serviço de integração do frontend; encapsula chamadas HTTP e regras de comunicação com a API no domínio de integração com a API.
+ */
 import api from './api';
 
 export interface RecurringTransactionDTO {

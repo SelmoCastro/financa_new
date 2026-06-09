@@ -1,3 +1,6 @@
+/**
+ * Componente reutilizável do frontend; encapsula uma parte relevante da interface dentro do domínio de componentes reutilizáveis da interface.
+ */
 import React from 'react';
 import { Settings2, Moon, Sun, Eye, EyeOff, Upload, ShieldCheck, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

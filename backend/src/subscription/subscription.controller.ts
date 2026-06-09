@@ -1,3 +1,6 @@
+/**
+ * Controller HTTP do domínio de assinaturas e plano premium; recebe as requisições, aplica guards/decorators e delega a regra de negócio aos services.
+ */
 import { Controller, Get, Post, UseGuards, Request } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { SubscriptionService } from './subscription.service';

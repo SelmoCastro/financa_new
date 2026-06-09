@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de create account dentro do fluxo de contas bancárias.
+ */
 import {
   IsString,
   IsNotEmpty,

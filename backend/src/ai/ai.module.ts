@@ -1,3 +1,6 @@
+/**
+ * Módulo NestJS do domínio de inteligência artificial; agrupa controllers, services e dependências necessárias para este contexto.
+ */
 import { Module } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { AiController } from './ai.controller';

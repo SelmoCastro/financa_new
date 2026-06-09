@@ -1,3 +1,6 @@
+/**
+ * Controller HTTP do domínio de relatos de erro; recebe as requisições, aplica guards/decorators e delega a regra de negócio aos services.
+ */
 import { Controller, Post, Body, Request, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';

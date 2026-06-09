@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de relatos de erro; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateErrorReportDto } from './dto/create-error-report.dto';

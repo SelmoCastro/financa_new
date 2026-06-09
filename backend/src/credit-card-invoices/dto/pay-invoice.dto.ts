@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de pay invoice dentro do fluxo de faturas de cartão.
+ */
 import { IsNumber, IsOptional, IsPositive, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 

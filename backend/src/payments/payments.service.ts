@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de pagamentos; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Payment } from '@prisma/client';

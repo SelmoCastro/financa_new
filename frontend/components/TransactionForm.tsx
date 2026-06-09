@@ -1,3 +1,6 @@
+/**
+ * Componente reutilizável do frontend; encapsula uma parte relevante da interface dentro do domínio de componentes reutilizáveis da interface.
+ */
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown, Check } from 'lucide-react';
 import { getCategoryEmoji } from '../utils/categoryIcons';

@@ -1,3 +1,6 @@
+/**
+ * Arquivo de suporte do domínio de autenticação; dá sustentação ao fluxo principal deste módulo.
+ */
 import {
   Injectable,
   CanActivate,

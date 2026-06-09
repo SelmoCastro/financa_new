@@ -1,3 +1,6 @@
+/**
+ * Arquivo de suporte do domínio de agendamentos automáticos; dá sustentação ao fluxo principal deste módulo.
+ */
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';

@@ -1,3 +1,6 @@
+/**
+ * Componente reutilizável do frontend; encapsula uma parte relevante da interface dentro do domínio de componentes reutilizáveis da interface.
+ */
 import React from 'react';
 import { X, FileSpreadsheet, Camera, Check, Sparkles, Loader2, ChevronDown, Image } from 'lucide-react';
 import { Account, CreditCard, ACCOUNT_TYPE_LABELS } from '../../types';

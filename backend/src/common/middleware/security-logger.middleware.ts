@@ -1,3 +1,6 @@
+/**
+ * Middleware compartilhado do backend; executa lógica transversal antes do ciclo normal dos controllers.
+ */
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 

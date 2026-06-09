@@ -1,3 +1,6 @@
+/**
+ * Centraliza a configuração global do backend: segurança, CORS, CSP, CSRF, versionamento, pipes, interceptors e Swagger.
+ */
 import {
   INestApplication,
   ValidationPipe,
@@ -22,30 +25,31 @@ function generateNonce(): string {
 }
 
 export function configureApp(app: INestApplication) {
-  // CORS (Aceita Regex)
+  // Define a lista de origens confiáveis para navegador sem abrir CORS para a internet inteira.
   const frontendUrl = process.env.FRONTEND_URL || 'https://finanzaai.tech';
   const isProduction = process.env.NODE_ENV === 'production';
   const allowedOriginsCORS = [
     frontendUrl,
     'http://localhost:5173',
     'http://localhost:3000',
-    // Only allow specific Vercel deploys in production (prevent wildcard subdomain abuse)
+    // Em produção, só aceita deploys conhecidos para evitar abuso com subdomínios curingas.
     ...(isProduction
       ? [
           /^https:\/\/financa-new-[a-z0-9-]+\.vercel\.app$/,
-          /^https:\/\/([a-z0-9-]+\.)?finanzaai\.tech$/,
+          // Aceita apenas domínio principal e www; nada de subdomínio arbitrário.
+          'https://finanzaai.tech',
+          'https://www.finanzaai.tech',
         ]
       : [
           /^https?:\/\/([a-z0-9-]+\.)?vercel\.app(?::\d+)?$/,
           /^https?:\/\/([a-z0-9-]+\.)?finanzaai\.tech(?::\d+)?$/,
         ]),
     /^exp:\/\//,
-    // Local network only in development
+    // Rede local só no desenvolvimento para testes em outros dispositivos.
     ...(!isProduction ? [/^http:\/\/192\.168\.\d+\.\d+:\d+$/] : []),
   ];
 
-  // CSP (Aceita Wildcard mas não Regex)
-  // Em produção, remover URLs de dev para não vazar infraestrutura
+  // A CSP usa uma lista separada porque aqui precisamos declarar destinos para scripts, fontes e conexões.
   const allowedOriginsCSP = [
     frontendUrl,
     ...(!isProduction
@@ -57,18 +61,23 @@ export function configureApp(app: INestApplication) {
         ]
       : []),
     'https://*.vercel.app',
-    'https://*.finanzaai.tech',
+    'https://api.finanzaai.tech',
   ];
 
-  // Custom origin validator: only echo CORS headers for whitelisted origins.
-  // When callback(null, false), NestJS omits Access-Control-Allow-Origin from the
-  // preflight response, causing browsers to block the actual request entirely.
+  // Validador explícito de origem. Se a origem não for aprovada, o browser bloqueia a chamada ainda no preflight.
   const corsOriginValidator = (
     origin: string | undefined,
     callback: (err: Error | null, allow?: boolean) => void,
   ) => {
     if (!origin) {
-      // Non-browser requests (curl, server-to-server) — allow
+      // Em produção, rejeitar requisições sem Origin para evitar que
+      // scripts locais (file://, Electron, WebView) façam chamadas
+      // autenticadas via cookies HttpOnly — o CSRF protege mutações
+      // mas leituras autenticadas também expõem dados sensíveis.
+      if (isProduction) {
+        return callback(new Error('Origin required in production'), false);
+      }
+      // Em dev, permitir para curl/Postman/testes locais.
       return callback(null, true);
     }
     const isAllowed = allowedOriginsCORS.some((o) => {
@@ -87,17 +96,14 @@ export function configureApp(app: INestApplication) {
       'Content-Type, Accept, Authorization, X-Requested-With, Cache-Control, Pragma, Expires, X-CSRF-Token',
   });
 
-  // ── Security: CSP Nonce-per-request ──
-  // Generate a unique nonce for each request and attach it to res.locals.
-  // The CSP header in Helmet references this nonce, so inline scripts/tags
-  // must use <script nonce="..."> to be allowed.
+  // Gera um nonce único por request para permitir apenas scripts inline explicitamente autorizados pela CSP.
   app.use((req: Request, res: Response, next: NextFunction) => {
     const nonce = generateNonce();
     res.locals.nonce = nonce;
     next();
   });
 
-  // ── Security Headers (Helmet com CSP nonce-based) ──
+  // Aplica headers de segurança globais com Helmet e CSP baseada em nonce.
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -112,19 +118,19 @@ export function configureApp(app: INestApplication) {
           defaultSrc: ["'self'"],
           scriptSrc: [
             "'self'",
-            // Dynamic nonce — Helmet replaces this function with the actual nonce per request
+            // O Helmet chama essa função a cada request e injeta o nonce gerado acima.
             (req: Request, res: Response) => `'nonce-${res.locals.nonce}'`,
-            // Google Tag Manager (LGPD consent mode — blocked until user accepts)
+            // Scripts de analytics só passam a operar corretamente depois do consentimento LGPD no frontend.
             'https://www.googletagmanager.com',
             'https://www.google-analytics.com',
-            // Swagger in dev needs unpkg/esm.sh, never in production
+            // Swagger em dev depende desses hosts externos; em produção eles ficam fora da política.
             ...(process.env.NODE_ENV !== 'production'
               ? ['https://unpkg.com', 'https://esm.sh']
               : []),
           ],
           styleSrc: [
             "'self'",
-            "'unsafe-inline'", // Tailwind needs inline styles
+            "'unsafe-inline'", // Tailwind ainda injeta estilos inline em alguns pontos do app.
             'https://fonts.googleapis.com',
           ],
           imgSrc: ["'self'", 'data:', 'https:'],
@@ -141,26 +147,31 @@ export function configureApp(app: INestApplication) {
           scriptSrcAttr: ["'none'"],
           upgradeInsecureRequests: [],
         },
+        // Report CSP violations so we can detect XSS attempts
+        // Uses report-uri (deprecated but universally supported) with optional env var
+        ...(process.env.CSP_REPORT_URI
+          ? { reportUri: process.env.CSP_REPORT_URI } as any
+          : {}),
       },
     }),
   );
 
-  // Additional security headers not covered by Helmet
+  // Complementa o Helmet com headers que deixam a política mais explícita.
   app.use((req: Request, res: Response, next: NextFunction) => {
-    // Disable browser features we don't use (camera, mic, geolocation, etc.)
+    // Desliga APIs de navegador que o produto não precisa usar.
     res.setHeader(
       'Permissions-Policy',
       'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self)',
     );
-    // Prevent MIME-type sniffing (redundant with helmet noSniff but explicit)
+    // Mantido explicitamente para não depender só do comportamento padrão do Helmet.
     res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
   });
 
-  // Cookie Parser (necessário para CSRF e auth cookies)
+  // Lê cookies antes dos guards e middlewares de auth/CSRF.
   app.use(cookieParser());
 
-  // V16: Debug request logger — only in non-production
+  // Logger HTTP simples para diagnóstico local sem poluir produção.
   if (process.env.NODE_ENV !== 'production') {
     app.use((req: Request, _res: Response, next: NextFunction) => {
       const start = Date.now();
@@ -180,20 +191,18 @@ export function configureApp(app: INestApplication) {
     });
   }
 
-  // CSRF Protection (double-submit cookie pattern)
-  // Para requests de escrita (POST/PUT/PATCH/DELETE), exige header x-csrf-token = cookie csrf-token
-  // Rotas de auth (login, register, etc.) são excluídas
+  // Proteção CSRF por double-submit cookie: escrita só passa quando header e cookie batem.
   const csrfMiddleware = new CsrfMiddleware();
   app.use((req: Request, res: Response, next: NextFunction) =>
     csrfMiddleware.use(req, res, next),
   );
 
-  // API Versioning
+  // Mantém compatibilidade entre versões da API sem quebrar clientes antigos.
   app.enableVersioning({
     type: VersioningType.URI,
   });
 
-  // Global Pipes & Interceptors
+  // Regras globais de validação, serialização e tratamento de erro.
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -204,7 +213,7 @@ export function configureApp(app: INestApplication) {
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  // Swagger Config (apenas em dev/staging, NUNCA em producao)
+  // Swagger só em ambientes de desenvolvimento/staging para não expor superfície extra em produção.
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Finanza API')

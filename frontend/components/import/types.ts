@@ -1,3 +1,6 @@
+/**
+ * Arquivo de suporte do frontend ligado a componentes reutilizáveis da interface; mantém comportamento ou tipagem reutilizável.
+ */
 import { Account, CreditCard, Category } from '../../types';
 
 export interface ImportOverlayProps {

@@ -1,3 +1,6 @@
+/**
+ * Seção visual especializada de uma tela maior; isola uma parte importante da interface para manter o fluxo mais legível.
+ */
 import React from 'react';
 import { MoreVertical, Edit3, Trash2, CreditCard as CreditCardIcon, Nfc, ShoppingBag, ChevronDown, ChevronUp } from 'lucide-react';
 import { CreditCard } from '../../types';

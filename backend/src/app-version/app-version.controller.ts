@@ -1,3 +1,6 @@
+/**
+ * Controller HTTP do domínio de versão do aplicativo; recebe as requisições, aplica guards/decorators e delega a regra de negócio aos services.
+ */
 import { Controller, Get } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';

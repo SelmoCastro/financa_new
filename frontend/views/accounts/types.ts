@@ -1,3 +1,6 @@
+/**
+ * Arquivo de apoio da camada de views; define tipos, hooks ou utilitários usados pelas telas principais.
+ */
 import { Account, CreditCard } from '../../types';
 import { CreditCardInstallmentDTO } from '../../services/creditCardService';
 

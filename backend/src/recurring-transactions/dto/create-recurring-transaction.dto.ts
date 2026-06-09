@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de create recurring transaction dentro do fluxo de lançamentos recorrentes.
+ */
 import {
   IsString,
   IsNotEmpty,

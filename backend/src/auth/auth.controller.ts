@@ -1,3 +1,6 @@
+/**
+ * Controller HTTP do domínio de autenticação; recebe as requisições, aplica guards/decorators e delega a regra de negócio aos services.
+ */
 import {
   Controller,
   Post,
@@ -11,6 +14,7 @@ import {
   Patch,
   Delete,
 } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
@@ -28,8 +32,9 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { Response, Request as ExpressRequest } from 'express';
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { RefreshTokenService } from './refresh-token.service';
 import { RequestWithUser } from '../common/types/request-with-user';
@@ -44,7 +49,17 @@ export class AuthController {
     private readonly refreshTokenService: RefreshTokenService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private extractIp(req: ExpressRequest): string {
+    return (
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      (req.headers['x-real-ip'] as string) ||
+      req.ip ||
+      'unknown'
+    );
+  }
 
   private setCookies(res: Response, accessToken: string, refreshToken: string) {
     const isProduction = process.env.NODE_ENV === 'production';
@@ -75,7 +90,10 @@ export class AuthController {
     if (process.env.NODE_ENV !== 'production') {
       console.log('[AUTH] REGISTER attempt');
     }
-    const responseData = await this.authService.register(createUserDto);
+    const responseData = await this.authService.register(createUserDto, {
+      ip: this.extractIp(req),
+      userAgent: req.headers['user-agent'] || null,
+    });
     if (process.env.NODE_ENV !== 'production') {
       console.log(
         `[AUTH] REGISTER OK - isEmailVerified: ${responseData.user?.isEmailVerified}`,
@@ -116,7 +134,10 @@ export class AuthController {
       }
       throw new UnauthorizedException('Credenciais inválidas');
     }
-    const responseData = await this.authService.login(user);
+    const responseData = await this.authService.login(user, {
+      ip: this.extractIp(req),
+      userAgent: req.headers['user-agent'] || null,
+    });
     if (process.env.NODE_ENV !== 'production') {
       console.log(
         `[AUTH] LOGIN OK - isEmailVerified: ${responseData.user?.isEmailVerified}`,
@@ -163,15 +184,27 @@ export class AuthController {
         where: { id: result.userId },
       });
       if (!user) throw new UnauthorizedException('User not found');
-      const accessToken = this.jwtService.sign(
-        {
-          sub: result.userId,
-          email: user.email,
-          isEmailVerified: user.isEmailVerified,
-          isAdmin: user.isAdmin,
-        },
-        { expiresIn: '15m' },
-      );
+      const payload: Record<string, unknown> = {
+        sub: result.userId,
+        email: user.email,
+        isEmailVerified: user.isEmailVerified,
+        isAdmin: user.isAdmin,
+      };
+
+      // Bind refreshed token to current request context when STRICT_JWT_CONTEXT enabled
+      const strictContext =
+        this.configService.get<string>('STRICT_JWT_CONTEXT') === 'true';
+      if (strictContext) {
+        const ip = this.extractIp(request);
+        const userAgent = request.headers['user-agent'] || 'unknown';
+        payload.ctx = crypto
+          .createHash('sha256')
+          .update(`${ip}|${userAgent.substring(0, 128)}|jwt-ctx`)
+          .digest('hex')
+          .substring(0, 16);
+      }
+
+      const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
       this.setCookies(res, accessToken, result.token);
 
       const isMobile =
@@ -388,6 +421,8 @@ export class AuthController {
   }
 
   // LGPD: Direito de portabilidade — exportação completa de dados pessoais
+  // Rate limit estrito: 1 requisição a cada 5 minutos por usuário
+  @Throttle({ default: { limit: 1, ttl: 300000 } })
   @Get('export-data')
   @UseGuards(AuthGuard('jwt'))
   async exportData(@Request() req: RequestWithUser, @Res() res: Response) {

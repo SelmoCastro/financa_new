@@ -1,3 +1,6 @@
+/**
+ * Seção visual especializada de uma tela maior; isola uma parte importante da interface para manter o fluxo mais legível.
+ */
 import React from 'react';
 import { Zap, MessagesSquare } from 'lucide-react';
 import type { AdminLogic } from './useAdminLogic';

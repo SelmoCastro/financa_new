@@ -1,3 +1,6 @@
+/**
+ * Configuração do Vite; controla build, proxy de desenvolvimento e ajustes de bundling do frontend.
+ */
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 

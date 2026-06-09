@@ -1,3 +1,6 @@
+/**
+ * Componente reutilizável do frontend; encapsula uma parte relevante da interface dentro do domínio de componentes reutilizáveis da interface.
+ */
 import React, { useState, useEffect, useMemo } from 'react';
 import { TrendingUp, TrendingDown, Banknote, CreditCard, Calendar, AlertCircle, Zap } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';

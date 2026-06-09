@@ -1,3 +1,6 @@
+/**
+ * Módulo NestJS do domínio de pagamentos; agrupa controllers, services e dependências necessárias para este contexto.
+ */
 import { Module } from '@nestjs/common';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';

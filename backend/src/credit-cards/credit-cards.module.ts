@@ -1,3 +1,6 @@
+/**
+ * Módulo NestJS do domínio de cartões de crédito; agrupa controllers, services e dependências necessárias para este contexto.
+ */
 import { Module } from '@nestjs/common';
 import { CreditCardsService } from './credit-cards.service';
 import { CreditCardsController } from './credit-cards.controller';

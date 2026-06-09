@@ -1,3 +1,6 @@
+/**
+ * Arquivo de suporte do frontend ligado a telas e fluxos principais; mantém comportamento ou tipagem reutilizável.
+ */
 import React, { useMemo } from 'react';
 import { Receipt, CreditCard, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCurrency } from '../../context/CurrencyContext';

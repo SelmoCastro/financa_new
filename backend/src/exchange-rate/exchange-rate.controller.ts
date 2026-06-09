@@ -1,3 +1,6 @@
+/**
+ * Controller HTTP do domínio de câmbio; recebe as requisições, aplica guards/decorators e delega a regra de negócio aos services.
+ */
 import { Controller, Get, Logger } from '@nestjs/common';
 import { ExchangeRateService } from './exchange-rate.service';
 

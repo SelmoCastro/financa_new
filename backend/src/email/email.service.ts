@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de envio de e-mails; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Resend } from 'resend';
 import * as nodemailer from 'nodemailer';

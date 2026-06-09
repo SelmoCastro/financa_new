@@ -1,3 +1,6 @@
+/**
+ * Middleware compartilhado do backend; executa lógica transversal antes do ciclo normal dos controllers.
+ */
 import { Injectable, NestMiddleware, ForbiddenException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as crypto from 'crypto';
@@ -29,6 +32,8 @@ export class CsrfMiddleware implements NestMiddleware {
     '/auth/reset-password',
     '/auth/verify-email',
     '/auth/refresh',
+    '/reseller-portal/auth/login',
+    '/reseller-portal/auth/refresh',
     '/errors/report', // Error reporter — must work even without auth
     '/payments/webhook', // Mercado Pago notifications — no CSRF, server-to-server
   ];

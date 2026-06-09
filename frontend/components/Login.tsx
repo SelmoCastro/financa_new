@@ -1,3 +1,6 @@
+/**
+ * Componente reutilizável do frontend; encapsula uma parte relevante da interface dentro do domínio de componentes reutilizáveis da interface.
+ */
 import React from 'react';
 import { LayoutDashboard, AlertCircle, CheckCircle } from 'lucide-react';
 import { SmartBanner } from './SmartBanner';

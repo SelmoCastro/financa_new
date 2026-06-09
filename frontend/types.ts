@@ -1,3 +1,6 @@
+/**
+ * Arquivo de suporte do frontend ligado a types.ts; mantém comportamento ou tipagem reutilizável.
+ */
 export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER';
 
 export const ACCOUNT_TYPE_LABELS: Record<string, string> = {

@@ -1,3 +1,6 @@
+/**
+ * Guard compartilhado do backend; decide se a requisição pode continuar antes de chegar ao controller.
+ */
 import {
   Injectable,
   CanActivate,

@@ -1,3 +1,6 @@
+/**
+ * Container principal do dashboard web; orquestra providers, layout, overlays e a navegação por abas internas.
+ */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
@@ -9,7 +12,6 @@ import { ActionMenu } from './components/ActionMenu';
 import { ImportOverlay } from './components/import/ImportOverlay';
 import { FeedbackModal } from './components/FeedbackModal';
 import { SmartBanner } from './components/SmartBanner';
-import { UpgradeModal } from './components/UpgradeModal';
 import { AppProviders } from './components/AppProviders';
 import { ViewRouter } from './components/ViewRouter';
 import { ToastProvider, useToast } from './context/ToastContext';
@@ -32,7 +34,6 @@ const AppContent: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showVerifyBanner, setShowVerifyBanner] = useState(true);
@@ -51,20 +52,20 @@ const AppContent: React.FC = () => {
   const { selectedDate } = useMonth();
   const { t } = useLanguage();
 
-  // Close any open modal/overlay on Esc key
+  // Mantém o dashboard com comportamento consistente de modal: Esc fecha o overlay visível mais prioritário.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (isFormOpen) { setIsFormOpen(false); setEditingTransaction(null); }
         else if (isImportOpen) setIsImportOpen(false);
         else if (isFeedbackOpen) setIsFeedbackOpen(false);
-        else if (isUpgradeOpen) setIsUpgradeOpen(false);
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isFormOpen, isImportOpen, isFeedbackOpen, isUpgradeOpen]);
+  }, [isFormOpen, isImportOpen, isFeedbackOpen]);
 
+  // Persiste o tema atual entre recargas e também respeita o modo escuro do documento HTML.
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -78,6 +79,7 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        // O profile alimenta permissões, greeting, banner de verificação e plano ativo sem duplicar estado em vários componentes.
         const res = await api.get('/auth/me');
         if (res.data.user) {
           setUserName(res.data.user.name || 'Usuário');
@@ -93,8 +95,7 @@ const AppContent: React.FC = () => {
     fetchProfile();
   }, []);
 
-  const handleOpenUpgrade = () => setIsUpgradeOpen(true);
-
+  // Resume os números usados pelas views sem espalhar lógica de fallback por toda a interface.
   const totals = useMemo(() => ({
     balance: dashboardSummary?.balance || 0,
     income: dashboardSummary?.currentMonth?.income || 0,
@@ -105,6 +106,7 @@ const AppContent: React.FC = () => {
     expenseTrend: dashboardSummary?.currentMonth?.expenseTrend || 0,
   }), [dashboardSummary]);
 
+  // Filtra somente as transações do mês selecionado, base para dashboard, histórico e timeline.
   const monthFilteredTransactions = useMemo(() => {
     if (!Array.isArray(transactions)) return [];
     const { year: currentYear, month: currentMonth } = getYearMonth(selectedDate);
@@ -147,6 +149,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleOpenTransactionForm = () => {
+    // A aplicação força a existência de conta antes do primeiro lançamento para evitar transações órfãs.
     if (accounts.length === 0) {
       addToast('Crie primeiro uma Conta para poder realizar lançamentos financeiros!', 'error');
       setActiveTab('accounts');
@@ -158,6 +161,7 @@ const AppContent: React.FC = () => {
     <>
     <SmartBanner />
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex text-slate-900 dark:text-slate-100 selection:bg-cyan-100 dark:selection:bg-cyan-900 selection:text-cyan-900 dark:selection:text-cyan-100 transition-colors duration-300">
+      {/* Sidebar controla a navegação principal do dashboard; as telas reais são trocadas sem mudar a rota /dashboard. */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} onOpenFeedback={() => setIsFeedbackOpen(true)} isAdmin={isAdmin} />
       <div className={`flex-1 sidebar-transition ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} pb-24 lg:pb-0`}>
         <header className="sticky top-0 z-[100] bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-800/50 px-4 md:px-8 py-2 md:py-3 flex flex-row justify-between items-center gap-2 w-full max-w-[100vw] transition-colors duration-300">
@@ -215,6 +219,7 @@ const AppContent: React.FC = () => {
         </header>
 
         {showVerifyBanner && !isEmailVerified && (
+          // Banner de verificação fica acima do conteúdo para reforçar a pendência sem bloquear o uso básico do app.
           <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700 px-4 py-3">
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
@@ -237,6 +242,7 @@ const AppContent: React.FC = () => {
 
         <main className="max-w-7xl mx-auto w-full px-4 md:px-8 py-6 md:py-10 overflow-hidden">
           <AnimatePresence mode="wait">
+            {/* A troca animada entre abas passa sempre pelo ViewRouter, que recebe os mesmos dados já preparados aqui. */}
             <motion.div key={activeTab} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}>
               <ViewRouter
                 activeTab={activeTab}
@@ -253,7 +259,6 @@ const AppContent: React.FC = () => {
                 onLogout={handleLogout}
                 onUserNameChange={(name) => setUserName(name)}
                 onUserEmailChange={(email) => setUserEmail(email)}
-                onUpgrade={handleOpenUpgrade}
           />
             </motion.div>
           </AnimatePresence>
@@ -290,13 +295,6 @@ const AppContent: React.FC = () => {
 
       {isFeedbackOpen && (
         <FeedbackModal onClose={() => setIsFeedbackOpen(false)} />
-      )}
-
-      {isUpgradeOpen && (
-        <UpgradeModal
-          onClose={() => setIsUpgradeOpen(false)}
-          currentPlan={userPlan}
-        />
       )}
 
       {!isFormOpen && !isImportOpen && (

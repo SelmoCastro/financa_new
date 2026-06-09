@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de feedback dos usuários; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 

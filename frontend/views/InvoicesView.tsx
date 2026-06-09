@@ -1,3 +1,6 @@
+/**
+ * Tela principal do frontend para Invoices; reúne estado visual, ações do usuário e composição de componentes.
+ */
 import React from 'react';
 import { CreditCardForm } from '../components/CreditCardForm';
 import { InstallmentFormModal } from '../views/accounts/InstallmentFormModal';

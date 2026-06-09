@@ -1,6 +1,9 @@
+/**
+ * Service do domínio de auditoria; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 
 export type AuditAction =
   | 'auth.login'
@@ -69,7 +72,7 @@ export class AuditService {
       const previousHash = lastEntry?.hash || null;
 
       // Generate a deterministic ID for hash computation
-      const id = crypto.randomUUID();
+      const id = randomUUID();
 
       // Compute hash: SHA256(id + action + actorId + targetId + previousHash + timestamp)
       const timestamp = new Date();

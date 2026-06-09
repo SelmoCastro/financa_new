@@ -1,3 +1,6 @@
+/**
+ * Tela principal do frontend para Dashboard; reúne estado visual, ações do usuário e composição de componentes.
+ */
 import React, { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend } from 'recharts';
 import { Transaction } from '../types';

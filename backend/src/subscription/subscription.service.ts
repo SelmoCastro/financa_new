@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de assinaturas e plano premium; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 

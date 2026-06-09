@@ -1,3 +1,6 @@
+/**
+ * Context provider do frontend; centraliza estado compartilhado e evita prop drilling entre telas e componentes.
+ */
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 interface MonthContextData {

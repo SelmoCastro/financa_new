@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de inteligência artificial; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
 import type {

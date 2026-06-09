@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de payment dentro do fluxo de pagamentos.
+ */
 import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
 
 export type PlanId =

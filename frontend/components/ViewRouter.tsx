@@ -1,3 +1,6 @@
+/**
+ * Componente reutilizável do frontend; encapsula uma parte relevante da interface dentro do domínio de componentes reutilizáveis da interface.
+ */
 import React from 'react';
 import { InvoicesView } from '../views/InvoicesView';
 import { DashboardView } from '../views/DashboardView';
@@ -29,7 +32,6 @@ interface ViewRouterProps {
   onLogout: () => void;
   onUserNameChange: (name: string) => void;
   onUserEmailChange: (email: string) => void;
-  onUpgrade: () => void;
 }
 
 export const ViewRouter: React.FC<ViewRouterProps> = ({
@@ -37,15 +39,15 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
   isPrivacyEnabled, isLoading, userName, userEmail, userPlan,
   onAddAccount, onAddTransaction, onAddBudget,
   onEditTransaction, onDeleteTransaction, onLogout,
-  onUserNameChange, onUserEmailChange, onUpgrade,
+  onUserNameChange, onUserEmailChange,
 }) => {
   switch (activeTab) {
     case 'dashboard':
       return <DashboardView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} onAddAccount={onAddAccount} onAddTransaction={onAddTransaction} onAddBudget={onAddBudget} />;
     case 'accounts':
-      return <AccountsView isPrivacyEnabled={isPrivacyEnabled} userPlan={userPlan} onUpgrade={onUpgrade} />;
+      return <AccountsView isPrivacyEnabled={isPrivacyEnabled} userPlan={userPlan} />;
     case 'budgets':
-      return <BudgetsView isPrivacyEnabled={isPrivacyEnabled} userPlan={userPlan} onUpgrade={onUpgrade} />;
+      return <BudgetsView isPrivacyEnabled={isPrivacyEnabled} userPlan={userPlan} />;
     case 'goals':
       return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
     case 'timeline':
@@ -59,7 +61,7 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
     case 'admin':
       return <AdminPanelView />;
     case 'settings':
-      return <SettingsView userName={userName} userEmail={userEmail} userPlan={userPlan} transactions={transactions} onLogout={onLogout} onNameChange={onUserNameChange} onEmailChange={onUserEmailChange} onUpgrade={onUpgrade} />;
+      return <SettingsView userName={userName} userEmail={userEmail} userPlan={userPlan} transactions={transactions} onLogout={onLogout} onNameChange={onUserNameChange} onEmailChange={onUserEmailChange} />;
     case 'invoices':
       return <InvoicesView isPrivacyEnabled={isPrivacyEnabled} />;
     default:

@@ -1,3 +1,6 @@
+/**
+ * Arquivo de suporte do domínio de infraestrutura compartilhada; dá sustentação ao fluxo principal deste módulo.
+ */
 import { SetMetadata } from '@nestjs/common';
 
 export const AUDIT_LOG_KEY = 'audit:log';

@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de autenticação; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import {
   Injectable,
   UnauthorizedException,
@@ -10,6 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { AuditService } from '../audit/audit.service';
 import * as crypto from 'crypto';
@@ -27,6 +31,7 @@ export class AuthService {
     private auditService: AuditService,
     private refreshTokenService: RefreshTokenService,
     private subscriptionService: SubscriptionService,
+    private configService: ConfigService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -93,14 +98,37 @@ export class AuthService {
    * Pilar 1: Generate access token (JWT 15min) + opaque refresh token via RefreshTokenService.
    * The refresh token is NOT a JWT — it's a random opaque token tracked in the RefreshToken table.
    * This enables token rotation and replay detection (RFC 6819).
+   *
+   * When STRICT_JWT_CONTEXT=true, binds the token to the client's IP and User-Agent
+   * via a context hash stored in the JWT payload. The JwtStrategy validates this on every request.
    */
   async generateTokens(
     userId: string,
     email: string,
     isEmailVerified: boolean,
     isAdmin: boolean = false,
+    context?: { ip?: string | null; userAgent?: string | null },
   ) {
-    const payload = { sub: userId, email, isEmailVerified, isAdmin };
+    const payload: Record<string, unknown> = {
+      sub: userId,
+      email,
+      isEmailVerified,
+      isAdmin,
+    };
+
+    // Bind token to client context when STRICT_JWT_CONTEXT is enabled
+    const strictContext =
+      this.configService.get<string>('STRICT_JWT_CONTEXT') === 'true';
+    if (strictContext && context) {
+      const { ip = 'unknown', userAgent = 'unknown' } = context;
+      const ctxHash = crypto
+        .createHash('sha256')
+        .update(`${ip}|${(userAgent ?? 'unknown').substring(0, 128)}|jwt-ctx`)
+        .digest('hex')
+        .substring(0, 16);
+      payload.ctx = ctxHash;
+    }
+
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
 
     // Use RefreshTokenService for opaque refresh tokens (Pilar 1: token family)
@@ -110,19 +138,23 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async login(user: {
-    id: string;
-    email: string;
-    password?: string;
-    name?: string | null;
-    isEmailVerified: boolean;
-    isAdmin: boolean;
-  }) {
+  async login(
+    user: {
+      id: string;
+      email: string;
+      password?: string;
+      name?: string | null;
+      isEmailVerified: boolean;
+      isAdmin: boolean;
+    },
+    context?: { ip?: string | null; userAgent?: string | null },
+  ) {
     const tokens = await this.generateTokens(
       user.id,
       user.email,
       user.isEmailVerified,
       user.isAdmin,
+      context,
     );
 
     return {
@@ -208,7 +240,7 @@ export class AuthService {
     };
   }
 
-  async register(createUserDto: CreateUserDto) {
+  async register(createUserDto: CreateUserDto, context?: { ip?: string | null; userAgent?: string | null }) {
     if (!createUserDto.termsAccepted) {
       throw new ForbiddenException(
         'Você deve aceitar os termos de uso para criar uma conta',
@@ -226,14 +258,9 @@ export class AuthService {
       termsAcceptedAt: new Date(),
     });
 
-    // 🎁 Trial: 2 meses de premium grátis para novos usuários
-    const twoMonthsFromNow = new Date();
-    twoMonthsFromNow.setMonth(twoMonthsFromNow.getMonth() + 2);
-    await this.subscriptionService.upgrade(
-      user.id,
-      'premium',
-      twoMonthsFromNow,
-    );
+    // Novo usuário entra em plano free por padrão.
+    // O Premium agora só pode nascer por ativação admin/revendedor ou fluxo explícito de pagamento.
+    await this.subscriptionService.upgrade(user.id, 'free');
 
     // Gerar token de verificação de email e enviar
     const verifyToken = crypto.randomBytes(32).toString('hex');
@@ -256,7 +283,7 @@ export class AuthService {
         }
       });
 
-    const loginData = await this.login(user);
+    const loginData = await this.login(user, context);
 
     return {
       message: 'Cadastro realizado com sucesso!',
@@ -488,9 +515,13 @@ export class AuthService {
       throw new BadRequestException('Senha incorreta');
     }
 
-    // Check if email is already in use
-    const existing = await this.prisma.user.findUnique({
-      where: { email: newEmail },
+    // Check if email is already in use (via emailHash for encrypted storage)
+    const emailHash = crypto
+      .createHash('sha256')
+      .update(newEmail.toLowerCase().trim())
+      .digest('hex');
+    const existing = await this.prisma.user.findFirst({
+      where: { emailHash },
     });
     if (existing) {
       throw new BadRequestException('Este e-mail já está em uso');

@@ -1,3 +1,6 @@
+/**
+ * Módulo NestJS do domínio de transações financeiras; agrupa controllers, services e dependências necessárias para este contexto.
+ */
 import { Module } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { TransactionsImportService } from './transactions-import.service';

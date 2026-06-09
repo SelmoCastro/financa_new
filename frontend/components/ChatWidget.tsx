@@ -1,3 +1,6 @@
+/**
+ * Componente reutilizável do frontend; encapsula uma parte relevante da interface dentro do domínio de componentes reutilizáveis da interface.
+ */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Sparkles, X, Send, User, Bot, Loader2, Zap } from 'lucide-react';
 import api from '../services/api';

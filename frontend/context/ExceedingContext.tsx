@@ -1,3 +1,6 @@
+/**
+ * Context provider do frontend; centraliza estado compartilhado e evita prop drilling entre telas e componentes.
+ */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 

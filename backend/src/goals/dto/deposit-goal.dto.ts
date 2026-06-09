@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de deposit goal dentro do fluxo de metas financeiras.
+ */
 import { IsNumber, Max, Min } from 'class-validator';
 
 export class DepositGoalDto {

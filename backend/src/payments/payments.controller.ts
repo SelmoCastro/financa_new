@@ -1,3 +1,6 @@
+/**
+ * Controller HTTP do domínio de pagamentos; recebe as requisições, aplica guards/decorators e delega a regra de negócio aos services.
+ */
 import {
   Controller,
   Post,
@@ -9,6 +12,7 @@ import {
   HttpStatus,
   UsePipes,
   ValidationPipe,
+  Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -22,6 +26,8 @@ import { RequestWithUser } from '../common/types/request-with-user';
   version: '1',
 })
 export class PaymentsController {
+  private readonly logger = new Logger(PaymentsController.name);
+
   constructor(private paymentsService: PaymentsService) {}
 
   @UseGuards(AuthGuard('jwt'))
@@ -63,8 +69,13 @@ export class PaymentsController {
     const isProduction = process.env.NODE_ENV === 'production';
 
     if (isProduction && !xSignature) {
-      // Missing signature — reject in production
-      return res.status(HttpStatus.OK).json({ received: true });
+      // Missing signature — return 4xx so Mercado Pago retries
+      // Returning 200 would silently discard the webhook
+      this.logger.warn('Webhook received without x-signature header');
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: 'Missing x-signature header',
+      });
     }
 
     try {

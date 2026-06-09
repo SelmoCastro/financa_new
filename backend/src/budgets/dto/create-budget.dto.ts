@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de create budget dentro do fluxo de orçamentos.
+ */
 import { IsNotEmpty, IsNumber, IsUUID, Min, Max } from 'class-validator';
 
 export class CreateBudgetDto {

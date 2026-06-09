@@ -1,3 +1,6 @@
+/**
+ * Seção visual especializada de uma tela maior; isola uma parte importante da interface para manter o fluxo mais legível.
+ */
 import React from 'react';
 import { Wallet, Sparkles, Plus, MoreVertical, Edit3, Trash2 } from 'lucide-react';
 import { BankIcon } from '../../components/BankIcon';

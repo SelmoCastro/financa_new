@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de categorias; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';

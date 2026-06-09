@@ -1,3 +1,6 @@
+/**
+ * Componente reutilizável do frontend; encapsula uma parte relevante da interface dentro do domínio de componentes reutilizáveis da interface.
+ */
 import React, { useState, useEffect } from 'react';
 import { X, CreditCard as CreditCardIcon, ChevronDown } from 'lucide-react';
 import { Account, CreditCard, ACCOUNT_TYPE_LABELS } from '../types';

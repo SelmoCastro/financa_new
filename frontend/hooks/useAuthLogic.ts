@@ -1,3 +1,6 @@
+/**
+ * Hook personalizado do frontend; concentra estado derivado, efeitos colaterais e handlers reutilizáveis.
+ */
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';

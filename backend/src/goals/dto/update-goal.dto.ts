@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de update goal dentro do fluxo de metas financeiras.
+ */
 import { OmitType, PartialType } from '@nestjs/swagger';
 import { CreateGoalDto } from './create-goal.dto';
 

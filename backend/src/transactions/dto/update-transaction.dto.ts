@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de update transaction dentro do fluxo de transações financeiras.
+ */
 import { PartialType, OmitType } from '@nestjs/swagger';
 import { IsIn, IsOptional } from 'class-validator';
 import {

@@ -1,3 +1,6 @@
+/**
+ * Arquivo de apoio da camada de views; define tipos, hooks ou utilitários usados pelas telas principais.
+ */
 import { useState, useCallback, useEffect, useRef } from 'react';
 import api from '../../services/api';
 import { creditCardService, CreditCardInstallmentDTO } from '../../services/creditCardService';

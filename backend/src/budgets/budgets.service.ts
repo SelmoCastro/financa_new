@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de orçamentos; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';

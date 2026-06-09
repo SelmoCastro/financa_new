@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de create goal dentro do fluxo de metas financeiras.
+ */
 import {
   IsNotEmpty,
   IsNumber,

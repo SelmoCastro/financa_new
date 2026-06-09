@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de recursos sociais; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import {
   Injectable,
   NotFoundException,
@@ -5,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import * as crypto from 'crypto';
 import { EncryptionService } from '../common/services/encryption.service';
 import {
   encryptAmount,
@@ -47,9 +51,13 @@ export class SocialService {
       }
     }
 
-    // 2. Check if recipient exists
-    const recipient = await this.prisma.user.findUnique({
-      where: { email: data.recipientEmail },
+    // 2. Check if recipient exists (via emailHash for encrypted storage)
+    const recipientHash = crypto
+      .createHash('sha256')
+      .update(data.recipientEmail.toLowerCase().trim())
+      .digest('hex');
+    const recipient = await this.prisma.user.findFirst({
+      where: { emailHash: recipientHash },
     });
 
     // 3. Create the invite (amount is now encrypted string)

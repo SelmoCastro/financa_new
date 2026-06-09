@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de relatórios e indicadores; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../common/services/encryption.service';

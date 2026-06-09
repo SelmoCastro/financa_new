@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de account settings dentro do fluxo de autenticação.
+ */
 import {
   IsString,
   MinLength,

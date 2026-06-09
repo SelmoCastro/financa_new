@@ -1,3 +1,6 @@
+/**
+ * Componente reutilizável do frontend; encapsula uma parte relevante da interface dentro do domínio de componentes reutilizáveis da interface.
+ */
 import React from 'react';
 import { AlertTriangle, Inbox, CheckSquare, X, Sparkles, Check, Loader2, ChevronDown } from 'lucide-react';
 import { Category } from '../../types';

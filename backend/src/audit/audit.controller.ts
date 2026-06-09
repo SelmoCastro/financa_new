@@ -1,4 +1,8 @@
+/**
+ * Controller HTTP do domínio de auditoria; recebe as requisições, aplica guards/decorators e delega a regra de negócio aos services.
+ */
 import { Controller, Get, Query, UseGuards, Req } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuditService } from './audit.service';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { Request } from 'express';
@@ -16,7 +20,7 @@ export class AuditController {
    * Query params: actorId, action, targetType, targetId, severity, from, to, limit, offset
    */
   @Get('logs')
-  @UseGuards(AdminGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   async queryLogs(
     @Query('actorId') actorId?: string,
     @Query('action') action?: string,
@@ -45,6 +49,7 @@ export class AuditController {
    * GET /v1/audit/my — Get audit logs for the current user
    */
   @Get('my')
+  @UseGuards(AuthGuard('jwt'))
   async getMyLogs(
     @Req() req: RequestWithUser,
     @Query('limit') limit?: string,
@@ -61,7 +66,7 @@ export class AuditController {
    * GET /v1/audit/verify — Verify the integrity of the audit log chain (admin only)
    */
   @Get('verify')
-  @UseGuards(AdminGuard)
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
   async verifyChain() {
     return this.auditService.verifyChain();
   }

@@ -1,3 +1,6 @@
+/**
+ * Middleware compartilhado do backend; executa lógica transversal antes do ciclo normal dos controllers.
+ */
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
@@ -22,6 +25,7 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
   private readonly logger = new Logger(BehavioralThrottleMiddleware.name);
 
   // Track error counts per IP — public for admin monitoring
+  // Hard cap at 5000 entries to prevent unbounded memory growth from botnets
   public ipTracker = new Map<
     string,
     {
@@ -32,6 +36,9 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
       windowStart: number;
     }
   >();
+
+  /** Maximum entries in the tracker map */
+  private readonly MAX_TRACKER_ENTRIES = 5000;
 
   // Cleanup stale entries every 10 minutes
   private cleanupInterval = setInterval(() => this.cleanup(), 10 * 60 * 1000);
@@ -138,6 +145,15 @@ export class BehavioralThrottleMiddleware implements NestMiddleware {
   private getOrCreateTracker(ip: string) {
     let tracker = this.ipTracker.get(ip);
     if (!tracker) {
+      // Enforce hard cap to prevent memory exhaustion under botnet attack
+      if (this.ipTracker.size >= this.MAX_TRACKER_ENTRIES) {
+        // Evict the 500 oldest entries to make room
+        const entries = Array.from(this.ipTracker.entries());
+        entries
+          .sort((a, b) => a[1].lastActivity - b[1].lastActivity)
+          .slice(0, 500)
+          .forEach(([key]) => this.ipTracker.delete(key));
+      }
       tracker = {
         errorCount: 0,
         lastActivity: Date.now(),

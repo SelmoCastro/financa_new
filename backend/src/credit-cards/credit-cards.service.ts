@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de cartões de crédito; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import {
   Injectable,
   NotFoundException,

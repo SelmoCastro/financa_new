@@ -1,3 +1,6 @@
+/**
+ * Arquivo de suporte do frontend ligado a componentes reutilizáveis da interface; mantém comportamento ou tipagem reutilizável.
+ */
 import { useState, useRef, useEffect } from 'react';
 import api from '../../services/api';
 import { Category } from '../../types';

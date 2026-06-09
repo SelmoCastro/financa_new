@@ -1,3 +1,6 @@
+/**
+ * Tela principal do frontend para Timeline; reúne estado visual, ações do usuário e composição de componentes.
+ */
 import React, { useMemo } from 'react';
 import { Repeat } from 'lucide-react';
 import { Transaction } from '../types';

@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de create category dentro do fluxo de categorias.
+ */
 import {
   IsString,
   IsNotEmpty,

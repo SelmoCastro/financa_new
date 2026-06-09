@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de create installment dentro do fluxo de cartões de crédito.
+ */
 import {
   IsString,
   IsNotEmpty,

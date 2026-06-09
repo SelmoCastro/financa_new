@@ -1,3 +1,6 @@
+/**
+ * Controller raiz do backend; expõe endpoints simples de infraestrutura e sanidade da aplicação.
+ */
 import { Controller, Get, UseGuards, VERSION_NEUTRAL } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AuthGuard } from '@nestjs/passport';

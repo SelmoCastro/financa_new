@@ -1,3 +1,6 @@
+/**
+ * Tela principal do frontend para Landing; reúne estado visual, ações do usuário e composição de componentes.
+ */
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { CookiePrefsLink } from '../components/CookieBanner';

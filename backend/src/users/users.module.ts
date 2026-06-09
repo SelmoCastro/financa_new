@@ -1,3 +1,6 @@
+/**
+ * Módulo NestJS do domínio de usuários; agrupa controllers, services e dependências necessárias para este contexto.
+ */
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';

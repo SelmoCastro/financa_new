@@ -1,3 +1,6 @@
+/**
+ * Módulo raiz do backend; registra os módulos de negócio, middlewares globais e integrações transversais.
+ */
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -40,6 +43,8 @@ import { ExchangeRateModule } from './exchange-rate/exchange-rate.module';
 import { OcrModule } from './common/services/ocr.module';
 import { BehavioralThrottleMiddleware } from './common/middleware/behavioral-throttle.middleware';
 import { SecurityLoggerMiddleware } from './common/middleware/security-logger.middleware';
+import { ResellersModule } from './resellers/resellers.module';
+import { ResellerAuthModule } from './reseller-auth/reseller-auth.module';
 
 @Module({
   imports: [
@@ -52,6 +57,8 @@ import { SecurityLoggerMiddleware } from './common/middleware/security-logger.mi
     ]),
     UsersModule,
     AuthModule,
+    ResellersModule,
+    ResellerAuthModule,
     PrismaModule,
     TransactionsModule,
     BudgetsModule,

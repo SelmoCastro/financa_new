@@ -1,3 +1,6 @@
+/**
+ * Interceptor compartilhado do backend; transforma ou enriquece a resposta/requisição de forma transversal.
+ */
 import {
   Injectable,
   NestInterceptor,

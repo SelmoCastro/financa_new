@@ -1,10 +1,13 @@
+/**
+ * Cliente HTTP principal do frontend web; cuida de baseURL, CSRF, refresh de sessão e desempacotamento do envelope da API.
+ */
 import axios from 'axios';
 
 const getBaseUrl = () => {
     // @ts-ignore
     const url = import.meta.env.VITE_API_URL || '';
-    // Em produção, usa /api/v1 relativo — Nginx faz proxy para o backend
-    // Em desenvolvimento, usa o proxy do vite.config.ts -> localhost:3000
+    // Em produção, usa /api/v1 relativo para manter frontend e backend no mesmo domínio.
+    // Em desenvolvimento, o Vite reescreve /api para o backend local.
     if (!url) return '/api/v1';
     return url.replace(/\/$/, '') + '/v1';
 };
@@ -29,11 +32,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-    // Auth: Jwt é enviado via HttpOnly cookie automaticamente (withCredentials).
-    // O backend extrai do cookie primeiro, depois do header Bearer (para mobile).
-    // Web não precisa mais de Authorization header — o cookie basta.
-
-    // CSRF: Para métodos de escrita, enviar o token do cookie como header
+    // No web, a sessão fica em cookie HttpOnly. Este interceptor só complementa com CSRF nos métodos mutáveis.
     const method = (config.method || 'get').toLowerCase();
     if (['post', 'put', 'patch', 'delete'].includes(method)) {
         const csrfToken = getCsrfTokenFromCookie();
@@ -45,7 +44,7 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Evita refresh loop infinito caso o próprio refresh falhe
+// Coordena refresh concorrente para que vários 401 simultâneos gerem um único refresh real.
 let isRefreshing = false;
 let refreshSubscribers: Array<() => void> = [];
 
@@ -58,7 +57,7 @@ const addRefreshSubscriber = (cb: () => void) => {
     refreshSubscribers.push(cb);
 };
 
-// Response interceptor: desempacota o envelope padronizado do backend e captura 401s
+// Desempacota o envelope padrão do backend e tenta recuperar sessões expiradas de forma transparente.
 api.interceptors.response.use(
     (response) => {
         if (response.data && response.data.data !== undefined) {
@@ -69,21 +68,21 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Se for 403 por email não verificado, redireciona pra verificação
+        // Bloqueios de verificação de e-mail merecem redirecionamento imediato porque não serão resolvidos por refresh.
         if (error.response?.status === 403 && error.response?.data?.message?.includes('Email verification required')) {
-            // Redireciona sem gravar em localStorage — o endpoint /auth/me é source of truth
+            // O endpoint /auth/me continua sendo a fonte da verdade; nada de espelhar sessão no localStorage.
             if (!window.location.pathname.includes('verify-email')) {
                 window.location.href = '/verify-email';
             }
             return Promise.reject(error);
         }
 
-        // Se for 401 (sem autorização) e não for rota de auth (evita loops e atrasos no logout)
+        // 401 em rotas normais tenta refresh; 401 em rotas de auth cai fora para evitar loop infinito.
         const isAuthRoute = ['/auth/refresh', '/auth/logout', '/auth/login'].some(r => originalRequest.url?.includes(r));
         if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
 
             if (isRefreshing) {
-                // Se já está fazendo refresh, espera e retry
+                // Requests concorrentes aguardam a primeira renovação terminar antes de repetir a chamada original.
                 return new Promise((resolve) => {
                     addRefreshSubscriber(() => {
                         resolve(api(originalRequest));
@@ -95,18 +94,18 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                // Backend detecta HttpOnly RefreshCookie e retorna novos cookies automaticamente
+                // O backend lê o refresh cookie e devolve novos cookies sem expor token ao JavaScript.
                 await api.post('/auth/refresh', {});
 
-                // Notifica todos os requests que estavam esperando
+                // Libera a fila de requests que ficaram pendentes durante a renovação.
                 onTokenRefreshed();
 
-                // Retry o request original — novos cookies já estão setados
+                // O retry reaproveita a config original; os cookies novos já foram persistidos pelo navegador.
                 return api(originalRequest);
 
             } catch (refreshError) {
                 refreshSubscribers = [];
-                // Se falhar de vez, redireciona pra login (sem localStorage para limpar)
+                // Se o refresh falhar, a sessão realmente morreu e o usuário volta para login.
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
             } finally {

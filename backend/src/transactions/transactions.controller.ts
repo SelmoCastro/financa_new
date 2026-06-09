@@ -1,3 +1,6 @@
+/**
+ * Controller HTTP do domínio de transações financeiras; recebe as requisições, aplica guards/decorators e delega a regra de negócio aos services.
+ */
 import {
   Controller,
   Get,

@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de create feedback dentro do fluxo de feedback dos usuários.
+ */
 import { IsString, MaxLength, IsIn } from 'class-validator';
 import { Transform } from 'class-transformer';
 

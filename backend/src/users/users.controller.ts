@@ -1,3 +1,6 @@
+/**
+ * Controller HTTP do domínio de usuários; recebe as requisições, aplica guards/decorators e delega a regra de negócio aos services.
+ */
 import {
   Controller,
   Get,

@@ -1,3 +1,6 @@
+/**
+ * Tela principal do frontend para Settings; reúne estado visual, ações do usuário e composição de componentes.
+ */
 import React, { useState } from 'react';
 import { LogOut, User, Mail, Lock, Trash2, Crown, Shield, ChevronDown, Check, Loader2, X, Sparkles, Globe } from 'lucide-react';
 import { Transaction } from '../types';
@@ -10,17 +13,16 @@ const SUPPORTED_LANGUAGES: AppLanguage[] = ['pt-BR', 'en'];
 const SUPPORTED_LOCALES: AppLocale[] = ['pt-BR', 'en-US', 'pt-PT', 'de-DE', 'en-IE'];
 
 interface SettingsViewProps {
-    userName: string;
-    userEmail: string;
-    userPlan: string;
-    transactions: Transaction[];
-    onLogout: () => void;
+    userName?: string;
+    userEmail?: string;
+    userPlan?: string;
+    transactions?: Transaction[];
+    onLogout?: () => void;
     onNameChange?: (name: string) => void;
     onEmailChange?: (email: string) => void;
-    onUpgrade?: () => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail, userPlan, transactions, onLogout, onNameChange, onEmailChange, onUpgrade }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail, userPlan, transactions, onLogout, onNameChange, onEmailChange }) => {
     const { currency, setCurrency } = useCurrency();
     const { language, setLanguage, locale, setLocale, t } = useLanguage();
     // Edit name
@@ -398,15 +400,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
                                     <Crown className="w-7 h-7" />
                                 </div>
                             </div>
-                            {!isPremium && (
-                                <button
-                                    onClick={() => onUpgrade?.()}
-                                    className="mt-4 w-full py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
-                                >
-                                    <Sparkles className="w-4 h-4" />
-                                    {t('settings.upgradePremium')}
-                                </button>
-                            )}
                         </div>
                     </div>
 

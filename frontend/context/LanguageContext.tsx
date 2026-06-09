@@ -1,3 +1,6 @@
+/**
+ * Context provider do frontend; centraliza estado compartilhado e evita prop drilling entre telas e componentes.
+ */
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 
 export type AppLanguage = 'pt-BR' | 'en';

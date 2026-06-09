@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de autenticação; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
@@ -33,7 +36,7 @@ export class RefreshTokenService {
     userId: string,
   ): Promise<{ familyId: string; tokenHash: string; token: string }> {
     const familyId = crypto.randomUUID();
-    const token = crypto.randomBytes(48).toString('hex');
+    const token = crypto.randomBytes(32).toString('hex');
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
     // Delete any existing refresh tokens for this user (single-session policy)

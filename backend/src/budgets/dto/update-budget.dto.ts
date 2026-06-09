@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de update budget dentro do fluxo de orçamentos.
+ */
 import {
   IsNotEmpty,
   IsNumber,

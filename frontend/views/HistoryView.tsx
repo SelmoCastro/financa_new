@@ -1,3 +1,6 @@
+/**
+ * Tela principal do frontend para History; reúne estado visual, ações do usuário e composição de componentes.
+ */
 
 import React, { useState, useMemo } from 'react';
 import { Edit3, Trash2, ArrowUpRight, ArrowDownLeft, Repeat, Search, Inbox } from 'lucide-react';

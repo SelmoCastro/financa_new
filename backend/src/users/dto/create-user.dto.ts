@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de create user dentro do fluxo de usuários.
+ */
 import {
   IsString,
   IsNotEmpty,

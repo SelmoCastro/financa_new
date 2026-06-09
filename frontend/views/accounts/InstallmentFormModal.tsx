@@ -1,3 +1,6 @@
+/**
+ * Arquivo de suporte do frontend ligado a telas e fluxos principais; mantém comportamento ou tipagem reutilizável.
+ */
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useCurrency } from '../../context/CurrencyContext';

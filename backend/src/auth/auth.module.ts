@@ -1,3 +1,6 @@
+/**
+ * Módulo NestJS do domínio de autenticação; agrupa controllers, services e dependências necessárias para este contexto.
+ */
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';

@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de update plan dentro do fluxo de administração.
+ */
 import { IsIn } from 'class-validator';
 
 export class UpdatePlanDto {

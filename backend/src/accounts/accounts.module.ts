@@ -1,3 +1,6 @@
+/**
+ * Módulo NestJS do domínio de contas bancárias; agrupa controllers, services e dependências necessárias para este contexto.
+ */
 import { Module } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import { AccountsController } from './accounts.controller';

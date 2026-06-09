@@ -1,3 +1,6 @@
+/**
+ * DTO usado para validar e tipar o payload de create transaction dentro do fluxo de transações financeiras.
+ */
 import {
   IsBoolean,
   IsDateString,

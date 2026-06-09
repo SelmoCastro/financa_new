@@ -1,3 +1,6 @@
+/**
+ * Service do domínio de infraestrutura compartilhada; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
+ */
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as crypto from 'crypto';
 

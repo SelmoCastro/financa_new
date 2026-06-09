@@ -1,8 +1,12 @@
+/**
+ * Arquivo de suporte do domínio de autenticação; dá sustentação ao fluxo principal deste módulo.
+ */
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -49,6 +53,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: string;
       isEmailVerified: boolean;
       isAdmin: boolean;
+      ctx?: string;
     },
   ) {
     // Verify user still exists (prevents deleted-user token usage)
@@ -74,10 +79,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         128,
       );
 
-      // Log context for audit (always, regardless of strict mode)
-      this.logger.debug(
-        `JWT context: ip=${currentIp} ua=${currentUa.substring(0, 40)}`,
-      );
+      // Compute expected context hash from current request
+      const currentCtx = crypto
+        .createHash('sha256')
+        .update(`${currentIp}|${currentUa}|jwt-ctx`)
+        .digest('hex')
+        .substring(0, 16);
+
+      if (!payload.ctx) {
+        this.logger.warn(
+          `JWT missing context hash — token issued before STRICT_JWT_CONTEXT: ip=${currentIp}`,
+        );
+        throw new UnauthorizedException(
+          'Token inválido: contexto de segurança ausente. Faça login novamente.',
+        );
+      }
+
+      if (payload.ctx !== currentCtx) {
+        this.logger.warn(
+          `JWT context mismatch: ip=${currentIp} ua=${currentUa.substring(0, 40)}`,
+        );
+        throw new UnauthorizedException(
+          'Sessão inválida: mudança de dispositivo ou rede detectada. Faça login novamente.',
+        );
+      }
     }
 
     return {
