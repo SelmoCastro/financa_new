@@ -13,6 +13,7 @@ import { AuditService } from '../audit/audit.service';
 import { EncryptionService } from '../common/services/encryption.service';
 import { PrismaClient } from '@prisma/client';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { TransactionType } from './dto/create-transaction.dto';
 
 describe('TransactionsService (integration)', () => {
   let service: TransactionsService;
@@ -79,7 +80,7 @@ describe('TransactionsService (integration)', () => {
 
   it('deve criar uma transação de despesa e atualizar o saldo da conta', async () => {
     const dto = {
-      type: 'EXPENSE' as const,
+      type: TransactionType.EXPENSE,
       amount: 100,
       date: new Date().toISOString(),
       description: 'Teste integração',
@@ -105,7 +106,7 @@ describe('TransactionsService (integration)', () => {
     futureDate.setDate(futureDate.getDate() + 5);
 
     const dto = {
-      type: 'EXPENSE' as const,
+      type: TransactionType.EXPENSE,
       amount: 50,
       date: futureDate.toISOString(),
       description: 'Data futura',
@@ -119,7 +120,7 @@ describe('TransactionsService (integration)', () => {
 
   it('deve rejeitar transação com accountId que não pertence ao usuário', async () => {
     const dto = {
-      type: 'EXPENSE' as const,
+      type: TransactionType.EXPENSE,
       amount: 50,
       date: new Date().toISOString(),
       description: 'Conta alheia',
@@ -133,7 +134,7 @@ describe('TransactionsService (integration)', () => {
 
   it('deve rejeitar criação de TRANSFER via endpoint create', async () => {
     const dto = {
-      type: 'TRANSFER' as const,
+      type: TransactionType.TRANSFER,
       amount: 50,
       date: new Date().toISOString(),
       description: 'Transfer indevida',
