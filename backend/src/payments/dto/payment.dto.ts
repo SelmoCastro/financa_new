@@ -37,6 +37,11 @@ export class MercadoPagoWebhookDto {
   @IsOptional()
   data_id?: string;
 
+  @IsOptional()
+  data?: {
+    id?: string | number;
+  };
+
   @IsString()
   @IsOptional()
   type?: string;

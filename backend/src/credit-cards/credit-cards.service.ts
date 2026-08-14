@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { CreateCreditCardDto } from './dto/create-credit-card.dto';
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto';
@@ -126,17 +127,19 @@ export class CreditCardsService {
       }
     }
     // Extract limit if provided and encrypt it
-    const { limit, ...rest } = updateCreditCardDto;
+    const { limit, version, ...rest } = updateCreditCardDto;
     const data: Record<string, unknown> = { ...rest };
     if (limit !== undefined) {
       data.limit = encryptAmount(limit, this.encryption);
     }
     const result = await this.prisma.creditCard.updateMany({
-      where: { id, userId, deletedAt: null },
-      data: data as any,
+      where: { id, userId, deletedAt: null, ...(version !== undefined ? { version } : {}) },
+      data: { ...data, version: { increment: 1 } } as any,
     });
     if (result.count === 0)
-      throw new NotFoundException('Cartão de crédito não encontrado');
+      throw version !== undefined
+        ? new ConflictException('Cartão foi modificado por outro usuário')
+        : new NotFoundException('Cartão de crédito não encontrado');
     // IDOR fix: include userId in findFirst to prevent cross-tenant data access
     return this.prisma.creditCard.findFirst({
       where: { id, userId, deletedAt: null },

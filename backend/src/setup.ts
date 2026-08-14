@@ -70,14 +70,10 @@ export function configureApp(app: INestApplication) {
     callback: (err: Error | null, allow?: boolean) => void,
   ) => {
     if (!origin) {
-      // Em produção, rejeitar requisições sem Origin para evitar que
-      // scripts locais (file://, Electron, WebView) façam chamadas
-      // autenticadas via cookies HttpOnly — o CSRF protege mutações
-      // mas leituras autenticadas também expõem dados sensíveis.
-      if (isProduction) {
-        return callback(new Error('Origin required in production'), false);
-      }
-      // Em dev, permitir para curl/Postman/testes locais.
+      // Navegadores não enviam Origin em requisições same-origin. Isso inclui
+      // o frontend de produção, que chama a API pelo caminho relativo /api/v1.
+      // O isolamento same-origin protege as leituras e o middleware CSRF
+      // continua protegendo as requisições mutáveis autenticadas por cookie.
       return callback(null, true);
     }
     const isAllowed = allowedOriginsCORS.some((o) => {

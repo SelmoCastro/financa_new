@@ -1,165 +1,144 @@
-# Bump version — triggered manually or via workflow_dispatch
-# Creates a commit + tag with version bump across all files
-# Then pushes the tag which triggers the release workflow
-
+# Version bump — creates a PR; it never writes directly to master.
+# Merge of the release PR creates the tag in tag-after-merge.yml.
 name: Version Bump
 
 on:
   workflow_dispatch:
     inputs:
       bump_type:
-        description: 'Version bump type'
+        description: Version bump type
         required: true
-        default: 'patch'
+        default: patch
         type: choice
-        options:
-          - patch
-          - minor
-          - major
+        options: [patch, minor, major]
       release_notes:
-        description: 'Release notes (optional)'
+        description: Release notes (optional)
         required: false
         type: string
 
 permissions:
   contents: write
+  pull-requests: write
+
+env:
+  NODE_VERSION: 22
 
 jobs:
   bump:
-    name: Bump Version & Tag
+    name: Prepare version bump PR
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout master
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: master
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Get current version
-        id: current
-        run: |
-          CURRENT=$(node -p "require('./package.json').version")
-          echo "version=$CURRENT" >> $GITHUB_OUTPUT
-
-      - name: Calculate new version
+      - name: Calculate next version
         id: next
+        shell: bash
         run: |
-          CURRENT="${{ steps.current.outputs.version }}"
+          set -euo pipefail
+          CURRENT=$(node -p "require('./package.json').version")
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          case "${{ github.event.inputs.bump_type }}" in
-            patch)  ((PATCH++)) ;;
-            minor)  ((MINOR++)); PATCH=0 ;;
-            major)  ((MAJOR++)); MINOR=0; PATCH=0 ;;
+          case "${{ inputs.bump_type }}" in
+            patch) PATCH=$((PATCH + 1)) ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            *) echo "Unsupported bump type" >&2; exit 1 ;;
           esac
           NEW="$MAJOR.$MINOR.$PATCH"
-          echo "version=$NEW" >> $GITHUB_OUTPUT
-          echo "📦 Bumping $CURRENT → $NEW"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+          echo "Bumping $CURRENT -> $NEW"
 
-      - name: Bump package.json files
+      - name: Update all version sources
+        env:
+          NEW_VERSION: ${{ steps.next.outputs.version }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
         run: |
-          NEW="${{ steps.next.outputs.version }}"
-          for PKG in package.json backend/package.json frontend/package.json mobile/package.json; do
-            if [[ -f "$PKG" ]]; then
-              node -e "
-                const fs = require('fs');
-                const d = JSON.parse(fs.readFileSync('$PKG', 'utf8'));
-                d.version = '$NEW';
-                fs.writeFileSync('$PKG', JSON.stringify(d, null, 2) + '\n');
-                console.log('  ✓ ' + '$PKG' + ' → $NEW');
-              "
-            fi
-          done
+          node <<'NODE'
+          const fs = require('fs');
+          const version = process.env.NEW_VERSION;
+          const notes = (process.env.RELEASE_NOTES || '').trim() || 'Atualização de versão.';
 
-      - name: Bump app.json (Expo version + versionCode)
-        run: |
-          NEW="${{ steps.next.outputs.version }}"
-          node -e "
-            const fs = require('fs');
-            const d = JSON.parse(fs.readFileSync('mobile/app.json', 'utf8'));
-            d.expo.version = '$NEW';
-            d.expo.android.versionCode += 1;
-            console.log('  ✓ mobile/app.json → ' + '$NEW' + ' (versionCode: ' + d.expo.android.versionCode + ')');
-            fs.writeFileSync('mobile/app.json', JSON.stringify(d, null, 2) + '\n');
-          "
+          for (const file of [
+            'package.json',
+            'backend/package.json',
+            'frontend/package.json',
+            'mobile/package.json',
+          ]) {
+            const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+            data.version = version;
+            fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');
+          }
 
-      - name: Bump version-meta.json
-        run: |
-          NEW="${{ steps.next.outputs.version }}"
-          NOTES="${{ github.event.inputs.release_notes }}"
-          node -e "
-            const fs = require('fs');
-            const d = JSON.parse(fs.readFileSync('backend/src/version-meta.json', 'utf8'));
-            d.version = '$NEW';
-            if ('$NOTES') d.releaseNotes = '$NOTES'.replace(/\\\\n/g, '\\n');
-            fs.writeFileSync('backend/src/version-meta.json', JSON.stringify(d, null, 2) + '\n');
-            console.log('  ✓ backend/src/version-meta.json → $NEW');
-          "
+          const appFile = 'mobile/app.json';
+          const app = JSON.parse(fs.readFileSync(appFile, 'utf8'));
+          app.expo.version = version;
+          app.expo.android.versionCode = Number(app.expo.android.versionCode) + 1;
+          app.version = version;
+          app.versionCode = app.expo.android.versionCode;
+          fs.writeFileSync(appFile, JSON.stringify(app, null, 2) + '\n');
 
-      - name: Generate CHANGELOG
-        run: |
-          CURRENT="${{ steps.current.outputs.version }}"
-          NEW="${{ steps.next.outputs.version }}"
-          
-          COMMITS=$(git log "v${CURRENT}..HEAD" --oneline 2>/dev/null || git log -20 --oneline)
-          
-          node -e "
-            const fs = require('fs');
-            const commits = \`$COMMITS\`.trim().split('\n');
-            const categories = {
-              feat: { emoji: '✨', title: 'Features', items: [] },
-              fix: { emoji: '🐛', title: 'Bug Fixes', items: [] },
-              perf: { emoji: '⚡', title: 'Performance', items: [] },
-              refactor: { emoji: '♻️', title: 'Refactoring', items: [] },
-              docs: { emoji: '📝', title: 'Documentation', items: [] },
-              test: { emoji: '✅', title: 'Tests', items: [] },
-              build: { emoji: '📦', title: 'Build', items: [] },
-              ci: { emoji: '🔧', title: 'CI/CD', items: [] },
-              chore: { emoji: '🧹', title: 'Chores', items: [] },
-            };
-            const other = [];
-            commits.forEach(line => {
-              const m = line.match(/^[a-f0-9]+\\s+(feat|fix|perf|refactor|docs|test|build|ci|chore)(\\(.+?\\))?:\\s+(.+)/i);
-              if (m) { categories[m[1].toLowerCase()]?.items.push((m[2]||'') + ' ' + m[3]); }
-              else if (line.trim()) other.push(line);
-            });
-            let entry = '## [' + '$NEW' + '](https://github.com/SelmoCastro/financa_new/compare/v' + '$CURRENT' + '...v' + '$NEW' + ') (' + new Date().toISOString().split('T')[0] + ')\\n\\n';
-            Object.values(categories).forEach(c => {
-              if (c.items.length) {
-                entry += '### ' + c.emoji + ' ' + c.title + '\\n\\n';
-                c.items.forEach(i => entry += '* ' + i + '\\n');
-                entry += '\\n';
-              }
-            });
-            if (other.length) {
-              entry += '### Other Changes\\n\\n';
-              other.forEach(i => entry += '* ' + i + '\\n');
-              entry += '\\n';
-            }
-            let existing = fs.existsSync('CHANGELOG.md') ? fs.readFileSync('CHANGELOG.md', 'utf8') : '';
-            const header = '# Changelog\\n\\nAll notable changes to this project will be documented in this file.\\n\\n';
-            const body = existing.replace(/^# Changelog.*?\\n\\n/s, '');
-            fs.writeFileSync('CHANGELOG.md', header + entry + body);
-          "
+          const gradleFile = 'mobile/android/app/build.gradle';
+          let gradle = fs.readFileSync(gradleFile, 'utf8');
+          const versionCode = app.expo.android.versionCode;
+          gradle = gradle.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`);
+          gradle = gradle.replace(/versionName\s+"[^"]+"/, `versionName "${version}"`);
+          fs.writeFileSync(gradleFile, gradle);
 
-      - name: Commit & Tag
-        run: |
-          NEW="${{ steps.next.outputs.version }}"
-          git add -A
-          git commit -m "chore: release v${NEW} [skip ci]"
-          git tag "v${NEW}"
-          git push origin master --tags
+          const metaFile = 'backend/src/version-meta.json';
+          const meta = JSON.parse(fs.readFileSync(metaFile, 'utf8'));
+          meta.version = version;
+          meta.mobileVersion = version;
+          meta.releaseNotes = notes;
+          fs.writeFileSync(metaFile, JSON.stringify(meta, null, 2) + '\n');
 
-      - name: Summary
+          const changelogFile = 'CHANGELOG.md';
+          const existing = fs.existsSync(changelogFile)
+            ? fs.readFileSync(changelogFile, 'utf8')
+            : '# Changelog\n\n';
+          const date = new Date().toISOString().slice(0, 10);
+          const entry = `## [${version}] (${date})\n\n${notes}\n\n`;
+          const header = existing.startsWith('# Changelog') ? '# Changelog\n\n' : '# Changelog\n\n';
+          const body = existing.replace(/^# Changelog\s*/i, '');
+          fs.writeFileSync(changelogFile, header + entry + body);
+          NODE
+
+      - name: Verify version consistency
         run: |
-          echo "🎉 Version ${{ steps.current.outputs.version }} → ${{ steps.next.outputs.version }} bumped!"
-          echo ""
-          echo "   Tag v${{ steps.next.outputs.version }} pushed — release workflow will trigger automatically."
-          echo "   Monitor: https://github.com/${{ github.repository }}/actions"
+          node <<'NODE'
+          const fs = require('fs');
+          const version = JSON.parse(fs.readFileSync('package.json')).version;
+          const files = ['backend/package.json', 'frontend/package.json', 'mobile/package.json'];
+          for (const file of files) {
+            if (JSON.parse(fs.readFileSync(file)).version !== version) throw new Error(`${file} diverged`);
+          }
+          const app = JSON.parse(fs.readFileSync('mobile/app.json'));
+          if (app.expo.version !== version || app.version !== version) throw new Error('app.json version diverged');
+          if (!new RegExp(`versionName "${version.replaceAll('.', '\\.') }"`).test(fs.readFileSync('mobile/android/app/build.gradle', 'utf8'))) throw new Error('Gradle versionName diverged');
+          console.log(`Version ${version} is consistent`);
+          NODE
+
+      - name: Create release PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: master
+          branch: release/v${{ steps.next.outputs.version }}
+          delete-branch: true
+          commit-message: "chore: prepare release v${{ steps.next.outputs.version }}"
+          title: "chore: prepare release v${{ steps.next.outputs.version }}"
+          body: |
+            ## Release preparation
+            - Synchronizes all package versions.
+            - Synchronizes Expo `version`, Android `versionCode`, and Gradle `versionName`.
+            - Updates `backend/src/version-meta.json` and `CHANGELOG.md`.
+
+            CI must pass and this PR requires approval before merge.

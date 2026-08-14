@@ -20,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
   const { t } = useLanguage();
   const allMenuItems = useMemo(() => [
     { id: 'dashboard', label: t('sidebar.dashboard'), icon: LayoutGrid },
+
     { id: 'accounts', label: t('sidebar.accounts'), icon: Wallet },
     { id: 'budgets', label: t('sidebar.budgets'), icon: Target },
     { id: 'goals', label: t('sidebar.goals'), icon: Trophy },
@@ -32,6 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
   ], [t]);
 
   const menuItems = allMenuItems.filter(item => {
+
     if (item.id === 'feedbacks') return isAdmin;
     if (item.id === 'admin') return isAdmin;
     return true;

@@ -46,11 +46,21 @@ jobs:
         run: |
           SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
 
+          echo "🔒 Running production preflight..."
+          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && test -z \"\$(git status --porcelain)\""
+          $SSH "test \"\$(stat -c '%a' ${{ env.VPS_BACKEND_PATH }}/.env)\" = 600"
+          $SSH "grep -q '^ENCRYPTION_KEY=' ${{ env.VPS_BACKEND_PATH }}/.env"
+          $SSH "pm2 jlist | python3 -c 'import json,sys; p=json.load(sys.stdin); x=next((x for x in p if x.get(\"name\")==\"finanza-api\"),None); raise SystemExit(0 if x and x.get(\"pm2_env\",{}).get(\"status\")==\"online\" else 1)'"
+          $SSH "find /opt/backups -maxdepth 1 -type f \( -name '*.sql.gz.enc' -o -name '*.sql.gz' \) -mmin -2880 | grep -q ."
+
           echo "📦 Pulling latest code on VPS..."
           $SSH "cd ${{ env.VPS_BACKEND_PATH }} && git fetch origin master:refs/remotes/origin/master --force && git reset --hard origin/master"
 
           echo "📦 Installing dependencies..."
           $SSH "cd ${{ env.VPS_BACKEND_PATH }} && npm install --production=false"
+
+          echo "🗃️ Applying database migrations..."
+          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && npx prisma migrate deploy"
 
           echo "🔨 Building..."
           $SSH "cd ${{ env.VPS_BACKEND_PATH }} && npm run build"
@@ -73,6 +83,10 @@ jobs:
           fi
 
           VERSION_RESPONSE=$($SSH "curl -s http://127.0.0.1:3000/v1/app/version | python3 -c 'import sys,json; print(json.load(sys.stdin)[\"data\"][\"version\"])'")
+          if [[ "$VERSION_RESPONSE" != "${VERSION#v}" ]]; then
+            echo "❌ Version mismatch! Expected ${VERSION#v}, got $VERSION_RESPONSE"
+            exit 1
+          fi
           echo "✅ Backend deployed! Version: $VERSION_RESPONSE"
 
   # ──────────────────────────────────────────────

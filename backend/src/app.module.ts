@@ -5,6 +5,8 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -46,6 +48,7 @@ import { SecurityLoggerMiddleware } from './common/middleware/security-logger.mi
 import { ResellersModule } from './resellers/resellers.module';
 import { ResellerAuthModule } from './reseller-auth/reseller-auth.module';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -59,6 +62,7 @@ import { ResellerAuthModule } from './reseller-auth/reseller-auth.module';
     AuthModule,
     ResellersModule,
     ResellerAuthModule,
+
     PrismaModule,
     TransactionsModule,
     BudgetsModule,
@@ -84,6 +88,11 @@ import { ResellerAuthModule } from './reseller-auth/reseller-auth.module';
     ExchangeRateModule,
     OcrModule,
     ScheduleModule.forRoot(),
+    CacheModule.register({
+      ttl: 10000, // 10 segundos default
+      max: 100,   // máximo 100 entradas em cache
+      isGlobal: true,
+    }),
   ],
   controllers: [AppController],
   providers: [
@@ -106,6 +115,10 @@ import { ResellerAuthModule } from './reseller-auth/reseller-auth.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
     },
   ],
 })

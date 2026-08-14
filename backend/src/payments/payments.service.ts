@@ -123,9 +123,13 @@ export class PaymentsService {
   /**
    * Verify Mercado Pago webhook signature (x-signature header).
    * MP sends: x-signature: ts=<timestamp>,v1=<hmac-sha256>
-   * Verification: HMAC-SHA256(webhookSecret, <data.id><timestamp>) == v1
+   * Official manifest: id:<data.id>;request-id:<x-request-id>;ts:<timestamp>;
    */
-  verifyWebhookSignature(dataId: string, xSignature: string): boolean {
+  verifyWebhookSignature(
+    dataId: string,
+    xSignature: string,
+    xRequestId?: string,
+  ): boolean {
     if (!this.webhookSecret) {
       this.logger.warn(
         'No MERCADOPAGO_WEBHOOK_SECRET set — rejecting webhook signature verification',
@@ -133,30 +137,37 @@ export class PaymentsService {
       return false;
     }
 
-    const parts = xSignature.split(',');
     let ts = '';
     let v1 = '';
-    for (const part of parts) {
-      const [key, value] = part.split('=');
-      if (key.trim() === 'ts') ts = value.trim();
-      if (key.trim() === 'v1') v1 = value.trim();
+    for (const part of xSignature.split(',')) {
+      const separator = part.indexOf('=');
+      if (separator < 0) continue;
+      const key = part.slice(0, separator).trim().toLowerCase();
+      const value = part.slice(separator + 1).trim();
+      if (key === 'ts') ts = value;
+      if (key === 'v1') v1 = value;
     }
 
-    if (!ts || !v1) {
+    if (!/^\d+$/.test(ts) || !/^[a-fA-F0-9]{64}$/.test(v1)) {
       this.logger.warn('Invalid x-signature format');
       return false;
     }
 
-    // Hash = HMAC-SHA256(webhookSecret, dataId + ts)
-    const manifest = `${dataId}${ts}`;
+    const manifestParts: string[] = [];
+    if (dataId) manifestParts.push(`id:${dataId}`);
+    if (xRequestId) manifestParts.push(`request-id:${xRequestId}`);
+    manifestParts.push(`ts:${ts}`);
+    const manifest = `${manifestParts.join(';')};`;
     const expected = crypto
       .createHmac('sha256', this.webhookSecret)
       .update(manifest)
       .digest('hex');
 
-    return crypto.timingSafeEqual(
-      Buffer.from(expected, 'hex'),
-      Buffer.from(v1, 'hex'),
+    const expectedBuffer = Buffer.from(expected, 'hex');
+    const receivedBuffer = Buffer.from(v1, 'hex');
+    return (
+      expectedBuffer.length === receivedBuffer.length &&
+      crypto.timingSafeEqual(expectedBuffer, receivedBuffer)
     );
   }
 
@@ -300,7 +311,8 @@ export class PaymentsService {
       return { received: true, processed: false };
     }
 
-    const paymentId = dto.data_id || dto.id?.toString();
+    const paymentId =
+      dto.data_id || dto.data?.id?.toString() || dto.id?.toString();
     if (!paymentId) {
       this.logPaymentAlert('payments.webhook_missing_payment_id', 'warn', {
         type: dto.type,
@@ -311,7 +323,10 @@ export class PaymentsService {
     }
 
     // Verify x-signature before processing any payment. Fail closed when secret/header is missing.
-    if (!xSignature || !this.verifyWebhookSignature(paymentId, xSignature)) {
+    if (
+      !xSignature ||
+      !this.verifyWebhookSignature(paymentId, xSignature, xRequestId)
+    ) {
       this.logger.warn(
         `Webhook signature verification failed for payment ${paymentId}`,
       );

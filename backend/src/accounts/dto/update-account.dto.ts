@@ -7,9 +7,16 @@ import {
   IsIn,
   IsOptional,
   MaxLength,
+  IsInt,
+  Min,
 } from 'class-validator';
 
 export class UpdateAccountDto {
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  version?: number;
+
   @IsString()
   @IsNotEmpty()
   @IsOptional()

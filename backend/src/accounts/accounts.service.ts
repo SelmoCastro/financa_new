@@ -1,7 +1,7 @@
 /**
  * Service do domínio de contas bancárias; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
  */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -108,11 +108,16 @@ export class AccountsService {
   async update(id: string, updateAccountDto: UpdateAccountDto, userId: string) {
     await this.subscriptionService.checkNotExceeding(userId, 'account', id);
     await this.findOne(id, userId);
+    const { version, ...data } = updateAccountDto;
     const result = await this.prisma.account.updateMany({
-      where: { id, userId, deletedAt: null },
-      data: updateAccountDto,
+      where: { id, userId, deletedAt: null, ...(version !== undefined ? { version } : {}) },
+      data: { ...data, version: { increment: 1 } },
     });
-    if (result.count === 0) throw new NotFoundException('Conta não encontrada');
+    if (result.count === 0) {
+      if (version !== undefined)
+        throw new ConflictException('Conta foi modificada por outro usuário');
+      throw new NotFoundException('Conta não encontrada');
+    }
     // IDOR fix: include userId in findFirst to prevent cross-tenant data access
     return this.prisma.account.findFirst({
       where: { id, userId, deletedAt: null },
