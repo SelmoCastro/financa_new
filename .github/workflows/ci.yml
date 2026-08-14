@@ -58,6 +58,7 @@ jobs:
       - name: Prepare integration database
         env:
           DATABASE_URL: postgresql://test_user:test_password@localhost:5433/finanza_test
+          DIRECT_URL: postgresql://test_user:test_password@localhost:5433/finanza_test
         run: cd backend && npx prisma db push --skip-generate
 
       - name: Backend integration tests
