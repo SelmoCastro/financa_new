@@ -127,3 +127,55 @@ engagement-*/
 dogfood-output/
 estudos/
 curso-engenharia-ia-aplicada-selmo.md
+
+# Environment files — keep only committed examples/templates
+.env*
+*.env
+*.env.*
+!.env.example
+!.env.*.example
+
+# Local secrets and signing material
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+local.properties
+
+# Local databases, dumps and backups
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.sql.gz
+*.sql.gz.enc
+**/backups/
+*.bak
+*.backup
+
+# Test, coverage and diagnostic output
+.nyc_output/
+test-results/
+playwright-report/
+blob-report/
+*.lcov
+junit.xml
+
+# Package-manager and build caches
+.npm/
+.pnpm-store/
+.yarn/
+.cache/
+*.tsbuildinfo
+**/.gradle/
+**/build/
+
+# Windows and editor leftovers
+Thumbs.db
+*.swp
+*.swo
