@@ -10,42 +10,42 @@ datasource db {
 }
 
 model User {
-  id                     String                  @id @default(uuid())
-  email                  String                  @unique
-  emailHash              String                  @unique
-  password               String
-  name                   String?
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
-  isAdmin                Boolean                 @default(false)
-  isEmailVerified        Boolean                 @default(false)
-  hashedRefreshToken     String?
-  failedLoginAttempts    Int                     @default(0)
-  lockedUntil            DateTime?
-  termsAccepted          Boolean                 @default(false)
-  termsAcceptedAt        DateTime?
-  accounts               Account[]
-  budgets                Budget[]
-  categories             Category[]
-  creditCards            CreditCard[]
-  feedbacks              Feedback[]
-  goals                  Goal[]
-  importedFitIds         ImportedFitId[]
-  notifications          Notification[]
-  transactions           Transaction[]
-  receivedInvites        TransactionInvite[]     @relation("ReceivedInvites")
-  sentInvites            TransactionInvite[]     @relation("SentInvites")
-  verificationTokens     VerificationToken[]
-  subscription           Subscription?
-  aiRequestLogs          AiRequestLog[]
-  auditLogs              AuditLog[]
-  recurringTransactions  RecurringTransaction[]
-  creditCardInstallments CreditCardInstallment[]
-  creditCardInvoices     CreditCardInvoice[]
-  payments               Payment[]
-  refreshTokens          RefreshToken[]
-  createdResellers       Reseller[]                  @relation("ResellerCreatedByAdmin")
-  resellerLedgerEntries  ResellerLedger[]            @relation("ResellerLedgerCreatedByAdmin")
+  id                         String                      @id @default(uuid())
+  email                      String                      @unique
+  emailHash                  String                      @unique
+  password                   String
+  name                       String?
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  isAdmin                    Boolean                     @default(false)
+  isEmailVerified            Boolean                     @default(false)
+  hashedRefreshToken         String?
+  failedLoginAttempts        Int                         @default(0)
+  lockedUntil                DateTime?
+  termsAccepted              Boolean                     @default(false)
+  termsAcceptedAt            DateTime?
+  accounts                   Account[]
+  budgets                    Budget[]
+  categories                 Category[]
+  creditCards                CreditCard[]
+  feedbacks                  Feedback[]
+  goals                      Goal[]
+  importedFitIds             ImportedFitId[]
+  notifications              Notification[]
+  transactions               Transaction[]
+  receivedInvites            TransactionInvite[]         @relation("ReceivedInvites")
+  sentInvites                TransactionInvite[]         @relation("SentInvites")
+  verificationTokens         VerificationToken[]
+  subscription               Subscription?
+  aiRequestLogs              AiRequestLog[]
+  auditLogs                  AuditLog[]
+  recurringTransactions      RecurringTransaction[]
+  creditCardInstallments     CreditCardInstallment[]
+  creditCardInvoices         CreditCardInvoice[]
+  payments                   Payment[]
+  refreshTokens              RefreshToken[]
+  createdResellers           Reseller[]                  @relation("ResellerCreatedByAdmin")
+  resellerLedgerEntries      ResellerLedger[]            @relation("ResellerLedgerCreatedByAdmin")
   resellerPremiumActivations ResellerPremiumActivation[] @relation("ResellerPremiumActivationTarget")
 }
 
@@ -53,10 +53,11 @@ model Account {
   id                     String                  @id @default(uuid())
   name                   String
   type                   String
-  balance                String                 @default("0")
+  balance                String                  @default("0")
   userId                 String
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
+  version                Int                     @default(0)
   deletedAt              DateTime? // Soft delete
   user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   creditCards            CreditCard[]
@@ -78,6 +79,7 @@ model CreditCard {
   userId               String
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
+  version              Int                     @default(0)
   deletedAt            DateTime? // Soft delete
   account              Account?                @relation(fields: [accountId], references: [id], onDelete: SetNull)
   user                 User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -112,16 +114,17 @@ model Category {
 }
 
 model Transaction {
-  id                 String      @id @default(uuid())
+  id                 String             @id @default(uuid())
   description        String
   amount             String
   date               DateTime
-  categoryLegacy     String?     @map("category")
+  categoryLegacy     String?            @map("category")
   type               String
-  isFixed            Boolean     @default(false)
+  isFixed            Boolean            @default(false)
   userId             String
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  version            Int                @default(0)
   deletedAt          DateTime? // Soft delete
   accountId          String?
   categoryId         String?
@@ -130,15 +133,15 @@ model Transaction {
   currentInstallment Int?
   installmentCount   Int?
   receiptUrl         String?
-  classificationRule Int?        @map("classification_rule")
+  classificationRule Int?               @map("classification_rule")
   fitId              String?
   sharedWithEmail    String?
-  transferGroupId    String?     // links paired (Entrada)/(Saida) transfer transactions
-  account            Account?    @relation(fields: [accountId], references: [id], onDelete: SetNull)
-  category           Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  creditCard         CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+  transferGroupId    String? // links paired (Entrada)/(Saida) transfer transactions
+  account            Account?           @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category           Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  creditCard         CreditCard?        @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
   invoice            CreditCardInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, fitId])
   @@index([userId])
@@ -173,7 +176,7 @@ model Goal {
   id            String    @id @default(uuid())
   title         String
   targetAmount  String
-  currentAmount String   @default("0")
+  currentAmount String    @default("0")
   deadline      DateTime?
   userId        String
   createdAt     DateTime  @default(now())
@@ -253,8 +256,8 @@ model Notification {
   isRead     Boolean  @default(false)
   userId     String
   metadata   Json?
-  actionType String?  // CONFIRM_PAYMENT, POSTPONE — for interactive notifications
-  actionMeta Json?    // { recurringTransactionId, installmentId, amount, description, accountId, categoryId, creditCardId }
+  actionType String? // CONFIRM_PAYMENT, POSTPONE — for interactive notifications
+  actionMeta Json? // { recurringTransactionId, installmentId, amount, description, accountId, categoryId, creditCardId }
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -273,7 +276,7 @@ model Subscription {
   updatedAt DateTime  @updatedAt
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  payments   Payment[]
+  payments Payment[]
 
   @@index([userId])
 }
@@ -282,13 +285,13 @@ model Payment {
   id             String   @id @default(uuid())
   userId         String
   subscriptionId String?
-  mpPaymentId    String?  @unique  // Mercado Pago payment ID
-  mpPreferenceId String?           // Mercado Pago preference ID
+  mpPaymentId    String?  @unique // Mercado Pago payment ID
+  mpPreferenceId String? // Mercado Pago preference ID
   amount         Float
   currency       String   @default("BRL")
   status         String   @default("pending") // pending, approved, rejected, refunded
-  planPurchased  String              // free, premium, annual
-  paymentMethod  String?            // pix, credit_card, debit_card
+  planPurchased  String // free, premium, annual
+  paymentMethod  String? // pix, credit_card, debit_card
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -326,24 +329,24 @@ model ErrorReport {
 }
 
 model AuditLog {
-  id           String   @id @default(uuid())
-  action       String   // e.g. "auth.login", "transaction.create", "account.delete"
-  actorId      String?  // userId who performed the action (null for system actions)
-  targetType   String?  // e.g. "Transaction", "Account", "User"
-  targetId     String?  // ID of the affected entity
-  previousState Json?   // state before mutation (for UPDATE/DELETE)
-  newState      Json?   // state after mutation (for CREATE/UPDATE)
-  details       Json     @default("{}") // arbitrary metadata (IP, user-agent, diff, etc.)
-  ip           String?  // requester IP address
-  userAgent    String?  // requester User-Agent
-  severity     String   @default("info") // info | warn | critical
+  id            String  @id @default(uuid())
+  action        String // e.g. "auth.login", "transaction.create", "account.delete"
+  actorId       String? // userId who performed the action (null for system actions)
+  targetType    String? // e.g. "Transaction", "Account", "User"
+  targetId      String? // ID of the affected entity
+  previousState Json? // state before mutation (for UPDATE/DELETE)
+  newState      Json? // state after mutation (for CREATE/UPDATE)
+  details       Json    @default("{}") // arbitrary metadata (IP, user-agent, diff, etc.)
+  ip            String? // requester IP address
+  userAgent     String? // requester User-Agent
+  severity      String  @default("info") // info | warn | critical
   // Hash chain: SHA256(id + action + actorId + targetId + previousHash + createdAt)
-  previousHash String? // hash of the previous AuditLog entry
-  hash         String   // SHA-256 of this entry — computed on insert, immutable
+  previousHash  String? // hash of the previous AuditLog entry
+  hash          String // SHA-256 of this entry — computed on insert, immutable
 
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  actor        User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([actorId])
   @@index([action])
@@ -406,19 +409,19 @@ model CreditCardInstallment {
 }
 
 model CreditCardInvoice {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   creditCardId   String
   referenceMonth Int // 1-12, mês de referência da fatura
   referenceYear  Int // ano de referência da fatura
   closingDate    DateTime // data de fechamento da fatura (baseada no closingDay)
   dueDate        DateTime // data de vencimento da fatura (baseada no dueDay)
-  totalAmount    String  @default("0") // soma das transações do período
-  paidAmount     String  @default("0") // valor já pago (registro parcial/total)
-  isPaid         Boolean  @default(false) // fatura foi quitada?
+  totalAmount    String    @default("0") // soma das transações do período
+  paidAmount     String    @default("0") // valor já pago (registro parcial/total)
+  isPaid         Boolean   @default(false) // fatura foi quitada?
   paidAt         DateTime? // data do pagamento total
   userId         String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   creditCard   CreditCard    @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -434,8 +437,8 @@ model CreditCardInvoice {
 model RefreshToken {
   id        String   @id @default(cuid())
   userId    String
-  familyId  String   // Groups tokens from same login session
-  tokenHash String   // SHA-256 hash of the refresh token
+  familyId  String // Groups tokens from same login session
+  tokenHash String // SHA-256 hash of the refresh token
   active    Boolean  @default(true) // false = already rotated or revoked
   expiresAt DateTime
 
@@ -448,24 +451,24 @@ model RefreshToken {
 }
 
 model Reseller {
-  id                  String                     @id @default(uuid())
-  email               String                     @unique
+  id                  String    @id @default(uuid())
+  email               String    @unique
   password            String
   displayName         String
   companyName         String?
   phone               String?
   notes               String?
-  status              String                     @default("active") // active, suspended, disabled
-  failedLoginAttempts Int                        @default(0)
+  status              String    @default("active") // active, suspended, disabled
+  failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
   hashedRefreshToken  String?
-  creditVersion       Int                        @default(0)
+  creditVersion       Int       @default(0)
   lastLoginAt         DateTime?
   createdByAdminId    String?
-  createdAt           DateTime                   @default(now())
-  updatedAt           DateTime                   @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  createdByAdmin     User?                      @relation("ResellerCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  createdByAdmin     User?                       @relation("ResellerCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
   ledgerEntries      ResellerLedger[]
   premiumActivations ResellerPremiumActivation[]
 

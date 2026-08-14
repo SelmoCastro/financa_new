@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -421,9 +422,9 @@ export class TransactionsService {
         }
       }
 
-      const { amount: updateAmount, ...updateRest } = updateTransactionDto;
-      await tx.transaction.updateMany({
-        where: { id, userId },
+      const { amount: updateAmount, version, ...updateRest } = updateTransactionDto;
+      const updated = await tx.transaction.updateMany({
+        where: { id, userId, ...(version !== undefined ? { version } : {}) },
         data: {
           ...updateRest,
           amount: updateAmount
@@ -432,8 +433,14 @@ export class TransactionsService {
           date: updateTransactionDto.date
             ? new Date(updateTransactionDto.date)
             : undefined,
+          version: { increment: 1 },
         },
       });
+      if (updated.count === 0) {
+        throw version !== undefined
+          ? new ConflictException('Transação foi modificada por outro usuário')
+          : new NotFoundException('Transação não encontrada');
+      }
 
       // 3. Apply new balance if there's an accountId
       if (newAccountId) {

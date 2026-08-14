@@ -111,19 +111,21 @@ describe('PaymentsService', () => {
   // verifyWebhookSignature
   // ==================================================================
   describe('verifyWebhookSignature', () => {
-    it('should return true when signature is valid', async () => {
+    it('accepts the official Mercado Pago manifest', async () => {
       await buildService();
       const dataId = 'payment-1';
+      const requestId = 'request-1';
       const ts = '1700000000';
-      const manifest = `${dataId}${ts}`;
+      const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
       const v1 = crypto
         .createHmac('sha256', 'test_webhook_secret_abc')
         .update(manifest)
         .digest('hex');
 
       const xSignature = `ts=${ts},v1=${v1}`;
-      const result = service.verifyWebhookSignature(dataId, xSignature);
-      expect(result).toBe(true);
+      expect(
+        service.verifyWebhookSignature(dataId, xSignature, requestId),
+      ).toBe(true);
     });
 
     it('should return false when webhookSecret is not set', async () => {
@@ -150,39 +152,54 @@ describe('PaymentsService', () => {
       expect(result).toBe(false);
     });
 
+    it('should return false instead of throwing for a malformed v1 length', async () => {
+      await buildService();
+      expect(() =>
+        service.verifyWebhookSignature('any-id', 'ts=1700000000,v1=invalid'),
+      ).not.toThrow();
+      expect(
+        service.verifyWebhookSignature('any-id', 'ts=1700000000,v1=invalid'),
+      ).toBe(false);
+    });
+
     it('should return false when signature does not match', async () => {
       await buildService();
       const dataId = 'payment-1';
+      const requestId = 'request-1';
       const ts = '1700000000';
-      // Generate a proper-length HMAC (64 hex chars = 32 bytes) but with wrong secret
       const wrongV1 = crypto
         .createHmac('sha256', 'WRONG_SECRET')
-        .update(`${dataId}${ts}`)
+        .update(`id:${dataId};request-id:${requestId};ts:${ts};`)
         .digest('hex');
       const xSignature = `ts=${ts},v1=${wrongV1}`;
-      const result = service.verifyWebhookSignature(dataId, xSignature);
-      expect(result).toBe(false);
+      expect(
+        service.verifyWebhookSignature(dataId, xSignature, requestId),
+      ).toBe(false);
     });
 
     it('should use timingSafeEqual for constant-time comparison', async () => {
       await buildService();
-      // Valid signature
       const dataId = 'payment-1';
+      const requestId = 'request-1';
       const ts = '1700000000';
+      const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
       const validV1 = crypto
         .createHmac('sha256', 'test_webhook_secret_abc')
-        .update(`${dataId}${ts}`)
+        .update(manifest)
         .digest('hex');
       const validSig = `ts=${ts},v1=${validV1}`;
-      expect(service.verifyWebhookSignature(dataId, validSig)).toBe(true);
+      expect(
+        service.verifyWebhookSignature(dataId, validSig, requestId),
+      ).toBe(true);
 
-      // Invalid signature (same length, different content)
       const invalidV1 = crypto
         .createHmac('sha256', 'WRONG_SECRET')
-        .update(`${dataId}${ts}`)
+        .update(manifest)
         .digest('hex');
       const invalidSig = `ts=${ts},v1=${invalidV1}`;
-      expect(service.verifyWebhookSignature(dataId, invalidSig)).toBe(false);
+      expect(
+        service.verifyWebhookSignature(dataId, invalidSig, requestId),
+      ).toBe(false);
     });
   });
 
@@ -396,6 +413,28 @@ describe('PaymentsService', () => {
       const result = await service.handleWebhook(dto as any, 'ts=1,v1=valid');
 
       expect((service as any).processPayment).toHaveBeenCalledWith('98765');
+    });
+
+    it('should extract payment id from the official nested data.id field', async () => {
+      await buildService();
+      jest.spyOn(service, 'verifyWebhookSignature').mockReturnValue(true);
+      jest
+        .spyOn(service as any, 'processPayment')
+        .mockResolvedValue({ processed: true, upgraded: false });
+
+      const dto = {
+        type: 'payment',
+        action: 'created',
+        data: { id: mpPaymentId },
+      };
+      await service.handleWebhook(dto as any, 'ts=1,v1=valid', 'request-1');
+
+      expect(service.verifyWebhookSignature).toHaveBeenCalledWith(
+        mpPaymentId,
+        'ts=1,v1=valid',
+        'request-1',
+      );
+      expect((service as any).processPayment).toHaveBeenCalledWith(mpPaymentId);
     });
   });
 
@@ -863,16 +902,16 @@ describe('PaymentsService', () => {
     it('should reject webhook when x-signature is invalid', async () => {
       await buildService();
       const dataId = mpPaymentId;
+      const requestId = 'request-invalid';
       const ts = '1700000000';
-      // Generate a proper-length wrong HMAC so timingSafeEqual doesn't throw
       const wrongV1 = crypto
         .createHmac('sha256', 'WRONG_SECRET')
-        .update(`${dataId}${ts}`)
+        .update(`id:${dataId};request-id:${requestId};ts:${ts};`)
         .digest('hex');
       const xSignature = `ts=${ts},v1=${wrongV1}`;
 
       const dto = { type: 'payment', action: 'created', data_id: mpPaymentId };
-      const result = await service.handleWebhook(dto, xSignature);
+      const result = await service.handleWebhook(dto, xSignature, requestId);
 
       expect(result).toEqual({ received: true, processed: false });
       expect(auditService.log).toHaveBeenCalledWith(
@@ -881,17 +920,16 @@ describe('PaymentsService', () => {
           severity: 'critical',
         }),
       );
-      // MP API should NOT be called
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
-    it('should accept webhook with valid signature and process payment', async () => {
+    it('should accept webhook with official signature and process payment', async () => {
       await buildService();
 
-      // Generate a valid signature
       const ts = '1700000000';
       const dataId = mpPaymentId;
-      const manifest = `${dataId}${ts}`;
+      const requestId = 'request-valid';
+      const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
       const v1 = crypto
         .createHmac('sha256', 'test_webhook_secret_abc')
         .update(manifest)
@@ -919,8 +957,12 @@ describe('PaymentsService', () => {
       prisma.subscription.findUnique.mockResolvedValue(mockSubscription);
       subscriptionService.upgrade.mockResolvedValue(mockSubscription);
 
-      const dto = { type: 'payment', action: 'created', data_id: mpPaymentId };
-      const result = await service.handleWebhook(dto, xSignature);
+      const dto = {
+        type: 'payment',
+        action: 'created',
+        data: { id: mpPaymentId },
+      };
+      const result = await service.handleWebhook(dto, xSignature, requestId);
 
       expect(result).toEqual({ processed: true, upgraded: true });
     });

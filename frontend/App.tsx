@@ -26,6 +26,7 @@ import { Plus, Mail } from 'lucide-react';
 import { useLanguage } from './context/LanguageContext';
 
 const AppContent: React.FC = () => {
+
   const {
     transactions, accounts, creditCards, categories, dashboardSummary, isLoading, refreshData,
     addTransaction, updateTransaction, deleteTransaction

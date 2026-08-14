@@ -7,6 +7,7 @@ import api from '../services/api';
 import { Transaction, Budget, Account, CreditCard, Category } from '../types';
 import { useToast } from './ToastContext';
 import { useMonth } from './MonthContext';
+import { useOptimisticTransactions } from '../hooks/useOptimisticTransactions';
 
 interface DashboardSummary {
     balance: number;
@@ -65,6 +66,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const { addToast } = useToast();
     const { selectedDate } = useMonth();
+
+    // React 19 useOptimistic — transações aparecem instantaneamente na UI
+    const { optimisticTransactions, addOptimistic, removeOptimistic } = useOptimisticTransactions(transactions);
 
     // AbortController to cancel in-flight requests on unmount or rapid refresh
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -175,6 +179,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [fetchBaseData, fetchDashboardSummary, selectedDate]);
 
     const addTransaction = async (newTx: Omit<Transaction, 'id'>) => {
+        // Optimistic: adiciona à UI antes do POST (React 19 useOptimistic)
+        addOptimistic(newTx);
         try {
             if (newTx.type === 'TRANSFER') {
                 const transferPayload = {
@@ -193,6 +199,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } catch (error) {
             console.error('Erro ao adicionar:', error);
             addToast('Erro ao salvar transação', 'error');
+            // Rollback: refreshData vai sobrescrever o estado optimistic com o real do servidor
+            await refreshData();
         }
     };
 
@@ -221,7 +229,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return (
         <DataContext.Provider value={{
-            transactions, accounts, creditCards, categories, budgets, dashboardSummary,
+            transactions: optimisticTransactions, accounts, creditCards, categories, budgets, dashboardSummary,
             isLoading, refreshData, addTransaction, updateTransaction, deleteTransaction
         }}>
             {children}

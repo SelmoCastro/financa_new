@@ -15,6 +15,7 @@ import { FeedbackAdminView } from '../views/FeedbackAdminView';
 import { AdminPanelView } from '../views/admin/AdminView';
 import { Transaction } from '../types';
 
+
 interface ViewRouterProps {
   activeTab: string;
   transactions: Transaction[];
@@ -42,6 +43,7 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
   onUserNameChange, onUserEmailChange,
 }) => {
   switch (activeTab) {
+
     case 'dashboard':
       return <DashboardView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} onAddAccount={onAddAccount} onAddTransaction={onAddTransaction} onAddBudget={onAddBudget} />;
     case 'accounts':

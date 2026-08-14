@@ -7,6 +7,7 @@ import { EmailService } from '../email/email.service';
 import { AuditService } from '../audit/audit.service';
 import { RefreshTokenService } from './refresh-token.service';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { ConfigService } from '@nestjs/config';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -44,6 +45,7 @@ describe('AuthService', () => {
         { provide: AuditService, useValue: { log: jest.fn() } },
         { provide: RefreshTokenService, useValue: {} },
         { provide: SubscriptionService, useValue: subscriptionService },
+        { provide: ConfigService, useValue: { get: jest.fn() } },
       ],
     }).compile();
 
