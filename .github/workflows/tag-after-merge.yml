@@ -37,4 +37,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "${TAG}" -m "Release ${TAG}"
           git push origin "${TAG}"
-          echo "Created ${TAG}; release workflow will now handle deployment."
+          gh workflow run Release --ref master -f release_tag="${TAG}"
+          echo "Created ${TAG}; release workflow dispatched explicitly."
