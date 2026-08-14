@@ -1,0 +1,8 @@
+# Security-sensitive areas require explicit owner review.
+* @SelmoCastro
+/backend/src/auth/ @SelmoCastro
+/backend/src/payments/ @SelmoCastro
+/backend/src/transactions/ @SelmoCastro
+/backend/prisma/ @SelmoCastro
+/.github/workflows/ @SelmoCastro
+/mobile/android/ @SelmoCastro

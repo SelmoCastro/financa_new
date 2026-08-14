@@ -20,6 +20,20 @@ jobs:
   check:
     name: Lint & Type Check
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: finanza_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d finanza_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -38,9 +52,24 @@ jobs:
       - name: Backend type check
         run: cd backend && npx tsc --noEmit
 
+      - name: Backend tests
+        run: cd backend && npm test -- --runInBand
+
+      - name: Prepare integration database
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5433/finanza_test
+        run: cd backend && npx prisma db push --skip-generate
+
+      - name: Backend integration tests
+        env:
+          DATABASE_URL_TEST: postgresql://test_user:test_password@localhost:5433/finanza_test
+        run: cd backend && npx jest --config jest.integration.config.js --runInBand
+
+      - name: Backend production dependency audit
+        run: cd backend && npm audit --omit=dev --audit-level=high
+
       - name: Backend lint
-        run: cd backend && npx eslint src/ --max-warnings 0 || true
-        # Allow lint warnings for now — will tighten later
+        run: cd backend && npx eslint src/ --max-warnings 0
 
       - name: Install frontend deps
         run: cd frontend && npm ci
@@ -53,9 +82,7 @@ jobs:
         # Build succeeds = no broken imports
 
       - name: Install mobile deps
-        run: cd mobile && npm ci || true
-        # Mobile not critical path — install failures shouldn't block backend/frontend
+        run: cd mobile && npm ci
 
       - name: Mobile type check
-        run: cd mobile && npx tsc --noEmit || true
-        # Mobile has pre-existing TS issues — non-blocking until stabilized
+        run: cd mobile && npx tsc --noEmit
