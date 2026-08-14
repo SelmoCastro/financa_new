@@ -1,6 +1,6 @@
 {
-  "version": "1.12.0",
-  "mobileVersion": "1.12.0",
+  "version": "1.12.1",
+  "mobileVersion": "1.12.1",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Security audit fixes: 12 findings resolved (CORS, JWT context, PII encryption, CSP, rate limiting, memory leak, webhook signature)"
+  "releaseNotes": "Atualização de segurança, CI e higiene do repositório."
 }

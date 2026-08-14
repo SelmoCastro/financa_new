@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.1] (2026-08-14)
+
+Atualização de segurança, CI e higiene do repositório.
+
 All notable changes to this project will be documented in this file.
 
 ## [1.11.0](https://github.com/SelmoCastro/financa_new/compare/v1.10.10...v1.11.0) (2026-06-09)
