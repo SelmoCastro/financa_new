@@ -11,7 +11,6 @@ describe('RecurringTransactionsService', () => {
       deleteMany: jest.Mock;
     };
     transaction: { findMany: jest.Mock; updateMany: jest.Mock };
-    $transaction: jest.Mock;
   };
   let encryption: {
     isEnabled: jest.Mock;
@@ -25,14 +24,7 @@ describe('RecurringTransactionsService', () => {
         findFirst: jest.fn(),
         deleteMany: jest.fn(),
       },
-      transaction: {
-        findMany: jest.fn(),
-        updateMany: jest.fn(),
-      },
-      $transaction: jest.fn(
-        async (callback: (tx: typeof prisma) => Promise<unknown>) =>
-          callback(prisma),
-      ),
+      transaction: { findMany: jest.fn(), updateMany: jest.fn() },
     };
 
     encryption = {
@@ -77,39 +69,32 @@ describe('RecurringTransactionsService', () => {
     });
   });
 
-  it('removes a migrated recurring transaction without recreating it from legacy fixed entries', async () => {
+  it('removes the legacy fixed marker so a deleted recurring is not recreated', async () => {
     prisma.recurringTransaction.findFirst.mockResolvedValue({
-      id: 'recurring-1',
+      id: 'rec-1',
       userId: 'user-1',
       description: 'Aluguel',
-      amount: '100',
+      amount: '132',
       type: 'EXPENSE',
-      categoryId: 'category-1',
-      accountId: 'account-1',
+      categoryId: 'cat-1',
+      accountId: 'acc-1',
       creditCardId: null,
     });
     prisma.transaction.findMany.mockResolvedValue([
-      {
-        id: 'legacy-1',
-        amount: '100',
-        description: 'Aluguel',
-        type: 'EXPENSE',
-        categoryId: 'category-1',
-        accountId: 'account-1',
-        creditCardId: null,
-      },
+      { id: 'tx-legacy', amount: '132' },
     ]);
+    prisma.recurringTransaction.deleteMany.mockResolvedValue({ count: 1 });
 
-    await expect(service.remove('recurring-1', 'user-1')).resolves.toEqual({
+    await expect(service.remove('rec-1', 'user-1')).resolves.toEqual({
       deleted: true,
     });
 
-    expect(prisma.recurringTransaction.deleteMany).toHaveBeenCalledWith({
-      where: { id: 'recurring-1', userId: 'user-1' },
-    });
     expect(prisma.transaction.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['legacy-1'] }, userId: 'user-1', isFixed: true },
+      where: { id: { in: ['tx-legacy'] }, userId: 'user-1', isFixed: true },
       data: { isFixed: false },
+    });
+    expect(prisma.recurringTransaction.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'rec-1', userId: 'user-1' },
     });
   });
 });
