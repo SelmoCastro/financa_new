@@ -473,7 +473,8 @@ export default function RecurringScreen() {
                 <TextInput
                   style={{ backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 16, padding: 16, fontSize: 16, fontWeight: '600', color: '#1e293b' }}
                   placeholder="0,00" placeholderTextColor="#94a3b8" keyboardType="numeric"
-                  value={amount} onChangeText={(v) => setAmount(formatCurrencyInput(v, currency))}
+                  value={amount}
+                  onChangeText={setAmount}
                 />
               </View>
               <View style={{ flex: 1 }}>

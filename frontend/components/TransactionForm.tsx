@@ -7,6 +7,7 @@ import { getCategoryEmoji } from '../utils/categoryIcons';
 import { TransactionType, Transaction, Account, CreditCard, Category, ACCOUNT_TYPE_LABELS } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { toYYYYMMDD } from '../utils/dateUtils';
+import { parseFlexibleCurrency } from '../utils/currency';
 
 interface TransactionFormProps {
   onAdd: (transaction: Omit<Transaction, 'id'>) => void;
@@ -101,13 +102,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   }, [editingTransaction]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value;
-    setDisplayAmount(formatCurrency(rawValue));
+    setDisplayAmount(e.target.value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const numericAmount = parseFloat(displayAmount.replace(/\./g, '').replace(',', '.'));
+    const numericAmount = parseFlexibleCurrency(displayAmount);
 
     if (!description || isNaN(numericAmount) || numericAmount <= 0) return;
 
@@ -213,7 +213,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-600 font-black text-sm pointer-events-none group-focus-within:text-cyan-500 transition-colors">{currencySymbol}</span>
                 <input
                   type="text"
-                  inputMode="numeric"
+                  inputMode="decimal"
                   className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-black text-slate-800 dark:text-white"
                   value={displayAmount}
                   placeholder="0,00"
