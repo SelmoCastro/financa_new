@@ -26,6 +26,7 @@ permissions:
 env:
   VPS_HOST: ${{ secrets.VPS_HOST }}
   VPS_USER: ${{ secrets.VPS_USER || 'root' }}
+  VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || '8443' }}
   VPS_BACKEND_PATH: ${{ secrets.VPS_BACKEND_PATH || '/opt/finanza/backend' }}
   VERSION: ${{ inputs.release_tag || github.ref_name }}
 
@@ -48,7 +49,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p ${{ env.VPS_SSH_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Prepare backend artifact
         run: |
@@ -59,14 +60,14 @@ jobs:
 
       - name: Upload backend artifact
         run: |
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+          scp -P ${{ env.VPS_SSH_PORT }} -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -O \
             "finanza-backend-${{ env.VERSION }}.tar.gz" \
             "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/"
 
       - name: Deploy backend artifact
         run: |
-          SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          SSH="ssh -p ${{ env.VPS_SSH_PORT }} -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           $SSH 'bash -s' <<'REMOTE'
           set -euo pipefail
           APP="${{ env.VPS_BACKEND_PATH }}"
@@ -107,7 +108,7 @@ jobs:
       - name: Health Check with rollback
         run: |
           set -euo pipefail
-          SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          SSH="ssh -p ${{ env.VPS_SSH_PORT }} -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           $SSH "pm2 delete finanza-api 2>/dev/null || true; cd '${{ env.VPS_BACKEND_PATH }}' && pm2 start dist/main.js --name finanza-api --cwd '${{ env.VPS_BACKEND_PATH }}' && pm2 save" || true
           sleep 5
           HTTP_CODE=$($SSH "curl -s -H 'Origin: https://finanzaai.tech' -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/v1/app/version")
@@ -203,19 +204,19 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p ${{ env.VPS_SSH_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
           VERSION="${{ github.ref_name }}"
           VER_NUM="${VERSION#v}"
           APK_DEST="/var/www/finanzaai.tech/downloads/Financa_new_v${VER_NUM}.apk"
 
           echo "📤 Uploading APK..."
-          scp -i ~/.ssh/deploy_key "${{ env.APK_NAME }}" \
+          scp -P ${{ env.VPS_SSH_PORT }} -i ~/.ssh/deploy_key "${{ env.APK_NAME }}" \
             -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -O \
             ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/finanza-${VER_NUM}.apk
 
           echo "🔗 Creating symlink..."
-          ssh -i ~/.ssh/deploy_key ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << EOF
+          ssh -p ${{ env.VPS_SSH_PORT }} -i ~/.ssh/deploy_key ${{ env.VPS_USER }}@${{ env.VPS_HOST }} << EOF
             cp /tmp/finanza-${VER_NUM}.apk ${APK_DEST}
             ln -sf ${APK_DEST} /var/www/finanzaai.tech/downloads/Financa_new.apk
             rm /tmp/finanza-${VER_NUM}.apk
