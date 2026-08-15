@@ -278,6 +278,7 @@ export class CreditCardsService {
         accountId: null,
         currentInstallment: i + 1,
         installmentCount,
+        installmentId: installment.id,
       });
     }
 
@@ -351,17 +352,31 @@ export class CreditCardsService {
       inst.creditCardId,
     );
 
-    // Excluir transações associadas a este parcelamento
-    // Busca transações que correspondem à descrição do parcelamento no cartão
-    await this.prisma.transaction.deleteMany({
+    const deletedTransactions = await this.prisma.transaction.deleteMany({
       where: {
         userId,
-        creditCardId: inst.creditCardId,
-        description: { startsWith: inst.description },
-        installmentCount: inst.installmentCount,
+        installmentId: inst.id,
         invoiceId: null, // Apenas transações não faturadas
       },
     });
+
+    if (deletedTransactions.count === 0) {
+      const ambiguousLegacyTransactions = await this.prisma.transaction.count({
+        where: {
+          userId,
+          creditCardId: inst.creditCardId,
+          description: { startsWith: inst.description },
+          installmentCount: inst.installmentCount,
+          installmentId: null,
+          invoiceId: null,
+        },
+      });
+      if (ambiguousLegacyTransactions > 0) {
+        throw new ConflictException(
+          'Este parcelamento legado possui transações sem vínculo seguro e não pode ser excluído automaticamente.',
+        );
+      }
+    }
 
     const result = await this.prisma.creditCardInstallment.deleteMany({
       where: { id, userId },

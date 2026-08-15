@@ -47,6 +47,7 @@ interface DataContextType {
     budgets: Budget[];
     dashboardSummary: DashboardSummary | null;
     isLoading: boolean;
+    transactionsLoadError: boolean;
     refreshData: () => Promise<void>;
     addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
     updateTransaction: (tx: Transaction) => Promise<void>;
@@ -63,6 +64,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [transactionsLoadError, setTransactionsLoadError] = useState(false);
 
     const { addToast } = useToast();
     const { selectedDate } = useMonth();
@@ -84,11 +86,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const res = await api.get(url, { signal });
                 const data = res.data;
                 setter(Array.isArray(data) ? data : []);
+                if (url === '/transactions') {
+                    setTransactionsLoadError(false);
+                }
             } catch (error: any) {
                 // Don't show toast for aborted/canceled requests (page unload or rapid F5)
                 if (isCanceledError(error)) return;
                 console.error(`Error fetching ${url}:`, error?.response?.status, error?.message);
                 setter([]);
+                if (url === '/transactions') {
+                    setTransactionsLoadError(true);
+                }
                 if (error.response?.status !== 401) {
                     addToast(`Erro ao sincronizar ${url.replace('/', '')}.`, 'error');
                 }
@@ -96,6 +104,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
 
         try {
+            setTransactionsLoadError(false);
             await Promise.all([
                 fetchResource('/transactions', setTransactions),
                 fetchResource('/budgets', setBudgets),
@@ -230,7 +239,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return (
         <DataContext.Provider value={{
             transactions: optimisticTransactions, accounts, creditCards, categories, budgets, dashboardSummary,
-            isLoading, refreshData, addTransaction, updateTransaction, deleteTransaction
+            isLoading, transactionsLoadError, refreshData, addTransaction, updateTransaction, deleteTransaction
         }}>
             {children}
         </DataContext.Provider>

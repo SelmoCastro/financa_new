@@ -174,20 +174,49 @@ jobs:
           sed -i 's/org.gradle.jvmargs=-Xmx2048m .*/org.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m/' gradle.properties
           sed -i 's/org.gradle.parallel=true/org.gradle.parallel=false/' gradle.properties
 
-      - name: Build APK (release)
+      - name: Configure production signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
+          : "${ANDROID_KEYSTORE_BASE64:?Missing ANDROID_KEYSTORE_BASE64 secret}"
+          : "${ANDROID_KEYSTORE_PASSWORD:?Missing ANDROID_KEYSTORE_PASSWORD secret}"
+          : "${ANDROID_KEY_ALIAS:?Missing ANDROID_KEY_ALIAS secret}"
+          : "${ANDROID_KEY_PASSWORD:?Missing ANDROID_KEY_PASSWORD secret}"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/finanza-release.keystore"
+          chmod 600 "$RUNNER_TEMP/finanza-release.keystore"
+          keytool -list -keystore "$RUNNER_TEMP/finanza-release.keystore" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/finanza-release.keystore" >> "$GITHUB_ENV"
+
+      - name: Build APK (release)
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
           cd mobile/android
           ./gradlew assembleRelease --no-daemon -x lintVitalAnalyzeRelease -x lint
 
       - name: Verify APK
         run: |
+          set -euo pipefail
           APK="mobile/android/app/build/outputs/apk/release/app-release.apk"
           if [[ ! -f "$APK" ]]; then
             echo "❌ APK not found!"
             exit 1
           fi
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/apksigner.txt"
+          if grep -q 'CN=Android Debug' "$RUNNER_TEMP/apksigner.txt"; then
+            echo "❌ Release APK is signed with the debug certificate"
+            exit 1
+          fi
           SIZE=$(du -h "$APK" | cut -f1)
-          echo "✅ APK built successfully ($SIZE)"
+          echo "✅ APK built and production-signed ($SIZE)"
 
       - name: Rename APK
         run: |

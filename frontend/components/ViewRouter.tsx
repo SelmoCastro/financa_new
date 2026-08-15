@@ -22,6 +22,7 @@ interface ViewRouterProps {
   monthFilteredTransactions: Transaction[];
   isPrivacyEnabled: boolean;
   isLoading: boolean;
+  transactionsLoadError: boolean;
   userName: string;
   userEmail: string;
   userPlan: string;
@@ -37,7 +38,7 @@ interface ViewRouterProps {
 
 export const ViewRouter: React.FC<ViewRouterProps> = ({
   activeTab, transactions, monthFilteredTransactions,
-  isPrivacyEnabled, isLoading, userName, userEmail, userPlan,
+  isPrivacyEnabled, isLoading, transactionsLoadError, userName, userEmail, userPlan,
   onAddAccount, onAddTransaction, onAddBudget,
   onEditTransaction, onDeleteTransaction, onLogout,
   onUserNameChange, onUserEmailChange,
@@ -53,11 +54,11 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
     case 'goals':
       return <GoalsView isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} />;
     case 'timeline':
-      return <TimelineView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} />;
+      return <TimelineView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} loadError={transactionsLoadError} />;
     case 'fixed':
       return <RecurringView isPrivacyEnabled={isPrivacyEnabled} />;
     case 'history':
-      return <HistoryView transactions={monthFilteredTransactions} isPrivacyEnabled={isPrivacyEnabled} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />;
+      return <HistoryView transactions={monthFilteredTransactions} isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} loadError={transactionsLoadError} onEdit={onEditTransaction} onDelete={onDeleteTransaction} />;
     case 'feedbacks':
       return <FeedbackAdminView />;
     case 'admin':

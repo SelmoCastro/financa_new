@@ -11,11 +11,13 @@ import { useLanguage } from '../context/LanguageContext';
 interface HistoryViewProps {
     transactions: Transaction[];
     isPrivacyEnabled: boolean;
+    isLoading?: boolean;
+    loadError?: boolean;
     onEdit: (tx: Transaction) => void;
     onDelete: (id: string) => void;
 }
 
-export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivacyEnabled, onEdit, onDelete }) => {
+export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false, loadError = false, onEdit, onDelete }) => {
     const { formatCurrency, locale } = useCurrency();
     const { t } = useLanguage();
     const [searchTerm, setSearchTerm] = useState('');
@@ -45,7 +47,21 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
 
             {/* Mobile/Card View */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 lg:hidden">
-                {filteredHistory.length === 0 ? (
+                {isLoading ? (
+                    <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                        {[0, 1, 2, 3].map((item) => (
+                            <div key={item} className="h-36 rounded-[2rem] bg-slate-100 dark:bg-slate-900 animate-pulse"></div>
+                        ))}
+                    </div>
+                ) : loadError ? (
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 px-6 glass-card rounded-[2rem] border-dashed border-rose-200 dark:border-rose-500/20">
+                        <div className="w-20 h-20 rounded-full bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mb-6">
+                            <Inbox className="w-10 h-10 text-rose-300 dark:text-rose-400" />
+                        </div>
+                        <p className="text-slate-800 dark:text-white font-black text-lg mb-1">{t('history.loadError')}</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm text-center max-w-sm">{t('history.loadErrorDesc')}</p>
+                    </div>
+                ) : filteredHistory.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-16 px-6">
                         <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-6">
                             <Inbox className="w-10 h-10 text-slate-300 dark:text-slate-600" />
@@ -78,8 +94,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                     {isPrivacyEnabled ? '•••••••' : `${tx.type === 'INCOME' ? '+' : '-'} ${formatCurrency(Number(tx.amount))}`}
                                 </p>
                                 <div className="flex gap-1 bg-slate-50 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-100 dark:border-slate-800">
-                                    <button onClick={() => onEdit(tx)} className="p-2 text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all shadow-sm"><Edit3 className="w-4 h-4" /></button>
-                                    <button onClick={() => onDelete(tx.id)} className="p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all shadow-sm"><Trash2 className="w-4 h-4" /></button>
+                                    <button type="button" onClick={() => onEdit(tx)} aria-label={`${t('common.edit')}: ${tx.description}`} title={`${t('common.edit')}: ${tx.description}`} className="p-2 text-slate-400 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all shadow-sm"><Edit3 className="w-4 h-4" /></button>
+                                    <button type="button" onClick={() => onDelete(tx.id)} aria-label={`${t('common.delete')}: ${tx.description}`} title={`${t('common.delete')}: ${tx.description}`} className="p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all shadow-sm"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                             </div>
                         </div>
@@ -112,7 +128,21 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                     </div>
                 </div>
                 <div className="overflow-x-auto">
-                    {filteredHistory.length === 0 ? (
+                    {isLoading ? (
+                        <div className="space-y-4 p-8">
+                            {[0, 1, 2, 3, 4].map((item) => (
+                                <div key={item} className="h-16 rounded-2xl bg-slate-100 dark:bg-slate-900 animate-pulse"></div>
+                            ))}
+                        </div>
+                    ) : loadError ? (
+                        <div className="flex flex-col items-center justify-center py-20 px-6">
+                            <div className="w-20 h-20 rounded-full bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mb-6">
+                                <Inbox className="w-10 h-10 text-rose-300 dark:text-rose-400" />
+                            </div>
+                            <p className="text-slate-800 dark:text-white font-black text-lg mb-1">{t('history.loadError')}</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm text-center max-w-sm">{t('history.loadErrorDesc')}</p>
+                        </div>
+                    ) : filteredHistory.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20 px-6">
                             <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-6">
                                 <Inbox className="w-10 h-10 text-slate-300 dark:text-slate-600" />
@@ -153,8 +183,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ transactions, isPrivac
                                     </td>
                                     <td className="px-10 py-6 text-right">
                                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                            <button onClick={() => onEdit(tx)} className="p-3 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700"><Edit3 className="w-4 h-4" /></button>
-                                            <button onClick={() => onDelete(tx.id)} className="p-3 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700"><Trash2 className="w-4 h-4" /></button>
+                                            <button type="button" onClick={() => onEdit(tx)} aria-label={`${t('common.edit')}: ${tx.description}`} title={`${t('common.edit')}: ${tx.description}`} className="p-3 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700"><Edit3 className="w-4 h-4" /></button>
+                                            <button type="button" onClick={() => onDelete(tx.id)} aria-label={`${t('common.delete')}: ${tx.description}`} title={`${t('common.delete')}: ${tx.description}`} className="p-3 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700"><Trash2 className="w-4 h-4" /></button>
                                         </div>
                                     </td>
                                 </tr>

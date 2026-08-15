@@ -11,9 +11,11 @@ import { useLanguage } from '../context/LanguageContext';
 interface TimelineViewProps {
     transactions: Transaction[];
     isPrivacyEnabled: boolean;
+    isLoading?: boolean;
+    loadError?: boolean;
 }
 
-export const TimelineView: React.FC<TimelineViewProps> = ({ transactions, isPrivacyEnabled }) => {
+export const TimelineView: React.FC<TimelineViewProps> = ({ transactions, isPrivacyEnabled, isLoading = false, loadError = false }) => {
     const { formatCurrency, locale } = useCurrency();
     const { t } = useLanguage();
     const transactionsGroupedByDate = useMemo(() => {
@@ -43,7 +45,21 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ transactions, isPriv
             <div className="relative px-2 md:px-0">
                 <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 via-blue-500 to-slate-200 dark:to-slate-800 -translate-x-1/2 rounded-full hidden md:block"></div>
                 <div className="space-y-16 md:space-y-24">
-                    {transactionsGroupedByDate.length === 0 ? (
+                    {isLoading ? (
+                        <div className="space-y-6 py-8">
+                            <div className="h-32 rounded-3xl bg-slate-100 dark:bg-slate-900 animate-pulse"></div>
+                            <div className="h-32 rounded-3xl bg-slate-100 dark:bg-slate-900 animate-pulse"></div>
+                            <div className="h-32 rounded-3xl bg-slate-100 dark:bg-slate-900 animate-pulse"></div>
+                        </div>
+                    ) : loadError ? (
+                        <div className="text-center py-20 px-6 glass-card rounded-[2.5rem] border-dashed border-rose-200 dark:border-rose-500/20">
+                            <div className="w-20 h-20 rounded-[2rem] bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mx-auto mb-6 shadow-sm">
+                                <Repeat className="w-10 h-10 text-rose-400 dark:text-rose-300" />
+                            </div>
+                            <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">{t('timeline.loadError')}</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-md mx-auto">{t('timeline.loadErrorDesc')}</p>
+                        </div>
+                    ) : transactionsGroupedByDate.length === 0 ? (
                         <div className="text-center py-20">
                             <p className="text-slate-400 dark:text-slate-500 font-bold">{t('timeline.noData')}</p>
                         </div>
