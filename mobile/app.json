@@ -58,7 +58,8 @@
           "cameraPermission": "O app precisa acessar sua câmera para tirar foto de comprovantes."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

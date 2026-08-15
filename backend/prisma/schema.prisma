@@ -114,34 +114,36 @@ model Category {
 }
 
 model Transaction {
-  id                 String             @id @default(uuid())
+  id                 String                 @id @default(uuid())
   description        String
   amount             String
   date               DateTime
-  categoryLegacy     String?            @map("category")
+  categoryLegacy     String?                @map("category")
   type               String
-  isFixed            Boolean            @default(false)
+  isFixed            Boolean                @default(false)
   userId             String
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  version            Int                @default(0)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  version            Int                    @default(0)
   deletedAt          DateTime? // Soft delete
   accountId          String?
   categoryId         String?
   creditCardId       String?
   invoiceId          String? // FK para CreditCardInvoice (fatura fechada)
+  installmentId      String?
   currentInstallment Int?
   installmentCount   Int?
   receiptUrl         String?
-  classificationRule Int?               @map("classification_rule")
+  classificationRule Int?                   @map("classification_rule")
   fitId              String?
   sharedWithEmail    String?
   transferGroupId    String? // links paired (Entrada)/(Saida) transfer transactions
-  account            Account?           @relation(fields: [accountId], references: [id], onDelete: SetNull)
-  category           Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  creditCard         CreditCard?        @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
-  invoice            CreditCardInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account            Account?               @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category           Category?              @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  creditCard         CreditCard?            @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+  invoice            CreditCardInvoice?     @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  installment        CreditCardInstallment? @relation("CreditCardInstallmentTransactions", fields: [installmentId], references: [id], onDelete: SetNull)
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, fitId])
   @@index([userId])
@@ -153,6 +155,7 @@ model Transaction {
   @@index([accountId])
   @@index([creditCardId])
   @@index([invoiceId])
+  @@index([installmentId])
 }
 
 model Budget {
@@ -398,10 +401,11 @@ model CreditCardInstallment {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  creditCard CreditCard @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
-  account    Account?   @relation(fields: [accountId], references: [id], onDelete: SetNull)
-  category   Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCard   CreditCard    @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  account      Account?      @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transactions Transaction[] @relation("CreditCardInstallmentTransactions")
 
   @@index([userId])
   @@index([creditCardId])

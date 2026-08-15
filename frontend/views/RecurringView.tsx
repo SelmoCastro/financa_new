@@ -224,12 +224,16 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={() => handleToggle(r.id)}
+                  type="button"
+                  aria-label={r.isActive ? `${t('common.deactivate')}: ${r.description}` : `${t('common.activate')}: ${r.description}`}
+                  title={r.isActive ? `${t('common.deactivate')}: ${r.description}` : `${t('common.activate')}: ${r.description}`}
                   className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-lg"
                 >
                   {r.isActive ? '✅' : '⭕'}
                 </button>
                 <button
                   onClick={() => openEdit(r)}
+                  type="button"
                   aria-label={t('common.edit')}
                   className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-cyan-600"
                 >
@@ -237,6 +241,7 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
                 </button>
                 <button
                   onClick={() => handleDelete(r.id)}
+                  type="button"
                   aria-label={t('common.delete')}
                   className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-rose-600"
                 >
@@ -258,6 +263,9 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
               </h2>
               <button
                 onClick={() => setIsFormOpen(false)}
+                type="button"
+                aria-label={t('common.close')}
+                title={t('common.close')}
                 className="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-all"
               >
                 <X className="w-5 h-5" />

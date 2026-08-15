@@ -1,7 +1,7 @@
 /**
  * Tela principal do frontend para Settings; reúne estado visual, ações do usuário e composição de componentes.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LogOut, User, Mail, Lock, Trash2, Crown, Shield, ChevronDown, Check, Loader2, X, Sparkles, Globe } from 'lucide-react';
 import { Transaction } from '../types';
 import api from '../services/api';
@@ -27,7 +27,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
     const { language, setLanguage, locale, setLocale, t } = useLanguage();
     // Edit name
     const [editingName, setEditingName] = useState(false);
-    const [nameValue, setNameValue] = useState(userName);
+    const [nameValue, setNameValue] = useState(userName ?? '');
     const [nameSaving, setNameSaving] = useState(false);
 
     // Change password
@@ -70,9 +70,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
         if (!nameValue.trim()) return;
         setNameSaving(true);
         try {
-            await api.patch('/auth/change-name', { name: nameValue.trim() });
+            const nextName = nameValue.trim();
+            await api.patch('/auth/change-name', { name: nextName });
             setEditingName(false);
-            onNameChange?.(nameValue.trim());
+            setNameValue(nextName);
+            onNameChange?.(nextName);
             showFeedback('success', t('settings.success.name'));
         } catch (e: any) {
             showFeedback('error', e?.response?.data?.message || t('settings.error.name'));
@@ -80,6 +82,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ userName, userEmail,
             setNameSaving(false);
         }
     };
+
+    useEffect(() => {
+        if (!editingName) {
+            setNameValue(userName ?? '');
+        }
+    }, [userName, editingName]);
 
     const handleChangePassword = async () => {
         if (newPass !== confirmPass) {
