@@ -1,0 +1,65 @@
+name: Clear Remaining Legacy Fixed Markers
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  VPS_HOST: ${{ secrets.VPS_HOST }}
+  VPS_USER: ${{ secrets.VPS_USER || 'root' }}
+  VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || '8443' }}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+      - name: Backup and clear remaining legacy markers
+        run: |
+          ssh -p "$VPS_SSH_PORT" -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          APP=/opt/finanza/backend
+          test -f "$APP/.env"
+          test "$(stat -c '%a' "$APP/.env")" = 600
+          DB_URL=$(awk -F= '$1 == "DATABASE_URL" {sub(/^[^=]*=/, ""); print; exit}' "$APP/.env")
+          DB_URL="${DB_URL#\"}"; DB_URL="${DB_URL%\"}"
+          DB_URL="${DB_URL#\'}"; DB_URL="${DB_URL%\'}"
+          BACKUP=/opt/backups/finanza_legacy-fixed-pre-final-$(date +%Y%m%d_%H%M%S).sql.gz
+          pg_dump "$DB_URL" | gzip > "$BACKUP"
+          test -s "$BACKUP"
+          sha256sum "$BACKUP"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          SET LOCAL lock_timeout = '10s';
+          SET LOCAL statement_timeout = '60s';
+          DO $$
+          DECLARE fixed_count integer; linked_count integer; recurring_count integer;
+          BEGIN
+            SELECT count(*) INTO fixed_count FROM "Transaction" WHERE "isFixed" = true AND type IN ('INCOME','EXPENSE') AND "deletedAt" IS NULL;
+            SELECT count(*) INTO linked_count FROM "Transaction" WHERE "isFixed" = true AND type IN ('INCOME','EXPENSE') AND "deletedAt" IS NULL AND ("invoiceId" IS NOT NULL OR "installmentId" IS NOT NULL);
+            SELECT count(*) INTO recurring_count FROM "RecurringTransaction";
+            IF fixed_count <> 21 OR linked_count <> 0 OR recurring_count <> 0 THEN
+              RAISE EXCEPTION 'Precondition failed: fixed=%, linked=%, recurring=%', fixed_count, linked_count, recurring_count;
+            END IF;
+          END $$;
+          UPDATE "Transaction"
+             SET "isFixed" = false, "updatedAt" = NOW(), "version" = "version" + 1
+           WHERE "isFixed" = true AND type IN ('INCOME','EXPENSE') AND "deletedAt" IS NULL;
+          DO $$
+          DECLARE remaining integer;
+          BEGIN
+            SELECT count(*) INTO remaining FROM "Transaction" WHERE "isFixed" = true AND type IN ('INCOME','EXPENSE') AND "deletedAt" IS NULL;
+            IF remaining <> 0 THEN RAISE EXCEPTION 'Postcondition failed: fixed=%', remaining; END IF;
+          END $$;
+          COMMIT;
+          SQL
+          echo 'SQL_CLEAR_REMAINING_COMMITTED=true'
+          psql "$DB_URL" -Atc 'SELECT count(*) FROM "RecurringTransaction"; SELECT count(*) FROM "Transaction" WHERE "isFixed" = true AND type IN (''INCOME'',''EXPENSE'') AND "deletedAt" IS NULL;'
+          REMOTE
