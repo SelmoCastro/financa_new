@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+declare const process: { env: Record<string, string | undefined> };
+
 const email = process.env.E2E_EMAIL;
 const password = process.env.E2E_PASSWORD;
 const menuLabels = [
@@ -15,9 +17,13 @@ const menuLabels = [
 ];
 
 test.describe('Finanza full menu and transaction smoke', () => {
-  test.skip(!email || !password, 'Requires E2E_EMAIL and E2E_PASSWORD');
-
   test('visits every menu and keeps expense/history/dashboard consistent', async ({ page }) => {
+    if (!email || !password) {
+      if (process.env.CI) {
+        throw new Error('E2E_EMAIL and E2E_PASSWORD must be configured in GitHub Actions secrets');
+      }
+      test.skip(true, 'Requires E2E_EMAIL and E2E_PASSWORD when run locally');
+    }
     const failedApiResponses: string[] = [];
     page.on('response', (response) => {
       if (response.url().includes('/api/') && response.status() >= 400) {
