@@ -242,7 +242,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${{ env.VPS_SSH_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
-          VERSION="${{ github.ref_name }}"
+          VERSION="${{ env.VERSION }}"
           VER_NUM="${VERSION#v}"
           APK_DEST="/var/www/finanzaai.tech/downloads/Financa_new_v${VER_NUM}.apk"
 
@@ -263,15 +263,15 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Finanza ${{ github.ref_name }}
+          tag_name: ${{ env.VERSION }}
+          name: Finanza ${{ env.VERSION }}
           draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(env.VERSION, '-') }}
           files: ${{ env.APK_NAME }}
           generate_release_notes: true
           body: |
             ## Downloads
-            - 📱 **Android APK**: [${{ env.APK_NAME }}](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.APK_NAME }})
+            - 📱 **Android APK**: [${{ env.APK_NAME }}](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ env.VERSION }}/${{ env.APK_NAME }})
 
             ## Update URL
             Apk also available at: https://finanzaai.tech/downloads/${{ env.APK_NAME }}
@@ -298,7 +298,7 @@ jobs:
 
       - name: Check APK download URL
         run: |
-          VERSION="${{ github.ref_name }}"
+          VERSION="${{ env.VERSION }}"
           VER_NUM="${VERSION#v}"
           HTTP=$(curl -s -o /dev/null -w '%{http_code}' "https://finanzaai.tech/downloads/Financa_new_v${VER_NUM}.apk")
           if [[ "$HTTP" != "200" ]]; then
@@ -309,10 +309,10 @@ jobs:
 
       - name: Summary
         run: |
-          VERSION="${{ github.ref_name }}"
+          VERSION="${{ env.VERSION }}"
           VER_NUM="${VERSION#v}"
-          echo "🎉 Release ${{ github.ref_name }} deployed successfully!"
+          echo "🎉 Release ${{ env.VERSION }} deployed successfully!"
           echo ""
           echo "   Backend: https://finanzaai.tech/api/v1"
           echo "   APK:     https://finanzaai.tech/downloads/Financa_new_v${VER_NUM}.apk"
-          echo "   GitHub:  ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+          echo "   GitHub:  ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ env.VERSION }}"
