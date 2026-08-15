@@ -1,6 +1,6 @@
 {
-  "version": "1.12.6",
-  "mobileVersion": "1.12.6",
+  "version": "1.12.7",
+  "mobileVersion": "1.12.7",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corrige integridade de transações e parcelas, estados do dashboard e compatibilidade do release Android."
+  "releaseNotes": "Corrige exclusão de recorrentes legados e publicação do asset GTM."
 }

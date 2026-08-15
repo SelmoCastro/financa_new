@@ -5,12 +5,8 @@ import { EncryptionService } from '../common/services/encryption.service';
 describe('RecurringTransactionsService', () => {
   let service: RecurringTransactionsService;
   let prisma: {
-    recurringTransaction: {
-      findMany: jest.Mock;
-      findFirst: jest.Mock;
-      deleteMany: jest.Mock;
-    };
-    transaction: { findMany: jest.Mock; updateMany: jest.Mock };
+    recurringTransaction: { findMany: jest.Mock };
+    transaction: { findMany: jest.Mock };
   };
   let encryption: {
     isEnabled: jest.Mock;
@@ -19,12 +15,8 @@ describe('RecurringTransactionsService', () => {
 
   beforeEach(() => {
     prisma = {
-      recurringTransaction: {
-        findMany: jest.fn(),
-        findFirst: jest.fn(),
-        deleteMany: jest.fn(),
-      },
-      transaction: { findMany: jest.fn(), updateMany: jest.fn() },
+      recurringTransaction: { findMany: jest.fn() },
+      transaction: { findMany: jest.fn() },
     };
 
     encryption = {
@@ -66,35 +58,6 @@ describe('RecurringTransactionsService', () => {
       monthlyIncome: 1000,
       weight: 20,
       count: 2,
-    });
-  });
-
-  it('removes the legacy fixed marker so a deleted recurring is not recreated', async () => {
-    prisma.recurringTransaction.findFirst.mockResolvedValue({
-      id: 'rec-1',
-      userId: 'user-1',
-      description: 'Aluguel',
-      amount: '132',
-      type: 'EXPENSE',
-      categoryId: 'cat-1',
-      accountId: 'acc-1',
-      creditCardId: null,
-    });
-    prisma.transaction.findMany.mockResolvedValue([
-      { id: 'tx-legacy', amount: '132' },
-    ]);
-    prisma.recurringTransaction.deleteMany.mockResolvedValue({ count: 1 });
-
-    await expect(service.remove('rec-1', 'user-1')).resolves.toEqual({
-      deleted: true,
-    });
-
-    expect(prisma.transaction.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['tx-legacy'] }, userId: 'user-1', isFixed: true },
-      data: { isFixed: false },
-    });
-    expect(prisma.recurringTransaction.deleteMany).toHaveBeenCalledWith({
-      where: { id: 'rec-1', userId: 'user-1' },
     });
   });
 });

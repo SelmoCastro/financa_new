@@ -174,41 +174,7 @@ export class RecurringTransactionsService {
   }
 
   async remove(id: string, userId: string) {
-    const recurring = await this.findOne(id, userId);
-    const recurringAmount = decryptAmount(recurring.amount, this.encryption);
-
-    // Legacy fixed transactions are the source used by migrateLegacyFixedTransactions.
-    // Clear that source marker when its derived recurring entry is deleted; otherwise
-    // the next GET recreates the entry and makes deletion appear ineffective.
-    const legacyTransactions = await this.prisma.transaction.findMany({
-      where: {
-        userId,
-        isFixed: true,
-        description: recurring.description,
-        type: recurring.type,
-        categoryId: recurring.categoryId,
-        accountId: recurring.accountId,
-        creditCardId: recurring.creditCardId,
-      },
-      select: { id: true, amount: true },
-    });
-    const matchingLegacyIds = legacyTransactions
-      .filter((transaction) => {
-        const transactionAmount = decryptAmount(
-          transaction.amount,
-          this.encryption,
-        );
-        return Math.abs(transactionAmount - recurringAmount) < 0.005;
-      })
-      .map((transaction) => transaction.id);
-
-    if (matchingLegacyIds.length > 0) {
-      await this.prisma.transaction.updateMany({
-        where: { id: { in: matchingLegacyIds }, userId, isFixed: true },
-        data: { isFixed: false },
-      });
-    }
-
+    await this.findOne(id, userId);
     await this.prisma.recurringTransaction.deleteMany({
       where: { id, userId },
     });
