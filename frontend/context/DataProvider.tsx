@@ -72,6 +72,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // React 19 useOptimistic — transações aparecem instantaneamente na UI
     const { optimisticTransactions, addOptimistic, removeOptimistic } = useOptimisticTransactions(transactions);
 
+    // Request generations prevent stale responses from overwriting newer financial state.
+    const baseRequestRef = useRef(0);
+    const dashboardRequestRef = useRef(0);
+
     // AbortController to cancel in-flight requests on unmount or rapid refresh
     const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -81,20 +85,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Fetch 1: All base data — independent error handling per resource
     const fetchBaseData = useCallback(async (signal?: AbortSignal) => {
+        const requestId = ++baseRequestRef.current;
+        const isCurrentRequest = () => requestId === baseRequestRef.current;
         const fetchResource = async (url: string, setter: (data: any) => void) => {
             try {
                 const res = await api.get(url, { signal });
+                if (!isCurrentRequest()) return;
                 const data = res.data;
                 setter(Array.isArray(data) ? data : []);
                 if (url === '/transactions') {
                     setTransactionsLoadError(false);
                 }
             } catch (error: any) {
-                // Don't show toast for aborted/canceled requests (page unload or rapid F5)
                 if (isCanceledError(error)) return;
                 console.error(`Error fetching ${url}:`, error?.response?.status, error?.message);
-                setter([]);
-                if (url === '/transactions') {
+                // Keep the last known-good data visible; an outage is not an empty account.
+                if (isCurrentRequest() && url === '/transactions') {
                     setTransactionsLoadError(true);
                 }
                 if (error.response?.status !== 401) {
@@ -120,6 +126,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Fetch 2: Dashboard summary — re-fetches on EVERY selectedDate change
     const fetchDashboardSummary = useCallback(async (date: Date, signal?: AbortSignal) => {
+        const requestId = ++dashboardRequestRef.current;
         const year = date.getFullYear();
         const month = date.getMonth(); // 0-indexed
         try {
@@ -127,7 +134,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 `/transactions/dashboard-summary?year=${year}&month=${month}&_t=${Date.now()}`,
                 { signal }
             );
-            setDashboardSummary(summaryRes.data);
+            if (requestId === dashboardRequestRef.current) {
+                setDashboardSummary(summaryRes.data);
+            }
         } catch (error: any) {
             if (isCanceledError(error)) return;
             console.error('Dashboard summary fetch error:', error);
