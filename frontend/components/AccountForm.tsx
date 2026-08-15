@@ -7,6 +7,7 @@ import api from '../services/api';
 import { BANKS } from '../constants';
 import { useCurrency } from '../context/CurrencyContext';
 import { useToast } from '../context/ToastContext';
+import { formatCurrencyInput } from '../utils/currencyInput';
 
 interface AccountFormProps {
     accountToEdit?: any;
@@ -29,16 +30,6 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
     const { addToast } = useToast();
     const { currencySymbol, locale } = useCurrency();
 
-    const formatCurrency = (value: string) => {
-        const digits = value.replace(/\D/g, '');
-        if (!digits) return '';
-        const amount = parseInt(digits) / 100;
-        return amount.toLocaleString(locale, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        });
-    };
-
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -50,7 +41,7 @@ export const AccountForm: React.FC<AccountFormProps> = ({ accountToEdit, onSave,
     }, [onClose]);
 
     const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setDisplayBalance(formatCurrency(e.target.value));
+        setDisplayBalance(formatCurrencyInput(e.target.value, locale));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

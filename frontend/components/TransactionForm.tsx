@@ -7,7 +7,8 @@ import { getCategoryEmoji } from '../utils/categoryIcons';
 import { TransactionType, Transaction, Account, CreditCard, Category, ACCOUNT_TYPE_LABELS } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { toYYYYMMDD } from '../utils/dateUtils';
-import { formatFlexibleCurrencyInput, parseFlexibleCurrency } from '../utils/currency';
+import { formatCurrencyInput } from '../utils/currencyInput';
+import { parseFlexibleCurrency } from '../utils/currency';
 
 interface TransactionFormProps {
   onAdd: (transaction: Omit<Transaction, 'id'>) => void;
@@ -46,16 +47,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const { currencySymbol, locale } = useCurrency();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const formatCurrency = (value: string) => {
-    const digits = value.replace(/\D/g, '');
-    if (!digits) return '';
-    const amount = parseInt(digits) / 100;
-    return amount.toLocaleString(locale, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  };
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -87,7 +78,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     if (editingTransaction) {
       setDescription(editingTransaction.description);
       const initialValue = (editingTransaction.amount * 100).toString();
-      setDisplayAmount(formatCurrency(initialValue));
+      setDisplayAmount(formatCurrencyInput(initialValue, locale));
       setType(editingTransaction.type);
 
       // Select correct IDs
@@ -102,7 +93,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   }, [editingTransaction]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDisplayAmount(e.target.value);
+    setDisplayAmount(formatCurrencyInput(e.target.value, locale));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -218,7 +209,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   value={displayAmount}
                   placeholder="0,00"
                   onChange={handleAmountChange}
-                  onBlur={() => setDisplayAmount(formatFlexibleCurrencyInput(displayAmount, locale))}
                 />
               </div>
             </div>
