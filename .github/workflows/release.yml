@@ -143,7 +143,8 @@ jobs:
       - name: Checkout release ref
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.VERSION }}
+          # Manual reruns use this workflow commit; tag pushes remain immutable.
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || env.VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -163,9 +164,6 @@ jobs:
 
       - name: Install mobile dependencies
         run: cd mobile && npm ci
-
-      - name: Expo prebuild
-        run: cd mobile && npx expo prebuild --platform android --clean
 
       - name: Patch gradle for CI
         run: |
