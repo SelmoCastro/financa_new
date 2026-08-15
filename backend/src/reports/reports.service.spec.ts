@@ -2,6 +2,20 @@ import { ReportsService } from './reports.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../common/services/encryption.service';
 
+type DashboardSummary = {
+  currentMonth: {
+    income: number;
+    expense: number;
+    incomeTrend: number;
+    expenseTrend: number;
+  };
+  monthlyHistory: Array<{
+    month: string;
+    income: number;
+    expenses: number;
+  }>;
+};
+
 describe('ReportsService', () => {
   let service: ReportsService;
   let prisma: {
@@ -62,7 +76,11 @@ describe('ReportsService', () => {
         },
       ]);
 
-    const summary = await service.getDashboardSummary('user-1', 2026, 5);
+    const summary: DashboardSummary = await service.getDashboardSummary(
+      'user-1',
+      2026,
+      5,
+    );
 
     expect(summary.currentMonth).toEqual({
       income: 0,
@@ -70,24 +88,19 @@ describe('ReportsService', () => {
       incomeTrend: -100,
       expenseTrend: -100,
     });
-    expect(summary.monthlyHistory).toEqual([
-      {
-        month: expect.stringMatching(/^Mai/i),
-        income: 1000,
-        expenses: 400,
-      },
-    ]);
+    expect(summary.monthlyHistory).toHaveLength(1);
+    expect(summary.monthlyHistory[0].month).toMatch(/^Mai/i);
+    expect(summary.monthlyHistory[0].income).toBe(1000);
+    expect(summary.monthlyHistory[0].expenses).toBe(400);
 
-    expect(prisma.transaction.findMany).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        where: expect.objectContaining({
-          date: {
-            gte: new Date(Date.UTC(2026, 5, 1)),
-            lte: new Date(Date.UTC(2026, 6, 0, 23, 59, 59, 999)),
-          },
-        }),
-      }),
-    );
+    const calls = prisma.transaction.findMany.mock
+      .calls as unknown as unknown[][];
+    const firstCall = calls[0]?.[0] as {
+      where: { date: { gte: Date; lte: Date } };
+    };
+    expect(firstCall.where.date).toEqual({
+      gte: new Date(Date.UTC(2026, 5, 1)),
+      lte: new Date(Date.UTC(2026, 6, 0, 23, 59, 59, 999)),
+    });
   });
 });

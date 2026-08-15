@@ -48,7 +48,6 @@ import { SecurityLoggerMiddleware } from './common/middleware/security-logger.mi
 import { ResellersModule } from './resellers/resellers.module';
 import { ResellerAuthModule } from './reseller-auth/reseller-auth.module';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -90,7 +89,7 @@ import { ResellerAuthModule } from './reseller-auth/reseller-auth.module';
     ScheduleModule.forRoot(),
     CacheModule.register({
       ttl: 10000, // 10 segundos default
-      max: 100,   // máximo 100 entradas em cache
+      max: 100, // máximo 100 entradas em cache
       isGlobal: true,
     }),
   ],

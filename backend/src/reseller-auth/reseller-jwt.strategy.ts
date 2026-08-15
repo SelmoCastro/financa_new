@@ -5,9 +5,12 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { RESELLER_ACCESS_COOKIE } from '../resellers/reseller.constants';
+
+type ResellerJwtCookieRequest = {
+  cookies?: Record<string, string | undefined>;
+};
 
 @Injectable()
 export class ResellerJwtStrategy extends PassportStrategy(
@@ -22,14 +25,13 @@ export class ResellerJwtStrategy extends PassportStrategy(
       configService.get<string>('RESELLER_JWT_SECRET') ||
       configService.get<string>('JWT_SECRET');
     if (!secret) {
-      throw new Error(
-        'Neither RESELLER_JWT_SECRET nor JWT_SECRET configured',
-      );
+      throw new Error('Neither RESELLER_JWT_SECRET nor JWT_SECRET configured');
     }
 
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        ResellerJwtStrategy.extractJwt,
+        (req: ResellerJwtCookieRequest | undefined) =>
+          ResellerJwtStrategy.extractJwt(req),
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
@@ -37,11 +39,10 @@ export class ResellerJwtStrategy extends PassportStrategy(
     });
   }
 
-  private static extractJwt(req: Request | any): string | null {
-    if (req.cookies && req.cookies[RESELLER_ACCESS_COOKIE]) {
-      return req.cookies[RESELLER_ACCESS_COOKIE];
-    }
-    return null;
+  private static extractJwt(
+    req: ResellerJwtCookieRequest | undefined,
+  ): string | null {
+    return req?.cookies?.[RESELLER_ACCESS_COOKIE] ?? null;
   }
 
   async validate(payload: {

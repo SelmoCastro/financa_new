@@ -10,20 +10,28 @@
 export function serializeDecimal<T>(data: T): T {
   if (data === null || data === undefined) return data;
 
+  function isDecimalLike(value: unknown): value is {
+    toNumber(): number;
+    toString(): string;
+  } {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'toNumber' in value &&
+      typeof (value as { toNumber?: unknown }).toNumber === 'function' &&
+      'toString' in value &&
+      typeof (value as { toString?: unknown }).toString === 'function' &&
+      !(value instanceof Date)
+    );
+  }
+
   // Duck-type Prisma Decimal: has toNumber() and toString()
-  if (
-    typeof data === 'object' &&
-    data !== null &&
-    typeof (data as any).toNumber === 'function' &&
-    typeof (data as any).toString === 'function' &&
-    // Exclude Date objects which also have toString but structure differs
-    !(data instanceof Date)
-  ) {
+  if (isDecimalLike(data)) {
     return Number(data) as T;
   }
 
   if (Array.isArray(data)) {
-    return data.map((item) => serializeDecimal(item)) as T;
+    return data.map((item: unknown) => serializeDecimal(item)) as unknown as T;
   }
 
   if (typeof data === 'object' && data.constructor === Object) {

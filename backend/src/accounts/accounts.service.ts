@@ -1,7 +1,11 @@
 /**
  * Service do domínio de contas bancárias; concentra as regras de negócio, validações e operações de banco ligadas a este fluxo.
  */
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -110,7 +114,12 @@ export class AccountsService {
     await this.findOne(id, userId);
     const { version, ...data } = updateAccountDto;
     const result = await this.prisma.account.updateMany({
-      where: { id, userId, deletedAt: null, ...(version !== undefined ? { version } : {}) },
+      where: {
+        id,
+        userId,
+        deletedAt: null,
+        ...(version !== undefined ? { version } : {}),
+      },
       data: { ...data, version: { increment: 1 } },
     });
     if (result.count === 0) {

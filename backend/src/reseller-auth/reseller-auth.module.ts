@@ -20,7 +20,7 @@ import { ResellerJwtStrategy } from './reseller-jwt.strategy';
     ResellersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret:
           configService.get<string>('RESELLER_JWT_SECRET') ||
           configService.get<string>('JWT_SECRET'),

@@ -39,7 +39,7 @@ export class FeedbackController {
 
   @Get()
   @UseGuards(AdminGuard)
-  async getAllFeedbacks(@Request() req: RequestWithUser) {
+  async getAllFeedbacks() {
     return this.feedbackService.findAllFeedbacks();
   }
 

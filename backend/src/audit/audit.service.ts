@@ -3,6 +3,7 @@
  */
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { createHash, randomUUID } from 'crypto';
 
 export type AuditAction =
@@ -37,7 +38,7 @@ export type AuditAction =
 export type AuditSeverity = 'info' | 'warn' | 'critical';
 
 export interface AuditLogInput {
-  action: AuditAction | string;
+  action: AuditAction | (string & {});
   actorId?: string | null;
   targetType?: string | null;
   targetId?: string | null;
@@ -94,9 +95,13 @@ export class AuditService {
           actorId: input.actorId || null,
           targetType: input.targetType || null,
           targetId: input.targetId || null,
-          previousState: (input.previousState as any) ?? undefined,
-          newState: (input.newState as any) ?? undefined,
-          details: (input.details as any) ?? {},
+          previousState: input.previousState
+            ? (input.previousState as Prisma.InputJsonValue)
+            : undefined,
+          newState: input.newState
+            ? (input.newState as Prisma.InputJsonValue)
+            : undefined,
+          details: (input.details ?? {}) as Prisma.InputJsonValue,
           ip: input.ip || null,
           userAgent: input.userAgent || null,
           severity: input.severity || 'info',

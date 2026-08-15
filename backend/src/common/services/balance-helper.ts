@@ -23,6 +23,18 @@ interface BalanceRow {
   balance: string;
 }
 
+function toStringValue(value: unknown): string | null {
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    typeof value === 'bigint'
+  ) {
+    return String(value);
+  }
+  return null;
+}
+
 /**
  * Atomically update an account's encrypted balance.
  * Uses SELECT FOR UPDATE to prevent concurrent modifications.
@@ -135,16 +147,13 @@ export function decryptRecordAmounts(
 ): Record<string, unknown>[] {
   for (const record of records) {
     for (const field of fields) {
-      if (record[field] !== null && record[field] !== undefined) {
-        if (
-          encryption.isEnabled() &&
-          String(record[field]).startsWith('enc:')
-        ) {
-          record[field] = Number(
-            encryption.decryptDecimal(String(record[field])),
-          );
+      const value = record[field];
+      const textValue = toStringValue(value);
+      if (textValue !== null) {
+        if (encryption.isEnabled() && textValue.startsWith('enc:')) {
+          record[field] = Number(encryption.decryptDecimal(textValue));
         } else {
-          record[field] = Number(record[field]);
+          record[field] = Number(textValue);
         }
       }
     }
@@ -162,13 +171,13 @@ export function decryptRecord(
   encryption: EncryptionService,
 ): Record<string, unknown> {
   for (const field of fields) {
-    if (record[field] !== null && record[field] !== undefined) {
-      if (encryption.isEnabled() && String(record[field]).startsWith('enc:')) {
-        record[field] = Number(
-          encryption.decryptDecimal(String(record[field])),
-        );
+    const value = record[field];
+    const textValue = toStringValue(value);
+    if (textValue !== null) {
+      if (encryption.isEnabled() && textValue.startsWith('enc:')) {
+        record[field] = Number(encryption.decryptDecimal(textValue));
       } else {
-        record[field] = Number(record[field]);
+        record[field] = Number(textValue);
       }
     }
   }

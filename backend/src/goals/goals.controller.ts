@@ -23,6 +23,8 @@ import { PlanGuard, REQUIRED_PLAN_KEY } from '../subscription/plan.guard';
 import { SetMetadata } from '@nestjs/common';
 import { RequestWithUser } from '../common/types/request-with-user';
 
+type DepositGoalUpdateDto = UpdateGoalDto & { currentAmount: number };
+
 @Controller({
   path: 'goals',
   version: '1',
@@ -53,11 +55,8 @@ export class GoalsController {
     if (!goal) throw new NotFoundException('Meta não encontrada');
 
     const currentAmount = Number(goal.currentAmount) + Number(body.amount);
-    return this.goalsService.update(
-      id,
-      { currentAmount } as any,
-      req.user.userId,
-    );
+    const updateDto: DepositGoalUpdateDto = { currentAmount };
+    return this.goalsService.update(id, updateDto, req.user.userId);
   }
 
   @Get()

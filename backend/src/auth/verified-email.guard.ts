@@ -8,7 +8,14 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
 import { REQUIRE_VERIFIED_EMAIL_KEY } from './require-verified-email.decorator';
+
+type RequestWithOptionalUser = Request & {
+  user?: {
+    isEmailVerified?: boolean;
+  };
+};
 
 /**
  * Guard de verificação de email.
@@ -35,7 +42,9 @@ export class VerifiedEmailGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context
+      .switchToHttp()
+      .getRequest<RequestWithOptionalUser>();
     const user = request.user;
 
     // Guard global roda ANTES do AuthGuard popular request.user.

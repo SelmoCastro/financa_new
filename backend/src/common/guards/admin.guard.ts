@@ -8,6 +8,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RequestWithUser } from '../types/request-with-user';
 
 // V11: Reusable AdminGuard — checks isAdmin from DB (not just JWT which could be stale)
 @Injectable()
@@ -15,7 +16,7 @@ export class AdminGuard implements CanActivate {
   constructor(private prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const userId = request.user?.userId;
 
     if (!userId) {

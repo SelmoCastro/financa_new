@@ -97,7 +97,13 @@ export class OcrService {
     } finally {
       try {
         fs.unlinkSync(inPath);
-      } catch {}
+      } catch (error: unknown) {
+        this.logger.debug(
+          `Cleanup skipped for ${inPath}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
     }
   }
 }

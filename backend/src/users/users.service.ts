@@ -69,15 +69,17 @@ export class UsersService {
   }) {
     try {
       const encrypted = this.encryptUserData(data);
-      return await this.prisma.user.create({
-        data: {
-          ...data,
-          email: encrypted.email!,
-          emailHash: encrypted.emailHash,
-          name: encrypted.name!,
-        },
-        select: excludePassword,
-      }).then((user) => this.decryptUserData(user));
+      return await this.prisma.user
+        .create({
+          data: {
+            ...data,
+            email: encrypted.email!,
+            emailHash: encrypted.emailHash,
+            name: encrypted.name!,
+          },
+          select: excludePassword,
+        })
+        .then((user) => this.decryptUserData(user));
     } catch (error: unknown) {
       if (
         error instanceof Error &&
@@ -104,23 +106,27 @@ export class UsersService {
   }
 
   async findAllInternal() {
-    return this.prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    }).then((users) => users.map((u) => this.decryptUserData(u)));
+    return this.prisma.user
+      .findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      })
+      .then((users) => users.map((u) => this.decryptUserData(u)));
   }
 
   async findOne(id: string, requestingUserId?: string) {
     if (requestingUserId !== undefined && requestingUserId !== id) {
       throw new ForbiddenException('You can only access your own profile');
     }
-    return this.prisma.user.findUnique({
-      where: { id },
-      select: excludePassword,
-    }).then((user) => (user ? this.decryptUserData(user) : null));
+    return this.prisma.user
+      .findUnique({
+        where: { id },
+        select: excludePassword,
+      })
+      .then((user) => (user ? this.decryptUserData(user) : null));
   }
 
   // WARNING: Returns full user including password hash. Only use for authentication.
@@ -128,9 +134,11 @@ export class UsersService {
   // Uses emailHash for lookup — encrypts the lookup email to hash for matching.
   findOneByEmail(email: string) {
     const emailHash = this.hashEmail(email);
-    return this.prisma.user.findFirst({
-      where: { emailHash },
-    }).then((user) => (user ? this.decryptUserData(user) : null));
+    return this.prisma.user
+      .findFirst({
+        where: { emailHash },
+      })
+      .then((user) => (user ? this.decryptUserData(user) : null));
   }
 
   async update(
@@ -147,9 +155,10 @@ export class UsersService {
     // Note: email changes go through auth/change-email flow, not via UpdateUserDto
     const data: Record<string, unknown> = { ...updateUserDto };
     if (updateUserDto.name !== undefined) {
-      data.name = updateUserDto.name != null
-        ? this.encryption.encrypt(updateUserDto.name)
-        : null;
+      data.name =
+        updateUserDto.name != null
+          ? this.encryption.encrypt(updateUserDto.name)
+          : null;
     }
 
     return this.prisma.user

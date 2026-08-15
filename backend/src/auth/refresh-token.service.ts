@@ -161,7 +161,7 @@ export class RefreshTokenService {
   async rotate(
     userId: string,
     refreshToken: string,
-  ): Promise<{ token: string; accessToken: string } | never> {
+  ): Promise<{ token: string; accessToken: string }> {
     const tokenHash = crypto
       .createHash('sha256')
       .update(refreshToken)

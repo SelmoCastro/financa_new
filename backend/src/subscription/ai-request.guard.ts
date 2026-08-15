@@ -8,13 +8,14 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { SubscriptionService } from './subscription.service';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @Injectable()
 export class AiRequestGuard implements CanActivate {
   constructor(private subscriptionService: SubscriptionService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const userId = request.user?.userId;
     if (!userId) return false;
 

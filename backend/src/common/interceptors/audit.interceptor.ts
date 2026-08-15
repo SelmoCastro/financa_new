@@ -21,6 +21,16 @@ interface RequestWithUser extends Request {
   user?: { userId: string; email: string };
 }
 
+type AuditDetails = {
+  method: string;
+  url: string;
+  params: Request['params'];
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
   private readonly logger = new Logger(AuditInterceptor.name);
@@ -30,7 +40,7 @@ export class AuditInterceptor implements NestInterceptor {
     private auditService: AuditService,
   ) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const metadata = this.reflector.get<AuditLogMetadata>(
       AUDIT_LOG_KEY,
       context.getHandler(),
@@ -44,7 +54,13 @@ export class AuditInterceptor implements NestInterceptor {
     const user = request.user;
 
     return next.handle().pipe(
-      tap((result) => {
+      tap((result: unknown) => {
+        const details: AuditDetails = {
+          method: request.method,
+          url: request.originalUrl,
+          params: request.params,
+        };
+
         // Fire-and-forget: audit logging never blocks the response
         this.auditService
           .log({
@@ -52,11 +68,7 @@ export class AuditInterceptor implements NestInterceptor {
             actorId: user?.userId || null,
             targetType: metadata.targetType || null,
             targetId: this.extractTargetId(request, result),
-            details: {
-              method: request.method,
-              url: request.originalUrl,
-              params: request.params,
-            } as any,
+            details,
             ip: (request.ip ||
               (Array.isArray(request.headers['x-forwarded-for'])
                 ? request.headers['x-forwarded-for'][0]
@@ -76,14 +88,17 @@ export class AuditInterceptor implements NestInterceptor {
 
   private extractTargetId(
     request: RequestWithUser,
-    result: any,
+    result: unknown,
   ): string | null {
     // Try to extract the ID from URL params first
     if (request.params?.id) return String(request.params.id);
 
     // Then from the response body
-    if (result?.data?.id) return result.data.id;
-    if (result?.id) return result.id;
+    if (isRecord(result)) {
+      const data = result.data;
+      if (isRecord(data) && typeof data.id === 'string') return data.id;
+      if (typeof result.id === 'string') return result.id;
+    }
 
     return null;
   }

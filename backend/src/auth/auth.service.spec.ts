@@ -86,7 +86,10 @@ describe('AuthService', () => {
         termsAccepted: true,
       });
 
-      expect(subscriptionService.upgrade).toHaveBeenCalledWith(createdUser.id, 'free');
+      expect(subscriptionService.upgrade).toHaveBeenCalledWith(
+        createdUser.id,
+        'free',
+      );
       expect(subscriptionService.upgrade).not.toHaveBeenCalledWith(
         createdUser.id,
         'premium',

@@ -89,7 +89,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const msg = resp.message;
       if (Array.isArray(msg)) {
         errorBody = { message: 'Invalid request data' };
-      } else if (typeof msg === 'string' && (msg.length > 120 || msg.includes('Unexpected token') || msg.includes('is not valid JSON'))) {
+      } else if (
+        typeof msg === 'string' &&
+        (msg.length > 120 ||
+          msg.includes('Unexpected token') ||
+          msg.includes('is not valid JSON'))
+      ) {
         // Truncate overly verbose messages (e.g. JSON parse errors, long stack traces)
         errorBody = { message: 'Invalid request' };
       } else {

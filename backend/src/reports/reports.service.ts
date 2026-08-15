@@ -358,10 +358,7 @@ export class ReportsService {
     ];
 
     const creditCardDebt = allPendingInvoices.reduce(
-      (sum, inv) =>
-        sum +
-        (inv.remaining ||
-          this.dec(inv.totalAmount as any) - this.dec(inv.paidAmount as any)),
+      (sum, inv) => sum + inv.remaining,
       0,
     );
 

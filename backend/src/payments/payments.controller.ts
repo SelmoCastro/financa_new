@@ -65,9 +65,16 @@ export class PaymentsController {
   ) {
     // Verify x-signature in production to prevent webhook forgery
     const normalizeValue = (value: unknown): string => {
-      const raw = Array.isArray(value) ? value[0] : value;
-      if (typeof raw !== 'string' && typeof raw !== 'number') return '';
-      return String(raw).trim();
+      if (typeof value === 'string' || typeof value === 'number') {
+        return String(value).trim();
+      }
+      if (Array.isArray(value) && value.length > 0) {
+        const first: unknown = value[0];
+        if (typeof first === 'string' || typeof first === 'number') {
+          return String(first).trim();
+        }
+      }
+      return '';
     };
     const xSignature = normalizeValue(req.headers['x-signature']);
     const rawRequestId = req.headers['x-request-id'];
@@ -89,7 +96,9 @@ export class PaymentsController {
     if (isProduction && !xSignature) {
       // Missing signature — return 4xx so Mercado Pago retries
       // Returning 200 would silently discard the webhook
-      this.logger.warn(`Webhook without signature requestId=${xRequestId || 'unknown'}`);
+      this.logger.warn(
+        `Webhook without signature requestId=${xRequestId || 'unknown'}`,
+      );
       return res.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
         message: 'Missing x-signature header',
@@ -106,7 +115,9 @@ export class PaymentsController {
         signatureRequestId || undefined,
       )
     ) {
-      this.logger.warn(`Webhook with invalid signature requestId=${xRequestId || 'unknown'}`);
+      this.logger.warn(
+        `Webhook with invalid signature requestId=${xRequestId || 'unknown'}`,
+      );
       return res.status(HttpStatus.UNAUTHORIZED).json({
         statusCode: HttpStatus.UNAUTHORIZED,
         message: 'Invalid webhook signature',
@@ -120,7 +131,9 @@ export class PaymentsController {
         signatureRequestId || undefined,
       );
       if ('error' in result && result.error) {
-        this.logger.error(`Transient webhook failure requestId=${xRequestId || 'unknown'}`);
+        this.logger.error(
+          `Transient webhook failure requestId=${xRequestId || 'unknown'}`,
+        );
         return res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
           statusCode: HttpStatus.SERVICE_UNAVAILABLE,
           message: 'Webhook temporarily unavailable',
@@ -128,7 +141,9 @@ export class PaymentsController {
       }
       return res.status(HttpStatus.OK).json({ received: true });
     } catch {
-      this.logger.error(`Unexpected webhook failure requestId=${xRequestId || 'unknown'}`);
+      this.logger.error(
+        `Unexpected webhook failure requestId=${xRequestId || 'unknown'}`,
+      );
       return res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
         statusCode: HttpStatus.SERVICE_UNAVAILABLE,
         message: 'Webhook temporarily unavailable',

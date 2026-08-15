@@ -74,8 +74,25 @@ const MODELS: MigrateConfig[] = [
   },
 ];
 
-async function migrateModel(cfg: MigrateConfig) {
-  const model: any = (prisma as any)[cfg.model];
+interface DynamicRecord {
+  [key: string]: unknown;
+}
+
+interface DynamicDelegate {
+  findMany(args: {
+    where: Record<string, null | undefined>;
+    select: Record<string, boolean>;
+  }): Promise<DynamicRecord[]>;
+  update(args: {
+    where: Record<string, string>;
+    data: Record<string, string>;
+  }): Promise<unknown>;
+}
+
+async function migrateModel(cfg: MigrateConfig): Promise<void> {
+  const model = (prisma as unknown as Record<string, unknown>)[cfg.model] as
+    | DynamicDelegate
+    | undefined;
   if (!model) {
     console.error(`❌ Model ${cfg.model} not found`);
     return;
@@ -96,19 +113,19 @@ async function migrateModel(cfg: MigrateConfig) {
 
     for (const field of cfg.fields) {
       const value = record[field];
-      if (
-        value !== null &&
-        value !== undefined &&
-        !isEncrypted(String(value))
-      ) {
-        updates[field] = encrypt(String(value));
+      const stringValue =
+        typeof value === 'string' || typeof value === 'number'
+          ? String(value)
+          : null;
+      if (stringValue !== null && !isEncrypted(stringValue)) {
+        updates[field] = encrypt(stringValue);
         needsUpdate = true;
       }
     }
 
     if (needsUpdate) {
       await model.update({
-        where: { [cfg.pk]: record[cfg.pk] },
+        where: { [cfg.pk]: String(record[cfg.pk]) },
         data: updates,
       });
       encrypted++;

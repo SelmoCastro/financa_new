@@ -1,11 +1,7 @@
 /**
  * Arquivo de suporte do domínio de revendedores e créditos; dá sustentação ao fluxo principal deste módulo.
  */
-export const RESELLER_STATUSES = [
-  'active',
-  'suspended',
-  'disabled',
-] as const;
+export const RESELLER_STATUSES = ['active', 'suspended', 'disabled'] as const;
 
 export type ResellerStatus = (typeof RESELLER_STATUSES)[number];
 

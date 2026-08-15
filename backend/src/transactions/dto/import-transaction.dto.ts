@@ -10,29 +10,31 @@ import {
   IsBoolean,
   IsArray,
   ArrayMaxSize,
-  IsIn,
+  IsEnum,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
+import { TransactionType } from './create-transaction.dto';
+
+function toNumberOrValue(value: unknown): number | null | undefined {
+  return value !== null && value !== undefined ? Number(value) : value;
+}
 
 export class ImportValidateTransactionDto {
   @IsString()
   @MaxLength(500)
   description: string;
 
-  @Transform(({ value }) =>
-    value !== null && value !== undefined ? Number(value) : value,
-  )
+  @Transform(({ value }) => toNumberOrValue(value))
   @IsNumber()
   amount: number;
 
   @IsDateString()
   date: Date;
 
-  @IsString()
-  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'])
-  type: string;
+  @IsEnum(TransactionType)
+  type: TransactionType;
 
   @IsString()
   @IsOptional()
@@ -48,18 +50,15 @@ export class ImportConfirmTransactionDto {
   @MaxLength(500)
   description: string;
 
-  @Transform(({ value }) =>
-    value !== null && value !== undefined ? Number(value) : value,
-  )
+  @Transform(({ value }) => toNumberOrValue(value))
   @IsNumber()
   amount: number;
 
   @IsDateString()
   date: Date;
 
-  @IsString()
-  @IsIn(['INCOME', 'EXPENSE', 'TRANSFER'])
-  type: string;
+  @IsEnum(TransactionType)
+  type: TransactionType;
 
   @IsString()
   @IsOptional()
@@ -78,9 +77,7 @@ export class ImportConfirmTransactionDto {
   @MaxLength(100)
   categoryLegacy?: string;
 
-  @Transform(({ value }) =>
-    value !== null && value !== undefined ? Number(value) : value,
-  )
+  @Transform(({ value }) => toNumberOrValue(value))
   @IsOptional()
   classificationRule?: number;
 

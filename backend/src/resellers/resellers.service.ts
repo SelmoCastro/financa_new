@@ -40,7 +40,7 @@ export class ResellersService {
   private maskEmail(email: string) {
     const [local, domain] = email.split('@');
     if (!local || !domain) return email;
-    const visible = local.length <= 2 ? local[0] ?? '*' : local.slice(0, 2);
+    const visible = local.length <= 2 ? (local[0] ?? '*') : local.slice(0, 2);
     return `${visible}${'*'.repeat(Math.max(local.length - visible.length, 1))}@${domain}`;
   }
 
@@ -129,7 +129,10 @@ export class ResellersService {
     }
   }
 
-  private getNextExpiry(subscription: Subscription | null, durationDays: number) {
+  private getNextExpiry(
+    subscription: Subscription | null,
+    durationDays: number,
+  ) {
     const now = new Date();
     // Se o usuário já é premium e ainda não expirou, a nova ativação empilha em cima da data futura em vez de reiniciar hoje.
     const base =
@@ -200,7 +203,9 @@ export class ResellersService {
     await this.verifyAdmin(adminUserId);
 
     const email = this.normalizeEmail(dto.email);
-    const existing = await this.prisma.reseller.findUnique({ where: { email } });
+    const existing = await this.prisma.reseller.findUnique({
+      where: { email },
+    });
     if (existing) {
       throw new ConflictException('Já existe um revendedor com este email');
     }
@@ -321,19 +326,21 @@ export class ResellersService {
     }
 
     // Dashboard do portal traz só o necessário para operar: saldo atual, ledger recente e ativações recentes.
-    const [currentBalance, recentLedger, recentActivations] = await Promise.all([
-      this.getCurrentBalanceTx(this.prisma, resellerId),
-      this.prisma.resellerLedger.findMany({
-        where: { resellerId },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-      }),
-      this.prisma.resellerPremiumActivation.findMany({
-        where: { resellerId },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-      }),
-    ]);
+    const [currentBalance, recentLedger, recentActivations] = await Promise.all(
+      [
+        this.getCurrentBalanceTx(this.prisma, resellerId),
+        this.prisma.resellerLedger.findMany({
+          where: { resellerId },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        }),
+        this.prisma.resellerPremiumActivation.findMany({
+          where: { resellerId },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+        }),
+      ],
+    );
 
     return {
       reseller: this.sanitizeReseller(reseller),
@@ -427,7 +434,9 @@ export class ResellersService {
 
       if (existing) {
         if (existing.resellerId !== resellerId) {
-          throw new ConflictException('Idempotency key já usada em outro revendedor');
+          throw new ConflictException(
+            'Idempotency key já usada em outro revendedor',
+          );
         }
 
         const reseller = await tx.reseller.findUnique({
@@ -537,19 +546,21 @@ export class ResellersService {
   async getPortalDashboard(resellerId: string) {
     const reseller = await this.ensureResellerCanOperate(resellerId);
 
-    const [currentBalance, recentLedger, recentActivations] = await Promise.all([
-      this.getCurrentBalanceTx(this.prisma, resellerId),
-      this.prisma.resellerLedger.findMany({
-        where: { resellerId },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      }),
-      this.prisma.resellerPremiumActivation.findMany({
-        where: { resellerId },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      }),
-    ]);
+    const [currentBalance, recentLedger, recentActivations] = await Promise.all(
+      [
+        this.getCurrentBalanceTx(this.prisma, resellerId),
+        this.prisma.resellerLedger.findMany({
+          where: { resellerId },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+        this.prisma.resellerPremiumActivation.findMany({
+          where: { resellerId },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+      ],
+    );
 
     return {
       reseller,
@@ -587,10 +598,7 @@ export class ResellersService {
     await this.ensureResellerCanOperate(resellerId);
 
     const email = this.normalizeEmail(dto.email);
-    const emailHash = crypto
-      .createHash('sha256')
-      .update(email)
-      .digest('hex');
+    const emailHash = crypto.createHash('sha256').update(email).digest('hex');
 
     const user = await this.prisma.user.findFirst({
       where: { emailHash },
@@ -643,7 +651,9 @@ export class ResellersService {
     context?: { ip?: string | null; userAgent?: string | null },
   ) {
     if (!dto.confirmationChecked) {
-      throw new BadRequestException('Confirmação obrigatória antes da ativação');
+      throw new BadRequestException(
+        'Confirmação obrigatória antes da ativação',
+      );
     }
 
     const normalizedEmail = this.normalizeEmail(dto.email);
@@ -657,7 +667,9 @@ export class ResellersService {
 
       if (existingActivation) {
         if (existingActivation.resellerId !== resellerId) {
-          throw new ConflictException('Idempotency key já usada por outro revendedor');
+          throw new ConflictException(
+            'Idempotency key já usada por outro revendedor',
+          );
         }
 
         const currentBalance = await this.getCurrentBalanceTx(tx, resellerId);
@@ -680,7 +692,9 @@ export class ResellersService {
       }
 
       if (reseller.status !== 'active') {
-        throw new ForbiddenException('Revendedor não está autorizado a ativar Premium');
+        throw new ForbiddenException(
+          'Revendedor não está autorizado a ativar Premium',
+        );
       }
 
       const targetEmailHash = crypto
