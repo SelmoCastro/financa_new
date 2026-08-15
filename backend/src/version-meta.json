@@ -1,6 +1,6 @@
 {
-  "version": "1.12.4",
-  "mobileVersion": "1.12.4",
+  "version": "1.12.5",
+  "mobileVersion": "1.12.5",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corrige importacao de comprovante Pix no Android/Expo: upload via fetch nativo, timeout maior e tratamento robusto de arquivo local."
+  "releaseNotes": "Corrige a exibição e edição de recorrentes legados para usuários existentes."
 }

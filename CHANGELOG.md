@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.5] (2026-08-15)
+
+Corrige a exibição e edição de recorrentes legados para usuários existentes.
+
 ## [1.12.4] (produção)
 
 Correção de importação de comprovante Pix no Android/Expo: upload via fetch nativo, timeout maior e tratamento robusto de arquivo local.
