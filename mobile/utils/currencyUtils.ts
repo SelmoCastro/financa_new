@@ -18,38 +18,29 @@ export const formatCurrencyInput = (value: string, currencyCode: string = 'BRL')
 
 export const parseCurrencyToNumber = (value: string) => {
     if (!value) return 0;
-    
-    // Proteção contra NaN / valores inválidos vindos de campos criptografados não descriptografados
-    if (typeof value === 'string' && (value.startsWith('enc:') || value === 'NaN' || value === 'null' || value === 'undefined')) {
+    const normalized = value.trim().replace(/\s/g, '');
+    if (!normalized || normalized.startsWith('enc:') || normalized === 'NaN' || normalized === 'null' || normalized === 'undefined') {
         return 0;
     }
 
-    // Identifica se usa vírgula ou ponto como decimal
-    // Se tiver vírgula e estiver no final (ou perto do final), provavelmente é o decimal
-    const hasComma = value.includes(',');
-    const hasDot = value.includes('.');
+    const lastComma = normalized.lastIndexOf(',');
+    const lastDot = normalized.lastIndexOf('.');
 
-    if (hasComma && !hasDot) {
-        // Formato 1000,00
-        return parseFloat(value.replace(',', '.'));
-    }
-    if (hasDot && !hasComma) {
-        // Formato 1000.00
-        return parseFloat(value);
-    }
-    if (hasComma && hasDot) {
-        // Formato 1.000,00 ou 1,000.00
-        const lastComma = value.lastIndexOf(',');
-        const lastDot = value.lastIndexOf('.');
-        
-        if (lastComma > lastDot) {
-            // pt-BR: 1.000,00
-            return parseFloat(value.replace(/\./g, '').replace(',', '.'));
-        } else {
-            // en-US: 1,000.00
-            return parseFloat(value.replace(/,/g, ''));
-        }
+    if (lastComma >= 0 && lastDot >= 0) {
+        const decimalSeparator = lastComma > lastDot ? ',' : '.';
+        const thousandsSeparator = decimalSeparator === ',' ? '.' : ',';
+        return Number(normalized.replaceAll(thousandsSeparator, '').replace(decimalSeparator, '.')) || 0;
     }
 
-    return parseFloat(value);
+    if (lastComma >= 0) {
+        const suffixLength = normalized.length - lastComma - 1;
+        return Number(suffixLength === 3 ? normalized.replaceAll(',', '') : normalized.replace(',', '.')) || 0;
+    }
+
+    if (lastDot >= 0) {
+        const suffixLength = normalized.length - lastDot - 1;
+        return Number(suffixLength === 3 ? normalized.replaceAll('.', '') : normalized) || 0;
+    }
+
+    return Number(normalized) || 0;
 };
