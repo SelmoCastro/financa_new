@@ -7,6 +7,10 @@ on:
         description: Release version used for the deployment label
         required: true
         type: string
+      ref:
+        description: Git ref to build (defaults to the release tag)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -25,7 +29,7 @@ jobs:
       - name: Checkout release tag
         uses: actions/checkout@v4
         with:
-          ref: v${{ inputs.version }}
+          ref: ${{ inputs.ref || format('v{0}', inputs.version) }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
