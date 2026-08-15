@@ -50,52 +50,86 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Deploy to VPS
+      - name: Prepare backend artifact
+        run: |
+          tar --exclude='backend/node_modules' \
+              --exclude='backend/dist' \
+              --exclude='backend/.env*' \
+              -czf "finanza-backend-${{ env.VERSION }}.tar.gz" backend
+
+      - name: Upload backend artifact
+        run: |
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            "finanza-backend-${{ env.VERSION }}.tar.gz" \
+            "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/"
+
+      - name: Deploy backend artifact
         run: |
           SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          $SSH 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          APP="${{ env.VPS_BACKEND_PATH }}"
+          VERSION="${{ env.VERSION }}"
+          ARCHIVE="/tmp/finanza-backend-${VERSION}.tar.gz"
+          BACKUP_DIR="/opt/backups"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
-          echo "🔒 Running production preflight..."
-          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && test -z \"\$(git status --porcelain)\""
-          $SSH "test \"\$(stat -c '%a' ${{ env.VPS_BACKEND_PATH }}/.env)\" = 600"
-          $SSH "grep -q '^ENCRYPTION_KEY=' ${{ env.VPS_BACKEND_PATH }}/.env"
-          $SSH "pm2 jlist | python3 -c 'import json,sys; p=json.load(sys.stdin); x=next((x for x in p if x.get(\"name\")==\"finanza-api\"),None); raise SystemExit(0 if x and x.get(\"pm2_env\",{}).get(\"status\")==\"online\" else 1)'"
-          $SSH "find /opt/backups -maxdepth 1 -type f \( -name '*.sql.gz.enc' -o -name '*.sql.gz' \) -mmin -2880 | grep -q ."
+          test -d "$APP"
+          test -f "$APP/.env"
+          test "$(stat -c '%a' "$APP/.env")" = 600
+          grep -q '^ENCRYPTION_KEY=' "$APP/.env"
+          mkdir -p "$BACKUP_DIR"
 
-          echo "📦 Pulling latest code on VPS..."
-          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && git fetch origin master:refs/remotes/origin/master --force && git reset --hard origin/master"
+          DB_URL=$(awk -F= '$1 == "DATABASE_URL" {sub(/^[^=]*=/, ""); print; exit}' "$APP/.env")
+          test -n "$DB_URL"
+          pg_dump "$DB_URL" | gzip > "$BACKUP_DIR/finanza_${VERSION}_${TIMESTAMP}.sql.gz"
+          test -s "$BACKUP_DIR/finanza_${VERSION}_${TIMESTAMP}.sql.gz"
 
-          echo "📦 Installing dependencies..."
-          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && npm install --production=false"
+          CURRENT_BACKUP="/opt/backups/finanza-backend-pre-${VERSION}.tar.gz"
+          rm -f "$CURRENT_BACKUP"
+          tar --exclude='node_modules' --exclude='dist' --exclude='.env*' -czf "$CURRENT_BACKUP" -C "$(dirname "$APP")" "$(basename "$APP")"
 
-          echo "🗃️ Applying database migrations..."
-          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && npx prisma migrate deploy"
+          STAGE="$(mktemp -d /opt/finanza-release.XXXXXX)"
+          trap 'rm -rf "$STAGE" "$ARCHIVE"' EXIT
+          tar -xzf "$ARCHIVE" -C "$STAGE"
+          RELEASE="$STAGE/backend"
+          cd "$RELEASE"
+          npm ci
+          npx prisma migrate deploy
+          npm run build
 
-          echo "🔨 Building..."
-          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && npm run build"
+          rsync -a --delete --exclude='.env' "$RELEASE/" "$APP/"
+          test -f "$APP/dist/main.js"
+          echo "Artifact ${VERSION} staged successfully"
+          REMOTE
 
-      - name: Health Check
+      - name: Health Check with rollback
         run: |
+          set -euo pipefail
           SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-
-          echo "🔄 Restarting PM2..."
-          $SSH "cd ${{ env.VPS_BACKEND_PATH }} && pm2 delete finanza-api 2>/dev/null || true && pm2 start dist/main.js --name finanza-api && pm2 save"
-
-          echo "🏥 Waiting for health check..."
+          $SSH "pm2 delete finanza-api 2>/dev/null || true; cd '${{ env.VPS_BACKEND_PATH }}' && pm2 start dist/main.js --name finanza-api --cwd '${{ env.VPS_BACKEND_PATH }}' && pm2 save" || true
           sleep 5
-
-          HTTP_CODE=$($SSH "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/v1/app/version")
-          if [[ "$HTTP_CODE" != "200" ]]; then
-            echo "❌ Health check failed! HTTP $HTTP_CODE"
-            $SSH "pm2 logs finanza-api --lines 30 --nostream"
+          HTTP_CODE=$($SSH "curl -s -H 'Origin: https://finanzaai.tech' -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/v1/app/version")
+          VERSION_RESPONSE=$($SSH "curl -s -H 'Origin: https://finanzaai.tech' http://127.0.0.1:3000/v1/app/version | python3 -c 'import sys,json; print(json.load(sys.stdin)[\"data\"][\"version\"])'") || true
+          if [[ "$HTTP_CODE" != "200" || "$VERSION_RESPONSE" != "${VERSION#v}" ]]; then
+            echo "Health check failed (HTTP $HTTP_CODE, version $VERSION_RESPONSE); restoring previous backend"
+            $SSH 'bash -s' <<'ROLLBACK'
+            set -euo pipefail
+            APP="${{ env.VPS_BACKEND_PATH }}"
+            BACKUP="/opt/backups/finanza-backend-pre-${{ env.VERSION }}.tar.gz"
+            STAGE="$(mktemp -d /opt/finanza-rollback.XXXXXX)"
+            trap 'rm -rf "$STAGE"' EXIT
+            tar -xzf "$BACKUP" -C "$STAGE"
+            rsync -a --delete --exclude='.env' "$STAGE/backend/" "$APP/"
+            pm2 delete finanza-api 2>/dev/null || true
+            cd "$APP"
+            pm2 start dist/main.js --name finanza-api --cwd "$APP"
+            pm2 save
+            ROLLBACK
             exit 1
           fi
+          echo "Backend deployed: $VERSION_RESPONSE"
 
-          VERSION_RESPONSE=$($SSH "curl -s http://127.0.0.1:3000/v1/app/version | python3 -c 'import sys,json; print(json.load(sys.stdin)[\"data\"][\"version\"])'")
-          if [[ "$VERSION_RESPONSE" != "${VERSION#v}" ]]; then
-            echo "❌ Version mismatch! Expected ${VERSION#v}, got $VERSION_RESPONSE"
-            exit 1
-          fi
-          echo "✅ Backend deployed! Version: $VERSION_RESPONSE"
 
   # ──────────────────────────────────────────────
   # Job 2: Build Android APK
