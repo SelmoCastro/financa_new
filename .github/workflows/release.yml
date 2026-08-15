@@ -83,6 +83,10 @@ jobs:
           mkdir -p "$BACKUP_DIR"
 
           DB_URL=$(awk -F= '$1 == "DATABASE_URL" {sub(/^[^=]*=/, ""); print; exit}' "$APP/.env")
+          DB_URL="${DB_URL#\"}"
+          DB_URL="${DB_URL%\"}"
+          DB_URL="${DB_URL#\'}"
+          DB_URL="${DB_URL%\'}"
           test -n "$DB_URL"
           pg_dump "$DB_URL" | gzip > "$BACKUP_DIR/finanza_${VERSION}_${TIMESTAMP}.sql.gz"
           test -s "$BACKUP_DIR/finanza_${VERSION}_${TIMESTAMP}.sql.gz"
