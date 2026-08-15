@@ -100,6 +100,8 @@ jobs:
           tar -xzf "$ARCHIVE" -C "$STAGE"
           RELEASE="$STAGE/backend"
           cd "$RELEASE"
+          cp "$APP/.env" "$RELEASE/.env"
+          chmod 600 "$RELEASE/.env"
           npm ci
           npx prisma migrate deploy
           npm run build
