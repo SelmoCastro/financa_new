@@ -56,7 +56,7 @@ jobs:
           tar --exclude='backend/node_modules' \
               --exclude='backend/dist' \
               --exclude='backend/.env*' \
-              -czf "finanza-backend-${{ env.VERSION }}.tar.gz" backend package.json version-meta.json
+              -czf "finanza-backend-${{ env.VERSION }}.tar.gz" backend package.json
 
       - name: Upload backend artifact
         run: |
@@ -111,7 +111,7 @@ jobs:
 
           rsync -a --delete --exclude='.env' "$RELEASE/" "$APP/"
           install -m 644 "$STAGE/package.json" "$ROOT_APP/package.json"
-          install -m 644 "$STAGE/version-meta.json" "$ROOT_APP/version-meta.json"
+          install -m 644 "$RELEASE/src/version-meta.json" "$ROOT_APP/version-meta.json"
           test -f "$APP/dist/main.js"
           echo "Artifact ${VERSION} staged successfully"
           REMOTE
