@@ -31,14 +31,29 @@ jobs:
           require('dotenv').config({ path: '.env' });
           const { PrismaClient } = require('@prisma/client');
           const p = new PrismaClient();
+          const crypto = require('crypto');
+          const keyMap = new Map();
+          if (process.env.ENCRYPTION_KEYS) for (const entry of process.env.ENCRYPTION_KEYS.split(',')) { const [v, k] = entry.trim().split(':'); keyMap.set(v, Buffer.from(k, 'hex')); }
+          else if (process.env.ENCRYPTION_KEY) keyMap.set('v1', Buffer.from(process.env.ENCRYPTION_KEY, 'hex'));
+          function dec(value) {
+            if (value == null) return 0;
+            if (!String(value).startsWith('enc:')) return Number(value);
+            const [, v, ivHex, tagHex, cipherHex] = String(value).split(':');
+            const decipher = crypto.createDecipheriv('aes-256-gcm', keyMap.get(v), Buffer.from(ivHex, 'hex'));
+            decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
+            return Number(decipher.update(cipherHex, 'hex', 'utf8') + decipher.final('utf8'));
+          }
           (async () => {
             const db = await p.$queryRawUnsafe('SELECT current_database() AS db, current_schema() AS schema, inet_server_addr()::text AS host, inet_server_port() AS port');
             const fixed = await p.transaction.groupBy({ by: ['userId'], where: { isFixed: true, type: { in: ['INCOME', 'EXPENSE'] }, deletedAt: null }, _count: { _all: true } });
             const recurring = await p.recurringTransaction.groupBy({ by: ['userId'], _count: { _all: true } });
             const fixedTotal = await p.transaction.count({ where: { isFixed: true, type: { in: ['INCOME', 'EXPENSE'] }, deletedAt: null } });
             const recurringTotal = await p.recurringTransaction.count();
-            const legacyIds = await p.transaction.findMany({ where: { isFixed: true, type: { in: ['INCOME', 'EXPENSE'] }, deletedAt: null }, select: { id: true, userId: true, description: true, type: true, categoryId: true, accountId: true, creditCardId: true, invoiceId: true, installmentId: true, date: true }, orderBy: [{ userId: 'asc' }, { date: 'asc' }] });
-            console.log(JSON.stringify({ database: db[0], fixedTotal, recurringTotal, fixedByUser: fixed, recurringByUser: recurring, legacyTransactions: legacyIds.map(x => ({...x, descriptionLength: x.description.length, descriptionHash: require('crypto').createHash('sha256').update(x.description).digest('hex').slice(0,16), description: undefined })) }, null, 2));
+            const recurringRows = await p.recurringTransaction.findMany({ select: { id: true, userId: true, description: true, amount: true, type: true, categoryId: true, accountId: true, creditCardId: true, dueDay: true, startMonth: true, isActive: true, createdAt: true }, orderBy: [{ userId: 'asc' }, { dueDay: 'asc' }] });
+            const recurringOut = recurringRows.map(r => ({ id: r.id, userId: r.userId, type: r.type, categoryId: r.categoryId, accountId: r.accountId, creditCardId: r.creditCardId, amountCents: Math.round(dec(r.amount) * 100), dueDay: r.dueDay, startMonth: r.startMonth, isActive: r.isActive, createdAt: r.createdAt }));
+            const fixedRows = await p.transaction.findMany({ where: { isFixed: true, type: { in: ['INCOME', 'EXPENSE'] }, deletedAt: null }, select: { id: true, userId: true, description: true, amount: true, type: true, categoryId: true, accountId: true, creditCardId: true, invoiceId: true, installmentId: true, date: true }, orderBy: [{ userId: 'asc' }, { date: 'asc' }] });
+            const fixedOut = fixedRows.map(x => ({ id: x.id, userId: x.userId, type: x.type, categoryId: x.categoryId, accountId: x.accountId, creditCardId: x.creditCardId, invoiceId: x.invoiceId, installmentId: x.installmentId, date: x.date, amountCents: Math.round(dec(x.amount) * 100), descriptionLength: x.description.length, descriptionHash: require('crypto').createHash('sha256').update(x.description).digest('hex').slice(0,16) }));
+            console.log(JSON.stringify({ database: db[0], fixedTotal, recurringTotal, fixedByUser: fixed, recurringByUser: recurring, recurringRows: recurringOut, fixedTransactions: fixedOut }, null, 2));
           })().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => p.$disconnect());
           NODE
           REMOTE
