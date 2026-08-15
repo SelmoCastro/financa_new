@@ -26,7 +26,7 @@ jobs:
         run: |
           ssh -p "$VPS_SSH_PORT" -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          cd "$VPS_BACKEND_PATH"
+          cd /opt/finanza/backend
           node <<'NODE'
           require('dotenv').config({ path: '.env' });
           const { PrismaClient } = require('@prisma/client');
