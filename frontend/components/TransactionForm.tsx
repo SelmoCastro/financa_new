@@ -7,7 +7,7 @@ import { getCategoryEmoji } from '../utils/categoryIcons';
 import { TransactionType, Transaction, Account, CreditCard, Category, ACCOUNT_TYPE_LABELS } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { toYYYYMMDD } from '../utils/dateUtils';
-import { parseFlexibleCurrency } from '../utils/currency';
+import { formatFlexibleCurrencyInput, parseFlexibleCurrency } from '../utils/currency';
 
 interface TransactionFormProps {
   onAdd: (transaction: Omit<Transaction, 'id'>) => void;
@@ -218,6 +218,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                   value={displayAmount}
                   placeholder="0,00"
                   onChange={handleAmountChange}
+                  onBlur={() => setDisplayAmount(formatFlexibleCurrencyInput(displayAmount, locale))}
                 />
               </div>
             </div>
