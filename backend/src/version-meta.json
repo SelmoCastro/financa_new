@@ -1,6 +1,6 @@
 {
-  "version": "1.12.5",
-  "mobileVersion": "1.12.5",
+  "version": "1.12.6",
+  "mobileVersion": "1.12.6",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corrige a exibição e edição de recorrentes legados para usuários existentes."
+  "releaseNotes": "Corrige consistência de importações e faturas, estados de erro, privacidade visual, configuração mobile e hardening do deploy."
 }

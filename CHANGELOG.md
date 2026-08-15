@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.6] (2026-08-15)
+
+Corrige consistência de importações e faturas, estados de erro, privacidade visual, configuração mobile e hardening do deploy.
+
 ## [1.12.5] (2026-08-15)
 
 Corrige a exibição e edição de recorrentes legados para usuários existentes.
