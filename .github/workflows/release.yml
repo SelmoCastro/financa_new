@@ -60,6 +60,7 @@ jobs:
       - name: Upload backend artifact
         run: |
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -O \
             "finanza-backend-${{ env.VERSION }}.tar.gz" \
             "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/"
 
@@ -210,6 +211,7 @@ jobs:
 
           echo "📤 Uploading APK..."
           scp -i ~/.ssh/deploy_key "${{ env.APK_NAME }}" \
+            -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -O \
             ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/finanza-${VER_NUM}.apk
 
           echo "🔗 Creating symlink..."
