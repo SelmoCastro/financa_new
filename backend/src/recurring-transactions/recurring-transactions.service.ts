@@ -174,9 +174,38 @@ export class RecurringTransactionsService {
   }
 
   async remove(id: string, userId: string) {
-    await this.findOne(id, userId);
-    await this.prisma.recurringTransaction.deleteMany({
-      where: { id, userId },
+    const recurring = await this.findOne(id, userId);
+    const legacyTransactions = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        isFixed: true,
+        type: recurring.type,
+        description: recurring.description,
+        categoryId: recurring.categoryId,
+        accountId: recurring.accountId,
+        creditCardId: recurring.creditCardId,
+      },
+      select: { id: true, amount: true },
+    });
+    const recurringAmount = decryptAmount(recurring.amount, this.encryption);
+    const legacyIds = legacyTransactions
+      .filter(
+        (transaction) =>
+          decryptAmount(transaction.amount, this.encryption) ===
+          recurringAmount,
+      )
+      .map((transaction) => transaction.id);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.recurringTransaction.deleteMany({
+        where: { id, userId },
+      });
+      if (legacyIds.length > 0) {
+        await tx.transaction.updateMany({
+          where: { id: { in: legacyIds }, userId, isFixed: true },
+          data: { isFixed: false },
+        });
+      }
     });
     return { deleted: true };
   }

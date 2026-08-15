@@ -1,0 +1,38 @@
+name: Repair Static Asset Permissions
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repair:
+    name: Repair frontend static assets
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Setup SSH key
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s' '${{ secrets.VPS_SSH_KEY }}' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p '${{ secrets.VPS_SSH_PORT || '8443' }}' -H '${{ secrets.VPS_HOST }}' >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Repair and verify GTM bootstrap asset
+        run: |
+          set -euo pipefail
+          PORT='${{ secrets.VPS_SSH_PORT || '8443' }}'
+          HOST='${{ secrets.VPS_HOST }}'
+          USER='${{ secrets.VPS_USER || 'root' }}'
+          SSH="ssh -p $PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $USER@$HOST"
+          $SSH 'set -euo pipefail; FILE=/opt/finanza/frontend/dist/security/gtm-bootstrap.js; test -f "$FILE"; chmod 644 "$FILE"; test "$(stat -c "%a" "$FILE")" = 644'
+          HTTP=$(curl -sS -o /tmp/gtm-bootstrap-response -w '%{http_code}' https://finanzaai.tech/security/gtm-bootstrap.js)
+          TYPE=$(curl -sSI https://finanzaai.tech/security/gtm-bootstrap.js | awk -F': ' 'tolower($1)=="content-type" {print tolower($2)}' | tr -d '\r')
+          test "$HTTP" = 200
+          case "$TYPE" in
+            application/javascript*|text/javascript*) ;;
+            *) echo "Unexpected content type: $TYPE"; exit 1 ;;
+          esac
+          echo "Static asset repaired: HTTP $HTTP, $TYPE"
