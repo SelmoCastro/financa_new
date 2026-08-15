@@ -34,6 +34,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate required QA secrets
+        run: |
+          test -n "$E2E_EMAIL" || (echo 'Missing repository secret: E2E_EMAIL' >&2; exit 1)
+          test -n "$E2E_PASSWORD" || (echo 'Missing repository secret: E2E_PASSWORD' >&2; exit 1)
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
