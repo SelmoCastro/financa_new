@@ -167,10 +167,20 @@ jobs:
 
       - name: Patch gradle for CI
         run: |
+          set -euo pipefail
           cd mobile/android
-          # Reduce memory for CI (4GB runners)
-          sed -i 's/org.gradle.jvmargs=-Xmx2048m .*/org.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m/' gradle.properties
-          sed -i 's/org.gradle.parallel=true/org.gradle.parallel=false/' gradle.properties
+          # Reduce memory for CI (4GB runners); keep this safe when the file is absent.
+          touch gradle.properties
+          if grep -q '^org.gradle.jvmargs=' gradle.properties; then
+            sed -i 's#^org.gradle.jvmargs=.*#org.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m#' gradle.properties
+          else
+            printf '%s\n' 'org.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m' >> gradle.properties
+          fi
+          if grep -q '^org.gradle.parallel=' gradle.properties; then
+            sed -i 's#^org.gradle.parallel=.*#org.gradle.parallel=false#' gradle.properties
+          else
+            printf '%s\n' 'org.gradle.parallel=false' >> gradle.properties
+          fi
 
       - name: Configure production signing
         env:
