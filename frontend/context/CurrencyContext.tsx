@@ -89,12 +89,13 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
     }, []);
 
     const formatCurrency = useCallback((value: number | string, options?: Intl.NumberFormatOptions) => {
+        const currencyLocale = currency === 'BRL' ? 'pt-BR' : locale;
         if (value === null || value === undefined) {
-            return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(0);
+            return new Intl.NumberFormat(currencyLocale, { style: 'currency', currency }).format(0);
         }
         const numValue = typeof value === 'string' ? Number(value) : value;
         if (isNaN(numValue)) {
-            return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(0);
+            return new Intl.NumberFormat(currencyLocale, { style: 'currency', currency }).format(0);
         }
 
         // Converter: valor em BRL → moeda alvo
@@ -105,7 +106,7 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
             converted = numValue * rates.EUR;
         }
 
-        return converted.toLocaleString(locale, {
+        return converted.toLocaleString(currencyLocale, {
             style: 'currency',
             currency,
             ...options,
