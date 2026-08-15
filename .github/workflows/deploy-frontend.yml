@@ -1,0 +1,84 @@
+name: Deploy Frontend
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version used for the deployment label
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  VPS_HOST: ${{ secrets.VPS_HOST }}
+  VPS_USER: ${{ secrets.VPS_USER || 'root' }}
+  VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || '8443' }}
+
+jobs:
+  deploy:
+    name: Deploy Frontend Static Bundle
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ inputs.version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          test -f dist/index.html
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$VPS_SSH_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Upload frontend bundle
+        run: |
+          tar -czf "finanza-frontend-v${{ inputs.version }}.tar.gz" -C frontend dist
+          scp -P "$VPS_SSH_PORT" -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "finanza-frontend-v${{ inputs.version }}.tar.gz" \
+            "$VPS_USER@$VPS_HOST:/tmp/"
+
+      - name: Activate frontend bundle
+        run: |
+          ssh -p "$VPS_SSH_PORT" -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          APP=/opt/finanza/frontend
+          ARCHIVE="/tmp/finanza-frontend-v${{ inputs.version }}.tar.gz"
+          BACKUP="/opt/backups/finanza-frontend-pre-${{ inputs.version }}-$(date +%Y%m%d_%H%M%S).tar.gz"
+          test -d "$APP"
+          mkdir -p /opt/backups
+          tar -czf "$BACKUP" -C "$APP" dist
+          STAGE=$(mktemp -d /opt/finanza-frontend-stage.XXXXXX)
+          trap 'rm -rf "$STAGE" "$ARCHIVE"' EXIT
+          tar -xzf "$ARCHIVE" -C "$STAGE"
+          test -f "$STAGE/dist/index.html"
+          rm -rf "$APP/dist"
+          mv "$STAGE/dist" "$APP/dist"
+          test -f "$APP/dist/index.html"
+          printf 'frontend_backup=%s\n' "$BACKUP"
+          printf 'frontend_bundle=active\n'
+          REMOTE
+
+      - name: Verify public bundle
+        run: |
+          curl --fail --silent --show-error --location https://finanzaai.tech/ -o /tmp/finanza-home.html
+          grep -Eqo '/assets/[^" ]+\.js' /tmp/finanza-home.html
+          printf 'Public frontend bundle is reachable.\n'
