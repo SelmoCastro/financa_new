@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.4] (produção)
+
+Correção de importação de comprovante Pix no Android/Expo: upload via fetch nativo, timeout maior e tratamento robusto de arquivo local.
+
 ## [1.12.1] (2026-08-14)
 
 Atualização de segurança, CI e higiene do repositório.

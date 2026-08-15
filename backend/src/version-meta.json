@@ -1,6 +1,6 @@
 {
-  "version": "1.12.1",
-  "mobileVersion": "1.12.1",
+  "version": "1.12.4",
+  "mobileVersion": "1.12.4",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Atualização de segurança, CI e higiene do repositório."
+  "releaseNotes": "Corrige importacao de comprovante Pix no Android/Expo: upload via fetch nativo, timeout maior e tratamento robusto de arquivo local."
 }
