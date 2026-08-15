@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { SubscriptionService, PlanType } from './subscription.service';
 import { Reflector } from '@nestjs/core';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 export const REQUIRED_PLAN_KEY = 'requiredPlan';
 
@@ -27,7 +28,7 @@ export class PlanGuard implements CanActivate {
 
     if (!requiredPlan) return true;
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const userId = request.user?.userId;
     if (!userId) return false;
 

@@ -146,7 +146,7 @@ export function configureApp(app: INestApplication) {
         // Report CSP violations so we can detect XSS attempts
         // Uses report-uri (deprecated but universally supported) with optional env var
         ...(process.env.CSP_REPORT_URI
-          ? { reportUri: process.env.CSP_REPORT_URI } as any
+          ? { reportUri: process.env.CSP_REPORT_URI }
           : {}),
       },
     }),

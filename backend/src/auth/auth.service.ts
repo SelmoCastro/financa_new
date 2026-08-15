@@ -21,6 +21,20 @@ import * as crypto from 'crypto';
 import { RefreshTokenService } from './refresh-token.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 
+type AuthenticatedUser = {
+  id: string;
+  email: string;
+  name?: string | null;
+  isEmailVerified: boolean;
+  isAdmin: boolean;
+  password: string;
+  failedLoginAttempts: number;
+  lockedUntil: Date | null;
+  hashedRefreshToken: string | null;
+};
+
+type PublicAuthUser = Omit<AuthenticatedUser, 'password'>;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -34,8 +48,10 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOneByEmail(email);
+  async validateUser(email: string, pass: string): Promise<PublicAuthUser> {
+    const user = (await this.usersService.findOneByEmail(
+      email,
+    )) as AuthenticatedUser | null;
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
@@ -62,8 +78,8 @@ export class AuthService {
         targetType: 'User',
         targetId: user.id,
       });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user;
+      void password;
       return result;
     }
 
@@ -202,12 +218,13 @@ export class AuthService {
         access_token: accessToken,
         refreshToken: result.token,
       };
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : null;
       if (
-        err.message === 'REFRESH_TOKEN_EXPIRED' ||
-        err.message === 'REFRESH_TOKEN_REUSE'
+        message === 'REFRESH_TOKEN_EXPIRED' ||
+        message === 'REFRESH_TOKEN_REUSE'
       ) {
-        throw new UnauthorizedException('Access Denied: ' + err.message);
+        throw new UnauthorizedException('Access Denied: ' + message);
       }
       // REFRESH_TOKEN_INVALID → fall through to legacy JWT path below
     }
@@ -240,7 +257,10 @@ export class AuthService {
     };
   }
 
-  async register(createUserDto: CreateUserDto, context?: { ip?: string | null; userAgent?: string | null }) {
+  async register(
+    createUserDto: CreateUserDto,
+    context?: { ip?: string | null; userAgent?: string | null },
+  ) {
     if (!createUserDto.termsAccepted) {
       throw new ForbiddenException(
         'Você deve aceitar os termos de uso para criar uma conta',

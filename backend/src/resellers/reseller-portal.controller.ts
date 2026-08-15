@@ -1,14 +1,7 @@
 /**
  * Controller HTTP do domínio de revendedores e créditos; recebe as requisições, aplica guards/decorators e delega a regra de negócio aos services.
  */
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RequestWithReseller } from '../common/types/request-with-reseller';
 import { ResellersService } from './resellers.service';

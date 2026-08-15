@@ -53,8 +53,10 @@ export class EmailService implements OnModuleInit {
       this.transporter
         .verify()
         .then(() => this.logger.log('✅ SMTP conectado com sucesso!'))
-        .catch((err) =>
-          this.logger.error(`❌ SMTP falhou na verificação: ${err.message}`),
+        .catch((err: unknown) =>
+          this.logger.error(
+            `❌ SMTP falhou na verificação: ${this.getErrorMessage(err)}`,
+          ),
         );
       return;
     }
@@ -125,6 +127,10 @@ export class EmailService implements OnModuleInit {
     return `${local[0]}${'*'.repeat(Math.max(0, local.length - 1))}@${domain}`;
   }
 
+  private getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
+
   private async sendEmail(to: string, subject: string, html: string) {
     // Prioridade 1: Resend
     if (this.useResend && this.resend) {
@@ -155,8 +161,8 @@ export class EmailService implements OnModuleInit {
         }
         this.logger.log(`✅ Email sent to ${this.maskEmail(to)} via Resend`);
         return;
-      } catch (error) {
-        this.logger.error(`Resend exception: ${error.message}`);
+      } catch (error: unknown) {
+        this.logger.error(`Resend exception: ${this.getErrorMessage(error)}`);
         if (this.transporter) {
           this.logger.warn('Tentando fallback SMTP...');
           return this.sendViaSmtp(to, subject, html);
@@ -182,9 +188,9 @@ export class EmailService implements OnModuleInit {
         html,
       });
       this.logger.log(`✅ Email sent to ${this.maskEmail(to)} via SMTP`);
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(
-        `SMTP error sending to ${this.maskEmail(to)}: ${error.message}`,
+        `SMTP error sending to ${this.maskEmail(to)}: ${this.getErrorMessage(error)}`,
       );
     }
   }

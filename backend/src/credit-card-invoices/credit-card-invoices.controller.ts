@@ -16,6 +16,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { CreditCardInvoiceService } from './credit-card-invoices.service';
 import { PayInvoiceDto } from './dto/pay-invoice.dto';
+import { RequestWithUser } from '../common/types/request-with-user';
 
 @ApiTags('credit-card-invoices')
 @ApiBearerAuth()
@@ -33,7 +34,7 @@ export class CreditCardInvoiceController {
   @Get(':creditCardId/current')
   getCurrentInvoice(
     @Param('creditCardId', ParseUUIDPipe) creditCardId: string,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     return this.invoiceService.getCurrentInvoice(creditCardId, req.user.userId);
   }
@@ -44,7 +45,7 @@ export class CreditCardInvoiceController {
   @Post(':creditCardId/close')
   closeInvoice(
     @Param('creditCardId', ParseUUIDPipe) creditCardId: string,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     return this.invoiceService.closeInvoice(creditCardId, req.user.userId);
   }
@@ -56,7 +57,7 @@ export class CreditCardInvoiceController {
   payInvoice(
     @Param('invoiceId', ParseUUIDPipe) invoiceId: string,
     @Body() dto: PayInvoiceDto,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     return this.invoiceService.payInvoice(invoiceId, dto, req.user.userId);
   }
@@ -67,7 +68,7 @@ export class CreditCardInvoiceController {
   @Get(':creditCardId/history')
   getInvoiceHistory(
     @Param('creditCardId', ParseUUIDPipe) creditCardId: string,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     return this.invoiceService.getInvoiceHistory(creditCardId, req.user.userId);
   }
@@ -78,7 +79,7 @@ export class CreditCardInvoiceController {
   @Delete(':invoiceId')
   removeInvoice(
     @Param('invoiceId', ParseUUIDPipe) invoiceId: string,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     return this.invoiceService.remove(invoiceId, req.user.userId);
   }

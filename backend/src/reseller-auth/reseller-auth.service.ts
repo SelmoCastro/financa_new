@@ -160,10 +160,7 @@ export class ResellerAuthService {
     let payload: { sub?: string; actorType?: string };
 
     try {
-      payload = this.jwtService.verify(refreshToken) as {
-        sub?: string;
-        actorType?: string;
-      };
+      payload = this.jwtService.verify(refreshToken);
     } catch {
       throw new UnauthorizedException('Refresh token inválido');
     }
@@ -195,7 +192,9 @@ export class ResellerAuthService {
     }
 
     if (reseller.status !== 'active') {
-      throw new ForbiddenException('Revendedor sem permissão para renovar sessão');
+      throw new ForbiddenException(
+        'Revendedor sem permissão para renovar sessão',
+      );
     }
 
     const tokens = await this.generateTokens(reseller);

@@ -9,6 +9,12 @@ import { Request } from 'express';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
+type JwtCookieRequest = {
+  cookies?: {
+    access_token?: string;
+  };
+};
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly logger = new Logger(JwtStrategy.name);
@@ -25,7 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        JwtStrategy.extractJWT,
+        (req: JwtCookieRequest | undefined) => JwtStrategy.extractJWT(req),
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
@@ -34,11 +40,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  private static extractJWT(req: Request | any): string | null {
-    if (req.cookies && req.cookies.access_token) {
-      return req.cookies.access_token;
-    }
-    return null;
+  private static extractJWT(req: JwtCookieRequest | undefined): string | null {
+    return req?.cookies?.access_token ?? null;
   }
 
   /**

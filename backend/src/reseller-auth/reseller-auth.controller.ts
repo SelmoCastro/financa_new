@@ -23,6 +23,10 @@ import {
   RESELLER_REFRESH_COOKIE,
 } from '../resellers/reseller.constants';
 
+type RequestWithCookies = Omit<ExpressRequest, 'cookies'> & {
+  cookies?: Record<string, string | undefined>;
+};
+
 @Controller({
   path: 'reseller-portal/auth',
   version: '1',
@@ -31,11 +35,7 @@ export class ResellerAuthController {
   constructor(private readonly resellerAuthService: ResellerAuthService) {}
 
   // Cookies separados impedem colisão com a sessão do usuário final do dashboard comum.
-  private setCookies(
-    res: Response,
-    accessToken: string,
-    refreshToken: string,
-  ) {
+  private setCookies(res: Response, accessToken: string, refreshToken: string) {
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie(RESELLER_ACCESS_COOKIE, accessToken, {
       httpOnly: true,
@@ -83,11 +83,12 @@ export class ResellerAuthController {
   @Post('refresh')
   async refresh(
     @Body() dto: ResellerRefreshDto,
-    @Req() req: ExpressRequest,
+    @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
   ) {
     // Permite refresh por cookie HttpOnly ou payload explícito, o que ajuda tanto navegador quanto clientes alternativos.
-    const refreshToken = req.cookies?.[RESELLER_REFRESH_COOKIE] || dto.refreshToken;
+    const refreshToken =
+      req.cookies?.[RESELLER_REFRESH_COOKIE] || dto.refreshToken;
 
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token ausente');

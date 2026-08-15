@@ -3,11 +3,43 @@ import { Request, Response } from 'express';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 
+type MercadoPagoWebhookDto = {
+  type: string;
+  action: string;
+  data_id?: string;
+  id?: number;
+  data?: { id?: string };
+};
+
+type WebhookResponseBody = {
+  received?: boolean;
+  statusCode?: number;
+  message?: string;
+};
+
+type MockResponse = Response & {
+  status: jest.MockedFunction<(code: number) => MockResponse>;
+  json: jest.MockedFunction<(body: WebhookResponseBody) => MockResponse>;
+};
+
 describe('PaymentsController - webhook', () => {
   let controller: PaymentsController;
   let paymentsService: {
-    verifyWebhookSignature: jest.Mock;
-    handleWebhook: jest.Mock;
+    verifyWebhookSignature: jest.MockedFunction<
+      (dataId: string, xSignature?: string, requestId?: string) => boolean
+    >;
+    handleWebhook: jest.MockedFunction<
+      (
+        dto: MercadoPagoWebhookDto,
+        xSignature?: string,
+        requestId?: string,
+      ) => Promise<{
+        processed: boolean;
+        upgraded?: boolean;
+        skipped?: boolean;
+        error?: boolean;
+      }>
+    >;
   };
   let warnSpy: jest.SpyInstance;
   let errorSpy: jest.SpyInstance;
@@ -16,27 +48,28 @@ describe('PaymentsController - webhook', () => {
   const buildRequest = (
     headers: Record<string, string | undefined> = {},
     query: Record<string, string | undefined> = {},
-  ): Request => ({
-    headers,
-    query,
-  } as unknown as Request);
+  ): Request =>
+    ({
+      headers,
+      query,
+    }) as unknown as Request;
 
-  const buildResponse = (): Response & {
-    status: jest.Mock;
-    json: jest.Mock;
-  } => {
+  const buildResponse = (): MockResponse => {
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: jest.fn((code: number) => {
+        void code;
+        return res as MockResponse;
+      }),
+      json: jest.fn((body: WebhookResponseBody) => {
+        void body;
+        return res as MockResponse;
+      }),
     };
 
-    return res as unknown as Response & {
-      status: jest.Mock;
-      json: jest.Mock;
-    };
+    return res as MockResponse;
   };
 
-  const buildWebhookDto = () => ({
+  const buildWebhookDto = (): MercadoPagoWebhookDto => ({
     type: 'payment',
     action: 'created',
     data_id: 'mp-pay-123',
@@ -48,9 +81,15 @@ describe('PaymentsController - webhook', () => {
       verifyWebhookSignature: jest.fn(),
       handleWebhook: jest.fn(),
     };
-    controller = new PaymentsController(paymentsService as unknown as PaymentsService);
-    warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
-    errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    controller = new PaymentsController(
+      paymentsService as unknown as PaymentsService,
+    );
+    warnSpy = jest
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
+    errorSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -63,7 +102,7 @@ describe('PaymentsController - webhook', () => {
     const req = buildRequest({ 'x-request-id': 'req-123' });
     const res = buildResponse();
 
-    await controller.webhook(buildWebhookDto() as any, req, res);
+    await controller.webhook(buildWebhookDto(), req, res);
 
     expect(res.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     expect(res.json).toHaveBeenCalledWith(
@@ -74,10 +113,9 @@ describe('PaymentsController - webhook', () => {
     );
     expect(paymentsService.verifyWebhookSignature).not.toHaveBeenCalled();
     expect(paymentsService.handleWebhook).not.toHaveBeenCalled();
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('req-123'),
-    );
-    expect(JSON.stringify(res.json.mock.calls[0][0])).not.toContain('stack');
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('req-123'));
+    const responseCalls = res.json.mock.calls as Array<[WebhookResponseBody]>;
+    expect(JSON.stringify(responseCalls[0]?.[0])).not.toContain('stack');
   });
 
   it('returns 401 when x-signature is invalid and logs sanitized correlation id', async () => {
@@ -89,7 +127,7 @@ describe('PaymentsController - webhook', () => {
     });
     const res = buildResponse();
 
-    await controller.webhook(buildWebhookDto() as any, req, res);
+    await controller.webhook(buildWebhookDto(), req, res);
 
     expect(paymentsService.verifyWebhookSignature).toHaveBeenCalledWith(
       'mp-pay-123',
@@ -104,7 +142,8 @@ describe('PaymentsController - webhook', () => {
       }),
     );
     expect(paymentsService.handleWebhook).not.toHaveBeenCalled();
-    const warnMessage = warnSpy.mock.calls.at(-1)?.[0] as string;
+    const warnCalls = warnSpy.mock.calls as Array<[string]>;
+    const warnMessage = warnCalls.at(-1)?.[0] ?? '';
     expect(warnMessage).toContain('req-123');
     expect(warnMessage).not.toContain('secret-token');
     expect(warnMessage).not.toContain('\n');
@@ -123,7 +162,7 @@ describe('PaymentsController - webhook', () => {
     });
     const res = buildResponse();
 
-    await controller.webhook(buildWebhookDto() as any, req, res);
+    await controller.webhook(buildWebhookDto(), req, res);
 
     expect(paymentsService.handleWebhook).toHaveBeenCalledWith(
       buildWebhookDto(),
@@ -147,7 +186,7 @@ describe('PaymentsController - webhook', () => {
     );
     const res = buildResponse();
 
-    await controller.webhook(buildWebhookDto() as any, req, res);
+    await controller.webhook(buildWebhookDto(), req, res);
 
     expect(paymentsService.verifyWebhookSignature).toHaveBeenCalledWith(
       'mp-query-456',
@@ -175,7 +214,7 @@ describe('PaymentsController - webhook', () => {
     });
     const res = buildResponse();
 
-    await controller.webhook(buildWebhookDto() as any, req, res);
+    await controller.webhook(buildWebhookDto(), req, res);
 
     expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
     expect(res.json).toHaveBeenCalledWith({ received: true });
@@ -194,7 +233,7 @@ describe('PaymentsController - webhook', () => {
     });
     const res = buildResponse();
 
-    await controller.webhook(buildWebhookDto() as any, req, res);
+    await controller.webhook(buildWebhookDto(), req, res);
 
     expect(res.status).toHaveBeenCalledWith(HttpStatus.SERVICE_UNAVAILABLE);
     expect(res.json).toHaveBeenCalledWith(
@@ -203,13 +242,16 @@ describe('PaymentsController - webhook', () => {
         message: 'Webhook temporarily unavailable',
       }),
     );
-    const forwardedRequestId = paymentsService.handleWebhook.mock.calls[0][2] as
-      | string
-      | undefined;
+    const handleWebhookCalls = paymentsService.handleWebhook.mock
+      .calls as Array<
+      [MercadoPagoWebhookDto, string | undefined, string | undefined]
+    >;
+    const forwardedRequestId = handleWebhookCalls[0]?.[2] ?? '';
     expect(forwardedRequestId).toContain('req-503');
     expect(forwardedRequestId).not.toContain('secret-token');
     expect(forwardedRequestId).not.toContain('\n');
-    const errorMessage = errorSpy.mock.calls.at(-1)?.[0] as string;
+    const errorCalls = errorSpy.mock.calls as Array<[string]>;
+    const errorMessage = errorCalls.at(-1)?.[0] ?? '';
     expect(errorMessage).toContain('req-503');
     expect(errorMessage).not.toContain('secret-token');
     expect(errorMessage).not.toContain('\n');
@@ -227,7 +269,7 @@ describe('PaymentsController - webhook', () => {
     });
     const res = buildResponse();
 
-    await controller.webhook(buildWebhookDto() as any, req, res);
+    await controller.webhook(buildWebhookDto(), req, res);
 
     expect(res.status).toHaveBeenCalledWith(HttpStatus.SERVICE_UNAVAILABLE);
     expect(res.json).toHaveBeenCalledWith(
@@ -236,13 +278,16 @@ describe('PaymentsController - webhook', () => {
         message: 'Webhook temporarily unavailable',
       }),
     );
-    const forwardedRequestId = paymentsService.handleWebhook.mock.calls[0][2] as
-      | string
-      | undefined;
+    const handleWebhookCalls = paymentsService.handleWebhook.mock
+      .calls as Array<
+      [MercadoPagoWebhookDto, string | undefined, string | undefined]
+    >;
+    const forwardedRequestId = handleWebhookCalls[0]?.[2] ?? '';
     expect(forwardedRequestId).toContain('req-throw');
     expect(forwardedRequestId).not.toContain('super-secret');
     expect(forwardedRequestId).not.toContain('\n');
-    const errorMessage = errorSpy.mock.calls.at(-1)?.[0] as string;
+    const errorCalls = errorSpy.mock.calls as Array<[string]>;
+    const errorMessage = errorCalls.at(-1)?.[0] ?? '';
     expect(errorMessage).toContain('req-throw');
     expect(errorMessage).not.toContain('super-secret');
     expect(errorMessage).not.toContain('\n');

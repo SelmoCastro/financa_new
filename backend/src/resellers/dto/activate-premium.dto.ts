@@ -3,7 +3,10 @@
  */
 import { IsBoolean, IsIn, IsNotEmpty, IsUUID } from 'class-validator';
 import { IsValidEmail } from '../../users/validators/is-valid-email.validator';
-import { RESELLER_PREMIUM_SKUS, ResellerPremiumSku } from '../reseller.constants';
+import {
+  RESELLER_PREMIUM_SKUS,
+  ResellerPremiumSku,
+} from '../reseller.constants';
 
 export class ActivatePremiumDto {
   @IsValidEmail()

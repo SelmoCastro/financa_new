@@ -2,6 +2,30 @@ import { CreditCardInvoiceService } from './credit-card-invoices.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../common/services/encryption.service';
 
+type CreditCardRecord = {
+  id: string;
+  userId: string;
+  name: string;
+  closingDay: number;
+  dueDay: number;
+  deletedAt: null;
+};
+
+type InvoiceTransactionRange = {
+  date?: {
+    gte?: Date;
+    lte?: Date;
+  };
+};
+
+type CurrentInvoiceProjection = {
+  isProjection?: boolean;
+  referenceMonth: number;
+  referenceYear: number;
+  transactions: Array<{ id: string }>;
+  totalAmount: number;
+};
+
 describe('CreditCardInvoiceService', () => {
   let service: CreditCardInvoiceService;
   let prisma: {
@@ -19,7 +43,7 @@ describe('CreditCardInvoiceService', () => {
   const userId = 'user-1';
   const creditCardId = 'card-1';
 
-  const card = {
+  const card: CreditCardRecord = {
     id: creditCardId,
     userId,
     name: 'Cartão principal',
@@ -67,25 +91,38 @@ describe('CreditCardInvoiceService', () => {
     prisma.creditCard.findFirst.mockResolvedValue(card);
     prisma.creditCardInvoice.findUnique.mockResolvedValue(null);
 
-    const beforeCycle = makeTx('tx-before', new Date(2026, 4, 10, 9, 0, 0), '10');
-    const insideCycle = makeTx('tx-inside', new Date(2026, 4, 15, 9, 0, 0), '25');
+    const beforeCycle = makeTx(
+      'tx-before',
+      new Date(2026, 4, 10, 9, 0, 0),
+      '10',
+    );
+    const insideCycle = makeTx(
+      'tx-inside',
+      new Date(2026, 4, 15, 9, 0, 0),
+      '25',
+    );
     const afterCycle = makeTx('tx-after', new Date(2026, 5, 11, 9, 0, 0), '40');
 
-    prisma.transaction.findMany.mockImplementation(async ({ where }) => {
-      const range = where?.date;
-      return [beforeCycle, insideCycle, afterCycle].filter((tx) => {
-        if (!range) return true;
-        const gteOk = !range.gte || tx.date >= range.gte;
-        const lteOk = !range.lte || tx.date <= range.lte;
-        return gteOk && lteOk;
-      });
-    });
+    prisma.transaction.findMany.mockImplementation(
+      ({ where }: { where?: { date?: InvoiceTransactionRange['date'] } }) => {
+        const range = where?.date;
+        return [beforeCycle, insideCycle, afterCycle].filter((tx) => {
+          if (!range) return true;
+          const gteOk = !range.gte || tx.date >= range.gte;
+          const lteOk = !range.lte || tx.date <= range.lte;
+          return gteOk && lteOk;
+        });
+      },
+    );
 
-    const result = await service.getCurrentInvoice(creditCardId, userId);
+    const result = (await service.getCurrentInvoice(
+      creditCardId,
+      userId,
+    )) as CurrentInvoiceProjection;
 
     expect(prisma.transaction.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({
+        where: {
           date: {
             gte: new Date(2026, 4, 11),
             lte: new Date(2026, 5, 10, 23, 59, 59, 999),
@@ -95,23 +132,15 @@ describe('CreditCardInvoiceService', () => {
           userId,
           deletedAt: null,
           type: 'EXPENSE',
-        }),
+        },
       }),
     );
 
-    const projection = result as {
-      isProjection?: boolean;
-      referenceMonth: number;
-      referenceYear: number;
-      transactions: Array<{ id: string }>;
-      totalAmount: number;
-    };
-
-    expect(projection.isProjection).toBe(true);
-    expect(projection.referenceMonth).toBe(6);
-    expect(projection.referenceYear).toBe(2026);
-    expect(projection.transactions).toHaveLength(1);
-    expect(projection.transactions[0].id).toBe('tx-inside');
-    expect(projection.totalAmount).toBe(25);
+    expect(result.isProjection).toBe(true);
+    expect(result.referenceMonth).toBe(6);
+    expect(result.referenceYear).toBe(2026);
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].id).toBe('tx-inside');
+    expect(result.totalAmount).toBe(25);
   });
 });

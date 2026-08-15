@@ -5,6 +5,10 @@ import { Injectable, NestMiddleware, ForbiddenException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as crypto from 'crypto';
 
+type RequestWithCookies = Omit<Request, 'cookies'> & {
+  cookies?: Record<string, string | undefined>;
+};
+
 /**
  * CSRF Protection via Double-Submit Cookie pattern.
  *
@@ -40,7 +44,7 @@ export class CsrfMiddleware implements NestMiddleware {
 
   private readonly safeMethods = ['GET', 'HEAD', 'OPTIONS'];
 
-  use(req: Request, res: Response, next: NextFunction) {
+  use(req: RequestWithCookies, res: Response, next: NextFunction) {
     const isProduction = process.env.NODE_ENV === 'production';
 
     // Se o cookie csrf-token nao existe, gerar um novo.
@@ -83,7 +87,7 @@ export class CsrfMiddleware implements NestMiddleware {
 
     // Web/Cookie auth — validar double-submit
     const cookieToken = req.cookies?.['csrf-token'];
-    const headerToken = req.headers['x-csrf-token'] as string | undefined;
+    const headerToken = req.header('x-csrf-token');
 
     if (!cookieToken || !headerToken) {
       throw new ForbiddenException(

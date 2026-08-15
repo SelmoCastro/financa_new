@@ -4,15 +4,17 @@
 import { IsString, MaxLength, IsIn } from 'class-validator';
 import { Transform } from 'class-transformer';
 
+function normalizePlatform(value: unknown): unknown {
+  return typeof value === 'string' ? value.toLowerCase() : value;
+}
+
 export class CreateFeedbackDto {
   @IsString()
   @MaxLength(2000)
   content: string;
 
   @IsString()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.toLowerCase() : value,
-  )
+  @Transform(({ value }) => normalizePlatform(value))
   @IsIn(['web', 'mobile'])
   platform: string;
 }

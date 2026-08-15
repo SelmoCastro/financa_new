@@ -11,6 +11,7 @@ import { CreateCreditCardDto } from './dto/create-credit-card.dto';
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto';
 import { CreateInstallmentDto } from './dto/create-installment.dto';
 import { UpdateInstallmentDto } from './dto/update-installment.dto';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { EncryptionService } from '../common/services/encryption.service';
@@ -128,13 +129,18 @@ export class CreditCardsService {
     }
     // Extract limit if provided and encrypt it
     const { limit, version, ...rest } = updateCreditCardDto;
-    const data: Record<string, unknown> = { ...rest };
+    const data: Prisma.CreditCardUpdateManyMutationInput = { ...rest };
     if (limit !== undefined) {
       data.limit = encryptAmount(limit, this.encryption);
     }
     const result = await this.prisma.creditCard.updateMany({
-      where: { id, userId, deletedAt: null, ...(version !== undefined ? { version } : {}) },
-      data: { ...data, version: { increment: 1 } } as any,
+      where: {
+        id,
+        userId,
+        deletedAt: null,
+        ...(version !== undefined ? { version } : {}),
+      },
+      data: { ...data, version: { increment: 1 } },
     });
     if (result.count === 0)
       throw version !== undefined
@@ -327,13 +333,15 @@ export class CreditCardsService {
     await this.validateInstallmentFkOwnership(dto, userId);
     // Extract financial fields and encrypt them
     const { totalAmount, ...rest } = dto;
-    const data: Record<string, unknown> = { ...rest };
+    const data: Prisma.CreditCardInstallmentUpdateManyMutationInput = {
+      ...rest,
+    };
     if (totalAmount !== undefined) {
       data.totalAmount = encryptAmount(totalAmount, this.encryption);
     }
     const result = await this.prisma.creditCardInstallment.updateMany({
       where: { id, userId },
-      data: data as any,
+      data,
     });
     if (result.count === 0)
       throw new NotFoundException('Parcela não encontrada');
@@ -352,37 +360,41 @@ export class CreditCardsService {
       inst.creditCardId,
     );
 
-    const deletedTransactions = await this.prisma.transaction.deleteMany({
+    const ambiguousLegacyTransactions = await this.prisma.transaction.count({
       where: {
         userId,
-        installmentId: inst.id,
-        invoiceId: null, // Apenas transações não faturadas
+        creditCardId: inst.creditCardId,
+        description: { startsWith: inst.description },
+        installmentCount: inst.installmentCount,
+        installmentId: null,
+        invoiceId: null,
+        deletedAt: null,
       },
     });
-
-    if (deletedTransactions.count === 0) {
-      const ambiguousLegacyTransactions = await this.prisma.transaction.count({
-        where: {
-          userId,
-          creditCardId: inst.creditCardId,
-          description: { startsWith: inst.description },
-          installmentCount: inst.installmentCount,
-          installmentId: null,
-          invoiceId: null,
-        },
-      });
-      if (ambiguousLegacyTransactions > 0) {
-        throw new ConflictException(
-          'Este parcelamento legado possui transações sem vínculo seguro e não pode ser excluído automaticamente.',
-        );
-      }
+    if (ambiguousLegacyTransactions > 0) {
+      throw new ConflictException(
+        'Este parcelamento legado possui transações sem vínculo seguro e não pode ser excluído automaticamente.',
+      );
     }
 
-    const result = await this.prisma.creditCardInstallment.deleteMany({
-      where: { id, userId },
+    const result = await this.prisma.$transaction(async (tx) => {
+      await tx.transaction.updateMany({
+        where: {
+          userId,
+          installmentId: inst.id,
+          invoiceId: null,
+          deletedAt: null,
+        },
+        data: { deletedAt: new Date() },
+      });
+
+      return tx.creditCardInstallment.deleteMany({
+        where: { id, userId },
+      });
     });
-    if (result.count === 0)
+    if (result.count === 0) {
       throw new NotFoundException('Parcela não encontrada');
+    }
     return { deleted: true };
   }
 

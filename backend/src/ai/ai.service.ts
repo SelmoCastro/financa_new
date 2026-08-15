@@ -696,7 +696,7 @@ export class AiService {
     rawData: unknown,
   ): UnknownObject | readonly unknown[] {
     if (Array.isArray(rawData)) {
-      return rawData;
+      return rawData as readonly unknown[];
     }
 
     if (!this.isUnknownObject(rawData)) {
@@ -705,7 +705,7 @@ export class AiService {
 
     const transactions = rawData.transactions;
     if (Array.isArray(transactions)) {
-      return transactions;
+      return transactions as readonly unknown[];
     }
     if (this.isUnknownObject(transactions)) {
       return transactions;
@@ -713,7 +713,7 @@ export class AiService {
 
     const classifications = rawData.classifications;
     if (Array.isArray(classifications)) {
-      return classifications;
+      return classifications as readonly unknown[];
     }
     if (this.isUnknownObject(classifications)) {
       return classifications;
@@ -773,7 +773,7 @@ export class AiService {
 
   private extractReceiptTransactions(rawData: unknown): readonly unknown[] {
     if (Array.isArray(rawData)) {
-      return rawData;
+      return rawData as readonly unknown[];
     }
 
     if (!this.isUnknownObject(rawData)) {

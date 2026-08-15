@@ -7,9 +7,11 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
+import {
+  CreateTransactionDto,
+  TransactionType,
+} from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { TransferTransactionDto } from './dto/transfer-transaction.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { Prisma } from '@prisma/client';
@@ -45,7 +47,7 @@ export class TransactionsService {
     }
 
     // TRANSFER type must go through the dedicated /transfer endpoint
-    if (createTransactionDto.type === 'TRANSFER') {
+    if (createTransactionDto.type === TransactionType.TRANSFER) {
       throw new BadRequestException(
         'Use o endpoint de transferência para criar transferências',
       );
@@ -84,7 +86,7 @@ export class TransactionsService {
 
     return this.prisma.$transaction(async (tx) => {
       // CRITICAL: Balance check + row lock before EXPENSE to prevent overdraft
-      if (type === 'EXPENSE' && accountId) {
+      if (type === TransactionType.EXPENSE && accountId) {
         const rows = await tx.$queryRaw<
           AccountRow[]
         >`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${accountId} AND "userId" = ${userId} FOR UPDATE`;
@@ -110,7 +112,11 @@ export class TransactionsService {
 
       if (accountId) {
         const adjustment =
-          type === 'INCOME' ? amount : type === 'EXPENSE' ? -amount : 0;
+          type === TransactionType.INCOME
+            ? amount
+            : type === TransactionType.EXPENSE
+              ? -amount
+              : 0;
         if (adjustment !== 0) {
           await atomicBalanceUpdate(
             tx,
@@ -364,6 +370,8 @@ export class TransactionsService {
 
       if (!oldTx) return null;
 
+      const oldTxType = oldTx.type as TransactionType;
+
       // VULN-05: Lock the old account row with userId scoping
       if (oldTx.accountId) {
         await tx.$queryRaw<
@@ -375,9 +383,9 @@ export class TransactionsService {
       if (oldTx.accountId) {
         const oldAmount = Number(oldTx.amount);
         const revertAdj =
-          oldTx.type === 'INCOME'
+          oldTxType === TransactionType.INCOME
             ? -oldAmount
-            : oldTx.type === 'EXPENSE'
+            : oldTxType === TransactionType.EXPENSE
               ? oldAmount
               : 0;
         if (revertAdj !== 0) {
@@ -396,7 +404,7 @@ export class TransactionsService {
         updateTransactionDto.amount !== undefined
           ? Number(updateTransactionDto.amount)
           : Number(oldTx.amount);
-      const newType = updateTransactionDto.type || oldTx.type;
+      const newType = updateTransactionDto.type ?? oldTxType;
 
       let newAccountId = oldTx.accountId;
       if (updateTransactionDto.accountId !== undefined) {
@@ -411,7 +419,7 @@ export class TransactionsService {
       }
 
       // VULN-03: Overdraft check
-      if (newType === 'EXPENSE' && newAccountId) {
+      if (newType === TransactionType.EXPENSE && newAccountId) {
         const rows = await tx.$queryRaw<
           AccountRow[]
         >`SELECT id, "userId", balance, "deletedAt" FROM "Account" WHERE id = ${newAccountId} AND "userId" = ${userId} FOR UPDATE`;
@@ -422,7 +430,11 @@ export class TransactionsService {
         }
       }
 
-      const { amount: updateAmount, version, ...updateRest } = updateTransactionDto;
+      const {
+        amount: updateAmount,
+        version,
+        ...updateRest
+      } = updateTransactionDto;
       const updated = await tx.transaction.updateMany({
         where: { id, userId, ...(version !== undefined ? { version } : {}) },
         data: {
@@ -445,9 +457,9 @@ export class TransactionsService {
       // 3. Apply new balance if there's an accountId
       if (newAccountId) {
         const applyAdj =
-          newType === 'INCOME'
+          newType === TransactionType.INCOME
             ? newAmount
-            : newType === 'EXPENSE'
+            : newType === TransactionType.EXPENSE
               ? -newAmount
               : 0;
         if (applyAdj !== 0) {
@@ -483,6 +495,8 @@ export class TransactionsService {
       });
 
       if (!oldTx) return { count: 0 };
+
+      const oldTxType = oldTx.type as TransactionType;
 
       // Prevent double-delete - use conditional soft delete
       const deleteResult = await tx.transaction.updateMany({
@@ -528,10 +542,11 @@ export class TransactionsService {
             });
             if (sibTx?.accountId) {
               const sibAmount = Number(sibTx.amount);
+              const sibTxType = sibTx.type as TransactionType;
               const revertAdj =
-                sibTx.type === 'INCOME'
+                sibTxType === TransactionType.INCOME
                   ? -sibAmount
-                  : sibTx.type === 'EXPENSE'
+                  : sibTxType === TransactionType.EXPENSE
                     ? sibAmount
                     : 0;
               if (revertAdj !== 0) {
@@ -551,9 +566,9 @@ export class TransactionsService {
       if (oldTx.accountId) {
         const oldAmount = Number(oldTx.amount);
         const revertAdj =
-          oldTx.type === 'INCOME'
+          oldTxType === TransactionType.INCOME
             ? -oldAmount
-            : oldTx.type === 'EXPENSE'
+            : oldTxType === TransactionType.EXPENSE
               ? oldAmount
               : 0;
         if (revertAdj !== 0) {

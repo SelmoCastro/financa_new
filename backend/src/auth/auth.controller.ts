@@ -39,6 +39,10 @@ import { AdminGuard } from '../common/guards/admin.guard';
 import { RefreshTokenService } from './refresh-token.service';
 import { RequestWithUser } from '../common/types/request-with-user';
 
+type RequestWithRefreshCookie = ExpressRequest & {
+  cookies?: { refresh_token?: string };
+};
+
 @Controller({
   path: 'auth',
   version: '1',
@@ -162,7 +166,7 @@ export class AuthController {
   @Post('refresh')
   async refresh(
     @Body() body: RefreshDto,
-    @Req() request: ExpressRequest,
+    @Req() request: RequestWithRefreshCookie,
     @Res({ passthrough: true }) res: Response,
   ) {
     let refreshToken = request.cookies?.refresh_token;
@@ -214,10 +218,11 @@ export class AuthController {
         access_token: accessToken,
         ...(isMobile && { refreshToken: result.token }),
       };
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : null;
       if (
-        err.message === 'REFRESH_TOKEN_REUSE' ||
-        err.message === 'REFRESH_TOKEN_EXPIRED'
+        message === 'REFRESH_TOKEN_REUSE' ||
+        message === 'REFRESH_TOKEN_EXPIRED'
       ) {
         const isMobile =
           request.headers['x-platform'] === 'mobile' ||

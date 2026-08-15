@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.13.2",
+    "axios": "^1.19.0",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.563.0",
@@ -17,7 +17,7 @@
     "react-dom": "^19.2.3",
     "react-is": "^19.2.6",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.13.0",
+    "react-router-dom": "^7.18.2",
     "recharts": "^3.7.0"
   },
   "devDependencies": {

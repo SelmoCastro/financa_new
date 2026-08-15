@@ -106,7 +106,7 @@ async function bootstrap() {
         '⚠️  ENCRYPTION_KEY não definida — criptografia de campos sensíveis desabilitada',
       );
       console.warn(
-        '   Para ativar, gere uma chave: node -e "console.log(require(\"crypto\").randomBytes(32).toString(\"hex\"))"\n',
+        `   Para ativar, gere uma chave: node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))'\n`,
       );
     } else if (process.env.ENCRYPTION_KEY.length !== 64) {
       console.error(
@@ -121,7 +121,10 @@ async function bootstrap() {
     }
 
     const app = await NestFactory.create(AppModule);
-    app.getHttpAdapter().getInstance().set('trust proxy', 1);
+    const httpInstance = app.getHttpAdapter().getInstance() as {
+      set: (name: string, value: unknown) => void;
+    };
+    httpInstance.set('trust proxy', 1);
     if (!isProduction)
       console.log('NestFactory criado com sucesso. Configurando o App...');
 
@@ -149,4 +152,4 @@ async function bootstrap() {
     process.exit(1);
   }
 }
-bootstrap();
+void bootstrap();

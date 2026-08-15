@@ -17,17 +17,48 @@ type TransactionRow = {
   date: Date;
 };
 
+type TransactionWhere = {
+  fitId?: { in?: string[] };
+  userId?: string;
+  deletedAt?: null;
+};
+
+type AccountWhere = {
+  id?: { in?: string[] };
+};
+
+type TxLike = {
+  $queryRaw: jest.Mock;
+  transaction: {
+    findMany: jest.Mock;
+    createMany: jest.Mock;
+  };
+  account: {
+    findMany: jest.Mock;
+    update: jest.Mock;
+  };
+  category: {
+    findMany: jest.Mock;
+  };
+  creditCard: {
+    findMany: jest.Mock;
+  };
+  importedFitId: {
+    upsert: jest.Mock;
+  };
+};
+
 function createServiceScenario() {
   const persistedTransactions: TransactionRow[] = [];
   const accountState = {
     balance: 1000,
   };
-  let lastTx: any;
+  let lastTx: TxLike | undefined;
 
   const prismaMock = {
-    $transaction: jest.fn(async (callback: (tx: any) => Promise<any>) => {
-      const tx = {
-        $queryRaw: jest.fn(async () => [
+    $transaction: jest.fn((callback: (tx: TxLike) => Promise<unknown>) => {
+      const tx: TxLike = {
+        $queryRaw: jest.fn(() => [
           {
             id: 'account-1',
             userId: 'user-1',
@@ -35,20 +66,21 @@ function createServiceScenario() {
           },
         ]),
         transaction: {
-          findMany: jest.fn(async ({ where }: any) => {
-            const fitIds: string[] | undefined = where?.fitId?.in;
+          findMany: jest.fn(({ where }: { where?: TransactionWhere }) => {
+            const fitIds = where?.fitId?.in;
             if (!fitIds || fitIds.length === 0) return [];
             return persistedTransactions
               .filter(
                 (row) =>
-                  row.userId === where.userId &&
+                  (where.userId === undefined || row.userId === where.userId) &&
                   row.deletedAt === null &&
-                  row.fitId &&
+                  row.fitId !== null &&
+                  row.fitId !== undefined &&
                   fitIds.includes(row.fitId),
               )
               .map((row) => ({ fitId: row.fitId }));
           }),
-          createMany: jest.fn(async ({ data }: { data: TransactionRow[] }) => {
+          createMany: jest.fn(({ data }: { data: TransactionRow[] }) => {
             let count = 0;
             for (const row of data) {
               const duplicate =
@@ -77,27 +109,29 @@ function createServiceScenario() {
           }),
         },
         account: {
-          findMany: jest.fn(async ({ where }: any) => {
-            const ids: string[] = where?.id?.in || [];
+          findMany: jest.fn(({ where }: { where?: AccountWhere }) => {
+            const ids = where?.id?.in ?? [];
             return ids.includes('account-1')
               ? [{ id: 'account-1', balance: String(accountState.balance) }]
               : [];
           }),
-          update: jest.fn(async ({ data }: any) => {
-            accountState.balance = Number(data.balance);
-            return { id: 'account-1', balance: data.balance };
-          }),
+          update: jest.fn(
+            ({ data }: { data: { balance: string | number } }) => {
+              accountState.balance = Number(data.balance);
+              return { id: 'account-1', balance: data.balance };
+            },
+          ),
         },
         category: {
-          findMany: jest.fn(async () => []),
+          findMany: jest.fn(() => []),
         },
         creditCard: {
-          findMany: jest.fn(async () => []),
+          findMany: jest.fn(() => []),
         },
         importedFitId: {
-          upsert: jest.fn(async ({ create }: any) => {
-            return create;
-          }),
+          upsert: jest.fn(
+            ({ create }: { create: { fitId: string } }) => create,
+          ),
         },
       };
 
@@ -105,7 +139,7 @@ function createServiceScenario() {
       return callback(tx);
     }),
     category: {
-      findMany: jest.fn(async () => []),
+      findMany: jest.fn(() => []),
     },
     transaction: {
       findMany: jest.fn(),
@@ -114,8 +148,8 @@ function createServiceScenario() {
       findMany: jest.fn(),
     },
     account: {
-      findMany: jest.fn(async ({ where }: any) => {
-        const ids: string[] = where?.id?.in || [];
+      findMany: jest.fn(({ where }: { where?: AccountWhere }) => {
+        const ids = where?.id?.in ?? [];
         return ids.includes('account-1') ? [{ id: 'account-1' }] : [];
       }),
     },
@@ -179,9 +213,11 @@ describe('TransactionsImportService.confirmImport', () => {
 
     expect(result).toEqual({ importedCount: 2 });
     expect(accountState.balance).toBe(920);
-    expect(lastTx()).toBeDefined();
-    expect(lastTx().transaction.createMany).toHaveBeenCalledTimes(1);
-    expect(lastTx().importedFitId.upsert).toHaveBeenCalledTimes(1);
+    const tx = lastTx();
+    expect(tx).toBeDefined();
+    if (!tx) throw new Error('missing transaction context');
+    expect(tx.transaction.createMany).toHaveBeenCalledTimes(1);
+    expect(tx.importedFitId.upsert).toHaveBeenCalledTimes(1);
   });
 
   it('não reimporta um fitId já persistido em uma nova confirmação', async () => {

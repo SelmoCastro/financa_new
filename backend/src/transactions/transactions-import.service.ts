@@ -389,7 +389,8 @@ export class TransactionsImportService {
           amountValue: Number(t.amount),
         }));
 
-      const toInsert = normalizedTransactions.map(({ source: t, amountValue }) => ({
+      const toInsert = normalizedTransactions.map(
+        ({ source: t, amountValue }) => ({
           description: t.description,
           amount: encryptAmount(amountValue, this.encryption),
           date: new Date(t.date),
@@ -402,7 +403,8 @@ export class TransactionsImportService {
           accountId: t.accountId,
           creditCardId: t.creditCardId,
           userId,
-        }));
+        }),
+      );
 
       if (toInsert.length === 0) {
         await this.saveImportHistory(userId, [], rejectedFitIds);
@@ -419,7 +421,11 @@ export class TransactionsImportService {
       for (const { source: t, amountValue } of normalizedTransactions) {
         if (t.accountId) {
           const adj =
-            t.type === 'INCOME' ? amountValue : t.type === 'EXPENSE' ? -amountValue : 0;
+            t.type === 'INCOME'
+              ? amountValue
+              : t.type === 'EXPENSE'
+                ? -amountValue
+                : 0;
           accountDeltas[t.accountId] = (accountDeltas[t.accountId] || 0) + adj;
         }
       }

@@ -1,7 +1,15 @@
 /**
  * DTO usado para validar e tipar o payload de add reseller credits dentro do fluxo de revendedores e créditos.
  */
-import { IsInt, IsNotEmpty, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class AddResellerCreditsDto {
   @IsInt()
