@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Anchor, Check, Info, X } from 'lucide-react';
 import { Transaction, TransactionType } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
+import { parseFlexibleCurrency } from '../utils/currency';
 
 interface FixedItemData {
     name: string;
@@ -41,7 +42,7 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
         const originalTx = transactions.find(t => t.id === item.lastTransactionId);
         if (!originalTx) return;
 
-        const newAmount = parseFloat(editForm.amount);
+        const newAmount = parseFlexibleCurrency(editForm.amount);
         const newDay = parseInt(editForm.day);
 
         if (isNaN(newAmount) || newAmount <= 0) {
@@ -129,7 +130,8 @@ export const FixedItems: React.FC<FixedItemsProps> = ({ items, onUpdateTransacti
                                                 <div className="md:col-span-4">
                                                     <label className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 ml-1">Valor</label>
                                                     <input
-                                                        type="number"
+                                                        type="text"
+                                                        inputMode="decimal"
                                                         value={editForm.amount}
                                                         onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
                                                         className="w-full px-3 py-2 text-right font-bold text-slate-700 dark:text-white bg-white dark:bg-slate-900 border border-cyan-200 dark:border-cyan-500/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
