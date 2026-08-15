@@ -23,12 +23,14 @@ interface Goal {
 
 interface GoalsViewProps {
     isPrivacyEnabled: boolean;
+    isLoading?: boolean;
 }
 
-export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
+export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled, isLoading: isInitialLoading = false }) => {
     const [goals, setGoals] = useState<Goal[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [loadError, setLoadError] = useState(false);
     const { addToast } = useToast();
     const { formatCurrency, currencySymbol, locale } = useCurrency();
     const { t } = useLanguage();
@@ -50,11 +52,14 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
 
     const fetchGoals = async () => {
         setIsLoading(true);
+        setLoadError(false);
         try {
             const response = await api.get('/goals');
-            setGoals(response.data);
+            setGoals(Array.isArray(response.data) ? response.data : []);
         } catch (error: any) {
             console.error('Error fetching goals:', error);
+            setGoals([]);
+            setLoadError(true);
             addToast(error.response?.status === 404 ? t('goals.notFound') : t('goals.saveError'), 'error');
         } finally {
             setIsLoading(false);
@@ -216,11 +221,18 @@ export const GoalsView: React.FC<GoalsViewProps> = ({ isPrivacyEnabled }) => {
             </div>
 
             {/* Grid */}
-            {isLoading ? (
+            {isLoading || isInitialLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {[1, 2, 3].map(i => (
                         <div key={i} className="h-72 bg-slate-100 dark:bg-slate-900 rounded-[2.5rem] animate-pulse"></div>
                     ))}
+                </div>
+            ) : loadError ? (
+                <div className="text-center py-24 glass-card rounded-[3rem] border-dashed border-rose-200 dark:border-rose-500/20">
+                    <div className="w-24 h-24 bg-rose-50 dark:bg-rose-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
+                        <Target className="w-12 h-12 text-rose-300 dark:text-rose-400" />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-800 dark:text-white mb-3 tracking-tight">{t('goals.loadError')}</h3>
                 </div>
             ) : goals.length === 0 ? (
                 <div className="text-center py-24 glass-card rounded-[3rem] border-dashed border-slate-200 dark:border-slate-800">

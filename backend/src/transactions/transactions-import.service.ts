@@ -374,11 +374,24 @@ export class TransactionsImportService {
         existingFitIds = new Set(existing.map((e) => e.fitId!));
       }
 
-      const toInsert = transactionsData
+      const seenFitIds = new Set<string>();
+      const candidates = transactionsData.filter((t) => {
+        if (!t.fitId) return true;
+        if (seenFitIds.has(t.fitId)) return false;
+        seenFitIds.add(t.fitId);
+        return true;
+      });
+
+      const normalizedTransactions = candidates
         .filter((t) => !(t.fitId && existingFitIds.has(t.fitId)))
         .map((t) => ({
+          source: t,
+          amountValue: Number(t.amount),
+        }));
+
+      const toInsert = normalizedTransactions.map(({ source: t, amountValue }) => ({
           description: t.description,
-          amount: encryptAmount(Number(t.amount), this.encryption),
+          amount: encryptAmount(amountValue, this.encryption),
           date: new Date(t.date),
           type: t.type,
           isFixed: t.isFixed || false,
@@ -403,11 +416,10 @@ export class TransactionsImportService {
 
       // Atualizar saldo das contas
       const accountDeltas: Record<string, number> = {};
-      for (const t of toInsert) {
+      for (const { source: t, amountValue } of normalizedTransactions) {
         if (t.accountId) {
-          const amt = Number(t.amount);
           const adj =
-            t.type === 'INCOME' ? amt : t.type === 'EXPENSE' ? -amt : 0;
+            t.type === 'INCOME' ? amountValue : t.type === 'EXPENSE' ? -amountValue : 0;
           accountDeltas[t.accountId] = (accountDeltas[t.accountId] || 0) + adj;
         }
       }

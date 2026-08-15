@@ -65,7 +65,7 @@ if [[ "$APK_ONLY" == false ]]; then
 
   # 1. Push to GitHub (triggers VPS pull)
   log "Pushing to GitHub..."
-  git push origin master --tags 2>&1 || true
+  git push origin master --tags
 
   # 2. Pull on VPS
   log "Pulling on VPS..."
@@ -100,18 +100,20 @@ if [[ "$APK_ONLY" == false ]]; then
   # 3. Install deps & build
   if [[ "$SKIP_BUILD" == false ]]; then
     log "Installing dependencies on VPS..."
-    ssh "$VPS" "cd $VPS_BACKEND && npm install --production=false 2>&1 | tail -3"
-
-    log "Building on VPS..."
-    ssh "$VPS" "cd $VPS_BACKEND && npm run build 2>&1 | tail -5"
-
-    # 4. Verify build succeeded
-    BUILD_EXIT=$?
-    if [[ $BUILD_EXIT -ne 0 ]]; then
-      err "Build failed on VPS! Aborting."
-      ssh "$VPS" "cd $VPS_BACKEND && npm run build 2>&1 | tail -20"
+    if ! INSTALL_OUTPUT=$(ssh "$VPS" "cd $VPS_BACKEND && npm install --production=false" 2>&1); then
+      err "Dependency install failed on VPS!"
+      printf '%s\n' "$INSTALL_OUTPUT" | tail -20
       exit 1
     fi
+    printf '%s\n' "$INSTALL_OUTPUT" | tail -3
+
+    log "Building on VPS..."
+    if ! BUILD_OUTPUT=$(ssh "$VPS" "cd $VPS_BACKEND && npm run build" 2>&1); then
+      err "Build failed on VPS! Aborting."
+      printf '%s\n' "$BUILD_OUTPUT" | tail -20
+      exit 1
+    fi
+    printf '%s\n' "$BUILD_OUTPUT" | tail -5
   fi
 
   # 5. Restart PM2 with correct entry point (--update-env recarrega variáveis do .env)
@@ -259,7 +261,7 @@ echo "========================================="
 if [[ "$APK_ONLY" == false ]]; then
   echo "  Backend: https://finanzaai.tech/api/v1"
   echo "  Frontend: https://finanzaai.tech"
-  echo "  Version: https://finanzaai.tech/api/v1/app/version"
+  echo "  Version: https://finanzaai.tech/v1/app/version"
 fi
 if [[ "$BACKEND_ONLY" == false ]]; then
   echo "  APK:     https://finanzaai.tech/downloads/Financa_new_v${VERSION}.apk"

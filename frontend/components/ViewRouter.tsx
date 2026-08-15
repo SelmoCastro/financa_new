@@ -49,9 +49,9 @@ export const ViewRouter: React.FC<ViewRouterProps> = ({
     case 'accounts':
       return <AccountsView isPrivacyEnabled={isPrivacyEnabled} userPlan={userPlan} />;
     case 'budgets':
-      return <BudgetsView isPrivacyEnabled={isPrivacyEnabled} userPlan={userPlan} />;
+      return <BudgetsView isPrivacyEnabled={isPrivacyEnabled} userPlan={userPlan} isLoading={isLoading} />;
     case 'goals':
-      return <GoalsView isPrivacyEnabled={isPrivacyEnabled} />;
+      return <GoalsView isPrivacyEnabled={isPrivacyEnabled} isLoading={isLoading} />;
     case 'timeline':
       return <TimelineView transactions={transactions} isPrivacyEnabled={isPrivacyEnabled} />;
     case 'fixed':
