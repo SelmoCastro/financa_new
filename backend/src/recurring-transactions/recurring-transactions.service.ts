@@ -70,7 +70,74 @@ export class RecurringTransactionsService {
     });
   }
 
+  private async migrateLegacyFixedTransactions(userId: string) {
+    const [recorrentes, legacyTransactions] = await Promise.all([
+      this.prisma.recurringTransaction.findMany({
+        where: { userId },
+      }),
+      this.prisma.transaction.findMany({
+        where: {
+          userId,
+          isFixed: true,
+          type: { in: ['INCOME', 'EXPENSE'] },
+        },
+        select: {
+          description: true,
+          amount: true,
+          type: true,
+          categoryId: true,
+          accountId: true,
+          creditCardId: true,
+          date: true,
+        },
+        orderBy: { date: 'asc' },
+      }),
+    ]);
+
+    const keyFor = (item: {
+      description: string;
+      amount: string;
+      type: string;
+      categoryId: string | null;
+      accountId: string | null;
+      creditCardId: string | null;
+    }) =>
+      JSON.stringify([
+        item.description.trim().toLowerCase(),
+        decryptAmount(item.amount, this.encryption),
+        item.type,
+        item.categoryId,
+        item.accountId,
+        item.creditCardId,
+      ]);
+
+    const existingKeys = new Set(recorrentes.map(keyFor));
+    const pendingKeys = new Set<string>();
+
+    for (const transaction of legacyTransactions) {
+      const key = keyFor(transaction);
+      if (existingKeys.has(key) || pendingKeys.has(key)) continue;
+
+      const amount = decryptAmount(transaction.amount, this.encryption);
+      await this.prisma.recurringTransaction.create({
+        data: {
+          description: transaction.description,
+          amount: encryptAmount(amount, this.encryption),
+          type: transaction.type,
+          categoryId: transaction.categoryId,
+          accountId: transaction.accountId,
+          creditCardId: transaction.creditCardId,
+          dueDay: transaction.date.getUTCDate(),
+          startMonth: transaction.date.getUTCMonth() + 1,
+          userId,
+        },
+      });
+      pendingKeys.add(key);
+    }
+  }
+
   async findAll(userId: string) {
+    await this.migrateLegacyFixedTransactions(userId);
     return this.prisma.recurringTransaction.findMany({
       where: { userId },
       include: { category: true, account: true, creditCard: true },
