@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.8] (2026-08-15)
+
+Corrige a interpretação de milhares em valores monetários recorrentes.
+
 ## [1.12.7] (2026-08-15)
 
 Corrige exclusão de recorrentes legados e publicação do asset GTM.
