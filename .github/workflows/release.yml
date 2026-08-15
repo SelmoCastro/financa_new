@@ -49,7 +49,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p ${{ env.VPS_SSH_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p ${{ env.VPS_SSH_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Prepare backend artifact
         run: |
@@ -210,7 +210,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p ${{ env.VPS_SSH_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p ${{ env.VPS_SSH_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
           VERSION="${{ github.ref_name }}"
           VER_NUM="${VERSION#v}"
