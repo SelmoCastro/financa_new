@@ -217,22 +217,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                             {isLoading ? (
                                 <Skeleton className="w-full h-full rounded-2xl" />
                             ) : monthlyChartData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={200}>
-                                    <BarChart data={monthlyChartData} barSize={20}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:opacity-5" />
-                                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} dx={-5} />
-                                        <Tooltip
-                                            cursor={{ fill: '#f8fafc', opacity: 0.1 }}
-                                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', backgroundColor: 'rgba(255,255,255,0.95)' }}
-                                            itemStyle={{ fontWeight: 800, fontSize: '12px' }}
-                                            formatter={(value: number) => isPrivacyEnabled ? '••••' : formatCurrency(value)}
-                                        />
-                                        <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }} />
-                                        <Bar name={t('dashboard.revenues')} dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                                        <Bar name={t('dashboard.expenses')} dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+                                <div className="relative h-full w-full">
+                                    <div className={isPrivacyEnabled ? 'opacity-20 blur-md select-none' : ''}>
+                                        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={200}>
+                                            <BarChart data={monthlyChartData} barSize={20}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:opacity-5" />
+                                                <XAxis hide={isPrivacyEnabled} dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} dy={10} />
+                                                <YAxis hide={isPrivacyEnabled} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} dx={-5} />
+                                                {!isPrivacyEnabled && (
+                                                    <Tooltip
+                                                        cursor={{ fill: '#f8fafc', opacity: 0.1 }}
+                                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', backgroundColor: 'rgba(255,255,255,0.95)' }}
+                                                        itemStyle={{ fontWeight: 800, fontSize: '12px' }}
+                                                        formatter={(value: number) => formatCurrency(value)}
+                                                    />
+                                                )}
+                                                <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={isPrivacyEnabled ? { display: 'none' } : { fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }} />
+                                                <Bar name={t('dashboard.revenues')} dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                                                <Bar name={t('dashboard.expenses')} dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    {isPrivacyEnabled && (
+                                        <div className="absolute inset-0 rounded-2xl bg-slate-50/75 dark:bg-slate-950/55 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-center">
+                                            <div className="space-y-2 w-40">
+                                                <Skeleton className="h-3 w-32 mx-auto rounded-full" />
+                                                <Skeleton className="h-24 w-full rounded-2xl" />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-6 bg-slate-50/50 dark:bg-slate-900/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                                     <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center mb-4">
@@ -436,21 +450,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                         <div className="h-64 relative mx-auto">
                             {categorySummary.length > 0 ? (
                             <>
-                            <ResponsiveContainer width="100%" height="100%" minWidth={150} minHeight={150}>
-                                <PieChart>
-                                    <Pie data={categorySummary} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value" isAnimationActive={false}>
-                                        {categorySummary.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" />)}
-                                    </Pie>
-                                    <Tooltip 
-                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', backgroundColor: 'rgba(255,255,255,0.95)' }}
-                                        itemStyle={{ fontWeight: 800, fontSize: '12px' }}
-                                        formatter={(value: number) => isPrivacyEnabled ? '••••' : formatCurrency(value)} 
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t('dashboard.expenses')}</span>
-                                <span className="text-xl font-black text-slate-800 dark:text-white">100%</span>
+                            <div className="relative h-full w-full">
+                                <div className={isPrivacyEnabled ? 'opacity-20 blur-md select-none' : ''}>
+                                    <ResponsiveContainer width="100%" height="100%" minWidth={150} minHeight={150}>
+                                        <PieChart>
+                                            <Pie data={categorySummary} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value" isAnimationActive={false}>
+                                                {categorySummary.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="transparent" />)}
+                                            </Pie>
+                                            {!isPrivacyEnabled && (
+                                                <Tooltip
+                                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', backgroundColor: 'rgba(255,255,255,0.95)' }}
+                                                    itemStyle={{ fontWeight: 800, fontSize: '12px' }}
+                                                    formatter={(value: number) => formatCurrency(value)}
+                                                />
+                                            )}
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t('dashboard.expenses')}</span>
+                                        <span className="text-xl font-black text-slate-800 dark:text-white">{isPrivacyEnabled ? '•••' : '100%'}</span>
+                                    </div>
+                                </div>
+                                {isPrivacyEnabled && (
+                                    <div className="absolute inset-0 rounded-2xl bg-slate-50/75 dark:bg-slate-950/55 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60" />
+                                )}
                             </div>
                             </>
                             ) : (
@@ -461,7 +484,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ transactions, isPr
                         </div>
                         <div className="mt-8 space-y-3">
                             {categorySummary.slice(0, 5).map((item, idx) => (
-                                <div key={item.name} className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-800">
+                                <div key={item.name} className={`flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-800 ${isPrivacyEnabled ? 'blur-sm select-none' : ''}`}>
                                     <div className="flex items-center gap-3">
                                         <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
                                         <span className="text-sm font-bold text-slate-600 dark:text-slate-400 truncate max-w-[120px]">{item.name}</span>

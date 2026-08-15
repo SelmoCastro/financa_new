@@ -26,9 +26,10 @@ interface Budget {
 interface BudgetsViewProps {
     isPrivacyEnabled: boolean;
     userPlan: string;
+    isLoading?: boolean;
 }
 
-export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, userPlan }) => {
+export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, userPlan, isLoading: isInitialLoading = false }) => {
     const { categories } = useData();
     const { selectedDate } = useMonth();
     const { addToast } = useToast();
@@ -37,6 +38,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
     const { t } = useLanguage();
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [form, setForm] = useState({ categoryId: '', amount: '' });
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
@@ -47,6 +49,8 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
     };
     
     const fetchBudgets = async () => {
+        setIsLoading(true);
+        setLoadError(false);
         try {
             const response = await api.get('/budgets', {
                 params: {
@@ -54,9 +58,11 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                     month: selectedDate.getMonth()
                 }
             });
-            setBudgets(response.data);
+            setBudgets(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Error fetching budgets:', error);
+            setBudgets([]);
+            setLoadError(true);
             addToast(t('budgets.loadError'), 'error');
         } finally {
             setIsLoading(false);
@@ -179,8 +185,38 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({ isPrivacyEnabled, user
                 </div>
             )}
 
-            {isLoading ? (
-                <div className="text-center py-12 text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-xs">{t('budgets.loading')}</div>
+            {isLoading || isInitialLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[0, 1].map((item) => (
+                        <div key={item} className="glass-card p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] animate-pulse">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="space-y-3 flex-1 mr-4">
+                                    <div className="h-6 w-40 bg-slate-100 dark:bg-slate-800 rounded-2xl"></div>
+                                    <div className="h-3 w-24 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
+                                </div>
+                                <div className="flex flex-col items-end gap-3">
+                                    <div className="h-10 w-20 bg-slate-100 dark:bg-slate-800 rounded-2xl"></div>
+                                    <div className="text-right space-y-2">
+                                        <div className="h-3 w-14 bg-slate-100 dark:bg-slate-800 rounded-full ml-auto"></div>
+                                        <div className="h-6 w-24 bg-slate-100 dark:bg-slate-800 rounded-full ml-auto"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full" />
+                            <div className="flex justify-between mt-4">
+                                <div className="h-3 w-28 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
+                                <div className="h-3 w-20 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : loadError ? (
+                <div className="text-center py-16 sm:py-20 glass-card rounded-2xl sm:rounded-[2.5rem] border-dashed border-rose-200 dark:border-rose-500/20">
+                    <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-sm">
+                        <X className="w-10 h-10 text-rose-400 dark:text-rose-300" />
+                    </div>
+                    <h3 className="text-slate-900 dark:text-white font-black text-xl mb-2">{t('budgets.loadError')}</h3>
+                </div>
             ) : budgets.length === 0 ? (
                 <div className="text-center py-16 sm:py-20 glass-card rounded-2xl sm:rounded-[2.5rem] border-dashed border-slate-200 dark:border-slate-800">
                     <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-sm">

@@ -207,15 +207,20 @@ export class CreditCardInvoiceService {
       refYear,
     );
 
-    // Busca TODAS as transações de crédito não faturadas (sem filtro de data restrito)
-    // Isso garante que qualquer lançamento no cartão apareça imediatamente,
-    // mesmo que esteja fora do período de fechamento calculado
+    const { startDate, endDate } = this.getTransactionPeriod(
+      refMonth,
+      refYear,
+      card.closingDay,
+    );
+
+    // Busca somente as transações não faturadas do ciclo corrente
     const transactions = await this.prisma.transaction.findMany({
       where: {
         userId,
         creditCardId,
         deletedAt: null,
         invoiceId: null,
+        date: { gte: startDate, lte: endDate },
         type: 'EXPENSE',
       },
       include: { category: true },
