@@ -8,6 +8,7 @@ import { useData } from '../context/DataProvider';
 import { useCurrency } from '../context/CurrencyContext';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
+import { parseFlexibleCurrency } from '../utils/currency';
 import { Skeleton } from '../components/Skeleton';
 import { Plus, Edit3, Trash2, X, ChevronDown, Calendar } from 'lucide-react';
 
@@ -69,14 +70,15 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
   };
 
   const handleSubmit = async () => {
-    if (!form.description || !form.amount) {
+    const amount = parseFlexibleCurrency(form.amount);
+    if (!form.description || !form.amount || !Number.isFinite(amount) || amount <= 0) {
       addToast(t('recurring.saveError'), 'error');
       return;
     }
     try {
       const payload = {
         description: form.description,
-        amount: Number(form.amount),
+        amount,
         type: form.type,
         dueDay: Number(form.dueDay),
         categoryId: form.categoryId || null,
@@ -304,9 +306,8 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1">{t('recurring.amount')}</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     className="w-full p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all font-bold text-sm text-slate-900 dark:text-white"
                     placeholder={t('recurring.amount')}
                     value={form.amount}
