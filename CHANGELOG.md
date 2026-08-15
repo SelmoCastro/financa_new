@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.7] (2026-08-15)
+
+Corrige exclusão de recorrentes legados e publicação do asset GTM.
+
 ## [1.12.5] (2026-08-15)
 
 Corrige a exibição e edição de recorrentes legados para usuários existentes.
