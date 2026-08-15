@@ -9,7 +9,6 @@ export function parseFlexibleCurrency(value: string | number): number {
   const lastDot = normalized.lastIndexOf('.');
 
   if (lastComma >= 0 && lastDot >= 0) {
-    // The last separator is the decimal separator; the other one is thousands.
     const decimalSeparator = lastComma > lastDot ? ',' : '.';
     const thousandsSeparator = decimalSeparator === ',' ? '.' : ',';
     return Number(
@@ -19,7 +18,6 @@ export function parseFlexibleCurrency(value: string | number): number {
 
   if (lastComma >= 0) {
     const fractionLength = normalized.length - lastComma - 1;
-    // A three-digit suffix is conventionally a thousands group: 3,500 = 3500.
     return Number(
       fractionLength === 3
         ? normalized.replaceAll(',', '')
@@ -37,4 +35,13 @@ export function parseFlexibleCurrency(value: string | number): number {
   }
 
   return Number(normalized);
+}
+
+export function formatFlexibleCurrencyInput(value: string, locale: string): string {
+  const amount = parseFlexibleCurrency(value);
+  if (!value.trim() || !Number.isFinite(amount)) return value;
+  return amount.toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }

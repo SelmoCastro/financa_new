@@ -8,7 +8,7 @@ import { useData } from '../context/DataProvider';
 import { useCurrency } from '../context/CurrencyContext';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
-import { parseFlexibleCurrency } from '../utils/currency';
+import { formatFlexibleCurrencyInput, parseFlexibleCurrency } from '../utils/currency';
 import { Skeleton } from '../components/Skeleton';
 import { Plus, Edit3, Trash2, X, ChevronDown, Calendar } from 'lucide-react';
 
@@ -312,6 +312,7 @@ export const RecurringView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPriva
                     placeholder={t('recurring.amount')}
                     value={form.amount}
                     onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                    onBlur={() => setForm({ ...form, amount: formatFlexibleCurrencyInput(form.amount, 'pt-BR') })}
                   />
                 </div>
               </div>

@@ -475,6 +475,10 @@ export default function RecurringScreen() {
                   placeholder="0,00" placeholderTextColor="#94a3b8" keyboardType="numeric"
                   value={amount}
                   onChangeText={setAmount}
+                  onBlur={() => {
+                    const parsed = parseCurrencyToNumber(amount);
+                    if (parsed > 0) setAmount(parsed.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                  }}
                 />
               </View>
               <View style={{ flex: 1 }}>
