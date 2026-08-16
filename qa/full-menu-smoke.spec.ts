@@ -44,7 +44,7 @@ test.describe('Finanza full menu and transaction smoke', () => {
     }
 
     for (const label of menuLabels) {
-      const target = page.getByRole('button', { name: label, exact: true }).first();
+      const target = page.locator('aside').getByRole('button', { name: label, exact: true }).first();
       if (await target.count()) {
         await target.click();
       } else {
@@ -53,26 +53,26 @@ test.describe('Finanza full menu and transaction smoke', () => {
       await page.waitForTimeout(250);
     }
 
-    await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
-    await page.getByRole('main').getByRole('button', { name: 'Novo Lançamento', exact: true }).click();
+    await page.locator('aside').getByRole('button', { name: 'Dashboard', exact: true }).click();
+    await page.getByRole('button', { name: 'Novo Lançamento', exact: true }).first().click();
     await page.locator('input[placeholder^="Ex: Aluguel"]').fill('E2E despesa consistente');
     await page.locator('input[placeholder="0,00"]').fill('12345');
     await page.getByRole('button', { name: /Confirmar Despesa/i }).click();
 
-    await page.getByRole('button', { name: 'Histórico', exact: true }).click();
+    await page.locator('aside').getByRole('button', { name: 'Extrato', exact: true }).click();
     const created = page.getByText('E2E despesa consistente', { exact: true }).first();
     await expect(created).toBeVisible();
     await expect(page.getByText(/R\$\s*123,45/).first()).toBeVisible();
 
-    await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
+    await page.locator('aside').getByRole('button', { name: 'Dashboard', exact: true }).click();
     await expect(page.getByText(/R\$\s*123,45/).first()).toBeVisible();
 
-    await page.getByRole('button', { name: 'Histórico', exact: true }).click();
+    await page.locator('aside').getByRole('button', { name: 'Extrato', exact: true }).click();
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: /Excluir: E2E despesa consistente/i }).click();
     await expect(page.getByText('E2E despesa consistente', { exact: true })).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
+    await page.locator('aside').getByRole('button', { name: 'Dashboard', exact: true }).click();
     await expect(page.getByText('E2E despesa consistente', { exact: true })).toHaveCount(0);
     expect(failedApiResponses, failedApiResponses.join('\n')).toEqual([]);
   });
