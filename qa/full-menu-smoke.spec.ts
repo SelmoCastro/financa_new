@@ -72,7 +72,7 @@ test.describe('Finanza full menu and transaction smoke', () => {
     await page.getByRole('button', { name: /Confirmar Despesa/i }).click();
 
     await page.locator('aside').getByRole('button', { name: 'Extrato', exact: true }).click();
-    const created = page.locator('p:visible').filter({ hasText: /^E2E despesa consistente$/ }).first();
+    const created = page.getByText('E2E despesa consistente', { exact: true }).filter({ visible: true }).first();
     await expect(created).toBeVisible();
     await expect(page.getByText(/R\$\s*123,45/).filter({ visible: true }).first()).toBeVisible();
 
@@ -82,10 +82,10 @@ test.describe('Finanza full menu and transaction smoke', () => {
     await page.locator('aside').getByRole('button', { name: 'Extrato', exact: true }).click();
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: /Excluir: E2E despesa consistente/i }).click();
-    await expect(page.locator('p:visible').filter({ hasText: /^E2E despesa consistente$/ })).toHaveCount(0);
+    await expect(page.getByText('E2E despesa consistente', { exact: true }).filter({ visible: true })).toHaveCount(0);
 
     await page.locator('aside').getByRole('button', { name: 'Dashboard', exact: true }).click();
-    await expect(page.locator('p:visible').filter({ hasText: /^E2E despesa consistente$/ })).toHaveCount(0);
+    await expect(page.getByText('E2E despesa consistente', { exact: true }).filter({ visible: true })).toHaveCount(0);
     expect(failedApiResponses, failedApiResponses.join('\n')).toEqual([]);
   });
 });
