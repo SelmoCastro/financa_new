@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.11] (2026-08-16)
+
+Fix account balance updates for expenses
+
 ## [1.12.10] (2026-08-16)
 
 Corrige saldos e Dashboard após edição ou exclusão de transações criptografadas.
