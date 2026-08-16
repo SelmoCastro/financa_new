@@ -208,7 +208,7 @@ export class TransactionsService {
     const headers = ['Data', 'Descrição', 'Valor', 'Tipo', 'Categoria'];
     const rows = transactions.map((t) => {
       const date = new Date(t.date).toLocaleDateString('pt-BR');
-      const amount = t.amount.toString().replace('.', ',');
+      const amount = String(decryptAmount(t.amount, this.encryption)).replace('.', ',');
       const type = t.type === 'INCOME' ? 'Receita' : 'Despesa';
       const categoryName =
         t.category?.name || t.categoryLegacy || 'Sem categoria';
@@ -252,8 +252,8 @@ export class TransactionsService {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (!byMonth.has(key)) byMonth.set(key, { income: 0, expense: 0 });
       const m = byMonth.get(key)!;
-      if (t.type === 'INCOME') m.income += Number(t.amount);
-      else if (t.type === 'EXPENSE') m.expense += Number(t.amount);
+      if (t.type === 'INCOME') m.income += decryptAmount(t.amount, this.encryption);
+      else if (t.type === 'EXPENSE') m.expense += decryptAmount(t.amount, this.encryption);
     });
 
     const balance = accounts.reduce(
@@ -310,7 +310,7 @@ export class TransactionsService {
       transactions: transactions.slice(0, 200).map((t) => ({
         date: t.date,
         description: t.description,
-        amount: Number(t.amount),
+        amount: decryptAmount(t.amount, this.encryption),
         type: t.type,
         category: t.category?.name || t.categoryLegacy || 'Outros',
         account: t.account?.name || null,
@@ -381,7 +381,7 @@ export class TransactionsService {
 
       // 1. Revert old balance if there was an accountId
       if (oldTx.accountId) {
-        const oldAmount = Number(oldTx.amount);
+        const oldAmount = decryptAmount(oldTx.amount, this.encryption);
         const revertAdj =
           oldTxType === TransactionType.INCOME
             ? -oldAmount
@@ -403,7 +403,7 @@ export class TransactionsService {
       const newAmount =
         updateTransactionDto.amount !== undefined
           ? Number(updateTransactionDto.amount)
-          : Number(oldTx.amount);
+          : decryptAmount(oldTx.amount, this.encryption);
       const newType = updateTransactionDto.type ?? oldTxType;
 
       let newAccountId = oldTx.accountId;
@@ -541,7 +541,7 @@ export class TransactionsService {
               where: { id: sibling.id, userId },
             });
             if (sibTx?.accountId) {
-              const sibAmount = Number(sibTx.amount);
+              const sibAmount = decryptAmount(sibTx.amount, this.encryption);
               const sibTxType = sibTx.type as TransactionType;
               const revertAdj =
                 sibTxType === TransactionType.INCOME
@@ -564,7 +564,7 @@ export class TransactionsService {
       }
 
       if (oldTx.accountId) {
-        const oldAmount = Number(oldTx.amount);
+        const oldAmount = decryptAmount(oldTx.amount, this.encryption);
         const revertAdj =
           oldTxType === TransactionType.INCOME
             ? -oldAmount
