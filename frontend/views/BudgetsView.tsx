@@ -10,6 +10,7 @@ import { useMonth } from "../context/MonthContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { ReadOnlyBadge } from "../components/ReadOnlyBadge";
 import { parseFlexibleCurrency } from "../utils/currency";
+import { formatCurrencyInput } from "../utils/currencyInput";
 import { useExceeding } from "../context/ExceedingContext";
 import { useLanguage } from "../context/LanguageContext";
 import { Plus, PiggyBank, Edit3, Trash2, X, ChevronDown } from "lucide-react";
@@ -81,7 +82,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.categoryId || !form.amount) {
-      addToast(t("budgets.fillAllFields"), "info");
+      addToast(t("budgets.fillAllFields"), "error");
       return;
     }
 
@@ -481,16 +482,10 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({
                     inputMode="numeric"
                     value={form.amount}
                     onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "");
-                      if (!digits) {
-                        setForm({ ...form, amount: "" });
-                        return;
-                      }
-                      const amount = parseInt(digits) / 100;
-                      const formatted = amount.toLocaleString(locale, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      });
+                      const formatted = formatCurrencyInput(
+                        e.target.value,
+                        locale,
+                      );
                       setForm({ ...form, amount: formatted });
                     }}
                     className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all font-black text-slate-800 dark:text-white text-2xl tracking-tight"
