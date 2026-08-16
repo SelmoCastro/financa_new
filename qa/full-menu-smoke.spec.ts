@@ -11,8 +11,8 @@ const menuLabels = [
   'Metas',
   'Faturas',
   'Linha do Tempo',
-  'Fixos',
-  'Histórico',
+  'Recorrentes',
+  'Extrato',
   'Configurações',
 ];
 
@@ -49,6 +49,7 @@ test.describe('Finanza full menu and transaction smoke', () => {
       await page.waitForTimeout(250);
     }
 
+    await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
     await page.getByRole('button', { name: /Novo Lançamento/i }).click();
     await page.locator('input[placeholder*="Aluguel"]').fill('E2E despesa consistente');
     await page.locator('input[placeholder="0,00"]').fill('12345');
