@@ -19,6 +19,12 @@ describe('TransactionsService (integration)', () => {
   let service: TransactionsService;
   let prisma: PrismaClient;
   const testUserId = 'test-user-integration-001';
+  let encryptionEnabled = false;
+  const encryptionMock = {
+    isEnabled: () => encryptionEnabled,
+    decryptDecimal: (v: string) => v.replace(/^enc:/, ''),
+    encryptDecimal: (v: string | number) => `enc:${v}`,
+  };
 
   beforeAll(async () => {
     // Conecta ao banco de teste
@@ -58,11 +64,7 @@ describe('TransactionsService (integration)', () => {
         },
         {
           provide: EncryptionService,
-          useValue: {
-            isEnabled: () => false,
-            decryptDecimal: (v: string) => v,
-            encryptDecimal: (v: string | number) => String(v),
-          },
+          useValue: encryptionMock,
         },
       ],
     }).compile();
@@ -144,5 +146,32 @@ describe('TransactionsService (integration)', () => {
     await expect(service.create(dto, testUserId)).rejects.toThrow(
       BadRequestException,
     );
+  });
+
+  it('deve reverter corretamente saldo ao excluir transação criptografada', async () => {
+    encryptionEnabled = true;
+    await prisma.account.update({
+      where: { id: 'test-account-001' },
+      data: { balance: 'enc:900' },
+    });
+
+    const created = await service.create(
+      {
+        type: TransactionType.EXPENSE,
+        amount: 100,
+        date: new Date().toISOString(),
+        description: 'Teste exclusão criptografada',
+        accountId: 'test-account-001',
+      },
+      testUserId,
+    );
+
+    await service.remove(created.id, testUserId);
+
+    const account = await prisma.account.findUnique({
+      where: { id: 'test-account-001' },
+    });
+    expect(account?.balance).toBe('enc:900');
+    encryptionEnabled = false;
   });
 });
