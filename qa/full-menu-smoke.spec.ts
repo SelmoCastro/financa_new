@@ -65,8 +65,16 @@ test.describe('Finanza full menu and transaction smoke', () => {
       await page.waitForTimeout(250);
     }
 
+    await page.locator('aside').getByRole('button', { name: 'Extrato', exact: true }).click();
+    const staleDeleteButtons = page.getByRole('button', { name: /Excluir: E2E despesa consistente/i }).filter({ visible: true });
+    for (let attempt = 0; attempt < 10 && await staleDeleteButtons.count(); attempt += 1) {
+      page.once('dialog', (dialog) => dialog.accept());
+      await staleDeleteButtons.first().click();
+      await page.waitForTimeout(300);
+    }
+
     await page.locator('aside').getByRole('button', { name: 'Dashboard', exact: true }).click();
-    await page.getByRole('button', { name: 'Novo Lançamento', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Novo Lançamento', exact: true }).filter({ visible: true }).first().click();
     await page.locator('input[placeholder^="Ex: Aluguel"]').fill('E2E despesa consistente');
     await page.locator('input[placeholder="0,00"]').fill('12345');
     await page.getByRole('button', { name: /Confirmar Despesa/i }).click();
