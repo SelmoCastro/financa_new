@@ -89,7 +89,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const isCurrentRequest = () => requestId === baseRequestRef.current;
         const fetchResource = async (url: string, setter: (data: any) => void) => {
             try {
-                const res = await api.get(url, { signal });
+                const requestUrl = url === '/accounts' ? `${url}?_t=${Date.now()}` : url;
+                const res = await api.get(requestUrl, { signal });
                 if (!isCurrentRequest()) return;
                 const data = res.data;
                 setter(Array.isArray(data) ? data : []);

@@ -51,6 +51,7 @@ test.describe('Finanza full menu and transaction smoke', () => {
       await page.locator('select').first().selectOption({ index: 0 });
       await page.locator('input[placeholder="0,00"]').fill('100000');
       await page.getByRole('button', { name: 'Criar Conta', exact: true }).click();
+      await expect(page.getByRole('heading', { name: /Saldo Consolidado/i })).toBeVisible();
       await expect(createAccount).toHaveCount(0);
     }
 
