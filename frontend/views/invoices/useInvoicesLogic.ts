@@ -1,18 +1,16 @@
 /**
  * Arquivo de apoio da camada de views; define tipos, hooks ou utilitários usados pelas telas principais.
  */
-import { useState, useCallback, useEffect, useRef } from 'react';
-import api from '../../services/api';
-import { creditCardService, CreditCardInstallmentDTO } from '../../services/creditCardService';
-import { CreditCard } from '../../types';
-import { useData } from '../../context/DataProvider';
-import { useToast } from '../../context/ToastContext';
-
-/** Parse a currency-formatted string like "1.500,00" into a number */
-function parseCurrencyValue(value: string): number {
-  if (!value) return 0;
-  return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
-}
+import { useState, useCallback, useEffect, useRef } from "react";
+import api from "../../services/api";
+import {
+  creditCardService,
+  CreditCardInstallmentDTO,
+} from "../../services/creditCardService";
+import { CreditCard } from "../../types";
+import { useData } from "../../context/DataProvider";
+import { useToast } from "../../context/ToastContext";
+import { parseFlexibleCurrency } from "../../utils/currency";
 
 export interface InstallFormData {
   description: string;
@@ -35,38 +33,52 @@ export function useInvoicesLogic() {
   const cardMenuRef = useRef<HTMLDivElement>(null);
 
   // Faturas
-  const [selectedCardId, setSelectedCardId] = useState('');
+  const [selectedCardId, setSelectedCardId] = useState("");
   const [invoices, setInvoices] = useState<any[]>([]);
   const [currentInvoice, setCurrentInvoice] = useState<any>(null);
   const [isInvoicesLoading, setIsInvoicesLoading] = useState(false);
   const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
 
   // Pagamento
-  const [payAccountId, setPayAccountId] = useState('');
+  const [payAccountId, setPayAccountId] = useState("");
   const [isPaying, setIsPaying] = useState<string | null>(null);
 
   // Parcelas
-  const [cardInstallments, setCardInstallments] = useState<Record<string, CreditCardInstallmentDTO[]>>({});
+  const [cardInstallments, setCardInstallments] = useState<
+    Record<string, CreditCardInstallmentDTO[]>
+  >({});
   const [isInstallFormOpen, setIsInstallFormOpen] = useState(false);
-  const [installFormCardId, setInstallFormCardId] = useState('');
+  const [installFormCardId, setInstallFormCardId] = useState("");
   const [installFormCardLimit, setInstallFormCardLimit] = useState(0);
   const [installFormCardUsed, setInstallFormCardUsed] = useState(0);
   const [installForm, setInstallForm] = useState<InstallFormData>({
-    description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: '1', accountId: '', categoryId: ''
+    description: "",
+    totalAmount: "",
+    installmentCount: "1",
+    entryAmount: "",
+    dueDay: "1",
+    accountId: "",
+    categoryId: "",
   });
-  const [expandedInstallId, setExpandedInstallId] = useState<string | null>(null);
+  const [expandedInstallId, setExpandedInstallId] = useState<string | null>(
+    null,
+  );
   const [useCustomValues, setUseCustomValues] = useState(false);
   const [installmentAmounts, setInstallmentAmounts] = useState<string[]>([]);
 
   // Close card menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (openCardMenuId && cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
+      if (
+        openCardMenuId &&
+        cardMenuRef.current &&
+        !cardMenuRef.current.contains(e.target as Node)
+      ) {
         setOpenCardMenuId(null);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, [openCardMenuId]);
 
   // Default card
@@ -88,7 +100,10 @@ export function useInvoicesLogic() {
     setIsCardFormOpen(false);
     setEditingCard(null);
     refreshData();
-    addToast(editingCard ? 'Cartão atualizado!' : 'Cartão adicionado!', 'success');
+    addToast(
+      editingCard ? "Cartão atualizado!" : "Cartão adicionado!",
+      "success",
+    );
   };
 
   const handleDeleteCard = async (id: string, name: string) => {
@@ -96,10 +111,12 @@ export function useInvoicesLogic() {
     setOpenCardMenuId(null);
     try {
       await api.delete(`/credit-cards/${id}`);
-      addToast('Cartão excluído', 'success');
-      if (selectedCardId === id) setSelectedCardId('');
+      addToast("Cartão excluído", "success");
+      if (selectedCardId === id) setSelectedCardId("");
       refreshData();
-    } catch { addToast('Erro ao excluir', 'error'); }
+    } catch {
+      addToast("Erro ao excluir", "error");
+    }
   };
 
   // ── Faturas ──
@@ -114,7 +131,15 @@ export function useInvoicesLogic() {
       setInvoices(historyRes.data || []);
       const cur = currentRes.data;
       if (cur && cur.transactions && cur.transactions.length > 0) {
-        setCurrentInvoice({ ...cur, id: cur.id || 'open', creditCardName: cur.creditCardName || creditCards.find(c => c.id === selectedCardId)?.name || '', isPaid: false });
+        setCurrentInvoice({
+          ...cur,
+          id: cur.id || "open",
+          creditCardName:
+            cur.creditCardName ||
+            creditCards.find((c) => c.id === selectedCardId)?.name ||
+            "",
+          isPaid: false,
+        });
       } else {
         setCurrentInvoice(null);
       }
@@ -126,32 +151,41 @@ export function useInvoicesLogic() {
     }
   }, [selectedCardId, creditCards]);
 
-  useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
+  useEffect(() => {
+    fetchInvoices();
+  }, [fetchInvoices]);
 
   const handleCloseInvoice = async () => {
     if (!selectedCardId) return;
     setIsInvoicesLoading(true);
     try {
       await api.post(`/credit-card-invoices/${selectedCardId}/close`);
-      addToast('Fatura fechada!', 'success');
+      addToast("Fatura fechada!", "success");
       fetchInvoices();
       refreshData();
     } catch (e: any) {
-      addToast(e.response?.data?.message || 'Erro ao fechar', 'error');
-    } finally { setIsInvoicesLoading(false); }
+      addToast(e.response?.data?.message || "Erro ao fechar", "error");
+    } finally {
+      setIsInvoicesLoading(false);
+    }
   };
 
   const handlePayInvoice = async (invoiceId: string, amount: number) => {
     if (!payAccountId) return;
     setIsPaying(invoiceId);
     try {
-      await api.post(`/credit-card-invoices/${invoiceId}/pay`, { amount, accountId: payAccountId });
-      addToast('Pagamento registrado!', 'success');
+      await api.post(`/credit-card-invoices/${invoiceId}/pay`, {
+        amount,
+        accountId: payAccountId,
+      });
+      addToast("Pagamento registrado!", "success");
       fetchInvoices();
       refreshData();
     } catch (e: any) {
-      addToast(e.response?.data?.message || 'Erro ao pagar', 'error');
-    } finally { setIsPaying(null); }
+      addToast(e.response?.data?.message || "Erro ao pagar", "error");
+    } finally {
+      setIsPaying(null);
+    }
   };
 
   // ── Parcelas ──
@@ -165,19 +199,33 @@ export function useInvoicesLogic() {
         grouped[i.creditCardId].push(i);
       });
       setCardInstallments(grouped);
-    } catch (e) { console.error('Erro ao buscar parcelas:', e); }
+    } catch (e) {
+      console.error("Erro ao buscar parcelas:", e);
+    }
   }, []);
 
-  useEffect(() => { fetchInstallments(); }, [creditCards]);
+  useEffect(() => {
+    fetchInstallments();
+  }, [creditCards]);
 
   const openInstallModal = (cardId: string) => {
-    const card = creditCards.find(c => c.id === cardId);
-    const usedLimit = currentInvoice?.totalAmount ? Number(currentInvoice.totalAmount) : 0;
+    const card = creditCards.find((c) => c.id === cardId);
+    const usedLimit = currentInvoice?.totalAmount
+      ? Number(currentInvoice.totalAmount)
+      : 0;
     setInstallFormCardId(cardId);
     setInstallFormCardLimit(Number(card?.limit) || 0);
     setInstallFormCardUsed(usedLimit);
     const dueDay = card?.dueDay || 10;
-    setInstallForm({ description: '', totalAmount: '', installmentCount: '1', entryAmount: '', dueDay: String(dueDay), accountId: '', categoryId: '' });
+    setInstallForm({
+      description: "",
+      totalAmount: "",
+      installmentCount: "1",
+      entryAmount: "",
+      dueDay: String(dueDay),
+      accountId: "",
+      categoryId: "",
+    });
     setUseCustomValues(false);
     setInstallmentAmounts([]);
     setIsInstallFormOpen(true);
@@ -185,21 +233,29 @@ export function useInvoicesLogic() {
 
   const handleInstallSubmit = async () => {
     if (!installForm.description || !installForm.totalAmount) {
-      addToast('Preencha descrição e valor', 'error');
+      addToast("Preencha descrição e valor", "error");
       return;
     }
-    const totalAmount = parseCurrencyValue(installForm.totalAmount);
+    const totalAmount = parseFlexibleCurrency(installForm.totalAmount);
     if (totalAmount <= 0) {
-      addToast('O valor deve ser maior que zero', 'error');
+      addToast("O valor deve ser maior que zero", "error");
       return;
     }
-    if (installFormCardLimit > 0 && (installFormCardUsed + totalAmount) > installFormCardLimit) {
-      addToast(`Valor ultrapassa o limite disponível. Disponível: R$ ${(installFormCardLimit - installFormCardUsed).toFixed(2)}`, 'error');
+    if (
+      installFormCardLimit > 0 &&
+      installFormCardUsed + totalAmount > installFormCardLimit
+    ) {
+      addToast(
+        `Valor ultrapassa o limite disponível. Disponível: R$ ${(installFormCardLimit - installFormCardUsed).toFixed(2)}`,
+        "error",
+      );
       return;
     }
-    const entryAmount = installForm.entryAmount ? parseCurrencyValue(installForm.entryAmount) : undefined;
+    const entryAmount = installForm.entryAmount
+      ? parseFlexibleCurrency(installForm.entryAmount)
+      : undefined;
     if (entryAmount !== undefined && entryAmount >= totalAmount) {
-      addToast('O valor da entrada deve ser menor que o valor total', 'error');
+      addToast("O valor da entrada deve ser menor que o valor total", "error");
       return;
     }
     try {
@@ -207,72 +263,109 @@ export function useInvoicesLogic() {
         description: installForm.description,
         totalAmount,
         installmentCount: Number(installForm.installmentCount),
-        entryAmount: (entryAmount && !useCustomValues) ? entryAmount : undefined,
+        entryAmount: entryAmount && !useCustomValues ? entryAmount : undefined,
         dueDay: Number(installForm.dueDay),
         accountId: installForm.accountId || undefined,
         categoryId: installForm.categoryId || undefined,
       };
 
       if (useCustomValues && Number(installForm.installmentCount) > 1) {
-        const sumValues = installmentAmounts.reduce((acc, v) => acc + parseCurrencyValue(v || '0'), 0);
+        const sumValues = installmentAmounts.reduce(
+          (acc, v) => acc + parseFlexibleCurrency(v || "0"),
+          0,
+        );
         if (Math.abs(sumValues - totalAmount) > 0.02) {
-          addToast(`Soma das parcelas (R$ ${sumValues.toFixed(2)}) não confere com o valor total (R$ ${totalAmount.toFixed(2)})`, 'error');
+          addToast(
+            `Soma das parcelas (R$ ${sumValues.toFixed(2)}) não confere com o valor total (R$ ${totalAmount.toFixed(2)})`,
+            "error",
+          );
           return;
         }
         data.installmentValues = installmentAmounts.map((v) => ({
-          amount: parseCurrencyValue(v || '0'),
+          amount: parseFlexibleCurrency(v || "0"),
         }));
       }
 
       await creditCardService.createInstallment(installFormCardId, data);
-      addToast('Compra parcelada adicionada!', 'success');
+      addToast("Compra parcelada adicionada!", "success");
       setIsInstallFormOpen(false);
       setUseCustomValues(false);
       setInstallmentAmounts([]);
       fetchInstallments();
       refreshData();
     } catch (e: any) {
-      addToast(e?.response?.data?.message || 'Erro ao adicionar', 'error');
+      addToast(e?.response?.data?.message || "Erro ao adicionar", "error");
     }
   };
 
   const handleDeleteInstallment = async (id: string) => {
-    if (!confirm('Remover esta compra parcelada?')) return;
+    if (!confirm("Remover esta compra parcelada?")) return;
     try {
       await creditCardService.deleteInstallment(id);
-      addToast('Parcela removida', 'info');
+      addToast("Parcela removida", "info");
       setExpandedInstallId(null);
       fetchInstallments();
       refreshData();
-    } catch { addToast('Erro ao remover', 'error'); }
+    } catch {
+      addToast("Erro ao remover", "error");
+    }
   };
 
   const handleDeleteTransaction = async (transactionId: string) => {
-    if (!confirm('Excluir este lançamento?')) return;
+    if (!confirm("Excluir este lançamento?")) return;
     try {
       await api.delete(`/transactions/${transactionId}`);
-      addToast('Lançamento excluído', 'success');
+      addToast("Lançamento excluído", "success");
       fetchInvoices();
       refreshData();
-    } catch { addToast('Erro ao excluir', 'error'); }
+    } catch {
+      addToast("Erro ao excluir", "error");
+    }
   };
 
   return {
-    creditCards, accounts, categories,
-    isCardFormOpen, setIsCardFormOpen, editingCard, setEditingCard,
-    openCardMenuId, setOpenCardMenuId, cardMenuRef,
-    handleCardSaved, handleDeleteCard,
-    selectedCardId, setSelectedCardId,
-    invoices, currentInvoice, isInvoicesLoading,
-    expandedInvoice, setExpandedInvoice,
-    payAccountId, setPayAccountId,
-    isPaying, handleCloseInvoice, handlePayInvoice,
-    cardInstallments, isInstallFormOpen, setIsInstallFormOpen,
-    installFormCardId, installFormCardLimit, installFormCardUsed, installForm, setInstallForm,
-    expandedInstallId, setExpandedInstallId,
-    openInstallModal, handleInstallSubmit, handleDeleteInstallment,
+    creditCards,
+    accounts,
+    categories,
+    isCardFormOpen,
+    setIsCardFormOpen,
+    editingCard,
+    setEditingCard,
+    openCardMenuId,
+    setOpenCardMenuId,
+    cardMenuRef,
+    handleCardSaved,
+    handleDeleteCard,
+    selectedCardId,
+    setSelectedCardId,
+    invoices,
+    currentInvoice,
+    isInvoicesLoading,
+    expandedInvoice,
+    setExpandedInvoice,
+    payAccountId,
+    setPayAccountId,
+    isPaying,
+    handleCloseInvoice,
+    handlePayInvoice,
+    cardInstallments,
+    isInstallFormOpen,
+    setIsInstallFormOpen,
+    installFormCardId,
+    installFormCardLimit,
+    installFormCardUsed,
+    installForm,
+    setInstallForm,
+    expandedInstallId,
+    setExpandedInstallId,
+    openInstallModal,
+    handleInstallSubmit,
+    handleDeleteInstallment,
     handleDeleteTransaction,
-    useCustomValues, setUseCustomValues, installmentAmounts, setInstallmentAmounts,
+    useCustomValues,
+    setUseCustomValues,
+    installmentAmounts,
+    setInstallmentAmounts,
     refreshData,
   };
 }
