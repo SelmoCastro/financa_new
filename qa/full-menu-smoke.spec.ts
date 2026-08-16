@@ -43,6 +43,15 @@ test.describe('Finanza full menu and transaction smoke', () => {
       await declineCookies.click();
     }
 
+    const createAccount = page.getByRole('button', { name: 'Criar Conta Agora', exact: true });
+    if (await createAccount.isVisible().catch(() => false)) {
+      await createAccount.click();
+      await page.locator('select').first().selectOption({ index: 0 });
+      await page.locator('input[placeholder="0,00"]').fill('100000');
+      await page.getByRole('button', { name: 'Criar Conta', exact: true }).click();
+      await expect(createAccount).toHaveCount(0);
+    }
+
     for (const label of menuLabels) {
       const target = page.locator('aside').getByRole('button', { name: label, exact: true }).first();
       if (await target.count()) {
