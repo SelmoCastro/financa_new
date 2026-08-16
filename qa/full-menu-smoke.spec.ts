@@ -81,7 +81,7 @@ test.describe('Finanza full menu and transaction smoke', () => {
 
     await page.locator('aside').getByRole('button', { name: 'Extrato', exact: true }).click();
     page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: /Excluir: E2E despesa consistente/i }).click();
+    await page.getByRole('button', { name: /Excluir: E2E despesa consistente/i }).filter({ visible: true }).first().click();
     await expect(page.getByText('E2E despesa consistente', { exact: true }).filter({ visible: true })).toHaveCount(0);
 
     await page.locator('aside').getByRole('button', { name: 'Dashboard', exact: true }).click();
