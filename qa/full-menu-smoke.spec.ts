@@ -38,6 +38,10 @@ test.describe('Finanza full menu and transaction smoke', () => {
       await page.getByRole('button', { name: /Entrar no Painel/i }).click();
     }
     await expect(page.getByText(/Dashboard/i).first()).toBeVisible();
+    const declineCookies = page.getByRole('button', { name: 'Recusar', exact: true });
+    if (await declineCookies.isVisible().catch(() => false)) {
+      await declineCookies.click();
+    }
 
     for (const label of menuLabels) {
       const target = page.getByRole('button', { name: label, exact: true }).first();
