@@ -54,7 +54,7 @@ test.describe('Finanza full menu and transaction smoke', () => {
     }
 
     await page.getByRole('button', { name: 'Dashboard', exact: true }).click();
-    await page.getByRole('button', { name: /Novo Lançamento/i }).click();
+    await page.getByRole('main').getByRole('button', { name: 'Novo Lançamento', exact: true }).click();
     await page.locator('input[placeholder*="Aluguel"]').fill('E2E despesa consistente');
     await page.locator('input[placeholder="0,00"]').fill('12345');
     await page.getByRole('button', { name: /Confirmar Despesa/i }).click();
