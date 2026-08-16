@@ -1,6 +1,6 @@
 {
-  "version": "1.12.10",
-  "mobileVersion": "1.12.10",
+  "version": "1.12.11",
+  "mobileVersion": "1.12.11",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corrige saldos e Dashboard após edição ou exclusão de transações criptografadas."
+  "releaseNotes": "Fix account balance updates for expenses"
 }
