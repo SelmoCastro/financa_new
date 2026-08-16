@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.10] (2026-08-16)
+
+Corrige saldos e Dashboard após edição ou exclusão de transações criptografadas.
+
 ## [1.12.9] (2026-08-15)
 
 Corrige a entrada monetária com separadores de milhar em lançamentos web e mobile.
