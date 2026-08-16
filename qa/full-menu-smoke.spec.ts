@@ -43,6 +43,8 @@ test.describe('Finanza full menu and transaction smoke', () => {
       await declineCookies.click();
     }
 
+    await page.locator('aside').getByRole('button', { name: 'Contas', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Minhas Contas' })).toBeVisible();
     const createAccount = page.getByRole('button', { name: 'Criar Conta Agora', exact: true });
     if (await createAccount.isVisible().catch(() => false)) {
       await createAccount.click();
