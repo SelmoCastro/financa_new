@@ -30,6 +30,16 @@ test.describe('Finanza full menu and transaction smoke', () => {
         failedApiResponses.push(`${response.status()} ${response.request().method()} ${response.url()}`);
       }
     });
+    const deleteMatchingTransactions = async () => {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        const buttons = page.getByRole('button', { name: /Excluir: E2E despesa consistente/i }).filter({ visible: true });
+        if (!(await buttons.count())) return;
+        page.once('dialog', (dialog) => dialog.accept());
+        await buttons.first().click();
+        await page.waitForTimeout(500);
+      }
+      throw new Error('Could not clean all stale E2E transactions');
+    };
 
     await page.goto('/login');
     if (await page.locator('input[type="email"]').count()) {
@@ -66,12 +76,8 @@ test.describe('Finanza full menu and transaction smoke', () => {
     }
 
     await page.locator('aside').getByRole('button', { name: 'Extrato', exact: true }).click();
-    const staleDeleteButtons = page.getByRole('button', { name: /Excluir: E2E despesa consistente/i }).filter({ visible: true });
-    for (let attempt = 0; attempt < 10 && await staleDeleteButtons.count(); attempt += 1) {
-      page.once('dialog', (dialog) => dialog.accept());
-      await staleDeleteButtons.first().click();
-      await page.waitForTimeout(300);
-    }
+    await expect(page.getByRole('heading', { name: 'Extrato Detalhado' })).toBeVisible();
+    await deleteMatchingTransactions();
 
     await page.locator('aside').getByRole('button', { name: 'Dashboard', exact: true }).click();
     await page.getByRole('button', { name: 'Novo Lançamento', exact: true }).filter({ visible: true }).first().click();
@@ -88,9 +94,8 @@ test.describe('Finanza full menu and transaction smoke', () => {
     await expect(page.getByText(/R\$\s*123,45/).filter({ visible: true }).first()).toBeVisible();
 
     await page.locator('aside').getByRole('button', { name: 'Extrato', exact: true }).click();
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: /Excluir: E2E despesa consistente/i }).filter({ visible: true }).first().click();
-    await expect(page.getByText('E2E despesa consistente', { exact: true }).filter({ visible: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Extrato Detalhado' })).toBeVisible();
+    await deleteMatchingTransactions();
 
     await page.locator('aside').getByRole('button', { name: 'Dashboard', exact: true }).click();
     await expect(page.getByText('E2E despesa consistente', { exact: true }).filter({ visible: true })).toHaveCount(0);
