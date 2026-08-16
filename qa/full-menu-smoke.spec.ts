@@ -109,6 +109,11 @@ test.describe("Finanza full menu and transaction smoke", () => {
       expect(reconcileResponse.ok()).toBeTruthy();
     }
 
+    const qaAccount = qaAccounts[0];
+    expect(qaAccount).toBeDefined();
+    const startingAccountBalance = Number(qaAccount.balance);
+    expect(Number.isFinite(startingAccountBalance)).toBeTruthy();
+
     for (const label of menuLabels) {
       const target = page
         .locator("aside")
@@ -145,6 +150,19 @@ test.describe("Finanza full menu and transaction smoke", () => {
       .fill("E2E despesa consistente");
     await page.locator('input[placeholder="0,00"]').fill("12345");
     await page.getByRole("button", { name: /Confirmar Despesa/i }).click();
+
+    const afterExpenseResponse = await page.request.get(
+      "/api/v1/accounts?_t=" + Date.now(),
+    );
+    expect(afterExpenseResponse.ok()).toBeTruthy();
+    const afterExpenseAccounts = await afterExpenseResponse.json();
+    const afterExpenseAccount = (
+      afterExpenseAccounts.data ?? afterExpenseAccounts
+    ).find((account: { id: string }) => account.id === qaAccount.id);
+    expect(Number(afterExpenseAccount?.balance)).toBeCloseTo(
+      startingAccountBalance - 123.45,
+      2,
+    );
 
     await page
       .locator("aside")
