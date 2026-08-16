@@ -127,18 +127,22 @@ jobs:
           NODE
 
       - name: Create release PR
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: master
-          branch: release/v${{ steps.next.outputs.version }}
-          delete-branch: true
-          commit-message: "chore: prepare release v${{ steps.next.outputs.version }}"
-          title: "chore: prepare release v${{ steps.next.outputs.version }}"
-          body: |
-            ## Release preparation
-            - Synchronizes all package versions.
-            - Synchronizes Expo `version`, Android `versionCode`, and Gradle `versionName`.
-            - Updates `backend/src/version-meta.json` and `CHANGELOG.md`.
-
-            CI must pass and this PR requires approval before merge.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.next.outputs.version }}
+        run: |
+          set -euo pipefail
+          BRANCH="release/v${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add package.json backend/package.json frontend/package.json mobile/package.json \
+            mobile/app.json mobile/android/app/build.gradle \
+            backend/src/version-meta.json CHANGELOG.md
+          git commit -m "chore: prepare release v${VERSION}"
+          git push --set-upstream origin "$BRANCH"
+          gh pr create \
+            --base master \
+            --head "$BRANCH" \
+            --title "chore: prepare release v${VERSION}" \
+            --body $'## Release preparation\n- Synchronizes all package versions.\n- Synchronizes Expo version, Android versionCode, and Gradle versionName.\n- Updates backend version metadata and CHANGELOG.\n\nCI must pass before merge.'
