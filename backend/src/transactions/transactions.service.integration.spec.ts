@@ -101,6 +101,10 @@ describe('TransactionsService (integration)', () => {
     });
     expect(saved).toBeDefined();
     expect(saved!.description).toBe('Teste integração');
+    const accountAfterExpense = await prisma.account.findUnique({
+      where: { id: 'test-account-001' },
+    });
+    expect(accountAfterExpense?.balance).toBe('900');
   });
 
   it('deve rejeitar transação com data > 2 dias no futuro', async () => {

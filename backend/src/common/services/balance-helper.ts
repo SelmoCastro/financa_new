@@ -81,7 +81,9 @@ export async function atomicBalanceUpdate(
     );
   }
 
-  const newEncrypted: string = encryption.encryptDecimal(newBalance) ?? '0.00';
+  const newEncrypted: string = encryption.isEnabled()
+    ? (encryption.encryptDecimal(newBalance) ?? '0.00')
+    : String(newBalance);
 
   await tx.account.update({
     where: { id: accountId },
