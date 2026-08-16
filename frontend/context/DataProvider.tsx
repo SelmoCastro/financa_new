@@ -215,9 +215,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
             await refreshData();
             addToast(newTx.type === 'TRANSFER' ? 'Transferência realizada com sucesso!' : 'Transação salva com sucesso!', 'success');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao adicionar:', error);
-            addToast('Erro ao salvar transação', 'error');
+            const serverMessage = error?.response?.data?.message;
+            const message = Array.isArray(serverMessage)
+                ? serverMessage[0]
+                : serverMessage || 'Erro ao salvar transação';
+            addToast(message, 'error');
             // Rollback: refreshData vai sobrescrever o estado optimistic com o real do servidor
             await refreshData();
         }
