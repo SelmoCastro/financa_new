@@ -1,6 +1,6 @@
 {
-  "version": "1.12.9",
-  "mobileVersion": "1.12.9",
+  "version": "1.12.10",
+  "mobileVersion": "1.12.10",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Corrige a entrada monetária com separadores de milhar em lançamentos web e mobile."
+  "releaseNotes": "Corrige saldos e Dashboard após edição ou exclusão de transações criptografadas."
 }

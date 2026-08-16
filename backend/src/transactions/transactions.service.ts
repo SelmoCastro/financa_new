@@ -208,7 +208,10 @@ export class TransactionsService {
     const headers = ['Data', 'Descrição', 'Valor', 'Tipo', 'Categoria'];
     const rows = transactions.map((t) => {
       const date = new Date(t.date).toLocaleDateString('pt-BR');
-      const amount = String(decryptAmount(t.amount, this.encryption)).replace('.', ',');
+      const amount = String(decryptAmount(t.amount, this.encryption)).replace(
+        '.',
+        ',',
+      );
       const type = t.type === 'INCOME' ? 'Receita' : 'Despesa';
       const categoryName =
         t.category?.name || t.categoryLegacy || 'Sem categoria';
@@ -252,8 +255,10 @@ export class TransactionsService {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (!byMonth.has(key)) byMonth.set(key, { income: 0, expense: 0 });
       const m = byMonth.get(key)!;
-      if (t.type === 'INCOME') m.income += decryptAmount(t.amount, this.encryption);
-      else if (t.type === 'EXPENSE') m.expense += decryptAmount(t.amount, this.encryption);
+      if (t.type === 'INCOME')
+        m.income += decryptAmount(t.amount, this.encryption);
+      else if (t.type === 'EXPENSE')
+        m.expense += decryptAmount(t.amount, this.encryption);
     });
 
     const balance = accounts.reduce(
