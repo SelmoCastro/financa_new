@@ -149,7 +149,13 @@ test.describe("Finanza full menu and transaction smoke", () => {
       .locator('input[placeholder^="Ex: Aluguel"]')
       .fill("E2E despesa consistente");
     await page.locator('input[placeholder="0,00"]').fill("12345");
+    const createTransactionResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/transactions") &&
+        response.request().method() === "POST",
+    );
     await page.getByRole("button", { name: /Confirmar Despesa/i }).click();
+    expect((await createTransactionResponse).status()).toBe(201);
 
     const afterExpenseResponse = await page.request.get(
       "/api/v1/accounts?_t=" + Date.now(),
