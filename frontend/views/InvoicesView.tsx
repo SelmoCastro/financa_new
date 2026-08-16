@@ -1,29 +1,31 @@
 /**
  * Tela principal do frontend para Invoices; reúne estado visual, ações do usuário e composição de componentes.
  */
-import React from 'react';
-import { CreditCardForm } from '../components/CreditCardForm';
-import { InstallmentFormModal } from '../views/accounts/InstallmentFormModal';
-import { InvoicesViewTabs } from '../views/invoices/InvoicesViewTabs';
-import { useInvoicesLogic, InstallFormData } from '../views/invoices/useInvoicesLogic';
-import { InstallmentPreview } from '../views/accounts/types';
+import React from "react";
+import { CreditCardForm } from "../components/CreditCardForm";
+import { InstallmentFormModal } from "../views/accounts/InstallmentFormModal";
+import { InvoicesViewTabs } from "../views/invoices/InvoicesViewTabs";
+import {
+  useInvoicesLogic,
+  InstallFormData,
+} from "../views/invoices/useInvoicesLogic";
+import { InstallmentPreview } from "../views/accounts/types";
+import { parseFlexibleCurrency } from "../utils/currency";
 
-export const InvoicesView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivacyEnabled }) => {
+export const InvoicesView: React.FC<{ isPrivacyEnabled: boolean }> = ({
+  isPrivacyEnabled,
+}) => {
   const logic = useInvoicesLogic();
 
-  const parseCurrencyValue = (value: string): number => {
-    if (!value) return 0;
-    return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
-  };
-
   const installmentPreview: InstallmentPreview | null = React.useMemo(() => {
-    const total = parseCurrencyValue(logic.installForm.totalAmount);
+    const total = parseFlexibleCurrency(logic.installForm.totalAmount);
     const count = Number(logic.installForm.installmentCount) || 1;
-    const entry = parseCurrencyValue(logic.installForm.entryAmount);
+    const entry = parseFlexibleCurrency(logic.installForm.entryAmount);
     if (total <= 0 || count < 1) return null;
-    const perMonth = entry > 0 && count > 1
-      ? Math.round(((total - entry) / (count - 1)) * 100) / 100
-      : Math.round((total / count) * 100) / 100;
+    const perMonth =
+      entry > 0 && count > 1
+        ? Math.round(((total - entry) / (count - 1)) * 100) / 100
+        : Math.round((total / count) * 100) / 100;
     return { entry, perMonth, count, total };
   }, [logic.installForm]);
 
@@ -54,7 +56,10 @@ export const InvoicesView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivac
         openCardMenuId={logic.openCardMenuId}
         setOpenCardMenuId={logic.setOpenCardMenuId}
         cardMenuRef={logic.cardMenuRef}
-        onEditCard={(card) => { logic.setEditingCard(card); logic.setIsCardFormOpen(true); }}
+        onEditCard={(card) => {
+          logic.setEditingCard(card);
+          logic.setIsCardFormOpen(true);
+        }}
         onDeleteCard={logic.handleDeleteCard}
         onAddCard={() => logic.setIsCardFormOpen(true)}
         onAddInstallment={logic.openInstallModal}
@@ -65,7 +70,10 @@ export const InvoicesView: React.FC<{ isPrivacyEnabled: boolean }> = ({ isPrivac
           accounts={logic.accounts}
           cardToEdit={logic.editingCard}
           onSave={logic.handleCardSaved}
-          onClose={() => { logic.setIsCardFormOpen(false); logic.setEditingCard(null); }}
+          onClose={() => {
+            logic.setIsCardFormOpen(false);
+            logic.setEditingCard(null);
+          }}
         />
       )}
 
