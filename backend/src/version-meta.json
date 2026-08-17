@@ -1,6 +1,6 @@
 {
-  "version": "1.12.13",
-  "mobileVersion": "1.12.13",
+  "version": "1.12.14",
+  "mobileVersion": "1.12.14",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Fix: restore soft-deleted budgets on upsert"
+  "releaseNotes": "Fix duplicate security headers causing mobile network error"
 }
