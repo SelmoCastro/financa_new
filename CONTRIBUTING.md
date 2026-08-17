@@ -178,7 +178,7 @@ Ela é sincronizada para:
 - `mobile/android/app/build.gradle`
 - `backend/src/version-meta.json`
 
-> Importante: `scripts/sync-versions.js` ajuda a sincronizar parte dos arquivos, mas o fluxo de release precisa garantir também `build.gradle` e `version-meta.json`.
+O workflow de release sincroniza também `build.gradle` e `version-meta.json`.
 
 ---
 

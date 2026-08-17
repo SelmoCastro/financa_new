@@ -7,11 +7,9 @@
     "release": "standard-version",
     "release:minor": "standard-version --release-as minor",
     "release:major": "standard-version --release-as major",
-    "release:patch": "standard-version --release-as patch",
-    "test:e2e": "playwright test --config qa/playwright.config.ts"
+    "release:patch": "standard-version --release-as patch"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
     "standard-version": "^9.5.0"
   },
   "main": "fix_icons.js",
