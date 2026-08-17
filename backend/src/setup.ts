@@ -104,11 +104,11 @@ export function configureApp(app: INestApplication) {
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
       crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
-      frameguard: { action: 'deny' },
-      hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
-      xssFilter: true,
-      noSniff: true,
-      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      frameguard: false, // nginx already sends X-Frame-Options
+      hsts: false, // nginx already sends Strict-Transport-Security
+      xssFilter: false, // nginx already sends X-XSS-Protection
+      noSniff: false, // nginx already sends X-Content-Type-Options
+      referrerPolicy: false, // nginx already sends Referrer-Policy
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],

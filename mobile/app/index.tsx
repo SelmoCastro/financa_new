@@ -1,254 +1,276 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert, Platform, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import api from '../services/api';
-import { useOfflineActionGuard } from '../hooks/useOfflineActionGuard';
-import { useAuth } from '../context/AuthContext';
-import * as Haptics from 'expo-haptics';
-import * as WebBrowser from 'expo-web-browser';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Alert,
+  Platform,
+  StyleSheet,
+} from "react-native";
+import { useRouter } from "expo-router";
+import api from "../services/api";
+import { useOfflineActionGuard } from "../hooks/useOfflineActionGuard";
+import { useAuth } from "../context/AuthContext";
+import * as Haptics from "expo-haptics";
+import * as WebBrowser from "expo-web-browser";
 
 export default function LoginScreen() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const router = useRouter();
-    const { login } = useAuth();
-    const { ensureOnline } = useOfflineActionGuard();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { login } = useAuth();
+  const { ensureOnline } = useOfflineActionGuard();
 
-    const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos');
-            return;
-        }
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Erro", "Por favor, preencha todos os campos");
+      return;
+    }
 
-        const sanitizedEmail = email.trim().toLowerCase();
-        const sanitizedPassword = password.trim();
+    const sanitizedEmail = email.trim().toLowerCase();
+    const sanitizedPassword = password.trim();
 
-        if (!ensureOnline('entrar na sua conta')) return;
+    if (!ensureOnline("entrar na sua conta")) return;
 
-        setLoading(true);
-        try {
-            const response = await api.post('/auth/login', {
-                email: sanitizedEmail,
-                password: sanitizedPassword
-            });
+    setLoading(true);
+    try {
+      const response = await api.post("/auth/login", {
+        email: sanitizedEmail,
+        password: sanitizedPassword,
+      });
 
-            const data = response.data;
-            const access_token = data.access_token || data.data?.access_token;
-            const refreshToken = data.refreshToken || data.data?.refreshToken;
-            const user = data.user || data.data?.user;
+      const data = response.data;
+      const access_token = data.access_token || data.data?.access_token;
+      const refreshToken = data.refreshToken || data.data?.refreshToken;
+      const user = data.user || data.data?.user;
 
-            if (!access_token || !refreshToken || !user?.id) {
-                if (__DEV__) console.error('[Login] auth payload incompleto na resposta.');
-                throw new Error('tokens or user info missing');
-            }
+      if (!access_token || !refreshToken || !user?.id) {
+        if (__DEV__)
+          console.error("[Login] auth payload incompleto na resposta.");
+        throw new Error("tokens or user info missing");
+      }
 
-            // Desmarcar loading ANTES do redirect para evitar conflito de estado
-            setLoading(false);
-            await login(access_token, refreshToken, user.id);
-        } catch (error: any) {
-            if (__DEV__) console.error('[Login] Erro detectado:', error.message || error);
-            if (error.response) {
-                if (__DEV__) console.error('[Login] Status do erro:', error.response.status);
-                Alert.alert('Erro', 'Falha no login. Verifique suas credenciais.');
-            } else {
-                if (__DEV__) console.error('[Login] Erro de rede ou servidor inacessível');
-                Alert.alert('Erro de Rede', 'Não foi possível conectar ao servidor. Verifique sua internet ou se o backend está rodando.');
-            }
-            setLoading(false);
-        }
-    };
+      // Desmarcar loading ANTES do redirect para evitar conflito de estado
+      setLoading(false);
+      await login(access_token, refreshToken, user.id);
+    } catch (error: any) {
+      if (__DEV__)
+        console.error(
+          "[Login] Erro detectado:",
+          error.message || error,
+          error.code,
+        );
+      if (error.response) {
+        if (__DEV__)
+          console.error("[Login] Status do erro:", error.response.status);
+        Alert.alert("Erro", "Falha no login. Verifique suas credenciais.");
+      } else {
+        const errMsg = error?.message || error?.code || "Erro desconhecido";
+        if (__DEV__)
+          console.error(
+            "[Login] Erro de rede ou servidor inacessível:",
+            errMsg,
+          );
+        Alert.alert(
+          "Erro de Rede",
+          `Não foi possível conectar ao servidor.\n\nDetalhe: ${errMsg}`,
+        );
+      }
+      setLoading(false);
+    }
+  };
 
-    return (
-        <View style={styles.container}>
-            <View style={styles.card}>
-                <Text style={styles.title}>
-                    Finança Pro
-                </Text>
-                <Text style={styles.subtitle}>
-                    Seu dinheiro sob controle
-                </Text>
+  return (
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.title}>Finança Pro</Text>
+        <Text style={styles.subtitle}>Seu dinheiro sob controle</Text>
 
-                <View style={styles.form}>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Email</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="seu@email.com"
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            value={email}
-                            onChangeText={setEmail}
-                        />
-                    </View>
+        <View style={styles.form}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="seu@email.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Senha</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="••••••••"
-                            secureTextEntry
-                            value={password}
-                            onChangeText={setPassword}
-                        />
-                    </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Senha</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="••••••••"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
 
-                    <View style={[styles.buttonContainer, loading && styles.buttonDisabled]}>
-                        <Pressable
-                            style={styles.button}
-                            android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
-                            onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                handleLogin();
-                            }}
-                            disabled={loading}
-                        >
-                            <Text style={styles.buttonText}>
-                                {loading ? 'Entrando...' : 'Entrar'}
-                            </Text>
-                        </Pressable>
-                    </View>
+          <View
+            style={[styles.buttonContainer, loading && styles.buttonDisabled]}
+          >
+            <Pressable
+              style={styles.button}
+              android_ripple={{ color: "rgba(255,255,255,0.3)" }}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleLogin();
+              }}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>
+                {loading ? "Entrando..." : "Entrar"}
+              </Text>
+            </Pressable>
+          </View>
 
-                    <Pressable
-                        onPress={async () => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            await WebBrowser.openBrowserAsync('https://finanzaai.tech/login?mode=recovery');
-                        }}
-                        style={styles.forgotPasswordLink}
-                    >
-                        <Text style={styles.forgotPasswordText}>
-                            Esqueceu a senha?
-                        </Text>
-                    </Pressable>
+          <Pressable
+            onPress={async () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              await WebBrowser.openBrowserAsync(
+                "https://finanzaai.tech/login?mode=recovery",
+              );
+            }}
+            style={styles.forgotPasswordLink}
+          >
+            <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
+          </Pressable>
 
-                    <Pressable
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            router.push('/signup');
-                        }}
-                        style={styles.signupLink}
-                    >
-                        <Text style={styles.signupLinkText}>
-                            Não tem uma conta? <Text style={styles.signupLinkHighlight}>Criar conta</Text>
-                        </Text>
-                    </Pressable>
-                </View>
-            </View>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push("/signup");
+            }}
+            style={styles.signupLink}
+          >
+            <Text style={styles.signupLinkText}>
+              Não tem uma conta?{" "}
+              <Text style={styles.signupLinkHighlight}>Criar conta</Text>
+            </Text>
+          </Pressable>
         </View>
-    );
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f8fafc',
-        padding: 24,
-    },
-    card: {
-        width: '100%',
-        maxWidth: 400,
-        backgroundColor: 'white',
-        padding: 32,
-        borderRadius: 24,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 12,
-            },
-            android: {
-                elevation: 8,
-            },
-        }),
-    },
-    title: {
-        fontSize: 30,
-        fontWeight: 'bold',
-        color: '#1e293b',
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    subtitle: {
-        color: '#64748b',
-        marginBottom: 32,
-        textAlign: 'center',
-        fontSize: 16,
-    },
-    form: {
-        gap: 16,
-    },
-    inputGroup: {
-        gap: 4,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#334155',
-        marginBottom: 4,
-    },
-    input: {
-        width: '100%',
-        backgroundColor: '#f8fafc',
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        color: '#1e293b',
-        fontSize: 16,
-    },
-    buttonContainer: {
-        borderRadius: 12,
-        overflow: 'hidden',
-        marginTop: 24,
-        backgroundColor: '#4f46e5',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#4f46e5',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.2,
-                shadowRadius: 8,
-            },
-            android: {
-                elevation: 4,
-            },
-        }),
-    },
-    button: {
-        width: '100%',
-        paddingVertical: 16,
-        alignItems: 'center',
-    },
-    buttonDisabled: {
-        opacity: 0.7,
-    },
-    buttonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 18,
-    },
-    signupLink: {
-        marginTop: 16,
-        alignItems: 'center',
-    },
-    signupLinkText: {
-        color: '#64748b',
-        fontSize: 14,
-    },
-    signupLinkHighlight: {
-        color: '#4f46e5',
-        fontWeight: 'bold',
-    },
-    forgotPasswordLink: {
-        marginTop: 16,
-        alignItems: 'center',
-    },
-    forgotPasswordText: {
-        color: '#4f46e5',
-        fontSize: 14,
-        fontWeight: '600',
-    },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+    padding: 24,
+  },
+  card: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "white",
+    padding: 32,
+    borderRadius: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: "bold",
+    color: "#1e293b",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  subtitle: {
+    color: "#64748b",
+    marginBottom: 32,
+    textAlign: "center",
+    fontSize: 16,
+  },
+  form: {
+    gap: 16,
+  },
+  inputGroup: {
+    gap: 4,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#334155",
+    marginBottom: 4,
+  },
+  input: {
+    width: "100%",
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: "#1e293b",
+    fontSize: 16,
+  },
+  buttonContainer: {
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 24,
+    backgroundColor: "#4f46e5",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#4f46e5",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  button: {
+    width: "100%",
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
+  signupLink: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  signupLinkText: {
+    color: "#64748b",
+    fontSize: 14,
+  },
+  signupLinkHighlight: {
+    color: "#4f46e5",
+    fontWeight: "bold",
+  },
+  forgotPasswordLink: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+  forgotPasswordText: {
+    color: "#4f46e5",
+    fontSize: 14,
+    fontWeight: "600",
+  },
 });
