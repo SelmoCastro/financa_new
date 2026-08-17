@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.14] (2026-08-17)
+
+Fix duplicate security headers causing mobile network error
+
 ## [1.12.13] (2026-08-17)
 
 Fix: restore soft-deleted budgets on upsert
