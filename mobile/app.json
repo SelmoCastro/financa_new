@@ -2,7 +2,7 @@
   "expo": {
     "name": "Financa New",
     "slug": "mobile",
-    "version": "1.12.11",
+    "version": "1.12.12",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
@@ -27,7 +27,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 141,
+      "versionCode": 142,
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ],
@@ -75,6 +75,6 @@
       "url": "https://u.expo.dev/c9801d6e-4636-4c78-ae32-9702a4b93bd0"
     }
   },
-  "version": "1.12.11",
-  "versionCode": 141
+  "version": "1.12.12",
+  "versionCode": 142
 }

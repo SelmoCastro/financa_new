@@ -1,6 +1,6 @@
 {
-  "version": "1.12.11",
-  "mobileVersion": "1.12.11",
+  "version": "1.12.12",
+  "mobileVersion": "1.12.12",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Fix account balance updates for expenses"
+  "releaseNotes": "Remove server-side cache interceptor; fix stale reads after mutations"
 }
