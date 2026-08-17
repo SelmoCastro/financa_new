@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.13] (2026-08-17)
+
+Fix: restore soft-deleted budgets on upsert
+
 ## [1.12.12] (2026-08-17)
 
 Remove server-side cache interceptor; fix stale reads after mutations
