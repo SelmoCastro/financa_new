@@ -2,8 +2,11 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function downgrade() {
+  const email = process.env.TARGET_EMAIL;
+  if (!email) throw new Error('TARGET_EMAIL is required');
+
   const user = await prisma.user.findUnique({
-    where: { email: 's.elmo@live.com' },
+    where: { email },
     include: { subscription: true },
   });
 

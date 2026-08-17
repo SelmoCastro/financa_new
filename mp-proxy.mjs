@@ -2,7 +2,11 @@ import express from 'express';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 const PORT = process.env.PORT || 3099;
-const TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN || 'APP_USR-4342173784896366-051118-e7f1e420c1fef34d1af5da6789d511e4-280905409';
+const TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
+
+if (!TOKEN) {
+  throw new Error('MERCADOPAGO_ACCESS_TOKEN is required');
+}
 
 const client = new MercadoPagoConfig({
   accessToken: TOKEN,
