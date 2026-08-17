@@ -58,13 +58,16 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({
     setIsLoading(true);
     setLoadError(false);
     try {
-      const response = await api.get(`/budgets?_t=${Date.now()}`, {
+      const response = await api.get("/budgets", {
         params: {
           year: selectedDate.getFullYear(),
           month: selectedDate.getMonth(),
+          _t: Date.now(),
         },
       });
-      setBudgets(Array.isArray(response.data) ? response.data : []);
+      const data = Array.isArray(response.data) ? response.data : [];
+      console.log("fetchBudgets received:", data.length, "budgets");
+      setBudgets(data);
     } catch (error) {
       console.error("Error fetching budgets:", error);
       setBudgets([]);
