@@ -37,6 +37,7 @@ export class BudgetsService {
         }
 
         // Upsert: update amount if budget for this category already exists, or create new
+        // Also restore if previously soft-deleted
         return this.prisma.budget.upsert({
           where: {
             userId_categoryId: {
@@ -44,7 +45,10 @@ export class BudgetsService {
               categoryId,
             },
           },
-          update: { amount: encryptAmount(Number(amount), this.encryption) },
+          update: {
+            amount: encryptAmount(Number(amount), this.encryption),
+            deletedAt: null,
+          },
           create: {
             userId,
             categoryId,
