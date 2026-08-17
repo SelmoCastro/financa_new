@@ -115,10 +115,8 @@ import { ResellerAuthModule } from './reseller-auth/reseller-auth.module';
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
     },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: CacheInterceptor,
-    },
+    // CacheInterceptor removed — financial data must not be cached server-side.
+    // A 10s TTL caused stale reads after mutations (budgets, transactions, accounts).
   ],
 })
 export class AppModule implements NestModule {

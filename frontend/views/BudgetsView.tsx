@@ -58,7 +58,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({
     setIsLoading(true);
     setLoadError(false);
     try {
-      const response = await api.get("/budgets", {
+      const response = await api.get(`/budgets?_t=${Date.now()}`, {
         params: {
           year: selectedDate.getFullYear(),
           month: selectedDate.getMonth(),
