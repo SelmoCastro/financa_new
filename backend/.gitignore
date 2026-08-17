@@ -68,9 +68,4 @@ find-user.*
 make_admin.*
 backup_*.sql
 report_*.sql
-scripts/backup.*
-scripts/check_*
-scripts/dedup.*
-scripts/remove_*
-scripts/restore.*
 prisma/backup_data.*

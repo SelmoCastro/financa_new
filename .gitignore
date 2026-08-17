@@ -30,7 +30,6 @@ opencode.json
 # Scripts de migração
 backend/src/migrate-*.ts
 backend/fix_*.js
-backend/scripts/fix_*.js
 backend/src/fix_*.ts
 
 # Screenshots
@@ -86,13 +85,6 @@ backend/src/budgets/budgets.service.spec.ts
 backend/src/prisma/prisma.service.spec.ts
 backend/test/
 
-# Icon generation scripts (one-off)
-scripts/apply_new_icon.py
-scripts/apply_new_jpeg_icon.py
-scripts/apply_raw_icon.py
-scripts/force_apply_icon.py
-scripts/remix_icon.py
-
 # VPS deploy config (keep locally or in secrets)
 deploy/
 
@@ -117,8 +109,6 @@ DOCS.md
 # Font file (bundled by Expo at build time, not needed in git)
 mobile/assets/fonts/
 
-# Nginx/deploy scripts (keep locally)
-scripts/rollback.sh
 backend/.env.bak*
 
 # Local security evidence and exploratory study artifacts
@@ -161,7 +151,6 @@ local.properties
 # Test, coverage and diagnostic output
 .nyc_output/
 test-results/
-playwright-report/
 blob-report/
 *.lcov
 junit.xml
