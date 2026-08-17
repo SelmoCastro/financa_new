@@ -3,7 +3,7 @@
 > Controle financeiro pessoal com IA, dashboard web e app Android.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.8.75-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.12.14-blue" alt="Version" />
   <img src="https://img.shields.io/badge/backend-NestJS-ea2845" alt="Backend" />
   <img src="https://img.shields.io/badge/frontend-React%20%2B%20Vite-61dafb" alt="Frontend" />
   <img src="https://img.shields.io/badge/mobile-Expo-000020" alt="Mobile" />
@@ -15,6 +15,10 @@
 ## Sobre
 
 Finanza AI é uma aplicação full-stack para organizar finanças pessoais, acompanhar gastos, controlar cartões, metas e orçamentos, além de usar IA para ajudar na análise financeira.
+
+- **Aplicação web:** https://finanzaai.tech
+- **API:** https://api.finanzaai.tech
+- **Repositório:** https://github.com/SelmoCastro/financa_new
 
 O projeto possui:
 
@@ -55,7 +59,7 @@ O projeto possui:
 
 ## Pré-requisitos
 
-- **Node.js 18+**
+- **Node.js 22**
 - **PostgreSQL** — local ou Docker (`cd backend && docker-compose up -d`)
 - **OpenRouter API Key** para funcionalidades de IA (obter em [openrouter.ai](https://openrouter.ai))
 
@@ -66,7 +70,7 @@ O projeto possui:
 ### 1. Clone e instale dependências
 
 ```bash
-git clone <repo-url> && cd Financa_new
+git clone https://github.com/SelmoCastro/financa_new.git && cd financa_new
 cd backend && npm install && cd ..
 cd frontend && npm install && cd ..
 cd mobile && npm install && cd ..
@@ -86,9 +90,10 @@ Edite `backend/.env` com suas credenciais:
 |---|---|---|
 | `DATABASE_URL` | Sim | Conexão com PostgreSQL |
 | `JWT_SECRET` | Sim | Chave para assinar tokens JWT |
-| `JWT_REFRESH_SECRET` | Sim | Chave para refresh tokens |
 | `OPENROUTER_API_KEY` | Não (IA opcional) | Chave da API OpenRouter |
-| `FRONTEND_URL` | Sim | URL do frontend (ex: `http://localhost:5173`) |
+| `FRONTEND_URL` | Sim | URL do frontend (local: `http://localhost:5173`; produção: `https://finanzaai.tech`) |
+| `MERCADOPAGO_ACCESS_TOKEN` | Para pagamentos | Access Token configurado somente no ambiente de execução |
+| `MERCADOPAGO_WEBHOOK_SECRET` | Para pagamentos | Segredo para validar webhooks do Mercado Pago |
 
 ### 3. Prepare o banco de dados
 
