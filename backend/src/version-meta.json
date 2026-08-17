@@ -1,6 +1,6 @@
 {
-  "version": "1.12.12",
-  "mobileVersion": "1.12.12",
+  "version": "1.12.13",
+  "mobileVersion": "1.12.13",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Remove server-side cache interceptor; fix stale reads after mutations"
+  "releaseNotes": "Fix: restore soft-deleted budgets on upsert"
 }
