@@ -35,9 +35,16 @@ function request(method, path, body, token) {
 }
 
 async function main() {
+  const email = process.env.TEST_EMAIL;
+  const password = process.env.TEST_PASSWORD;
+
+  if (!email || !password) {
+    throw new Error('TEST_EMAIL and TEST_PASSWORD are required');
+  }
+
   // 1. Login
   const login = await request('POST', '/v1/auth/login', 
-    JSON.stringify({ email: 's.elmo@live.com', password: 'Selmo1010' }));
+    JSON.stringify({ email, password }));
   console.log('Login:', JSON.stringify(login).substring(0, 100));
   
   const token = login?.data?.access_token;

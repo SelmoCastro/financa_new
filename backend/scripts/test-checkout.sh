@@ -1,10 +1,14 @@
 #!/bin/bash
 # Test Mercado Pago checkout flow
 
+: "${TEST_EMAIL:?Set TEST_EMAIL before running this script}"
+: "${TEST_PASSWORD:?Set TEST_PASSWORD before running this script}"
+
 # 1. Login
 LOGIN=$(curl -s -X POST http://localhost:3000/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"s.elmo@live.com","password":"Selmo1010"}')
+  --data-urlencode "email=$TEST_EMAIL" \
+  --data-urlencode "password=$TEST_PASSWORD")
 
 echo "Login: $(echo "$LOGIN" | head -c 100)"
 
@@ -30,7 +34,8 @@ echo "Token obtained: ${TOKEN:0:20}..."
 
 # 2. Create preference
 PREF=$(curl -s -X POST http://localhost:3000/v1/payments/create-preference \
-  -H "Authorization: Bearer ***            -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
   -d '{"plan":"premium_monthly"}')
 
 echo ""
