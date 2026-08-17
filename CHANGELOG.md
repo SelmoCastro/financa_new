@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.12] (2026-08-17)
+
+Remove server-side cache interceptor; fix stale reads after mutations
+
 ## [1.12.11] (2026-08-16)
 
 Fix account balance updates for expenses
