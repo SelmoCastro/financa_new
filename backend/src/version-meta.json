@@ -1,6 +1,6 @@
 {
-  "version": "1.12.14",
-  "mobileVersion": "1.12.14",
+  "version": "1.12.15",
+  "mobileVersion": "1.12.15",
   "minRequiredVersion": "1.7.0",
-  "releaseNotes": "Fix duplicate security headers causing mobile network error"
+  "releaseNotes": "Corrige o login Android após rotação dos pins TLS, adiciona validação de pins e garante publicação do APK antes do anúncio da versão."
 }

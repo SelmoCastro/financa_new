@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.15] (2026-08-18)
+
+Corrige o login Android após rotação dos pins TLS, adiciona validação de pins e garante publicação do APK antes do anúncio da versão.
+
 ## [1.12.14] (2026-08-17)
 
 Fix duplicate security headers causing mobile network error
