@@ -124,9 +124,13 @@ jobs:
             exit 1
           fi
           mkdir -p test-apk
-          TARGET="test-apk/Financa_new_v${VERSION}-test.apk"
+          TARGET_NAME="Financa_new_v${VERSION}-test.apk"
+          TARGET="test-apk/${TARGET_NAME}"
           cp "$APK" "$TARGET"
-          sha256sum "$TARGET" > "${TARGET}.sha256"
+          (
+            cd test-apk
+            sha256sum "$TARGET_NAME" > "${TARGET_NAME}.sha256"
+          )
           echo "APK_PATH=$TARGET" >> "$GITHUB_ENV"
           echo "## Private test APK" >> "$GITHUB_STEP_SUMMARY"
           echo "- Candidate: v${VERSION}" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,297 @@
+# Publishes a verified test APK to a versioned public URL only.
+# It deliberately does NOT deploy backend code, alter version metadata,
+# update Financa_new.apk, create a tag, or create a GitHub Release.
+name: Publish Verified Test APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Successful Build Test APK workflow run ID
+        required: true
+        type: string
+      version:
+        description: Candidate version without a v prefix (for example 1.12.15)
+        required: true
+        type: string
+      version_code:
+        description: Candidate Android versionCode
+        required: true
+        type: string
+      apk_sha256:
+        description: Expected SHA-256 of the exact APK candidate
+        required: true
+        type: string
+      confirm_production_upload:
+        description: Confirm upload of this test candidate to the public versioned URL
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: publish-test-apk-${{ inputs.version }}
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  VPS_HOST: ${{ secrets.VPS_HOST }}
+  VPS_USER: ${{ secrets.VPS_USER || 'root' }}
+  VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || '8443' }}
+  VPS_DOWNLOADS_PATH: /var/www/finanzaai.tech/downloads
+  VPS_FRONTEND_DIST: /opt/finanza/frontend/dist
+
+jobs:
+  publish:
+    name: Publish verified test APK
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Validate explicit publish request
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          VERSION: ${{ inputs.version }}
+          VERSION_CODE: ${{ inputs.version_code }}
+          EXPECTED_SHA256: ${{ inputs.apk_sha256 }}
+          CONFIRMED: ${{ inputs.confirm_production_upload }}
+        run: |
+          set -euo pipefail
+          [[ "$CONFIRMED" == "true" ]] || { echo 'Production upload was not explicitly confirmed' >&2; exit 1; }
+          [[ "$SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ ]] || { echo 'source_run_id must be numeric' >&2; exit 1; }
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'version must be stable X.Y.Z' >&2; exit 1; }
+          [[ "$VERSION_CODE" =~ ^[1-9][0-9]*$ ]] || { echo 'version_code must be a positive integer' >&2; exit 1; }
+          [[ "$EXPECTED_SHA256" =~ ^[a-f0-9]{64}$ ]] || { echo 'apk_sha256 must be lowercase SHA-256' >&2; exit 1; }
+          printf 'Candidate requested: v%s (code %s), source run %s\n' "$VERSION" "$VERSION_CODE" "$SOURCE_RUN_ID"
+
+      - name: Verify source run and API remains on the stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" \
+            > "$RUNNER_TEMP/source-run.json"
+          python3 - "$RUNNER_TEMP/source-run.json" "$VERSION" <<'PY'
+          import json
+          import re
+          import sys
+
+          source = json.load(open(sys.argv[1], encoding='utf-8'))
+          version = sys.argv[2]
+          if source.get('name') != 'Build Test APK' or source.get('conclusion') != 'success':
+              raise SystemExit(
+                  'Source run must be a successful Build Test APK run; '
+                  f"got name={source.get('name')!r} conclusion={source.get('conclusion')!r}"
+              )
+          print(f"Verified source run {source['id']}: {source['name']} ({source['conclusion']})")
+          if not re.fullmatch(r'\d+\.\d+\.\d+', version):
+              raise SystemExit('Invalid candidate version')
+          PY
+          curl --fail --silent --show-error --location \
+            -H 'Origin: https://finanzaai.tech' \
+            https://api.finanzaai.tech/v1/app/version \
+            > "$RUNNER_TEMP/current-version.json"
+          python3 - "$RUNNER_TEMP/current-version.json" "$VERSION" <<'PY'
+          import json
+          import re
+          import sys
+
+          payload = json.load(open(sys.argv[1], encoding='utf-8'))
+          data = payload.get('data', payload)
+          candidate = sys.argv[2]
+          stable = str(data.get('mobileVersion') or data.get('version') or '')
+          if stable == candidate:
+              raise SystemExit(
+                  'API already announces this candidate; use the release workflow instead of test publishing.'
+              )
+          if re.fullmatch(r'\d+\.\d+\.\d+', stable):
+              current = tuple(map(int, stable.split('.')))
+              requested = tuple(map(int, candidate.split('.')))
+              if requested <= current:
+                  raise SystemExit(
+                      f'Candidate v{candidate} must be newer than stable API version v{stable}.'
+                  )
+          print(f'API remains on stable mobile version v{stable or "unknown"}; candidate not announced.')
+          PY
+
+      - name: Download exact test artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: financa-test-apk
+          path: candidate-artifact
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.source_run_id }}
+          digest-mismatch: error
+
+      - name: Verify artifact name and checksum
+        env:
+          VERSION: ${{ inputs.version }}
+          EXPECTED_SHA256: ${{ inputs.apk_sha256 }}
+        run: |
+          set -euo pipefail
+          mapfile -t APK_FILES < <(find candidate-artifact -type f -name "Financa_new_v${VERSION}-test.apk" -print)
+          [[ "${#APK_FILES[@]}" -eq 1 ]] || { echo 'Expected exactly one candidate APK' >&2; exit 1; }
+          APK_PATH="${APK_FILES[0]}"
+          CHECKSUM_PATH="${APK_PATH}.sha256"
+          test -s "$APK_PATH"
+          test -s "$CHECKSUM_PATH"
+          read -r EMBEDDED_SHA256 _ < "$CHECKSUM_PATH"
+          ACTUAL_SHA256="$(sha256sum "$APK_PATH" | cut -d ' ' -f 1)"
+          [[ "$EMBEDDED_SHA256" == "$ACTUAL_SHA256" ]] || { echo 'Artifact checksum file does not match APK' >&2; exit 1; }
+          [[ "$EXPECTED_SHA256" == "$ACTUAL_SHA256" ]] || { echo 'Dispatch checksum does not match APK' >&2; exit 1; }
+          APK_SIZE="$(stat -c '%s' "$APK_PATH")"
+          printf 'APK verified: %s bytes, SHA-256 %s\n' "$APK_SIZE" "$ACTUAL_SHA256"
+          {
+            echo "APK_PATH=$APK_PATH"
+            echo "APK_SHA256=$ACTUAL_SHA256"
+            echo "APK_SIZE=$APK_SIZE"
+          } >> "$GITHUB_ENV"
+
+      - name: Setup Android SDK for APK inspection
+        uses: android-actions/setup-android@v3
+
+      - name: Verify APK version and release signature
+        env:
+          VERSION: ${{ inputs.version }}
+          VERSION_CODE: ${{ inputs.version_code }}
+        run: |
+          set -euo pipefail
+          BUILD_TOOLS=""
+          for directory in "$ANDROID_HOME"/build-tools/*; do
+            if [[ -x "$directory/aapt" && -x "$directory/apksigner" ]]; then
+              BUILD_TOOLS="$directory"
+            fi
+          done
+          test -n "$BUILD_TOOLS"
+          "$BUILD_TOOLS/aapt" dump badging "$APK_PATH" > "$RUNNER_TEMP/apk-badging.txt"
+          grep -F "versionCode='${VERSION_CODE}' versionName='${VERSION}'" "$RUNNER_TEMP/apk-badging.txt"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK_PATH" | tee "$RUNNER_TEMP/apksigner.txt"
+          if grep -q 'CN=Android Debug' "$RUNNER_TEMP/apksigner.txt"; then
+            echo 'Candidate APK uses the Android debug certificate' >&2
+            exit 1
+          fi
+          echo 'APK version and release signature verified.'
+
+      - name: Configure production SSH
+        run: |
+          set -euo pipefail
+          : "${VPS_HOST:?Missing VPS_HOST secret}"
+          : "${VPS_USER:?Missing VPS_USER secret}"
+          : "${VPS_SSH_PORT:?Missing VPS_SSH_PORT secret}"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$VPS_SSH_PORT" -H "$VPS_HOST" > ~/.ssh/known_hosts
+          test -s ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload candidate to the VPS staging path
+        run: |
+          set -euo pipefail
+          REMOTE_APK="/tmp/finanza-test-v${{ inputs.version }}-${GITHUB_RUN_ID}.apk"
+          scp -P "$VPS_SSH_PORT" -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -O \
+            "$APK_PATH" "$VPS_USER@$VPS_HOST:$REMOTE_APK"
+          echo "REMOTE_APK=$REMOTE_APK" >> "$GITHUB_ENV"
+
+      - name: Atomically publish versioned APK only
+        run: |
+          set -euo pipefail
+          ssh -p "$VPS_SSH_PORT" -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "bash -s -- '${{ inputs.version }}' '$APK_SHA256' '$REMOTE_APK' '$VPS_DOWNLOADS_PATH' '$VPS_FRONTEND_DIST'" <<'REMOTE'
+          set -euo pipefail
+          version="$1"
+          expected_sha256="$2"
+          incoming="$3"
+          downloads_path="$4"
+          frontend_dist="$5"
+          filename="Financa_new_v${version}.apk"
+          public_target="${downloads_path}/${filename}"
+          frontend_target="${frontend_dist}/${filename}"
+          backup_dir="/opt/backups/finanza-test-apk"
+          timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+
+          verify_sha256() {
+            local path="$1"
+            local actual
+            actual="$(sha256sum "$path" | cut -d ' ' -f 1)"
+            [[ "$actual" == "$expected_sha256" ]]
+          }
+
+          backup_if_exists() {
+            local path="$1"
+            local label="$2"
+            if [[ -e "$path" ]]; then
+              cp -a -- "$path" "$backup_dir/${label}-${filename}.${timestamp}.bak"
+            fi
+          }
+
+          test -s "$incoming"
+          test -d "$downloads_path"
+          test -d "$frontend_dist"
+          mkdir -p "$backup_dir"
+          backup_if_exists "$frontend_target" frontend
+          backup_if_exists "$public_target" downloads
+
+          frontend_tmp="$(mktemp "${frontend_target}.new.XXXXXX")"
+          public_tmp="$(mktemp "${public_target}.new.XXXXXX")"
+          trap 'rm -f "$frontend_tmp" "$public_tmp" "$incoming"' EXIT
+          install -m 0644 "$incoming" "$frontend_tmp"
+          install -m 0644 "$incoming" "$public_tmp"
+          verify_sha256 "$frontend_tmp"
+          verify_sha256 "$public_tmp"
+          mv -f "$frontend_tmp" "$frontend_target"
+          mv -f "$public_tmp" "$public_target"
+          verify_sha256 "$frontend_target"
+          verify_sha256 "$public_target"
+
+          # Keep the stable canonical APK and API metadata unchanged until release approval.
+          # This test candidate is reachable only through its explicit versioned URL.
+          echo "Published ${public_target} without changing Financa_new.apk or API version metadata."
+          REMOTE
+
+      - name: Verify public download and unchanged API contract
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          URL="https://finanzaai.tech/downloads/Financa_new_v${VERSION}.apk"
+          PUBLIC_APK="$RUNNER_TEMP/public-test-apk.apk"
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+            --connect-timeout 20 --max-time 600 --output "$PUBLIC_APK" "$URL"
+          PUBLIC_SHA256="$(sha256sum "$PUBLIC_APK" | cut -d ' ' -f 1)"
+          [[ "$PUBLIC_SHA256" == "$APK_SHA256" ]] || { echo 'Public download checksum mismatch' >&2; exit 1; }
+          [[ "$(stat -c '%s' "$PUBLIC_APK")" == "$APK_SIZE" ]] || { echo 'Public download size mismatch' >&2; exit 1; }
+          curl --fail --silent --show-error --location \
+            -H 'Origin: https://finanzaai.tech' \
+            https://api.finanzaai.tech/v1/app/version \
+            > "$RUNNER_TEMP/api-after-publish.json"
+          python3 - "$RUNNER_TEMP/api-after-publish.json" "$VERSION" <<'PY'
+          import json
+          import sys
+
+          payload = json.load(open(sys.argv[1], encoding='utf-8'))
+          data = payload.get('data', payload)
+          candidate = sys.argv[2]
+          announced = {str(data.get('version') or ''), str(data.get('mobileVersion') or '')}
+          if candidate in announced:
+              raise SystemExit('Test APK upload unexpectedly changed the API release metadata.')
+          print('Public APK hash verified; API release metadata remains unchanged.')
+          PY
+          {
+            echo "## Test APK published"
+            echo "- Candidate: v${VERSION}"
+            echo "- URL: ${URL}"
+            echo "- SHA-256: ${APK_SHA256}"
+            echo "- Size: ${APK_SIZE} bytes"
+            echo "- Backend/API release metadata: unchanged"
+          } >> "$GITHUB_STEP_SUMMARY"
