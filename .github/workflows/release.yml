@@ -36,6 +36,7 @@ jobs:
   # ──────────────────────────────────────────────
   deploy-backend:
     name: Deploy Backend
+    needs: build-apk
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -138,7 +139,6 @@ jobs:
   build-apk:
     name: Build APK
     runs-on: ubuntu-latest
-    needs: deploy-backend
     steps:
       - name: Checkout release ref
         uses: actions/checkout@v4
@@ -152,6 +152,30 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: mobile/package-lock.json
+
+      - name: Verify mobile release version sources
+        run: |
+          set -euo pipefail
+          EXPECTED_VERSION="${VERSION#v}"
+          EXPECTED_VERSION="$EXPECTED_VERSION" python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          expected = os.environ['EXPECTED_VERSION']
+          app = json.loads(Path('mobile/app.json').read_text(encoding='utf-8'))['expo']
+          gradle = Path('mobile/android/app/build.gradle').read_text(encoding='utf-8')
+          version_name = re.search(r'versionName\s+"([^"]+)"', gradle)
+          version_code = re.search(r'versionCode\s+(\d+)', gradle)
+          assert app['version'] == expected, (app['version'], expected)
+          assert version_name and version_name.group(1) == expected
+          assert version_code and int(version_code.group(1)) == int(app['android']['versionCode'])
+          print(f"Version sources OK: {expected} (code {app['android']['versionCode']})")
+          PY
+
+      - name: Verify live mobile TLS pins
+        run: python3 scripts/verify-mobile-ssl-pins.py --source mobile/services/sslPinning.ts --host api.finanzaai.tech
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -218,6 +242,8 @@ jobs:
             echo "❌ APK not found!"
             exit 1
           fi
+          VER_NUM="${VERSION#v}"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -F "versionName='${VER_NUM}'"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/apksigner.txt"
           if grep -q 'CN=Android Debug' "$RUNNER_TEMP/apksigner.txt"; then
             echo "❌ Release APK is signed with the debug certificate"
@@ -287,14 +313,24 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-backend, build-apk]
     steps:
-      - name: Check API is reachable
+      - name: Verify API and mobile artifact contract
         run: |
-          HTTP=$(curl -s -o /dev/null -w '%{http_code}' https://finanzaai.tech/api/v1/app/version)
-          if [[ "$HTTP" != "200" ]]; then
-            echo "❌ API unreachable (HTTP $HTTP)"
-            exit 1
-          fi
-          echo "✅ API is reachable"
+          set -euo pipefail
+          VER_NUM="${VERSION#v}"
+          VERSION_JSON="$(curl -fsS --retry 5 --retry-delay 2 https://api.finanzaai.tech/v1/app/version)"
+          VERSION_JSON="$VERSION_JSON" EXPECTED_VERSION="$VER_NUM" python3 - <<'PY'
+          import json
+          import os
+
+          data = json.loads(os.environ['VERSION_JSON'])['data']
+          expected = os.environ['EXPECTED_VERSION']
+          expected_url = f'https://finanzaai.tech/downloads/Financa_new_v{expected}.apk'
+          assert data['version'] == expected, data['version']
+          assert data['mobileVersion'] == expected, data['mobileVersion']
+          assert data['apkAvailable'] is True, data['apkAvailable']
+          assert data['apkUrl'] == expected_url, data['apkUrl']
+          print(f'API/mobile artifact contract OK: v{expected}')
+          PY
 
       - name: Check APK download URL
         run: |
@@ -302,10 +338,10 @@ jobs:
           VER_NUM="${VERSION#v}"
           HTTP=$(curl -s -o /dev/null -w '%{http_code}' "https://finanzaai.tech/downloads/Financa_new_v${VER_NUM}.apk")
           if [[ "$HTTP" != "200" ]]; then
-            echo "⚠️ APK URL returned HTTP $HTTP (may need manual check)"
-          else
-            echo "✅ APK download URL is live"
+            echo "❌ APK URL returned HTTP $HTTP"
+            exit 1
           fi
+          echo "✅ APK download URL is live"
 
       - name: Summary
         run: |
