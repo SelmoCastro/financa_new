@@ -71,8 +71,8 @@ export default function RootLayout() {
       initLocalDb().catch((dbError) => {
         if (__DEV__) console.warn('[localDb] Falha ao inicializar banco offline:', dbError);
       }),
-      initSslPinning().catch((pinningError) => {
-        if (__DEV__) console.warn('[sslPinning] Falha ao inicializar SSL pinning:', pinningError);
+      initSslPinning().catch(() => {
+        console.warn('[sslPinning] initialization failed');
       }),
     ]).finally(() => {
       setSecurityReady(true);

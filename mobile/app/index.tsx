@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import api from "../services/api";
+import { consumeSslPinningFailure } from "../services/sslPinningState";
 import { useOfflineActionGuard } from "../hooks/useOfflineActionGuard";
 import { useAuth } from "../context/AuthContext";
 import * as Haptics from "expo-haptics";
@@ -56,6 +57,16 @@ export default function LoginScreen() {
       setLoading(false);
       await login(access_token, refreshToken, user.id);
     } catch (error: any) {
+      const pinningFailure = consumeSslPinningFailure();
+      if (pinningFailure) {
+        Alert.alert(
+          "Conexão segura bloqueada",
+          "O certificado do servidor foi atualizado e esta versão do app não o reconhece. Instale a atualização mais recente.",
+        );
+        setLoading(false);
+        return;
+      }
+
       if (__DEV__)
         console.error(
           "[Login] Erro detectado:",
