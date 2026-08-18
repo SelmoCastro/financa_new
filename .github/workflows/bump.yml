@@ -146,3 +146,7 @@ jobs:
             --head "$BRANCH" \
             --title "chore: prepare release v${VERSION}" \
             --body $'## Release preparation\n- Synchronizes all package versions.\n- Synchronizes Expo version, Android versionCode, and Gradle versionName.\n- Updates backend version metadata and CHANGELOG.\n\nCI must pass before merge.'
+          # PRs created with GITHUB_TOKEN do not emit pull_request workflow runs.
+          # Dispatch CI explicitly so branch protection can evaluate the release PR.
+          gh workflow run CI --ref "$BRANCH"
+          echo "CI dispatched for ${BRANCH}"
