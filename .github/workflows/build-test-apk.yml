@@ -1,0 +1,141 @@
+# Builds a production-signed APK as a private Actions artifact only.
+# It never deploys the backend, uploads to the VPS, creates a tag, or publishes a release.
+name: Build Test APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref containing the APK candidate to build
+        required: true
+        type: string
+
+concurrency:
+  group: build-test-apk-${{ inputs.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build signed test APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Verify mobile version sources
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          app = json.loads(Path('mobile/app.json').read_text(encoding='utf-8'))['expo']
+          gradle = Path('mobile/android/app/build.gradle').read_text(encoding='utf-8')
+          version_name = re.search(r'versionName\s+"([^"]+)"', gradle)
+          version_code = re.search(r'versionCode\s+(\d+)', gradle)
+          assert version_name and version_name.group(1) == app['version']
+          assert version_code and int(version_code.group(1)) == int(app['android']['versionCode'])
+          print(f"Candidate version OK: {app['version']} (code {app['android']['versionCode']})")
+          PY
+          VERSION="$(node -p "require('./mobile/app.json').expo.version")"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Verify live mobile TLS pins
+        run: python3 scripts/verify-mobile-ssl-pins.py --source mobile/services/sslPinning.ts --host api.finanzaai.tech
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install mobile dependencies
+        run: cd mobile && npm ci
+
+      - name: Configure Gradle for CI
+        run: |
+          set -euo pipefail
+          cd mobile/android
+          touch gradle.properties
+          if grep -q '^org.gradle.jvmargs=' gradle.properties; then
+            sed -i 's#^org.gradle.jvmargs=.*#org.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m#' gradle.properties
+          else
+            printf '%s\n' 'org.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m' >> gradle.properties
+          fi
+          if grep -q '^org.gradle.parallel=' gradle.properties; then
+            sed -i 's#^org.gradle.parallel=.*#org.gradle.parallel=false#' gradle.properties
+          else
+            printf '%s\n' 'org.gradle.parallel=false' >> gradle.properties
+          fi
+
+      - name: Configure production signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${ANDROID_KEYSTORE_BASE64:?Missing ANDROID_KEYSTORE_BASE64 secret}"
+          : "${ANDROID_KEYSTORE_PASSWORD:?Missing ANDROID_KEYSTORE_PASSWORD secret}"
+          : "${ANDROID_KEY_ALIAS:?Missing ANDROID_KEY_ALIAS secret}"
+          : "${ANDROID_KEY_PASSWORD:?Missing ANDROID_KEY_PASSWORD secret}"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/finanza-release.keystore"
+          chmod 600 "$RUNNER_TEMP/finanza-release.keystore"
+          keytool -list -keystore "$RUNNER_TEMP/finanza-release.keystore" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/finanza-release.keystore" >> "$GITHUB_ENV"
+
+      - name: Build APK (release)
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          cd mobile/android
+          ./gradlew assembleRelease --no-daemon -x lintVitalAnalyzeRelease -x lint
+
+      - name: Verify and package private artifact
+        run: |
+          set -euo pipefail
+          APK="mobile/android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -F "versionName='${VERSION}'"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/apksigner.txt"
+          if grep -q 'CN=Android Debug' "$RUNNER_TEMP/apksigner.txt"; then
+            echo 'Release APK is signed with the debug certificate' >&2
+            exit 1
+          fi
+          mkdir -p test-apk
+          TARGET="test-apk/Financa_new_v${VERSION}-test.apk"
+          cp "$APK" "$TARGET"
+          sha256sum "$TARGET" > "${TARGET}.sha256"
+          echo "APK_PATH=$TARGET" >> "$GITHUB_ENV"
+          echo "## Private test APK" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Candidate: v${VERSION}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Delivery: private Actions artifact only; no VPS upload or release publication" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload private test artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: financa-test-apk
+          path: test-apk/
+          if-no-files-found: error
+          retention-days: 7
