@@ -61,7 +61,7 @@
     <ul>
         <li>Fornecer e manter o funcionamento do aplicativo Finanza.</li>
         <li>Processar transações financeiras, orçamentos e metas que você criar.</li>
-        <li>Categorizar automaticamente transações e analisar comprovantes via IA (usando OpenRouter/GPT-4o-mini).</li>
+        <li>Categorizar automaticamente transações e analisar comprovantes via IA (usando OpenRouter; Ox Alpha para leitura de comprovantes).</li>
         <li>Aplicar limites do plano (gratuito ou premium) com base no uso de IA.</li>
         <li>Enviar e-mails de verificação de conta e recuperação de senha.</li>
         <li>Corrigir bugs e melhorar a estabilidade do app através de relatórios de erro.</li>
@@ -71,13 +71,13 @@
     <h2>3. Processamento de IA e Dados Sensíveis</h2>
     <p>Quando você utiliza funcionalidades de IA (classificação automática, leitura de comprovantes):</p>
     <ul>
-        <li>Os dados enviados (descrição da transação, imagem do comprovante) são transmitidos para a API do OpenRouter, que utiliza modelos da OpenAI.</li>
+        <li>Os dados enviados (descrição da transação, imagem do comprovante) são transmitidos para a API do OpenRouter e podem ser processados pelo modelo Ox Alpha de um provedor terceiro.</li>
         <li>A transmissão é feita via HTTPS (criptografia TLS 1.2+).</li>
-        <li>O OpenRouter/OpenAI não armazena os dados após o processamento (conforme política de retenção deles para API).</li>
+        <li>O provedor do Ox Alpha retém prompts e respostas durante a prévia do modelo, mas declara que não os utiliza para treinamento. Não envie comprovantes que não sejam necessários para a funcionalidade.</li>
         <li>Não utilizamos seus dados para treinar modelos de IA.</li>
     </ul>
     <div class="highlight">
-        <strong>Importante:</strong> Ao usar funcionalidades de IA, você consente que seus dados sejam processados por terceiros (OpenRouter/OpenAI) conforme as políticas deles.
+        <strong>Importante:</strong> Ao usar funcionalidades de IA, você consente que seus dados sejam processados por terceiros (OpenRouter e o provedor do modelo) conforme as políticas deles.
     </div>
 
     <h2>4. Armazenamento e Segurança</h2>
@@ -127,7 +127,7 @@
     <p>Nossos servidores estão localizados nos Estados Unidos (Hostinger). Dados financeiros e pessoais podem ser processados fora do Brasil nas seguintes circunstâncias:</p>
     <ul>
         <li><strong>Hospedagem:</strong> Servidor VPS nos EUA (Hostinger) — dados armazenados e processados neste local.</li>
-        <li><strong>IA:</strong> Dados enviados para processamento via OpenRouter/OpenAI (servidores nos EUA e outros países).</li>
+        <li><strong>IA:</strong> Dados enviados para processamento via OpenRouter e provedores de modelos (servidores nos EUA e outros países).</li>
         <li><strong>E-mail:</strong> Envio de e-mails via Resend (infraestrutura nos EUA).</li>
         <li><strong>Pagamentos:</strong> Processamento de assinaturas via Mercado Pago (servidores no Brasil e América Latina).</li>
     </ul>
