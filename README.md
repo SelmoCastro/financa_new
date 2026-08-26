@@ -52,7 +52,7 @@ O projeto possui:
 | Backend | NestJS 11, Prisma 5, PostgreSQL, JWT |
 | Frontend | React 19, Vite 6, TypeScript, Tailwind CSS 3 |
 | Mobile | Expo SDK 54, React Native 0.81, NativeWind |
-| IA | OpenRouter (Gemini 2.0 Flash) |
+| IA | OpenRouter (Ox Alpha para leitura de comprovantes) |
 | Infra | Nginx, PM2, Docker |
 
 ---

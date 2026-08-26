@@ -1,6 +1,6 @@
 /**
  * Centralização dos Prompts do Sistema para o Finanza AI.
- * Otimizado para GPT-4o-mini (OpenAI via OpenRouter).
+ * Compatível com modelos OpenRouter configurados por ambiente.
  */
 
 export const SYSTEM_PROMPTS = {

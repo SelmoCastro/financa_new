@@ -121,9 +121,10 @@ export class AiService {
   private readonly logger = new Logger(AiService.name);
   private openai: OpenAI | null = null;
 
-  // Modelos configuráveis via .env com fallbacks
+  // Modelos configuráveis via .env com fallbacks. Ox Alpha aceita imagens e
+  // response_format JSON, por isso é adequado à extração de comprovantes.
   private readonly VISION_MODEL =
-    process.env.AI_VISION_MODEL || 'openai/gpt-4o-mini';
+    process.env.AI_VISION_MODEL || 'stealth/ox-alpha';
   private readonly TEXT_MODEL =
     process.env.AI_TEXT_MODEL || 'openai/gpt-4o-mini';
 
@@ -563,6 +564,9 @@ export class AiService {
         ],
         response_format: { type: 'json_object' },
         max_tokens: 4096,
+        // Ox Alpha é um modelo de raciocínio; limitar o esforço evita estourar
+        // o timeout de 60s em uma simples leitura de comprovante.
+        reasoning_effort: 'low',
       };
 
       const response: ChatCompletion =
