@@ -41,7 +41,7 @@ jobs:
     environment: production
     steps:
       - name: Checkout release ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ env.VERSION }}
 
@@ -141,7 +141,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout release ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Manual reruns use this workflow commit; tag pushes remain immutable.
           ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || env.VERSION }}
