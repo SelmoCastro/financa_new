@@ -13,7 +13,7 @@ jobs:
     name: Verify live mobile TLS pins
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Verify configured pins match the live API chain
         run: python3 scripts/verify-mobile-ssl-pins.py --source mobile/services/sslPinning.ts --host api.finanzaai.tech

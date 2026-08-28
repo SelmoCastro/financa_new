@@ -27,7 +27,7 @@ jobs:
     environment: production
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref || format('v{0}', inputs.version) }}
 
