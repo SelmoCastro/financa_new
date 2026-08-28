@@ -45,6 +45,16 @@ jobs:
           npm run build
           test -f dist/index.html
 
+      - name: Add OAuth public documents
+        run: |
+          mkdir -p frontend/dist/oauth/a-guerra-silenciosa
+          cp docs/oauth/a-guerra-silenciosa/index.html frontend/dist/oauth/a-guerra-silenciosa/index.html
+          cp docs/oauth/a-guerra-silenciosa/privacidade.html frontend/dist/oauth/a-guerra-silenciosa/privacidade.html
+          cp docs/oauth/a-guerra-silenciosa/termos.html frontend/dist/oauth/a-guerra-silenciosa/termos.html
+          test -s frontend/dist/oauth/a-guerra-silenciosa/index.html
+          test -s frontend/dist/oauth/a-guerra-silenciosa/privacidade.html
+          test -s frontend/dist/oauth/a-guerra-silenciosa/termos.html
+
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
@@ -85,4 +95,10 @@ jobs:
         run: |
           curl --fail --silent --show-error --location https://finanzaai.tech/ -o /tmp/finanza-home.html
           grep -Eqo '/assets/[^" ]+\.js' /tmp/finanza-home.html
+          curl --fail --silent --show-error --location https://finanzaai.tech/oauth/a-guerra-silenciosa/ -o /tmp/oauth-home.html
+          curl --fail --silent --show-error --location https://finanzaai.tech/oauth/a-guerra-silenciosa/privacidade.html -o /tmp/oauth-privacy.html
+          curl --fail --silent --show-error --location https://finanzaai.tech/oauth/a-guerra-silenciosa/termos.html -o /tmp/oauth-terms.html
+          grep -Fq 'A Guerra Silenciosa — Automação YouTube' /tmp/oauth-home.html
+          grep -Fq 'Política de Privacidade' /tmp/oauth-privacy.html
+          grep -Fq 'Termos de Serviço' /tmp/oauth-terms.html
           printf 'Public frontend bundle is reachable.\n'
