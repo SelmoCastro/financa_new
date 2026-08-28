@@ -178,7 +178,7 @@ jobs:
         run: python3 scripts/verify-mobile-ssl-pins.py --source mobile/services/sslPinning.ts --host api.finanzaai.tech
 
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 17
